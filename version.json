@@ -1,7 +1,15 @@
 {
-  "version": "58.93",
+  "version": "58.94",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.94",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Nuevo módulo Reacondicionado (taller de lotes): réplica del flujo de BAYOL CELL — lotes, 6 etapas (recibidos, diagnóstico, en reparación, control de calidad, listo para venta, despachados), evaluación con catálogo de fallas, piezas con doble confirmación, técnicos, devoluciones, pedidos de piezas y rentabilidad. Se activa con pos_config.reacondicionado.",
+        "Corrección: los modales del POS en móvil aparecían desplazados 76 px a la derecha."
+      ]
+    },
     {
       "version": "58.93",
       "fecha": "2026-09-22",

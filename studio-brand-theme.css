@@ -10,6 +10,9 @@
  */
 
 html.nx-studio {
+  /* STUDIO no tiene el sidebar-rail de 76px de NEXUS PRO (parches-contenido-movil-ajuste.js desplaza
+     todos los modales/overlays a la derecha del rail en móvil). Sin rail, el borde va en 0. */
+  --nx-rail: 0px;
   color-scheme: light;
   --studio-black: #0a0a0a;
   --studio-charcoal: #171717;

@@ -58,13 +58,13 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['ia', 'IA NEXUS'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['reacond', 'Reacondicionado'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['ia', 'IA NEXUS'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
     ['gerente', 'Gerente', _MODKEYS.filter(k => k !== 'ajustes')],
     ['cajero', 'Cajero', ['inicio', 'vender', 'caja', 'clientes', 'ventas']],
-    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades']]
+    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades', 'reacond']]
   ];
   // Lee un campo de dinero (formato RD: punto=miles). FALTABA en este módulo: sin esto,
   // Reparaciones/Apartados/Cuotas reventaban en silencio al guardar (ReferenceError).
@@ -78,12 +78,20 @@
   function puedeVerCosto360() { return puedeVerMin(); }
   function puedeVer(mod) {
     const r = rolEfectivo();
+    if (mod === 'reacond' && _posCfg.reacondicionado !== true) return false;
     if (r === 'admin') return true;
     const a = (_acceso || []).find(x => x.rol === r);
     if (!a) { const d = ROLES_DEF.find(x => x[0] === r); return d ? d[2].indexOf(mod) >= 0 : true; }
     let mods = a.modulos; if (typeof mods === 'string') { try { mods = JSON.parse(mods); } catch (e) { mods = []; } }
     return (mods || []).indexOf(mod) >= 0;
   }
+  // Reacondicionado (parches-pos-reacond.js): visible solo con pos_config.reacondicionado (bandera 18_reacondicionado.sql)
+  function reacondOn() { return _posCfg.reacondicionado === true; }
+  window.nxPosCtx = {
+    renderPOS: function () { const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
+    rolEfectivo: rolEfectivo, puedeVer: puedeVer,
+    sesion: function () { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return window.sesion; } }
+  };
   let _secuencias = [];
   const SEC_DEFS = [
     ['cotizacion', 'Cotización', 'COT', 5],
@@ -190,7 +198,7 @@
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, whatsapp_inbox: cf[0].whatsapp_inbox === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }; }
+    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, whatsapp_inbox: cf[0].whatsapp_inbox === true, reacondicionado: cf[0].reacondicionado === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }; }
     window.nxPosCfgListo = true;
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
@@ -470,6 +478,7 @@
     if (t === 'ia') { try { await Promise.all([cargarReportes(), cargarIAClientes()]); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
+    if (t === 'reacond') { try { if (window.nxReacond) await window.nxReacond.cargar(); } catch (e) {} }
     if (t === 'crm') { try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarCRM(); } catch (e) {} }
     renderPOS(view);
   };
@@ -550,6 +559,7 @@
     else if (_posTab === 'prefhist') body = renderPrefHist();
     else if (_posTab === 'prefactura') body = renderPrefactura();
     else if (_posTab === 'reparaciones') body = renderReparaciones();
+    else if (_posTab === 'reacond') body = window.nxReacond ? window.nxReacond.render() : '<div style="padding:20px;color:#85817a">Cargando módulo de reacondicionado…</div>';
     else if (_posTab === 'cuotas') body = cv2fin() ? renderFinV2() : renderCuotas();
     else if (_posTab === 'apartados') body = renderApartados();
     else if (_posTab === 'ajustes') body = renderAjustes();
@@ -567,6 +577,7 @@
     if (_posTab === 'prefhist') try { pintarLupaPH(); } catch (e) {}
     if (_posTab === 'productos') try { pintarLupaProd(); } catch (e) {}
     if (_posTab === 'reparaciones') try { pintarLupaRep(); } catch (e) {}
+    if (_posTab === 'reacond') try { window.nxReacond && window.nxReacond.postRender(); } catch (e) {}
     if (_posTab === 'cuotas') try { if (cv2fin()) finV2PostRender(); else pintarLupaFin(); } catch (e) {}
     if (_posTab === 'ventas') try { pintarLupaHist(); } catch (e) {}
   }
@@ -582,7 +593,7 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool'))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool') + (reacondOn() ? it('reacond', 'Reacondicionado', 'ti-recycle') : ''))
       + sec('Inventario', it('productos', 'Inventario', 'ti-box') + it('inventario', 'Kardex', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + it('reportes', 'Reportes', 'ti-chart-pie') + it('contabilidad', 'Contabilidad', 'ti-book-2'))
@@ -683,7 +694,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
-        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
+        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + (reacondOn() ? tile('reacond', 'Reacondicionado', 'ti-recycle', '#0e7490') : '') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
         ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
         ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}

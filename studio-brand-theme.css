@@ -1,0 +1,327 @@
+/*
+ * STUDIO RD — identidad visual negro, blanco y oro
+ * Capa final de marca. No modifica colores semánticos de éxito, advertencia o error.
+ * Decisión del dueño: 22-sep-2026.
+ */
+
+html.nx-studio {
+  color-scheme: light;
+  --studio-black: #0a0a0a;
+  --studio-charcoal: #171717;
+  --studio-graphite: #262626;
+  --studio-white: #fffefa;
+  --studio-canvas: #f7f5ef;
+  --studio-gold: #c9a227;
+  --studio-gold-light: #e3c45c;
+  --studio-gold-dark: #806515;
+  --studio-gold-soft: rgba(201, 162, 39, .13);
+  --studio-gold-ring: rgba(201, 162, 39, .28);
+
+  --bg0: var(--studio-canvas);
+  --bg1: var(--studio-white);
+  --bg2: #ffffff;
+  --bg3: #f3f0e8;
+  --bg4: #e9e5da;
+  --c1: var(--studio-gold);
+  --c2: var(--studio-gold-dark);
+  --c1a: var(--studio-gold-soft);
+  --c2a: rgba(128, 101, 21, .1);
+  --tx1: #111111;
+  --tx2: #4b4b47;
+  --tx3: #686862;
+  --sidebar: var(--studio-black);
+  --sidebar-accent: var(--studio-charcoal);
+  --sidebar-hover: rgba(255, 255, 255, .08);
+  --sidebar-active: rgba(201, 162, 39, .2);
+  --border: #ddd8ca;
+  --border-light: #ebe7dc;
+  --gradient-primary: linear-gradient(135deg, var(--studio-gold-dark), var(--studio-gold));
+  --shadow-sm: 0 1px 3px rgba(10, 10, 10, .08), 0 1px 2px rgba(10, 10, 10, .04);
+  --shadow: 0 5px 16px rgba(10, 10, 10, .09), 0 2px 5px rgba(10, 10, 10, .05);
+  --shadow-md: 0 10px 28px rgba(10, 10, 10, .12), 0 4px 9px rgba(10, 10, 10, .06);
+}
+
+/* Estructura general */
+html.nx-studio body {
+  background: var(--studio-canvas);
+  color: #111111;
+}
+html.nx-studio .content,
+html.nx-studio .nxInicio,
+html.nx-studio #v-pos {
+  background-color: var(--studio-canvas);
+}
+html.nx-studio .ticker {
+  background: #050505;
+  border-bottom: 1px solid rgba(201, 162, 39, .32);
+}
+html.nx-studio .ticker .tu {
+  color: var(--studio-gold-light);
+}
+html.nx-studio .sb {
+  background: linear-gradient(180deg, #050505 0%, #111111 58%, #1b1810 100%);
+  border-right: 1px solid rgba(201, 162, 39, .3);
+}
+html.nx-studio .sb-mk {
+  background: linear-gradient(145deg, var(--studio-gold-light), var(--studio-gold-dark));
+  color: #080808;
+  box-shadow: 0 5px 15px rgba(201, 162, 39, .22);
+}
+html.nx-studio .ni:hover {
+  background: rgba(255, 255, 255, .07);
+}
+html.nx-studio .ni.on,
+html.nx-studio .ni.active {
+  background: var(--studio-gold-soft);
+  color: var(--studio-gold-light);
+  box-shadow: inset 3px 0 0 var(--studio-gold);
+}
+html.nx-studio .ni.on i,
+html.nx-studio .ni.active i {
+  color: var(--studio-gold-light);
+}
+html.nx-studio .sb-av {
+  background: var(--studio-gold);
+  color: #090909;
+}
+html.nx-studio .topbar,
+html.nx-studio .tnav {
+  background: rgba(255, 254, 250, .96);
+  border-bottom-color: #ddd8ca;
+}
+
+/* Superficies operativas */
+html.nx-studio .nc,
+html.nx-studio .card,
+html.nx-studio .kpitile,
+html.nx-studio .nxTKpi,
+html.nx-studio .nxTPanel,
+html.nx-studio .nxMeCard,
+html.nx-studio .nxApp,
+html.nx-studio .modal,
+html.nx-studio .modal-box,
+html.nx-studio .tw {
+  border-color: #ddd8ca;
+}
+html.nx-studio .nc:hover,
+html.nx-studio .card:hover,
+html.nx-studio .nxMeCard:hover,
+html.nx-studio .nxApp:hover {
+  border-color: rgba(201, 162, 39, .55);
+  box-shadow: 0 7px 22px rgba(10, 10, 10, .1);
+}
+html.nx-studio thead th {
+  background: #f0ede4;
+  color: #49463d;
+  border-bottom-color: #d8d1bf;
+}
+html.nx-studio tbody tr:hover td {
+  background: #fbf7e9 !important;
+}
+
+/* Acciones y controles */
+html.nx-studio .btn:hover {
+  background: #fff9e8;
+  border-color: var(--studio-gold);
+  color: #5e4a0d;
+}
+html.nx-studio .btn.bc1,
+html.nx-studio .bxl,
+html.nx-studio .btn.primary,
+html.nx-studio .nxTQuick,
+html.nx-studio .nxPpkElegir {
+  background: linear-gradient(135deg, var(--studio-gold-light), var(--studio-gold)) !important;
+  border-color: var(--studio-gold) !important;
+  color: #090909 !important;
+  box-shadow: 0 4px 12px rgba(128, 101, 21, .24) !important;
+}
+html.nx-studio .btn.bc1:hover,
+html.nx-studio .bxl:hover,
+html.nx-studio .btn.primary:hover,
+html.nx-studio .nxTQuick:hover,
+html.nx-studio .nxPpkElegir:hover {
+  background: linear-gradient(135deg, #ebd06f, var(--studio-gold-light)) !important;
+  border-color: var(--studio-gold-dark) !important;
+  color: #050505 !important;
+}
+html.nx-studio input:focus,
+html.nx-studio select:focus,
+html.nx-studio textarea:focus,
+html.nx-studio .fr input:focus,
+html.nx-studio .fr select:focus {
+  border-color: var(--studio-gold) !important;
+  box-shadow: 0 0 0 3px var(--studio-gold-ring) !important;
+  outline: none;
+}
+html.nx-studio input[type="checkbox"]:checked,
+html.nx-studio input[type="radio"]:checked {
+  accent-color: var(--studio-gold-dark);
+}
+html.nx-studio a:not(.btn),
+html.nx-studio .lforgot {
+  color: var(--studio-gold-dark);
+}
+html.nx-studio .tab.on,
+html.nx-studio .tab.active,
+html.nx-studio .nxPosTab.on,
+html.nx-studio .nxPosTab.active,
+html.nx-studio .nxPpkChip.on,
+html.nx-studio .nxPpkChip.active {
+  color: #4d3b08 !important;
+  border-color: var(--studio-gold) !important;
+  background: var(--studio-gold-soft) !important;
+}
+
+/* POS Stitch: reemplaza el azul estructural por negro + oro */
+html.nx-studio #v-pos .nxTSide {
+  background: linear-gradient(180deg, #050505 0%, #121212 68%, #1d190e 100%) !important;
+  border-right: 1px solid rgba(201, 162, 39, .34);
+}
+html.nx-studio #v-pos .nxTLogo,
+html.nx-studio #v-pos .nxTBrand i,
+html.nx-studio #v-pos .nxTNav.on,
+html.nx-studio #v-pos .nxTNav.active {
+  color: var(--studio-gold-light) !important;
+}
+html.nx-studio #v-pos .nxTNav.on,
+html.nx-studio #v-pos .nxTNav.active {
+  background: rgba(201, 162, 39, .16) !important;
+  box-shadow: inset 3px 0 0 var(--studio-gold);
+}
+html.nx-studio #v-pos .nxTSearchBtn:hover,
+html.nx-studio #v-pos .nxApp:hover,
+html.nx-studio #v-pos .nxMeCard:hover {
+  border-color: var(--studio-gold) !important;
+}
+html.nx-studio #v-pos .nxTKpiV,
+html.nx-studio #v-pos .nxFacProductIcon,
+html.nx-studio #v-pos .nxFP-qico,
+html.nx-studio #v-pos .nxFP-ref,
+html.nx-studio #v-pos .nx-invoice-pro .imp,
+html.nx-studio #v-pos .nx-invoice-pro .dnm {
+  color: var(--studio-gold-dark) !important;
+}
+html.nx-studio #v-pos .nxFacProductIcon,
+html.nx-studio #v-pos .nxFP-qico,
+html.nx-studio #v-pos .nxFP-emptyIco {
+  background: var(--studio-gold-soft) !important;
+  border-color: rgba(201, 162, 39, .38) !important;
+}
+html.nx-studio #v-pos .nxIniHi,
+html.nx-studio #v-pos .nxFP-hero {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1b1b18 72%, #5d4a13 100%) !important;
+  border-color: rgba(201, 162, 39, .35) !important;
+}
+html.nx-studio #v-pos .nxIniHi,
+html.nx-studio #v-pos .nxIniHi *,
+html.nx-studio #v-pos .nxFP-hero,
+html.nx-studio #v-pos .nxFP-hero * {
+  color: #fffefa;
+}
+html.nx-studio #v-pos .nxIniHi .nxTQuick,
+html.nx-studio #v-pos .nxFP-hero .primary {
+  color: #090909 !important;
+}
+
+/* Factura: una sola firma oro, conservando legibilidad e impresión */
+html.nx-studio #v-pos .nx-invoice-pro {
+  --invoice-accent: var(--studio-gold-dark);
+}
+html.nx-studio #v-pos .nx-invoice-pro .head {
+  border-bottom-color: var(--studio-gold) !important;
+}
+html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th {
+  background: #171717 !important;
+  color: #fffefa !important;
+}
+html.nx-studio #v-pos .nxPpkIt:hover,
+html.nx-studio #v-pos .nxPpkIt.on,
+html.nx-studio #v-pos .nxPpkIt.active {
+  border-color: var(--studio-gold) !important;
+  background: #fffbef !important;
+}
+
+/* Login oscuro STUDIO con detalles oro */
+html.nx-studio #loginScreen {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(201, 162, 39, .08), transparent 34%),
+    #0a0a0a;
+}
+html.nx-studio #loginScreen .lx-st-glow {
+  background: rgba(201, 162, 39, .18);
+}
+html.nx-studio #loginScreen .lfi:focus-within,
+html.nx-studio #loginScreen input:focus {
+  border-color: var(--studio-gold) !important;
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, .2) !important;
+}
+html.nx-studio #loginScreen .lbtn {
+  background: linear-gradient(135deg, var(--studio-gold-light), var(--studio-gold)) !important;
+  color: #080808 !important;
+  border-color: var(--studio-gold) !important;
+}
+html.nx-studio #loginScreen .lbtn:hover {
+  background: #efd578 !important;
+}
+html.nx-studio #loginScreen .lforgot:hover {
+  color: var(--studio-gold-light);
+}
+html.nx-studio #loginScreen .lchk input[type="checkbox"]:checked {
+  background: var(--studio-gold) !important;
+  border-color: var(--studio-gold) !important;
+}
+
+/* Carga y actualización: identidad coherente antes de entrar */
+html.nx-studio #nxSplash,
+html.nx-studio #nxUpd {
+  background: linear-gradient(155deg, #050505 0%, #141414 72%, #4a3a0d 100%) !important;
+}
+html.nx-studio #nxSplash [class*="wave"],
+html.nx-studio #nxSplash [class*="ring"] {
+  border-color: rgba(201, 162, 39, .42) !important;
+}
+html.nx-studio #nxSplash i,
+html.nx-studio #nxSplash svg {
+  color: var(--studio-gold-light);
+}
+
+/* El oro identifica interacción; los estados siguen siendo semánticos. */
+html.nx-studio .bc3,
+html.nx-studio .bdis,
+html.nx-studio .danger,
+html.nx-studio [data-status="error"] {
+  --studio-semantic-lock: 1;
+}
+html.nx-studio .bc5,
+html.nx-studio .success,
+html.nx-studio [data-status="success"] {
+  --studio-semantic-lock: 1;
+}
+
+html.nx-studio ::selection {
+  background: rgba(201, 162, 39, .32);
+  color: #111111;
+}
+html.nx-studio ::-webkit-scrollbar-thumb {
+  background: rgba(128, 101, 21, .58);
+}
+html.nx-studio ::-webkit-scrollbar-thumb:hover {
+  background: var(--studio-gold-dark);
+}
+
+@media print {
+  html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th {
+    background: #171717 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio *,
+  html.nx-studio *::before,
+  html.nx-studio *::after {
+    scroll-behavior: auto !important;
+  }
+}

@@ -6708,7 +6708,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -8717,7 +8717,8 @@ function nav(view,el){
   // ── Modo TIENDA: bloquear vistas de seguros; siempre al Punto de Venta ──
   try{
     const esTienda=(sesion&&sesion.org&&sesion.org.tipo==='tienda')||document.body.classList.contains('org-tienda');
-    if(esTienda){ if(typeof window.nxAbrirPOS==='function')window.nxAbrirPOS(); return; }
+    // STUDIO: el Inbox de WhatsApp ('waInbox') es la única vista fuera del POS permitida en modo tienda.
+    if(esTienda&&view!=='waInbox'){ if(typeof window.nxAbrirPOS==='function')window.nxAbrirPOS(); return; }
     const esRifaOrg=(sesion&&sesion.org&&sesion.org.tipo==='rifa')||document.body.classList.contains('org-rifa');
     if(esRifaOrg){ if(typeof window.nxAbrirRifas==='function')window.nxAbrirRifas(); return; }
     const esConsOrg=(sesion&&sesion.org&&sesion.org.tipo==='consultorio')||document.body.classList.contains('org-consultorio');
@@ -13811,6 +13812,8 @@ function rHistorialAuto(){
        parches-pos-money.js       → utilidad de montos (miles con coma, teclado decimal)
        parches-pos.js             → Punto de Venta (ventas, compras, financiamiento, contabilidad)
        parches-pos-stitch-visual.js → línea gráfica (DESIGN.md), solo CSS
+       parches-whatsapp.js        → cargador del Inbox de WhatsApp (39 capas parches-whatsapp-*);
+                                    solo actúa si pos_config.whatsapp_inbox = true
        parches-contenido-movil-ajuste.js, parches-fase1-ui-motion.css, parches-motion-fase2.css
                                   → capas de UI compartidas (modales móviles, motion) -->
 <script>
@@ -13840,6 +13843,7 @@ function rHistorialAuto(){
     cargarConReintento('parches-pos-money.js');
     cargarConReintento('parches-pos.js');
     cargarConReintento('parches-pos-stitch-visual.js');
+    cargarConReintento('parches-whatsapp.js'); // Inbox de WhatsApp: solo carga sus capas si pos_config.whatsapp_inbox
     // Capas de UI compartidas (no son de Seguros): ajustes móviles de modales y motion de
     // botones/tablas/diálogos que el POS usa a través de las clases .modal/.btn/.tw del shell.
     cargarConReintento('parches-contenido-movil-ajuste.js');

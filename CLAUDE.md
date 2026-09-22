@@ -40,6 +40,10 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
   `parches-pos-money.js` (montos) + `parches-pos.js` (POS, Compras v2, Financiamiento v2) +
   `parches-pos-stitch-visual.js` (tokens DESIGN.md) + capas de UI compartidas `parches-contenido-movil-ajuste.js`,
   `parches-fase1-ui-motion.css`, `parches-motion-fase2.css`. El login usa la piel STUDIO siempre (`html.nx-studio`).
+  **WhatsApp se queda** (decisión del dueño, 22-sep-2026): las 39 capas `parches-whatsapp-*` del Inbox corporativo
+  están en el repo y las carga `parches-whatsapp.js` solo si `pos_config.whatsapp_inbox = true` (hoy `false`, porque
+  STUDIO aún no tiene su backend de WhatsApp: tablas `whatsapp_*`, RPC, Edge Functions y número propio). Las capas de
+  WhatsApp que eran de Seguros (cobranza de pólizas, pagos por validar, solicitudes, enrutamiento) no se restauraron.
   Al arrancar solo se consultan `organizaciones`, `usuarios_sistema`, `usuario_preferencias` y `auditoria`; el POS
   carga lo suyo desde `pos_*`.
 - Usuario administrador: `admin` (cambio de contraseña forzado al primer acceso).

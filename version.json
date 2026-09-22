@@ -1,7 +1,17 @@
 {
-  "version": "58.86",
+  "version": "58.87",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.87",
+      "fecha": "2026-09-22",
+      "notas": [
+        "NUEVO SIDEBAR STUDIO: navegación convertida en un dock flotante premium negro y oro.",
+        "Modo compacto de 78 px y expandido de 248 px, con iconos independientes e indicador activo dorado.",
+        "En móvil se transforma en una hoja flotante con márgenes, esquinas redondeadas y fondo desenfocado.",
+        "El sidebar interno del Punto de Venta utiliza el mismo lenguaje visual."
+      ]
+    },
     {
       "version": "58.86",
       "fecha": "2026-09-22",

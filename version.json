@@ -1,7 +1,17 @@
 {
-  "version": "58.94",
+  "version": "58.95",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.95",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Reacondicionado: el label imprime el IMEI con código de barras (Code128) y alto ajustable.",
+        "Reacondicionado: al agregar un equipo con un artículo con IMEI se pueden elegir los IMEI disponibles del inventario.",
+        "Reacondicionado: botón PDF en el reporte de costos del lote.",
+        "Reacondicionado: al despachar un IMEI nuevo, entra al inventario con el costo final del taller (compra + envío + piezas)."
+      ]
+    },
     {
       "version": "58.94",
       "fecha": "2026-09-22",

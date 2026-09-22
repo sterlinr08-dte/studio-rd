@@ -253,3 +253,21 @@ motion (§10) do not change; only depth and contrast do.
   and active row with gold gradient tile and gold glow.
 - **Mute/steel text** darkened (`#85817A`, `#5B5951`) and hairlines raised to 16–18% so secondary content is legible.
 - `prefers-contrast: more` keeps graphite borders; `prefers-reduced-transparency` removes the mobile header shadow.
+
+
+## 15. Premium toast notifications — owner reference (2026-09-22)
+
+The owner supplied a screen recording and requested replicating the **Premium** notification behavior. This is a
+behavioral reference, not copied third-party code. The global `toast(type,title,message)` contract remains unchanged
+so every existing module receives the upgrade automatically.
+
+- **Placement:** bottom-right on desktop; full safe mobile width with 10px margins. Maximum four visible notices.
+- **Structure:** semantic icon tile, short title, optional message, close control and a 3px lifetime indicator.
+- **Types:** success green, information blue, warning amber and error coral/red. These colors communicate status only;
+  they do not replace STUDIO gold as the brand accent.
+- **Motion:** enter from the right with a controlled spring, exit along the same path, animate only transform and opacity.
+  Hover/focus pauses dismissal. `prefers-reduced-motion` uses a short cross-fade.
+- **Material:** high-opacity white surface, light state tint, restrained blur and two-layer shadow. Text stays high contrast.
+  `prefers-reduced-transparency` gets an opaque white surface.
+- **Accessibility and safety:** status/error live regions, 28px close control with an accessible name, escaped title/message
+  content, explicit dismissal, automatic dismissal after 4.5 seconds and no interaction blocking.

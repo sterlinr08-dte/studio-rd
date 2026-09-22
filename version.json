@@ -1,7 +1,14 @@
 {
-  "version": "58.88",
+  "version": "58.89",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.89",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Corrección de la barra lateral: entre 769 y 860 px de ancho (iPad, ventana de escritorio reducida) la barra quedaba medio oculta y el contenido se desplazaba 264 px a la derecha. El menú del POS ahora usa el mismo corte móvil (860 px) que la base y el movimiento."
+      ]
+    },
     {
       "version": "58.88",
       "fecha": "2026-09-22",

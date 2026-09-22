@@ -424,7 +424,12 @@ html.nx-studio body #v-pos .nxTNav.active i {
     background: rgba(10, 10, 10, .42);
     backdrop-filter: blur(8px);
   }
+}
 
+/* Drawer móvil del POS — mismo corte (860px) que parches-pos.js y parches-pos-motion.js.
+   Fix 2026-09-22: con 768px, entre 769 y 860px la base ya ocultaba la barra (translateX) pero el dock
+   seguía reservando la columna de 240px y el contenido quedaba desplazado a la derecha. */
+@media (max-width: 860px) {
   html.nx-studio body #v-pos .nxTShell {
     display: block;
     gap: 0;

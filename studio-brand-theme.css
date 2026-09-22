@@ -194,7 +194,7 @@ html.nx-studio .nxPpkChip.active {
 
 /* POS Stitch: reemplaza el azul estructural por negro + oro */
 html.nx-studio #v-pos .nxTSide {
-  background: linear-gradient(180deg, #050505 0%, #121212 68%, #1d190e 100%) !important;
+  background: var(--studio-black);
   border-right: 1px solid rgba(201, 162, 39, .34);
 }
 html.nx-studio #v-pos .nxTLogo,

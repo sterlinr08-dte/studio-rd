@@ -215,3 +215,21 @@ Replace the document-shaped invoice with a dense list. Same actions and the same
    draggable mobile drawer with spring + velocity, no animation replay on data refresh.
 4. Factura list mode per 12.4 inside `renderFactura`/`pintarFactura` markup and CSS, keeping every function.
 5. QA in Chromium 390/1280 and on the owner's iPhone; bitácora; no publish without "publícalo".
+
+## 13. Sidebar Dock — approved implementation (2026-09-22)
+
+The owner requested a substantially different sidebar and explicitly authorized publication. This section is an additive
+refinement of §12.1 and §12.6; color, typography, icon and motion rules from §2, §3, §9 and §10 remain unchanged.
+
+- **Desktop:** the black navigation surface becomes a floating 240px dock inset 12px from the viewport, with a 24px
+  contour and a restrained 1px gold spine. It collapses to a 76px icon dock using the existing toggle.
+- **Items:** 40px outline-icon tiles, 50px minimum rows and 15px corners. The active row uses a translucent gold fill,
+  a 2px inset gold edge and a flat gold icon tile with a black glyph. No gold gradients.
+- **Brand and profile:** 46px flat-gold brand tile at the top; user profile remains in a dark translucent surface at the
+  bottom. Labels disappear only in desktop compact mode.
+- **Mobile:** the same navigation becomes a floating drawer up to 300px wide, with 10px viewport breathing room,
+  24px corners, dimmed/blurred backdrop and the existing open/close logic.
+- **POS:** the internal POS sidebar follows the same geometry and state treatment.
+- **Implementation:** `studio-sidebar-dock.css`, loaded after `studio-brand-theme.css`; presentation only, scoped to
+  `html.nx-studio`, no new business logic, no new priority overrides and reduced-motion/transparency supported.
+

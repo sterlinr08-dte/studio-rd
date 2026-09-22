@@ -32,11 +32,11 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en STUDIO empie
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 
-- Producción: `https://studiord.net` = Worker Cloudflare `studio-rd`, integración Git con `main`. Versión publicada: **58.87** (identidad negro/blanco/oro + sidebar dock premium).
+- Producción: `https://studiord.net` = Worker Cloudflare `studio-rd`, integración Git con `main`. Versión publicada: **58.94** (identidad negro/blanco/oro + sidebar dock premium).
 - Repositorio independiente desde el 22-sep-2026; base Supabase propia `edbknlkjnlfmkkiizdbe`.
 - **Datos migrados del sistema anterior (22-sep-2026, 15:00):** 797 productos, 399 clientes, 6.419 seriales, 1.155 ventas, cartera RD$30,2M, bancos, cajas y 15 usuarios, ya en la base STUDIO (`supabase/studio/16_migracion_legacy.sql`, esquema `legacy` como trazabilidad). Ver `docs/bitacora/2026-09-22-1500-claude.md`.
 - Línea gráfica definida (22-sep-2026): negro `#0A0A0A`, blanco cálido `#F7F5EF`, oro `#C9A227` como único acento; tipografía San Francisco (Inter fuera de Apple); iconos outline 1.75 px; movimiento fluido Apple; Factura en modo lista. **Publicada en `main` (58.88 → 58.91, 22-sep-2026)**; ver bitácora `2026-09-22-1300-claude.md`.
-- **Reacondicionado (22-sep-2026, 17:30, rama `claude/fix-dock-breakpoint-860`, sin publicar):** réplica fiel del taller de lotes de BAYOL CELL (5 pestañas, 6 etapas, evaluación, panel de reparación, piezas, devoluciones, rentabilidad) en `parches-pos-reacond.js` + `supabase/studio/18_reacondicionado.sql` (ya aplicado en la base STUDIO; bandera `pos_config.reacondicionado`). Decisión del dueño: «lo más parecido a lo actual». Ver bitácora `2026-09-22-1730-claude.md` y `docs/REACONDICIONADO.md`.
+- **Reacondicionado (22-sep-2026, publicado en `main` como 58.94 a las 17:45):** réplica fiel del taller de lotes de BAYOL CELL (5 pestañas, 6 etapas, evaluación, panel de reparación, piezas, devoluciones, rentabilidad) en `parches-pos-reacond.js` + `supabase/studio/18_reacondicionado.sql` (ya aplicado en la base STUDIO; bandera `pos_config.reacondicionado`). Decisión del dueño: «lo más parecido a lo actual». Ver bitácora `2026-09-22-1730-claude.md` y `docs/REACONDICIONADO.md`.
 - Stitch: proyecto `projects/3084779069905725803`, design system `assets/11862383679991154944`.
 - Próximos bloques: línea gráfica a código (Claude, rama sin publicar); WhatsApp backend propio (número Zernio pendiente del dueño); Financiamiento bloques B/D/E (ChatGPT).
 

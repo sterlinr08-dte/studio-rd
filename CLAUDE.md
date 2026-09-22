@@ -38,7 +38,7 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
   aplicados en STUDIO RD. Banderas activas en `pos_config`: `compras_v2`, `financiamiento_v2`.
 - Frontend: `index.html` (monolito: login, sesión, `API`, `toast`, `fmt`, auditoría y el shell) +
   `parches-pos-money.js` (montos) + `parches-pos.js` (POS, Compras v2, Financiamiento v2) +
-  `parches-pos-stitch-visual.js` (geometría base) + `studio-brand-theme.css` (paleta final negro/blanco/oro) + capas de UI compartidas `parches-contenido-movil-ajuste.js`,
+  `parches-pos-stitch-visual.js` (geometría base) + `studio-brand-theme.css` (paleta negro/blanco/oro) + `studio-sidebar-dock.css` (navegación flotante final) + capas de UI compartidas `parches-contenido-movil-ajuste.js`,
   `parches-fase1-ui-motion.css`, `parches-motion-fase2.css`. El login usa la piel STUDIO siempre (`html.nx-studio`).
   **WhatsApp se queda** (decisión del dueño, 22-sep-2026): las 39 capas `parches-whatsapp-*` del Inbox corporativo
   están en el repo y las carga `parches-whatsapp.js` solo si `pos_config.whatsapp_inbox = true` (hoy `false`, porque

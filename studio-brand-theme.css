@@ -41,6 +41,26 @@ html.nx-studio {
   --shadow-md: 0 10px 28px rgba(10, 10, 10, .12), 0 4px 9px rgba(10, 10, 10, .06);
 }
 
+/* Tokens del layout Stitch. Se redefinen en los mismos contenedores para ganar
+   a la capa base sin depender del orden de descarga. */
+html.nx-studio #v-pos,
+html.nx-studio #v-multiempresa,
+html.nx-studio .modal.nxPrForm,
+html.nx-studio .nxPf,
+html.nx-studio body.org-tienda {
+  --nx-bg: var(--studio-canvas);
+  --nx-surface: var(--studio-white);
+  --nx-ink: #111111;
+  --nx-steel: #5f5f59;
+  --nx-mute: #858177;
+  --nx-line: rgba(128, 101, 21, .14);
+  --nx-line-2: rgba(128, 101, 21, .22);
+  --nx-blue: var(--studio-gold);
+  --nx-blue-d: var(--studio-gold-dark);
+  --nx-blue-l: #fff8df;
+  --nx-blue-b: #ead584;
+}
+
 /* Estructura general */
 html.nx-studio body {
   background: var(--studio-canvas);

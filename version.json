@@ -1,7 +1,15 @@
 {
-  "version": "58.92",
+  "version": "58.93",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.93",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Corrección del login en iPhone/Safari: el formulario ya no conserva la disposición de escritorio ni queda cortado fuera de la pantalla.",
+        "El login móvil ahora ocupa el viewport real, respeta las áreas seguras del iPhone y elimina el desplazamiento horizontal."
+      ]
+    },
     {
       "version": "58.92",
       "fecha": "2026-09-22",

@@ -14,11 +14,18 @@ STUDIO RD is a professional operations platform with **Daily App Balanced** dens
 - **Light Gold** (#E3C45C) and **Dark Gold** (#806515) — hover/highlight and accessible text on light surfaces.
 - Success, warning and error retain their semantic green, amber and red. Gold never replaces status meaning.
 
-## 3. Typography Rules
-- **Display / Headings:** Geist Sans or Satoshi, controlled scale, tight tracking and hierarchy through weight.
-- **Body / UI Labels:** Geist Sans or Satoshi; operational body copy is 14px minimum where space permits.
-- **Mono:** JetBrains Mono for amounts, dates, technical metadata and cycle references.
-- Dashboard UI remains sans-serif. Do not introduce Inter or serif fonts.
+## 3. Typography Rules (owner decision 2026-09-22: Apple's San Francisco)
+- **The product uses Apple's system font, San Francisco (SF Pro).** Font stack for all text:
+  `-apple-system, "SF Pro Text", "SF Pro Display", system-ui, Inter, "Helvetica Neue", sans-serif`.
+  On iPhone, iPad and Mac this renders the real SF Pro with optical sizing, tracking tables and Dynamic Type; on
+  Windows and Android the closest open match, **Inter**, is loaded from Google Fonts (`display=optional`).
+- **SF Pro is never self-hosted or embedded**: Apple's license limits it to Apple platforms. Never ship `.woff`
+  files of SF Pro in this repo.
+- **Mono:** `ui-monospace, "SF Mono", Menlo, "JetBrains Mono", monospace` with tabular numerals for amounts, dates,
+  invoice numbers and serials.
+- Weights 700/600 for display and headings, 400/500 for body; operational body copy is 14px minimum where space
+  permits (13px in dense tables). Tracking and leading are size-specific (see §10).
+- Geist is retired for STUDIO. Never introduce Roboto, Arial or serif fonts.
 
 ## 4. Component Stylings
 - **Sidebar Rail:** fixed black structural layer with a restrained gold contour. Icons stay centered in the rail.
@@ -78,8 +85,8 @@ outside that scope on purpose (FOUC rollback history on iPhone).
 | `--nx-line` / `--nx-line-2` | rgba(148,163,184,.12 / .18) | separators / card borders |
 | `--studio-gold` / `--studio-gold-dark` / `--studio-gold-soft` | #C9A227 / #806515 / rgba(201,162,39,.13) | the single brand accent |
 | `--nx-r` / `--nx-r-md` / `--nx-r-sm` | 16px / 12px / 10px | surfaces / bars / buttons & inputs |
-| `--nx-font` | Geist, Segoe UI, system-ui | all text (Google Fonts, `display=optional`, loaded when the POS opens) |
-| `--nx-mono` (also `--mono`) | JetBrains Mono, ui-monospace | amounts, dates, references, serials |
+| `--nx-font` | -apple-system, SF Pro Text/Display, system-ui, Inter | all text (SF Pro on Apple; Inter from Google Fonts elsewhere) |
+| `--nx-mono` (also `--mono`) | ui-monospace, SF Mono, Menlo, JetBrains Mono | amounts, dates, references, serials |
 
 Rules the layers enforce: the base Stitch layer defines geometry, density and motion; `studio-brand-theme.css`
 loads last and remaps legacy purple/indigo/blue brand treatments to STUDIO black, white and gold. `.bc1`, `.bxl`,

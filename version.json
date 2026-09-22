@@ -1,7 +1,14 @@
 {
-  "version": "58.95",
+  "version": "58.96",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.96",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Nuevo inicio de sesión: aurora dorada animada, polvo de oro que reacciona al puntero, tarjeta de vidrio con borde de luz, campos con resplandor, botón magnético con brillo, aviso de Bloq Mayús, sacudida al fallar y destello al entrar. Respeta \"reducir movimiento\" y \"reducir transparencia\"."
+      ]
+    },
     {
       "version": "58.95",
       "fecha": "2026-09-22",

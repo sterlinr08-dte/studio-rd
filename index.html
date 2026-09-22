@@ -2883,6 +2883,171 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 .tema-opcion.tema-sel{border-color:var(--c1) !important;box-shadow:0 4px 16px rgba(15,23,42,.25)}
 .tema-opcion:hover{transform:translateY(-2px)}
 </style>
+<style id="stLoginV2">
+/* ═══ STUDIO · Login v2 (22-sep-2026) — aurora dorada animada, partículas, vidrio con borde de luz,
+   foco con resplandor, botón magnético con brillo, entrada en cascada, error con sacudida y salida
+   con destello. Solo presentación: IDs, doLogin(), nxTogglePwd() y el flujo de sesión no cambian.
+   Todo va bajo html.nx-studio #loginScreen.st2 para ganar la cascada a la piel anterior. ═══ */
+@property --st2-ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+html.nx-studio #loginScreen.st2{--g1:#e3c45c;--g2:#c9a227;--g3:#8a6d14;--ink:#f5f2ea;--mute:#9a958a;--card:rgba(16,15,13,.58);--line:rgba(227,196,92,.14);--mx:50%;--my:50%;
+  background:#060606;isolation:isolate;overflow:hidden}
+html.nx-studio #loginScreen.st2 .st2-bg{position:absolute;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none}
+html.nx-studio #loginScreen.st2 .st2-grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:st2Grain 1.2s steps(6) infinite}
+html.nx-studio #loginScreen.st2 .lfi i.st2-ico,html.nx-studio #loginScreen.st2 .st2-field>i.st2-ico{display:block!important}
+html.nx-studio #loginScreen.st2 .lrow{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:10px}
+html.nx-studio #loginScreen.st2 .lchk{display:flex;align-items:center;flex:0 0 auto}
+html.nx-studio #loginScreen.st2 .lforgot{white-space:nowrap;display:inline-flex!important;align-items:center}
+html.nx-studio #loginScreen.st2 .st2-vig{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 120% 90% at 50% 45%,transparent 45%,rgba(0,0,0,.72) 100%)}
+html.nx-studio #loginScreen.st2 .st2-grid{position:absolute;left:0;right:0;bottom:-2%;height:46%;z-index:1;pointer-events:none;opacity:.28;
+  background-image:linear-gradient(rgba(227,196,92,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(227,196,92,.35) 1px,transparent 1px);background-size:56px 56px;
+  transform:perspective(520px) rotateX(62deg);transform-origin:50% 100%;-webkit-mask-image:linear-gradient(to top,#000 0%,transparent 85%);mask-image:linear-gradient(to top,#000 0%,transparent 85%);
+  animation:st2GridMove 6s linear infinite}
+html.nx-studio #loginScreen.st2 .lwrap,html.nx-studio #loginScreen.st2 .lx-st-panel,html.nx-studio #loginScreen.st2 .lx-st-top{position:relative;z-index:2}
+/* ── Tarjeta de vidrio con borde de luz giratorio ── */
+html.nx-studio #loginScreen.st2 .lwrap{width:min(100%,400px);max-width:400px}
+html.nx-studio #loginScreen.st2 .lbox{position:relative;padding:30px 28px 26px!important;border-radius:24px!important;background:var(--card)!important;
+  border:1px solid var(--line)!important;backdrop-filter:blur(22px) saturate(140%)!important;-webkit-backdrop-filter:blur(22px) saturate(140%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(0,0,0,.4)!important;overflow:hidden;
+  animation:st2CardIn .9s cubic-bezier(.22,1,.36,1) .15s both}
+html.nx-studio #loginScreen.st2 .lbox::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;
+  background:conic-gradient(from var(--st2-ang),transparent 0 62%,rgba(227,196,92,.0) 64%,var(--g1) 72%,#fff6d6 75%,var(--g2) 78%,transparent 86% 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  animation:st2Beam 5.5s linear infinite;opacity:.9}
+html.nx-studio #loginScreen.st2 .lbox::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:radial-gradient(420px circle at var(--mx) var(--my),rgba(227,196,92,.11),transparent 45%);transition:opacity .3s;opacity:var(--spot,0)}
+html.nx-studio #loginScreen.st2 .lbox>*{position:relative;z-index:1}
+/* ── Cabecera de la tarjeta ── */
+html.nx-studio #loginScreen.st2 .lbox .lx-st-mark{width:72px;margin:0 0 18px}
+html.nx-studio #loginScreen.st2 .lbox .lx-st-tag{display:none}
+html.nx-studio #loginScreen.st2 .lver{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.2em;color:var(--g1);font-weight:600;margin:0}
+html.nx-studio #loginScreen.st2 .lver::before{content:'';width:18px;height:1px;background:linear-gradient(90deg,var(--g1),transparent)}
+html.nx-studio #loginScreen.st2 .lh{font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1.1;margin:10px 0 6px;
+  background:linear-gradient(180deg,#fff 0%,#e9e3d4 55%,#b9ae94 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+html.nx-studio #loginScreen.st2 .st2-sub{font-size:13px;color:var(--mute);margin:0 0 26px;letter-spacing:-.005em}
+/* ── Campos: icono, halo de foco y línea de luz que crece desde el centro ── */
+html.nx-studio #loginScreen.st2 .lfr{margin-bottom:16px}
+html.nx-studio #loginScreen.st2 .lfr label{font-size:12px!important;font-weight:600;color:#c9c3b5!important;margin-bottom:7px;letter-spacing:-.005em}
+html.nx-studio #loginScreen.st2 .st2-field{position:relative}
+html.nx-studio #loginScreen.st2 .st2-field>.st2-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:17px;color:#77736a;pointer-events:none;transition:color .2s,transform .25s cubic-bezier(.34,1.56,.64,1);z-index:2}
+html.nx-studio #loginScreen.st2 .lfr input{height:48px!important;padding:0 14px 0 44px!important;border-radius:14px!important;font-size:15px!important;
+  background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.09)!important;color:var(--ink)!important;
+  transition:border-color .2s,background .2s,box-shadow .25s!important}
+html.nx-studio #loginScreen.st2 .lfr input#loginPwd{padding-right:48px!important}
+html.nx-studio #loginScreen.st2 .lfr input:hover{border-color:rgba(255,255,255,.16)!important}
+html.nx-studio #loginScreen.st2 .lfr input:focus{border-color:rgba(227,196,92,.55)!important;background:rgba(227,196,92,.045)!important;
+  box-shadow:0 0 0 4px rgba(227,196,92,.12),0 8px 28px -10px rgba(227,196,92,.45)!important}
+html.nx-studio #loginScreen.st2 .st2-field:focus-within>.st2-ico{color:var(--g1);transform:translateY(-50%) scale(1.12)}
+html.nx-studio #loginScreen.st2 .st2-field::after{content:'';position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;z-index:2;
+  background:linear-gradient(90deg,transparent,var(--g1),#fff3c8,var(--g1),transparent);transform:scaleX(0);transition:transform .45s cubic-bezier(.22,1,.36,1);pointer-events:none}
+html.nx-studio #loginScreen.st2 .st2-field:focus-within::after{transform:scaleX(1)}
+html.nx-studio #loginScreen.st2 .lfr input::placeholder{color:#5e5a52!important}
+html.nx-studio #loginScreen.st2 .lfr input:-webkit-autofill,html.nx-studio #loginScreen.st2 .lfr input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px #17150f inset!important;box-shadow:0 0 0 1000px #17150f inset!important;-webkit-text-fill-color:var(--ink)!important}
+html.nx-studio #loginScreen.st2 #loginPwdEye{right:6px!important;width:38px;height:38px;border-radius:10px!important;color:#8d887c!important;font-size:18px!important;transition:color .2s,background .2s,transform .15s}
+html.nx-studio #loginScreen.st2 #loginPwdEye:hover{color:var(--ink)!important;background:rgba(255,255,255,.06)!important}
+html.nx-studio #loginScreen.st2 #loginPwdEye:active{transform:translateY(-50%) scale(.9)!important}
+html.nx-studio #loginScreen.st2 .st2-caps{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#f5c451;margin-top:7px;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s,max-height .25s}
+html.nx-studio #loginScreen.st2 .st2-caps.on{opacity:1;max-height:24px}
+/* ── Fila recordar / olvidé ── */
+html.nx-studio #loginScreen.st2 .lrow{margin:4px 0 22px}
+html.nx-studio #loginScreen.st2 .lchk label{font-size:12.5px!important;color:#b3ad9f!important}
+html.nx-studio #loginScreen.st2 .lchk input[type=checkbox]{width:18px;height:18px;border-radius:6px!important;border:1px solid rgba(255,255,255,.22)!important;background:rgba(255,255,255,.03)!important;transition:background .2s,border-color .2s,transform .2s cubic-bezier(.34,1.56,.64,1)}
+html.nx-studio #loginScreen.st2 .lchk input[type=checkbox]:checked{background:var(--g2)!important;border-color:var(--g2)!important;transform:scale(1.06)}
+html.nx-studio #loginScreen.st2 .lchk input[type=checkbox]:checked::after{border-color:#0a0a0a}
+html.nx-studio #loginScreen.st2 .lforgot{font-size:12.5px!important;color:#b3ad9f!important;position:relative}
+html.nx-studio #loginScreen.st2 .lforgot::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:1px;background:var(--g1);transform:scaleX(0);transform-origin:right;transition:transform .3s cubic-bezier(.22,1,.36,1)}
+html.nx-studio #loginScreen.st2 .lforgot:hover{color:var(--g1)!important}
+html.nx-studio #loginScreen.st2 .lforgot:hover::after{transform:scaleX(1);transform-origin:left}
+/* ── Botón dorado: brillo que recorre, magnético, onda al tocar ── */
+html.nx-studio #loginScreen.st2 .lbtn{position:relative;overflow:hidden;height:50px!important;border-radius:14px!important;font-size:15px!important;font-weight:700!important;letter-spacing:-.01em!important;
+  color:#0b0a07!important;background:linear-gradient(180deg,#f0d57a 0%,var(--g1) 30%,var(--g2) 70%,#a88419 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(0,0,0,.25),0 14px 34px -12px rgba(227,196,92,.65),0 2px 6px rgba(0,0,0,.4)!important;
+  transform:translate(var(--bx,0),var(--by,0));transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .25s,filter .2s!important;display:flex;align-items:center;justify-content:center;gap:8px}
+html.nx-studio #loginScreen.st2 .lbtn::before{content:'';position:absolute;top:0;bottom:0;left:-40%;width:35%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);transform:skewX(-18deg);animation:st2Sheen 3.6s cubic-bezier(.4,0,.2,1) 1.6s infinite}
+html.nx-studio #loginScreen.st2 .lbtn:hover{filter:brightness(1.06)!important;background:linear-gradient(180deg,#f5de8c 0%,#e8ca63 30%,#cfa82c 70%,#ad891c 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 18px 44px -12px rgba(227,196,92,.8),0 2px 6px rgba(0,0,0,.4)!important}
+html.nx-studio #loginScreen.st2 .lbtn:active{transform:translate(var(--bx,0),var(--by,0)) scale(.97)!important;transition-duration:.1s!important}
+html.nx-studio #loginScreen.st2 .lbtn i{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+html.nx-studio #loginScreen.st2 .lbtn:hover i{transform:translateX(4px)}
+html.nx-studio #loginScreen.st2 .lbtn[disabled]{filter:saturate(.7) brightness(.92)!important;cursor:progress}
+html.nx-studio #loginScreen.st2 .lbtn .spin{width:18px;height:18px;border:2px solid rgba(0,0,0,.18)!important;border-top-color:#0b0a07!important}
+html.nx-studio #loginScreen.st2 .st2-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:st2Ripple .7s cubic-bezier(.22,1,.36,1) forwards;pointer-events:none}
+/* ── Error: sacudida con resorte + mensaje ── */
+html.nx-studio #loginScreen.st2 .lerr{font-size:12.5px!important;border-radius:12px!important;padding:10px 12px!important;margin-bottom:14px;background:rgba(239,68,68,.1)!important;border:1px solid rgba(239,68,68,.3)!important;color:#fca5a5!important;animation:st2ErrIn .35s cubic-bezier(.22,1,.36,1)}
+html.nx-studio #loginScreen.st2 .lbox.st2-shake{animation:st2Shake .55s cubic-bezier(.36,.07,.19,.97) both}
+html.nx-studio #loginScreen.st2 .lbox.st2-shake::before{background:conic-gradient(from var(--st2-ang),transparent 0 62%,#ef4444 72%,#fecaca 75%,#ef4444 78%,transparent 86% 100%)}
+/* ── Pie: seguridad ── */
+html.nx-studio #loginScreen.st2 .st2-foot{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px;font-size:11px;color:#6f6a60;letter-spacing:.01em}
+html.nx-studio #loginScreen.st2 .st2-foot i{color:var(--g2);font-size:13px}
+/* ── Entrada en cascada ── */
+html.nx-studio #loginScreen.st2 .st2-in{animation:st2Rise .8s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.35s + var(--i,0) * .07s)}
+/* ── Salida al entrar: la tarjeta se eleva y se disuelve en luz ── */
+html.nx-studio #loginScreen.st2.lx-revelando .lbox{animation:st2Out .44s cubic-bezier(.4,0,.2,1) both!important}
+html.nx-studio #loginScreen.st2.lx-revelando .lx-st-panel{animation:st2PanelOut .44s ease both}
+html.nx-studio #loginScreen.st2 .st2-flash{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(circle at var(--fx,50%) var(--fy,50%),rgba(255,236,170,.55),rgba(227,196,92,.12) 30%,transparent 60%)}
+html.nx-studio #loginScreen.st2.lx-revelando .st2-flash{animation:st2Flash .5s ease-out both}
+/* ── Panel de marca (escritorio) ── */
+html.nx-studio #loginScreen.st2 .st2-words{display:inline-grid;vertical-align:bottom;height:1.2em;overflow:hidden}
+html.nx-studio #loginScreen.st2 .st2-words>span{grid-area:1/1;transform:translateY(110%);opacity:0;transition:transform .7s cubic-bezier(.22,1,.36,1),opacity .5s;
+  background:linear-gradient(90deg,#f5de8c,var(--g1),#fff1bf,var(--g2));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:st2GoldText 6s linear infinite}
+html.nx-studio #loginScreen.st2 .st2-words>span.on{transform:none;opacity:1}
+html.nx-studio #loginScreen.st2 .st2-words>span.out{transform:translateY(-110%);opacity:0}
+html.nx-studio #loginScreen.st2 .st2-chips{display:none}
+@media (min-width:1024px){
+  html.nx-studio #loginScreen.st2{grid-template-columns:1.1fr 1fr!important}
+  html.nx-studio #loginScreen.st2 .lx-st-panel{order:-1;background:transparent!important;border:0!important;align-items:flex-start!important;justify-content:center;padding:72px 64px 72px 9vw!important;animation:st2PanelIn 1s cubic-bezier(.22,1,.36,1) .1s both!important}
+  html.nx-studio #loginScreen.st2 .lx-st-panel::before{display:none}
+  html.nx-studio #loginScreen.st2 .lx-st-panel .lx-st-mark{width:108px!important;margin:0 0 28px!important;transform:perspective(700px) rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg));transition:transform .5s cubic-bezier(.22,1,.36,1)}
+  html.nx-studio #loginScreen.st2 .lx-st-panel .lx-st-glow{background:rgba(227,196,92,.35)!important;filter:blur(46px)!important}
+  html.nx-studio #loginScreen.st2 .lx-st-panel .lx-st-tag{text-align:left;margin:0!important;color:var(--g1);letter-spacing:.28em}
+  html.nx-studio #loginScreen.st2 .lx-st-h{margin-top:22px!important;max-width:560px;text-align:left!important;font-size:clamp(40px,4.4vw,64px)!important;font-weight:700!important;letter-spacing:-.045em!important;line-height:1.02!important;
+    color:var(--ink)!important;background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important}
+  html.nx-studio #loginScreen.st2 .lx-st-p{text-align:left!important;max-width:460px;font-size:15px!important;color:var(--mute)!important;margin-top:20px!important}
+  html.nx-studio #loginScreen.st2 .st2-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:34px}
+  html.nx-studio #loginScreen.st2 .st2-chip{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:999px;font-size:12.5px;color:#d9d3c4;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:st2Rise .8s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(1s + var(--i,0) * .08s);
+    transition:border-color .25s,background .25s,transform .3s cubic-bezier(.34,1.56,.64,1)}
+  html.nx-studio #loginScreen.st2 .st2-chip i{color:var(--g1);font-size:15px}
+  html.nx-studio #loginScreen.st2 .st2-chip:hover{border-color:rgba(227,196,92,.4);background:rgba(227,196,92,.08);transform:translateY(-2px)}
+  html.nx-studio #loginScreen.st2 .lwrap{margin:56px auto 32px 32px!important;justify-self:start!important}
+  html.nx-studio #loginScreen.st2 .lbox .lx-st-mark{display:none!important}
+  html.nx-studio #loginScreen.st2 .lx-st-top{display:none!important}
+}
+@media (max-width:1023px),(hover:none) and (pointer:coarse) and (orientation:portrait){
+  html.nx-studio #loginScreen.st2{background:#060606!important;align-items:center!important}
+  html.nx-studio #loginScreen.st2 .lwrap{width:min(100%,400px)!important;max-width:400px!important}
+  html.nx-studio #loginScreen.st2 .lbox{padding:26px 20px 22px!important;border-radius:22px!important}
+  html.nx-studio #loginScreen.st2 .lbox .lx-st-mark{display:block!important;width:64px!important;margin:0 0 16px!important}
+  html.nx-studio #loginScreen.st2 .lh{font-size:27px}
+  html.nx-studio #loginScreen.st2 .st2-grid{height:34%;opacity:.2}
+}
+@keyframes st2Beam{to{--st2-ang:360deg}}
+@keyframes st2Grain{0%{background-position:0 0}20%{background-position:-23px 17px}40%{background-position:19px -31px}60%{background-position:-11px -9px}80%{background-position:29px 13px}100%{background-position:0 0}}
+@keyframes st2GridMove{from{background-position:0 0,0 0}to{background-position:0 56px,0 0}}
+@keyframes st2CardIn{from{opacity:0;transform:translateY(28px) scale(.97);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+@keyframes st2Rise{from{opacity:0;transform:translateY(14px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes st2PanelIn{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes st2Sheen{0%{left:-40%}55%,100%{left:130%}}
+@keyframes st2Ripple{to{transform:scale(1);opacity:0}}
+@keyframes st2ErrIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes st2Shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
+@keyframes st2Out{to{opacity:0;transform:translateY(-16px) scale(1.04);filter:blur(12px)}}
+@keyframes st2PanelOut{to{opacity:0;transform:translateX(-20px)}}
+@keyframes st2Flash{0%{opacity:0}35%{opacity:1}100%{opacity:0}}
+@keyframes st2GoldText{to{background-position:200% 0}}
+@media (prefers-reduced-motion:reduce){
+  html.nx-studio #loginScreen.st2 *,html.nx-studio #loginScreen.st2 *::before,html.nx-studio #loginScreen.st2 *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html.nx-studio #loginScreen.st2 .lbox::before{opacity:.35}
+  html.nx-studio #loginScreen.st2 .lbtn{transform:none!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  html.nx-studio #loginScreen.st2 .lbox{background:#15130f!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  html.nx-studio #loginScreen.st2 .st2-grain{display:none}
+}
+@media (prefers-contrast:more){html.nx-studio #loginScreen.st2 .lbox{border-color:rgba(227,196,92,.6)!important}html.nx-studio #loginScreen.st2 .lfr input{border-color:rgba(255,255,255,.35)!important}}
+</style>
 </head>
 <body>
 
@@ -3011,6 +3176,88 @@ window.nxLoginBtnHTML=function(){ return document.documentElement.classList.cont
     lw.style.setProperty('--lx-ry','0deg');
     lw.style.setProperty('--lx-rx','0deg');
   });
+})();
+</script>
+<script id="stLoginV2js">
+/* STUDIO · Login v2: capas y efectos. Solo presentación; no toca doLogin() ni la sesión. */
+(function(){
+  if(!document.documentElement.classList.contains('nx-studio'))return;
+  var ls=document.getElementById('loginScreen'); if(!ls||ls.classList.contains('st2'))return;
+  var mm=function(q){try{return window.matchMedia&&matchMedia(q).matches}catch(e){return false}};
+  var reduce=mm('(prefers-reduced-motion: reduce)'), fine=mm('(pointer: fine)');
+  ls.classList.add('st2');
+  // ── Capas de fondo ──
+  var bg=document.createElement('canvas'); bg.className='st2-bg'; bg.setAttribute('aria-hidden','true');
+  var mk=function(c){var d=document.createElement('div');d.className=c;d.setAttribute('aria-hidden','true');return d};
+  ls.insertBefore(mk('st2-vig'),ls.firstChild); ls.insertBefore(mk('st2-grid'),ls.firstChild); ls.insertBefore(mk('st2-grain'),ls.firstChild); ls.insertBefore(bg,ls.firstChild);
+  var flash=mk('st2-flash'); ls.appendChild(flash);
+  // ── Tarjeta: textos, iconos, aviso de mayúsculas, pie ──
+  var box=ls.querySelector('.lbox'), lh=ls.querySelector('.lh'), lv=ls.querySelector('.lver');
+  var h=new Date().getHours(); if(lv) lv.textContent=h<12?'Buenos días':(h<19?'Buenas tardes':'Buenas noches');
+  if(lh){ lh.textContent='Inicia sesión en Studio'; var sub=document.createElement('p'); sub.className='st2-sub'; sub.textContent='Ingresa tus datos para continuar con tu operación.'; lh.parentNode.insertBefore(sub,lh.nextSibling); }
+  var fu=document.getElementById('loginUser'), fp=document.getElementById('loginPwd');
+  [[fu,'ti-user'],[fp,'ti-lock']].forEach(function(p){ if(!p[0])return; var w=p[0].parentNode; w.classList.add('st2-field'); var i=document.createElement('i'); i.className='ti '+p[1]+' st2-ico'; i.setAttribute('aria-hidden','true'); w.insertBefore(i,w.firstChild); });
+  var caps=document.createElement('div'); caps.className='st2-caps'; caps.setAttribute('role','status'); caps.innerHTML='<i class="ti ti-arrow-big-up-line"></i> Bloq Mayús está activado';
+  if(fp) fp.parentNode.parentNode.appendChild(caps);
+  var btn=document.getElementById('btnLogin');
+  if(btn){ var ft=document.createElement('div'); ft.className='st2-foot'; ft.innerHTML='<i class="ti ti-shield-lock"></i> Conexión cifrada · Sesión protegida'; var wrapBtn=btn.parentNode; wrapBtn.insertBefore(ft,btn.nextSibling); }
+  if(box){ var n=0; Array.prototype.forEach.call(box.children,function(c){ if(c.id==='loginErr'||getComputedStyle(c).display==='none')return; c.classList.add('st2-in'); c.style.setProperty('--i',n++); }); }
+  // ── Panel de marca (escritorio): palabras que rotan y chips ──
+  var ph=ls.querySelector('.lx-st-h'), pp=ls.querySelector('.lx-st-p'), panel=ls.querySelector('.lx-st-panel');
+  if(ph){ ph.innerHTML='Todo tu negocio,<br>en un solo lugar: <span class="st2-words"><span class="on">Hogar</span><span>Movilidad</span><span>Tecnología</span><span>Taller</span><span>Finanzas</span></span>'; }
+  if(pp) pp.textContent='Punto de venta, inventario con IMEI, taller de reacondicionado, financiamiento y contabilidad — conectados en tiempo real.';
+  if(panel){ var ch=document.createElement('div'); ch.className='st2-chips';
+    [['ti-shopping-cart','Punto de venta'],['ti-device-mobile','Inventario con IMEI'],['ti-recycle','Reacondicionado'],['ti-calendar-dollar','Financiamiento'],['ti-book-2','Contabilidad']].forEach(function(c,i){ var s=document.createElement('span'); s.className='st2-chip'; s.style.setProperty('--i',i); s.innerHTML='<i class="ti '+c[0]+'"></i>'+c[1]; ch.appendChild(s); });
+    panel.appendChild(ch); }
+  var words=ls.querySelectorAll('.st2-words>span'), wi=0;
+  if(words.length&&!reduce) setInterval(function(){ if(ls.style.display==='none'||document.hidden)return; var a=words[wi]; wi=(wi+1)%words.length; var b=words[wi]; a.classList.remove('on'); a.classList.add('out'); b.classList.remove('out'); b.classList.add('on'); setTimeout(function(){a.classList.remove('out')},700); },2600);
+  // ── Lienzo: aurora dorada + polvo de oro que reacciona al puntero ──
+  var ctx=bg.getContext('2d'), W=0,H=0,DPR=1, px=.5,py=.5, tx=.5,ty=.5, parts=[], burst=0, raf=0, t0=performance.now();
+  function size(){ DPR=Math.min(window.devicePixelRatio||1,1.5); W=ls.clientWidth||innerWidth; H=ls.clientHeight||innerHeight; bg.width=W*DPR; bg.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+    var want=Math.round(Math.min(110,Math.max(36,W*H/14000))); while(parts.length<want)parts.push(np(true)); parts.length=want; }
+  function np(any){ return {x:Math.random()*W,y:any?Math.random()*H:H+10,r:Math.random()*1.6+.4,vy:-(Math.random()*.25+.08),vx:(Math.random()-.5)*.08,a:Math.random()*.6+.2,tw:Math.random()*6.28,z:Math.random()*.8+.2}; }
+  var blobs=[{c:[227,196,92],r:.55,sx:.21,sy:.17,ox:.25,oy:.3,ph:0},{c:[201,162,39],r:.48,sx:.13,sy:.19,ox:.75,oy:.65,ph:2},{c:[255,236,170],r:.32,sx:.27,sy:.11,ox:.55,oy:.2,ph:4},{c:[120,90,20],r:.62,sx:.09,sy:.14,ox:.4,oy:.85,ph:1}];
+  function frame(now){
+    var t=(now-t0)/1000; px+=(tx-px)*.05; py+=(ty-py)*.05;
+    ctx.globalCompositeOperation='source-over'; ctx.fillStyle='#060606'; ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter'; var m=Math.max(W,H);
+    blobs.forEach(function(b,i){ var x=(b.ox+Math.sin(t*b.sx+b.ph)*.18+(px-.5)*.08*(i%2?1:-1))*W, y=(b.oy+Math.cos(t*b.sy+b.ph)*.16+(py-.5)*.08)*H, r=b.r*m*(1+Math.sin(t*.3+i)*.06);
+      var g=ctx.createRadialGradient(x,y,0,x,y,r); g.addColorStop(0,'rgba('+b.c+','+(i===2?.16:.22)+')'); g.addColorStop(.45,'rgba('+b.c+',.07)'); g.addColorStop(1,'rgba('+b.c+',0)'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); });
+    var cx=W/2, cy=H/2, mxp=px*W, myp=py*H;
+    for(var i=0;i<parts.length;i++){ var p=parts[i];
+      if(burst>0){ var dx=p.x-cx, dy=p.y-cy, d=Math.hypot(dx,dy)||1; p.x+=dx/d*burst*p.z*6; p.y+=dy/d*burst*p.z*6; }
+      else { p.x+=p.vx+(px-.5)*.25*p.z; p.y+=p.vy*(1+p.z); var ddx=p.x-mxp, ddy=p.y-myp, dd=ddx*ddx+ddy*ddy; if(fine&&dd<14000){ var f=(1-dd/14000)*1.4; p.x+=ddx/Math.sqrt(dd+1)*f; p.y+=ddy/Math.sqrt(dd+1)*f; } }
+      if(p.y<-10||p.x<-20||p.x>W+20||p.y>H+40){ parts[i]=np(false); continue; }
+      var a=p.a*(.55+.45*Math.sin(t*2+p.tw)); ctx.beginPath(); ctx.fillStyle='rgba(255,228,150,'+a.toFixed(3)+')'; ctx.arc(p.x,p.y,p.r*p.z*1.4,0,6.283); ctx.fill();
+      if(p.r>1.6){ ctx.fillStyle='rgba(227,196,92,'+(a*.18).toFixed(3)+')'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*4,0,6.283); ctx.fill(); } }
+    if(burst>0) burst*=.94;
+    if(reduce) return;
+    if(ls.style.display==='none'||document.hidden){ raf=0; return; }
+    raf=requestAnimationFrame(frame);
+  }
+  function start(){ if(!raf&&ls.style.display!=='none'){ raf=requestAnimationFrame(frame); } }
+  size(); addEventListener('resize',function(){ size(); if(reduce) frame(performance.now()); },{passive:true});
+  if(reduce) frame(performance.now()); else start();
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&!reduce) start(); });
+  new MutationObserver(function(){ if(!reduce) start(); if(ls.classList.contains('lx-revelando')){ burst=3.2; var r=btn&&btn.getBoundingClientRect(); if(r){ ls.style.setProperty('--fx',(r.left+r.width/2)+'px'); ls.style.setProperty('--fy',(r.top+r.height/2)+'px'); } flash.style.background=''; } }).observe(ls,{attributes:true,attributeFilter:['style','class']});
+  // ── Puntero: parallax del fondo, foco de luz en la tarjeta, logo 3D, botón magnético ──
+  var logo=panel&&panel.querySelector('.lx-st-mark');
+  ls.addEventListener('pointermove',function(e){ var r=ls.getBoundingClientRect(); tx=(e.clientX-r.left)/r.width; ty=(e.clientY-r.top)/r.height;
+    if(box){ var b=box.getBoundingClientRect(); box.style.setProperty('--mx',(e.clientX-b.left)+'px'); box.style.setProperty('--my',(e.clientY-b.top)+'px'); box.style.setProperty('--spot', (e.clientX>b.left-120&&e.clientX<b.right+120&&e.clientY>b.top-120&&e.clientY<b.bottom+120)?1:0); }
+    if(logo&&fine&&!reduce){ logo.style.setProperty('--ry',((tx-.5)*22).toFixed(2)+'deg'); logo.style.setProperty('--rx',((.5-ty)*16).toFixed(2)+'deg'); }
+  },{passive:true});
+  ls.addEventListener('pointerleave',function(){ tx=.5; ty=.5; if(box)box.style.setProperty('--spot',0); if(logo){logo.style.setProperty('--ry','0deg');logo.style.setProperty('--rx','0deg');} });
+  if(btn&&fine&&!reduce){
+    btn.addEventListener('pointermove',function(e){ var r=btn.getBoundingClientRect(); btn.style.setProperty('--bx',((e.clientX-r.left-r.width/2)*.08).toFixed(1)+'px'); btn.style.setProperty('--by',((e.clientY-r.top-r.height/2)*.25).toFixed(1)+'px'); });
+    btn.addEventListener('pointerleave',function(){ btn.style.setProperty('--bx','0px'); btn.style.setProperty('--by','0px'); });
+  }
+  if(btn) btn.addEventListener('pointerdown',function(e){ if(reduce)return; var r=btn.getBoundingClientRect(), s=Math.max(r.width,r.height)*2.2, rp=document.createElement('span'); rp.className='st2-ripple'; rp.style.width=rp.style.height=s+'px'; rp.style.left=(e.clientX-r.left-s/2)+'px'; rp.style.top=(e.clientY-r.top-s/2)+'px'; btn.appendChild(rp); setTimeout(function(){rp.remove()},720); });
+  // ── Error: sacudida con resorte (observa el mensaje que ya pinta doLogin) ──
+  var err=document.getElementById('loginErr');
+  if(err&&box) new MutationObserver(function(){ if(err.style.display==='block'&&err.textContent.trim()){ box.classList.remove('st2-shake'); void box.offsetWidth; box.classList.add('st2-shake'); try{navigator.vibrate&&navigator.vibrate(40)}catch(e){} } }).observe(err,{attributes:true,attributeFilter:['style'],childList:true,characterData:true,subtree:true});
+  if(box) box.addEventListener('animationend',function(e){ if(e.animationName==='st2Shake')box.classList.remove('st2-shake'); });
+  // ── Bloq Mayús ──
+  if(fp){ var cap=function(e){ try{ caps.classList.toggle('on',!!(e.getModifierState&&e.getModifierState('CapsLock'))); }catch(x){} }; fp.addEventListener('keydown',cap); fp.addEventListener('keyup',cap); fp.addEventListener('blur',function(){caps.classList.remove('on')}); }
 })();
 </script>
 
@@ -6667,7 +6914,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.95';
+const APP_VERSION='58.96';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

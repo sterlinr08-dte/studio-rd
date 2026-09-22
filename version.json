@@ -1,7 +1,14 @@
 {
-  "version": "58.90",
+  "version": "58.91",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.91",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Corrección del menú lateral en iPhone/Safari: la lista de módulos se veía colapsada (solo encabezado y pie). El panel ahora tiene altura fija a la pantalla y la lista no puede colapsar."
+      ]
+    },
     {
       "version": "58.90",
       "fecha": "2026-09-22",

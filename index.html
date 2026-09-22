@@ -6578,7 +6578,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.85';
+const APP_VERSION='58.86';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6708,7 +6708,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js','studio-brand-theme.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -13849,6 +13849,8 @@ function rHistorialAuto(){
     cargarConReintento('parches-contenido-movil-ajuste.js');
     cargarCSS('parches-fase1-ui-motion.css');
     cargarCSS('parches-motion-fase2.css');
+    // Identidad propia STUDIO RD: capa final negro, blanco y oro.
+    cargarCSS('studio-brand-theme.css');
   })();
 </script>
 </body>

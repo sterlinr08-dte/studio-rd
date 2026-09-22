@@ -1,7 +1,16 @@
 {
-  "version": "58.85",
+  "version": "58.86",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.86",
+      "fecha": "2026-09-22",
+      "notas": [
+        "NUEVA IDENTIDAD STUDIO RD: negro y carbón para navegación, blanco cálido para el espacio operativo y oro para acciones, selección y foco.",
+        "La paleta se aplica al login, POS, Multiempresa, formularios, tablas, facturas, modales, splash y pantalla de actualización.",
+        "Los estados funcionales conservan verde, ámbar y rojo para éxito, advertencia y peligro."
+      ]
+    },
     {
       "version": "58.85",
       "fecha": "2026-09-22",

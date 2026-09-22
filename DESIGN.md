@@ -21,10 +21,10 @@ STUDIO RD is a professional operations platform with **Daily App Balanced** dens
 - Dashboard UI remains sans-serif. Do not introduce Inter or serif fonts.
 
 ## 4. Component Stylings
-- **Sidebar Rail:** fixed black structural layer with a restrained gold contour. Icons stay centered in the rail.
-- **Sidebar White Panel:** separate elevated white surface, soft border and rounded lower termination. When an accordion is open, its vertical edge extends so no new option is visually cut by the curve.
-- **Navigation Labels:** remain legible inside the navigation surface and never overlap the icon rail.
-- **Active Navigation State:** a compact translucent-gold treatment anchored to the label zone, with a slim gold edge.
+- **Sidebar Dock:** a floating black navigation object, inset 12px from the viewport, with a 28px contour, restrained gold spine and soft depth shadow. It collapses to a 78px icon dock and expands to 248px.
+- **Navigation Icons:** each icon lives in a compact dark tile. The active icon becomes a solid gold tile with black glyph; labels stay white and never overlap the icon zone.
+- **Active Navigation State:** a translucent-gold row, slim illuminated gold edge and one active icon. No full-surface glow.
+- **Mobile Drawer:** the same dock becomes a floating sheet with 10px outer breathing room, rounded corners and a blurred backdrop; it never covers the full screen width.
 - **Buttons:** compact, tactile, no neon glow. Hover lifts by 1px only on pointer devices; active state presses down by 1px.
 - **Cards:** elevation only where it communicates hierarchy. Use slate-tinted shadows; status and amount cards enter in a short cascade instead of all appearing at once.
 - **Modals:** surface fades in while its content rises 8px. Dismissal is quicker than entry.
@@ -32,7 +32,7 @@ STUDIO RD is a professional operations platform with **Daily App Balanced** dens
 
 ## 5. Layout Principles
 - Mobile-first below 768px, with no horizontal scrolling.
-- Mobile black rail is 76px; expanded navigation surface is 228px. Labels start at least 20px inside the label zone after the rail boundary.
+- Desktop dock is 78px collapsed and 248px expanded. Mobile uses a floating sheet up to 292px wide with 10px viewport margins. Touch targets remain at least 44px.
 - Touch targets are at least 44px.
 - Use explicit grids and zones instead of fragile positional spacing.
 - The sidebar may overlay content when expanded, but its physical layers must not overlap semantically.
@@ -41,7 +41,7 @@ STUDIO RD is a professional operations platform with **Daily App Balanced** dens
 ## 6. Motion & Interaction
 - **Timing:** 160ms for tactile feedback, 220ms for local surface changes, 320–420ms for drawers and accordions.
 - **Easing:** default is a controlled spring curve: `cubic-bezier(.22,1,.36,1)`. Do not use linear movement.
-- **Drawer:** the navigation panel emerges from beneath the fixed black rail. Labels follow after 85–115ms in a short cascade.
+- **Drawer:** the floating dock enters with a controlled 360ms spring curve; its contents remain stable and labels never animate separately from their action row.
 - **Views:** the first 8–12 visible operational surfaces enter with 22ms stagger: opacity from 0 to 1 and translateY from 8px to 0. Re-enter only on a real navigation change.
 - **Accordions:** options reveal downward with real measured height; the rail’s lower contour continues vertically while open. The navigation zone may auto-scroll just enough to reveal the first new option.
 - **Buttons and cards:** pointer hover uses translateY(-1px); active press uses translateY(1px). Never use scale for primary taps on iOS.

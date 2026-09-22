@@ -271,3 +271,21 @@ so every existing module receives the upgrade automatically.
   `prefers-reduced-transparency` gets an opaque white surface.
 - **Accessibility and safety:** status/error live regions, 28px close control with an accessible name, escaped title/message
   content, explicit dismissal, automatic dismissal after 4.5 seconds and no interaction blocking.
+
+
+## 16. Login Pro Motion — owner direction (2026-09-22)
+
+The owner requested a more polished, professional login experience with animation. This section refines the existing
+STUDIO login without changing its authentication contract, mobile containment fix or black/white/gold identity.
+
+- **Entrance hierarchy:** eyebrow, heading, fields, utility row and primary action reveal in a short stagger. Motion uses
+  the Apple-style easing from §10, stays under 620 ms per element and animates only transform and opacity.
+- **Atmosphere:** two low-opacity ambient light fields drift slowly behind the content, plus a restrained light sweep.
+  They add depth without competing with the form or introducing another brand color.
+- **Interaction:** the active field lifts by 1 px; the password visibility control scales subtly; the arrow advances on
+  button hover; a slow highlight crosses the primary action. Error feedback uses one brief horizontal correction.
+- **Mobile safety:** no width, positioning, viewport or overflow rule from the 58.93 iPhone fix is changed.
+- **Accessibility:** `prefers-reduced-motion` disables decorative and entrance animations; `prefers-reduced-transparency`
+  removes the ambient layers. No new `!important` declarations are introduced.
+- **Implementation scope:** CSS only in `index.html`, scoped to `html.nx-studio #loginScreen`; no JavaScript, Supabase,
+  credentials, permissions or business logic changes.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>Studio — Hogar, movilidad y tecnología</title>
 <script>/* Marca por dominio: en studiord.net el login/splash usan la piel STUDIO (solo CSS + textos; misma app). */
-(function(){try{if(true){document.documentElement.classList.add('nx-studio');document.title='Iniciar sesión · Studio';var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap';document.head.appendChild(l);}}catch(e){}})();</script>
+(function(){try{if(true){document.documentElement.classList.add('nx-studio');document.title='Iniciar sesión · Studio';var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';document.head.appendChild(l);}}catch(e){}})();</script>
 
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
 <meta name="application-name" content="Studio"/>
@@ -178,7 +178,7 @@ body:has(#nxSplash) #loginScreen{opacity:0;transition:none}
 /* ── STUDIO (studiord.net): piel del login calcada de la referencia del dueño (studiord.vercel.app/auth,
    22-sep-2026). Solo aplica con html.nx-studio (lo pone el script del <head> por dominio). Tokens del tema
    oscuro de la referencia: fondo #0c0c0c, texto #f3f1ee, muted #a1a1a1, botón claro con hover #cacaca. ── */
-html.nx-studio{--st-bg:#0c0c0c;--st-fg:#f3f1ee;--st-muted:#a1a1a1;--st-glow:#cacaca;--st-line:rgba(255,255,255,.08);--st-font:"Geist","SF Pro Display",ui-sans-serif,system-ui,sans-serif}
+html.nx-studio{--st-bg:#0c0c0c;--st-fg:#f3f1ee;--st-muted:#a1a1a1;--st-glow:#cacaca;--st-line:rgba(255,255,255,.08);--st-font:-apple-system,"SF Pro Text","SF Pro Display",system-ui,Inter,"Helvetica Neue",sans-serif}
 html.nx-studio #loginScreen{background:var(--st-bg);font-family:var(--st-font);padding:24px 32px;position:relative}
 html.nx-studio #loginScreen,html.nx-studio #loginScreen *{text-transform:none}
 html.nx-studio #loginScreen .lver,html.nx-studio #loginScreen .lx-st-tag{text-transform:uppercase}
@@ -6578,7 +6578,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.87';
+const APP_VERSION='58.88';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6708,7 +6708,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js','studio-brand-theme.css','studio-sidebar-dock.css']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -13844,6 +13844,7 @@ function rHistorialAuto(){
     cargarConReintento('parches-pos.js');
     cargarConReintento('parches-pos-stitch-visual.js');
     cargarConReintento('parches-whatsapp.js'); // Inbox de WhatsApp: solo carga sus capas si pos_config.whatsapp_inbox
+    cargarConReintento('parches-pos-motion.js'); // STUDIO: movimiento fluido (DESIGN.md §10), solo presentación
     // Capas de UI compartidas (no son de Seguros): ajustes móviles de modales y motion de
     // botones/tablas/diálogos que el POS usa a través de las clases .modal/.btn/.tw del shell.
     cargarConReintento('parches-contenido-movil-ajuste.js');

@@ -3434,7 +3434,7 @@
   function nxPfEnsureCSS() {
     if (document.getElementById('nxPfCSS')) return;
     const link = document.createElement('link'); link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';
     document.head.appendChild(link);
     const st = document.createElement('style'); st.id = 'nxPfCSS';
     st.textContent = `
@@ -9366,7 +9366,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxFPEnsureCSS = function () {
     if (!document.getElementById('nxFinFontLink')) {
       const l = document.createElement('link'); l.id = 'nxFinFontLink'; l.rel = 'stylesheet';
-      l.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+      l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';
       document.head.appendChild(l);
     }
     if (document.getElementById('nxFPCSS')) return;
@@ -11349,20 +11349,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       '.nxTTopBiz{font-weight:800;font-size:15px;color:#0f172a;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       'body.nxTDrawer .nxTBackdrop{display:block}',
       '}',
-      /* ── BLINDAJE de la barra lateral: gana SIEMPRE sobre el tema glass y los parches de iconos ──
-         (en el tema glass del admin salía translúcida con pastillas blancas — se veía amateur).
-         Mismos valores del chrome graphite de arriba, repetidos con !important a propósito. */
-      'html body .nxTSide{background:linear-gradient(180deg,#14161f,#0a0b10)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:none!important}',
-      'html body .nxTSide .nxTNav{background:transparent!important;border:0!important;box-shadow:none!important;color:rgba(231,234,242,.68)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;min-height:0!important}',
-      'html body .nxTSide .nxTSearchBtn{background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important;color:rgba(231,234,242,.68)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important}',
-      'html body .nxTSide .nxTNav.on{background:rgba(99,102,241,.16)!important;color:#fff!important;box-shadow:inset 2px 0 0 #6366f1!important}',
-      'html body .nxTSide .nxTNav i,html body .nxTSide .nxTLogout i{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;color:inherit!important;border-radius:0!important;padding:0!important}',
-      'html body .nxTSide .nxTSec{color:rgba(231,234,242,.36)!important;background:none!important}',
-      'html body .nxTSide .nxTBrand,html body .nxTSide .nxTFoot{background:transparent!important}',
-      'html body .nxTSide .nxTBiz{color:#fff!important}html body .nxTSide .nxTBiz small{color:rgba(231,234,242,.5)!important}',
-      'html body .nxTSide .nxTUser b{color:#fff!important}html body .nxTSide .nxTUser span{color:rgba(231,234,242,.5)!important}',
-      'html body .nxTSide .nxTAva{background:rgba(99,102,241,.28)!important;color:#fff!important;box-shadow:none!important}',
-      'html body .nxTSide .nxTLogout{background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(255,255,255,.16)!important;box-shadow:none!important}',
+      /* STUDIO (2026-09-22): el bloque BLINDAJE (!important) de la barra lateral se retiró; la geometría y el color
+         viven en studio-sidebar-dock.css y studio-brand-theme.css (DESIGN.md §12.1). */
       /* Chips de estado en Últimas ventas (look premium del diseño aprobado) */
       '.nxTVEnd{display:flex;flex-direction:column;align-items:flex-end;gap:3px}',
       '.nxTVSt{font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:6px}',

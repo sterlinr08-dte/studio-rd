@@ -1,7 +1,12 @@
 /*
- * STUDIO RD — identidad visual negro, blanco y oro
- * Capa final de marca. No modifica colores semánticos de éxito, advertencia o error.
- * Decisión del dueño: 22-sep-2026.
+ * STUDIO RD — identidad visual negro, blanco y oro (v2, 2026-09-22)
+ * Capa final de marca, limitada a html.nx-studio. Reescrita según DESIGN.md §2, §3, §9, §10, §12.7:
+ *  - oro plano (#C9A227 con texto negro), sin degradados;
+ *  - tipografía San Francisco (SF Pro en Apple, Inter en el resto), SF Mono para montos;
+ *  - chips y pestañas seleccionadas en negro (el oro queda para la acción principal, el ítem activo y el foco);
+ *  - barras fijas translúcidas; reduced-motion / reduced-transparency / contraste alto respetados.
+ * Gana la cascada por especificidad (html.nx-studio …) y por cargar de última; !important solo contra estilos inline.
+ * No modifica colores semánticos de éxito, advertencia o error. Sin lógica: solo CSS.
  */
 
 html.nx-studio {
@@ -11,337 +16,368 @@ html.nx-studio {
   --studio-graphite: #262626;
   --studio-white: #fffefa;
   --studio-canvas: #f7f5ef;
+  --studio-canvas-2: #f0ede4;
+  --studio-ink: #111111;
+  --studio-steel: #686862;
+  --studio-mute: #9a968c;
   --studio-gold: #c9a227;
   --studio-gold-light: #e3c45c;
   --studio-gold-dark: #806515;
-  --studio-gold-soft: rgba(201, 162, 39, .13);
+  --studio-gold-soft: rgba(201, 162, 39, .16);
   --studio-gold-ring: rgba(201, 162, 39, .28);
+  --studio-line: rgba(128, 101, 21, .14);
+  --studio-line-2: rgba(128, 101, 21, .09);
+  --studio-hair: rgba(0, 0, 0, .12);
+  --studio-font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, Inter, "Helvetica Neue", sans-serif;
+  --studio-mono: ui-monospace, "SF Mono", Menlo, "JetBrains Mono", monospace;
+  --studio-ease: cubic-bezier(.22, 1, .36, 1);
+  --studio-glass: rgba(255, 254, 250, .72);
+  --studio-glass-dark: rgba(10, 10, 10, .92);
 
+  /* Tokens heredados del shell de NEXUS (index.html) */
   --bg0: var(--studio-canvas);
   --bg1: var(--studio-white);
   --bg2: #ffffff;
-  --bg3: #f3f0e8;
+  --bg3: var(--studio-canvas-2);
   --bg4: #e9e5da;
   --c1: var(--studio-gold);
   --c2: var(--studio-gold-dark);
   --c1a: var(--studio-gold-soft);
   --c2a: rgba(128, 101, 21, .1);
-  --tx1: #111111;
+  --tx1: var(--studio-ink);
   --tx2: #4b4b47;
-  --tx3: #686862;
+  --tx3: var(--studio-steel);
   --sidebar: var(--studio-black);
   --sidebar-accent: var(--studio-charcoal);
   --sidebar-hover: rgba(255, 255, 255, .08);
-  --sidebar-active: rgba(201, 162, 39, .2);
+  --sidebar-active: var(--studio-gold-soft);
   --border: #ddd8ca;
   --border-light: #ebe7dc;
-  --gradient-primary: linear-gradient(135deg, var(--studio-gold-dark), var(--studio-gold));
-  --shadow-sm: 0 1px 3px rgba(10, 10, 10, .08), 0 1px 2px rgba(10, 10, 10, .04);
-  --shadow: 0 5px 16px rgba(10, 10, 10, .09), 0 2px 5px rgba(10, 10, 10, .05);
-  --shadow-md: 0 10px 28px rgba(10, 10, 10, .12), 0 4px 9px rgba(10, 10, 10, .06);
+  --gradient-primary: var(--studio-gold);
+  --shadow-sm: 0 1px 2px rgba(10, 10, 10, .04);
+  --shadow: 0 5px 16px rgba(10, 10, 10, .08);
+  --shadow-md: 0 10px 28px rgba(10, 10, 10, .12);
 }
 
-/* Tokens del layout Stitch. Se redefinen en los mismos contenedores para ganar
-   a la capa base sin depender del orden de descarga. */
+/* Tokens de la capa Stitch (parches-pos-stitch-visual.js): se redefinen en los mismos ámbitos. */
 html.nx-studio #v-pos,
 html.nx-studio #v-multiempresa,
 html.nx-studio .modal.nxPrForm,
 html.nx-studio .nxPf,
 html.nx-studio body.org-tienda {
   --nx-bg: var(--studio-canvas);
-  --nx-surface: var(--studio-white);
-  --nx-ink: #111111;
-  --nx-steel: #5f5f59;
-  --nx-mute: #858177;
-  --nx-line: rgba(128, 101, 21, .14);
-  --nx-line-2: rgba(128, 101, 21, .22);
+  --nx-surface: #ffffff;
+  --nx-ink: var(--studio-ink);
+  --nx-steel: var(--studio-steel);
+  --nx-mute: var(--studio-mute);
+  --nx-line: var(--studio-line);
+  --nx-line-2: rgba(128, 101, 21, .2);
   --nx-blue: var(--studio-gold);
   --nx-blue-d: var(--studio-gold-dark);
   --nx-blue-l: #fff8df;
   --nx-blue-b: #ead584;
+  --nx-r: 12px;
+  --nx-r-md: 10px;
+  --nx-r-sm: 10px;
+  --nx-font: var(--studio-font);
+  --nx-mono: var(--studio-mono);
+  --mono: var(--studio-mono);
 }
 
-/* Estructura general */
-html.nx-studio body {
-  background: var(--studio-canvas);
-  color: #111111;
-}
-html.nx-studio .content,
-html.nx-studio .nxInicio,
-html.nx-studio #v-pos {
-  background-color: var(--studio-canvas);
-}
-html.nx-studio .ticker {
-  background: #050505;
-  border-bottom: 1px solid rgba(201, 162, 39, .32);
-}
-html.nx-studio .ticker .tu {
-  color: var(--studio-gold-light);
-}
-html.nx-studio .sb {
-  background: linear-gradient(180deg, #050505 0%, #111111 58%, #1b1810 100%);
-  border-right: 1px solid rgba(201, 162, 39, .3);
-}
-html.nx-studio .sb-mk {
-  background: linear-gradient(145deg, var(--studio-gold-light), var(--studio-gold-dark));
-  color: #080808;
-  box-shadow: 0 5px 15px rgba(201, 162, 39, .22);
-}
-html.nx-studio .ni:hover {
-  background: rgba(255, 255, 255, .07);
-}
-html.nx-studio .ni.on,
-html.nx-studio .ni.active {
-  background: var(--studio-gold-soft);
-  color: var(--studio-gold-light);
-  box-shadow: inset 3px 0 0 var(--studio-gold);
-}
-html.nx-studio .ni.on i,
-html.nx-studio .ni.active i {
-  color: var(--studio-gold-light);
-}
-html.nx-studio .sb-av {
-  background: var(--studio-gold);
-  color: #090909;
-}
-html.nx-studio .topbar,
-html.nx-studio .tnav {
-  background: rgba(255, 254, 250, .96);
-  border-bottom-color: #ddd8ca;
-}
+/* ── Estructura ─────────────────────────────────────────────────────────── */
+html.nx-studio body { background: var(--studio-canvas); color: var(--studio-ink); font-family: var(--studio-font); }
+html.nx-studio .content, html.nx-studio .nxInicio, html.nx-studio #v-pos, html.nx-studio #v-pos .nxTShell { background-color: var(--studio-canvas); }
+html.nx-studio h1, html.nx-studio h2, html.nx-studio h3 { letter-spacing: -.022em; }
+html.nx-studio .ticker { background: var(--studio-black); border-bottom: 1px solid rgba(201, 162, 39, .32); }
+html.nx-studio .ticker .tu { color: var(--studio-gold-light); }
+html.nx-studio .topbar, html.nx-studio .tnav { background: rgba(255, 254, 250, .96); border-bottom-color: #ddd8ca; }
+html.nx-studio .sb { background: var(--studio-black); border-right: 1px solid rgba(201, 162, 39, .22); }
+html.nx-studio .sb-mk, html.nx-studio .sb-av { background: var(--studio-gold); color: var(--studio-black); box-shadow: none; }
+html.nx-studio .ni:hover { background: rgba(255, 255, 255, .07); }
+html.nx-studio .ni.on, html.nx-studio .ni.active { background: var(--studio-gold-soft); color: var(--studio-gold-light); box-shadow: inset 2px 0 0 var(--studio-gold); }
+html.nx-studio .ni.on i, html.nx-studio .ni.active i { color: var(--studio-gold-light); }
 
-/* Superficies operativas */
-html.nx-studio .nc,
-html.nx-studio .card,
-html.nx-studio .kpitile,
-html.nx-studio .nxTKpi,
-html.nx-studio .nxTPanel,
-html.nx-studio .nxMeCard,
-html.nx-studio .nxApp,
-html.nx-studio .modal,
-html.nx-studio .modal-box,
-html.nx-studio .tw {
-  border-color: #ddd8ca;
+/* ── Superficies ────────────────────────────────────────────────────────── */
+html.nx-studio .nc, html.nx-studio .card, html.nx-studio .kpitile, html.nx-studio .nxTKpi, html.nx-studio .nxTPanel,
+html.nx-studio .nxMeCard, html.nx-studio .nxApp, html.nx-studio .modal, html.nx-studio .modal-box, html.nx-studio .tw {
+  border-color: var(--studio-line);
+  box-shadow: var(--shadow-sm);
 }
-html.nx-studio .nc:hover,
-html.nx-studio .card:hover,
-html.nx-studio .nxMeCard:hover,
-html.nx-studio .nxApp:hover {
+html.nx-studio .nc:hover, html.nx-studio .card:hover, html.nx-studio .nxMeCard:hover, html.nx-studio .nxApp:hover {
   border-color: rgba(201, 162, 39, .55);
-  box-shadow: 0 7px 22px rgba(10, 10, 10, .1);
+  box-shadow: 0 7px 22px rgba(10, 10, 10, .08);
 }
-html.nx-studio thead th {
-  background: #f0ede4;
-  color: #49463d;
-  border-bottom-color: #d8d1bf;
-}
-html.nx-studio tbody tr:hover td {
-  background: #fbf7e9 !important;
-}
+html.nx-studio thead th { background: var(--studio-canvas-2); color: #49463d; border-bottom-color: #d8d1bf; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+html.nx-studio tbody tr:hover td { background: #fbf7e9; }
 
-/* Acciones y controles */
-html.nx-studio .btn:hover {
-  background: #fff9e8;
+/* ── Acciones y controles ───────────────────────────────────────────────── */
+html.nx-studio .btn { font-family: var(--studio-font); }
+html.nx-studio .btn:hover { background: #fff9e8; border-color: var(--studio-gold); color: #5e4a0d; }
+html.nx-studio .btn.bc1, html.nx-studio .bxl, html.nx-studio .btn.primary, html.nx-studio #v-pos .nxTQuick, html.nx-studio .nxPpkElegir,
+html.nx-studio #v-pos .facTot .g1, html.nx-studio #v-pos .fbP, html.nx-studio body.org-tienda .fbP, html.nx-studio .fbP {
+  background: var(--studio-gold);
   border-color: var(--studio-gold);
-  color: #5e4a0d;
+  color: var(--studio-black);
+  box-shadow: 0 1px 2px rgba(128, 101, 21, .25);
 }
-html.nx-studio .btn.bc1,
-html.nx-studio .bxl,
-html.nx-studio .btn.primary,
-html.nx-studio .nxTQuick,
-html.nx-studio .nxPpkElegir {
-  background: linear-gradient(135deg, var(--studio-gold-light), var(--studio-gold)) !important;
-  border-color: var(--studio-gold) !important;
-  color: #090909 !important;
-  box-shadow: 0 4px 12px rgba(128, 101, 21, .24) !important;
+html.nx-studio .btn.bc1:hover, html.nx-studio .bxl:hover, html.nx-studio .btn.primary:hover, html.nx-studio #v-pos .nxTQuick:hover, html.nx-studio .nxPpkElegir:hover,
+html.nx-studio #v-pos .facTot .g1:hover, html.nx-studio .fbP:hover {
+  background: var(--studio-gold-light);
+  border-color: var(--studio-gold-light);
+  color: var(--studio-black);
 }
-html.nx-studio .btn.bc1:hover,
-html.nx-studio .bxl:hover,
-html.nx-studio .btn.primary:hover,
-html.nx-studio .nxTQuick:hover,
-html.nx-studio .nxPpkElegir:hover {
-  background: linear-gradient(135deg, #ebd06f, var(--studio-gold-light)) !important;
-  border-color: var(--studio-gold-dark) !important;
-  color: #050505 !important;
-}
-html.nx-studio input:focus,
-html.nx-studio select:focus,
-html.nx-studio textarea:focus,
-html.nx-studio .fr input:focus,
-html.nx-studio .fr select:focus {
-  border-color: var(--studio-gold) !important;
-  box-shadow: 0 0 0 3px var(--studio-gold-ring) !important;
+html.nx-studio .btn.bc1:active, html.nx-studio .fbP:active, html.nx-studio #v-pos .facTot .g1:active { background: var(--studio-gold-dark); color: var(--studio-white); }
+html.nx-studio .btn:disabled, html.nx-studio .fbP:disabled { opacity: .55; box-shadow: none; }
+/* Estilos inline heredados (morado/azul): solo aquí hace falta !important. */
+html.nx-studio #v-pos [style*="background:#6d28d9"], html.nx-studio .modal.nxPrForm [style*="background:#6d28d9"],
+html.nx-studio #v-pos [style*="background:#7c3aed"], html.nx-studio .modal.nxPrForm [style*="background:#7c3aed"],
+html.nx-studio #v-pos [style*="background:#4f46e5"], html.nx-studio .modal.nxPrForm [style*="background:#4f46e5"],
+html.nx-studio #v-pos [style*="background:#2563eb"], html.nx-studio .modal.nxPrForm [style*="background:#2563eb"],
+html.nx-studio #v-pos [style*="linear-gradient(135deg,#6d28d9,#4f46e5)"], html.nx-studio .modal.nxPrForm [style*="linear-gradient(135deg,#6d28d9,#4f46e5)"],
+html.nx-studio #v-pos [style*="linear-gradient(145deg,#818cf8,#4f46e5)"] { background: var(--studio-gold) !important; color: var(--studio-black) !important; }
+html.nx-studio #v-pos [style*="color:#6d28d9"], html.nx-studio #v-pos [style*="color:#7c3aed"], html.nx-studio #v-pos [style*="color:#4f46e5"], html.nx-studio #v-pos [style*="color:#2563eb"],
+html.nx-studio .modal.nxPrForm [style*="color:#6d28d9"], html.nx-studio .modal.nxPrForm [style*="color:#7c3aed"], html.nx-studio .modal.nxPrForm [style*="color:#2563eb"] { color: var(--studio-gold-dark) !important; }
+
+html.nx-studio input:focus, html.nx-studio select:focus, html.nx-studio textarea:focus,
+html.nx-studio #v-pos .fr input:focus, html.nx-studio #v-pos .fr select:focus, html.nx-studio .modal.nxPrForm .fr input:focus,
+html.nx-studio #v-pos .nxFacAdd:focus-within, html.nx-studio #v-pos .pf2clibtn:focus-visible {
+  border-color: var(--studio-gold);
+  box-shadow: 0 0 0 3px var(--studio-gold-ring);
   outline: none;
 }
-html.nx-studio input[type="checkbox"]:checked,
-html.nx-studio input[type="radio"]:checked {
-  accent-color: var(--studio-gold-dark);
-}
-html.nx-studio a:not(.btn),
-html.nx-studio .lforgot {
-  color: var(--studio-gold-dark);
-}
-html.nx-studio .tab.on,
-html.nx-studio .tab.active,
-html.nx-studio .nxPosTab.on,
-html.nx-studio .nxPosTab.active,
-html.nx-studio .nxPpkChip.on,
-html.nx-studio .nxPpkChip.active {
-  color: #4d3b08 !important;
-  border-color: var(--studio-gold) !important;
-  background: var(--studio-gold-soft) !important;
-}
+html.nx-studio #v-pos :focus-visible, html.nx-studio .modal.nxPrForm :focus-visible, html.nx-studio .nxPf :focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
+html.nx-studio input[type="checkbox"]:checked, html.nx-studio input[type="radio"]:checked { accent-color: var(--studio-gold-dark); }
+html.nx-studio a:not(.btn), html.nx-studio .lforgot { color: var(--studio-gold-dark); }
 
-/* POS Stitch: reemplaza el azul estructural por negro + oro */
-html.nx-studio #v-pos .nxTSide {
+/* Chips y pestañas seleccionadas: negro con marfil (el oro no se gasta en selección). */
+html.nx-studio #v-pos .nxPosTab.on, html.nx-studio .tab.on, html.nx-studio .tab.active,
+html.nx-studio #v-pos .vchip.on, html.nx-studio #v-pos .nxPpkChip.on, html.nx-studio .modal.nxPrForm .nxPpkChip.on {
   background: var(--studio-black);
-  border-right: 1px solid rgba(201, 162, 39, .34);
+  border-color: var(--studio-black);
+  color: var(--studio-white);
 }
-html.nx-studio #v-pos .nxTLogo,
-html.nx-studio #v-pos .nxTBrand i,
-html.nx-studio #v-pos .nxTNav.on,
-html.nx-studio #v-pos .nxTNav.active {
-  color: var(--studio-gold-light) !important;
-}
-html.nx-studio #v-pos .nxTNav.on,
-html.nx-studio #v-pos .nxTNav.active {
-  background: rgba(201, 162, 39, .16) !important;
-  box-shadow: inset 3px 0 0 var(--studio-gold);
-}
-html.nx-studio #v-pos .nxTSearchBtn:hover,
-html.nx-studio #v-pos .nxApp:hover,
-html.nx-studio #v-pos .nxMeCard:hover {
-  border-color: var(--studio-gold) !important;
-}
-html.nx-studio #v-pos .nxTKpiV,
-html.nx-studio #v-pos .nxFacProductIcon,
-html.nx-studio #v-pos .nxFP-qico,
-html.nx-studio #v-pos .nxFP-ref,
-html.nx-studio #v-pos .nx-invoice-pro .imp,
-html.nx-studio #v-pos .nx-invoice-pro .dnm {
-  color: var(--studio-gold-dark) !important;
-}
-html.nx-studio #v-pos .nxFacProductIcon,
-html.nx-studio #v-pos .nxFP-qico,
-html.nx-studio #v-pos .nxFP-emptyIco {
-  background: var(--studio-gold-soft) !important;
-  border-color: rgba(201, 162, 39, .38) !important;
-}
-html.nx-studio #v-pos .nxIniHi,
-html.nx-studio #v-pos .nxFP-hero {
-  background: linear-gradient(135deg, #0a0a0a 0%, #1b1b18 72%, #5d4a13 100%) !important;
-  border-color: rgba(201, 162, 39, .35) !important;
-}
-html.nx-studio #v-pos .nxIniHi,
-html.nx-studio #v-pos .nxIniHi *,
-html.nx-studio #v-pos .nxFP-hero,
-html.nx-studio #v-pos .nxFP-hero * {
-  color: #fffefa;
-}
-html.nx-studio #v-pos .nxIniHi .nxTQuick,
-html.nx-studio #v-pos .nxFP-hero .primary {
-  color: #090909 !important;
-}
+html.nx-studio #v-pos .vchip, html.nx-studio #v-pos .nxPpkChip { border-radius: 999px; font-weight: 600; }
 
-/* Factura: una sola firma oro, conservando legibilidad e impresión */
-html.nx-studio #v-pos .nx-invoice-pro {
-  --invoice-accent: var(--studio-gold-dark);
-}
-html.nx-studio #v-pos .nx-invoice-pro .head {
-  border-bottom-color: var(--studio-gold) !important;
-}
-html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th {
-  background: #171717 !important;
-  color: #fffefa !important;
-}
-html.nx-studio #v-pos .nxPpkIt:hover,
-html.nx-studio #v-pos .nxPpkIt.on,
-html.nx-studio #v-pos .nxPpkIt.active {
-  border-color: var(--studio-gold) !important;
-  background: #fffbef !important;
-}
+/* ── POS shell: negro plano + oro en el ítem activo ─────────────────────── */
+html.nx-studio #v-pos .nxTSide { background: var(--studio-black); border-right: 1px solid rgba(201, 162, 39, .22); box-shadow: 8px 0 28px rgba(10, 10, 10, .18); }
+html.nx-studio #v-pos .nxTBrand { border-bottom-color: rgba(255, 255, 255, .08); }
+html.nx-studio #v-pos .nxTLogo { background: var(--studio-gold); color: var(--studio-black); box-shadow: none; }
+html.nx-studio #v-pos .nxTBiz small { color: rgba(255, 254, 250, .5); letter-spacing: .14em; }
+html.nx-studio #v-pos .nxTSec { color: rgba(255, 254, 250, .38); }
+html.nx-studio #v-pos .nxTNav { color: rgba(255, 254, 250, .66); border-radius: 8px; }
+html.nx-studio #v-pos .nxTNav:hover { background: rgba(255, 255, 255, .07); color: var(--studio-white); transform: none; }
+html.nx-studio #v-pos .nxTNav.on, html.nx-studio #v-pos .nxTNav.active { background: var(--studio-gold-soft); color: var(--studio-gold-light); box-shadow: inset 2px 0 0 var(--studio-gold); font-weight: 600; }
+html.nx-studio #v-pos .nxTSearchBtn { border-color: rgba(255, 255, 255, .10); background: rgba(255, 255, 255, .05); color: rgba(255, 254, 250, .8); }
+html.nx-studio #v-pos .nxTSearchBtn:hover { border-color: var(--studio-gold); background: rgba(255, 255, 255, .08); }
+html.nx-studio #v-pos .nxTAva { background: var(--studio-gold); color: var(--studio-black); }
+html.nx-studio #v-pos .nxTLogout { border-color: rgba(255, 255, 255, .12); color: rgba(255, 254, 250, .75); }
+html.nx-studio #v-pos .nxTTop { background: var(--studio-glass); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--studio-line); box-shadow: none; }
+html.nx-studio #v-pos .nxTKpiV { color: var(--studio-ink); font-family: var(--studio-mono); }
+html.nx-studio #v-pos .nxTKpi, html.nx-studio #v-pos .nxTPanel, html.nx-studio #v-pos .nxApp { border-radius: 12px; }
+html.nx-studio #v-pos .nxAppIco { background: var(--studio-canvas) !important; color: var(--studio-black) !important; }
+html.nx-studio #v-pos .nxFP-hero { background: var(--studio-black); border-color: rgba(201, 162, 39, .35); color: var(--studio-white); }
+html.nx-studio #v-pos .nxFP-hero * { color: var(--studio-white); }
+html.nx-studio #v-pos .nxFP-hero .primary { color: var(--studio-black); }
+html.nx-studio #v-pos .nxIniHi { background: transparent; color: var(--studio-steel); font-size: 13px; font-weight: 600; }
+html.nx-studio #v-pos .nxIniBiz { color: var(--studio-ink); }
+html.nx-studio #v-pos .nxTKpiL { color: var(--studio-steel); }
+html.nx-studio #v-pos .nxTKpiL i { color: var(--studio-ink) !important; }
+html.nx-studio #v-pos .nxTKpiS, html.nx-studio #v-pos .nxAppSecT { color: var(--studio-steel); }
+html.nx-studio #v-pos .nxAppNom { color: var(--studio-ink); }
+html.nx-studio #v-pos .nxFP-qico, html.nx-studio #v-pos .nxFP-ref, html.nx-studio #v-pos .nxFP-emptyIco, html.nx-studio #v-pos .nxFacProductIcon { background: var(--studio-gold-soft); border-color: rgba(201, 162, 39, .38); color: var(--studio-gold-dark); }
+html.nx-studio #v-pos .nxFP-hAR .nxFP-hAst:nth-child(4) .nxFP-hAsi { background: var(--studio-gold); }
+html.nx-studio #v-pos .nxPpkIt:hover, html.nx-studio #v-pos .nxPpkIt.on { border-color: var(--studio-gold); background: #fffbef; }
 
-/* Login oscuro STUDIO con detalles oro */
-html.nx-studio #loginScreen {
-  background:
-    radial-gradient(circle at 50% 18%, rgba(201, 162, 39, .08), transparent 34%),
-    #0a0a0a;
-}
-html.nx-studio #loginScreen .lx-st-glow {
-  background: rgba(201, 162, 39, .18);
-}
-html.nx-studio #loginScreen .lfi:focus-within,
-html.nx-studio #loginScreen input:focus {
-  border-color: var(--studio-gold) !important;
-  box-shadow: 0 0 0 3px rgba(201, 162, 39, .2) !important;
-}
-html.nx-studio #loginScreen .lbtn {
-  background: linear-gradient(135deg, var(--studio-gold-light), var(--studio-gold)) !important;
-  color: #080808 !important;
-  border-color: var(--studio-gold) !important;
-}
-html.nx-studio #loginScreen .lbtn:hover {
-  background: #efd578 !important;
-}
-html.nx-studio #loginScreen .lforgot:hover {
-  color: var(--studio-gold-light);
-}
-html.nx-studio #loginScreen .lchk input[type="checkbox"]:checked {
-  background: var(--studio-gold) !important;
-  border-color: var(--studio-gold) !important;
-}
+/* ── Factura / documento ────────────────────────────────────────────────── */
+html.nx-studio #v-pos .nx-invoice-pro { --invoice-accent: var(--studio-gold-dark); }
+html.nx-studio #v-pos .nx-invoice-pro .head { border-bottom-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .imp, html.nx-studio #v-pos .nx-invoice-pro .dnm { color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th { background: var(--studio-canvas-2); color: #49463d; }
 
-/* Carga y actualización: identidad coherente antes de entrar */
-html.nx-studio #nxSplash,
-html.nx-studio #nxUpd {
-  background: linear-gradient(155deg, #050505 0%, #141414 72%, #4a3a0d 100%) !important;
+/* Barra fija de acciones (Factura / Compras): material translúcido. */
+html.nx-studio .nxFacBar {
+  background: var(--studio-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--studio-line);
+  box-shadow: 0 -8px 24px rgba(10, 10, 10, .06);
 }
-html.nx-studio #nxSplash [class*="wave"],
-html.nx-studio #nxSplash [class*="ring"] {
-  border-color: rgba(201, 162, 39, .42) !important;
-}
-html.nx-studio #nxSplash i,
-html.nx-studio #nxSplash svg {
-  color: var(--studio-gold-light);
-}
+html.nx-studio .nxFacBar .fbC, html.nx-studio .nxFacBar .fbG { background: #ffffff; border: 1px solid var(--studio-hair); color: var(--studio-ink); border-radius: 10px; }
+html.nx-studio .nxFacBar .fbC { color: var(--studio-steel); }
 
-/* El oro identifica interacción; los estados siguen siendo semánticos. */
-html.nx-studio .bc3,
-html.nx-studio .bdis,
-html.nx-studio .danger,
-html.nx-studio [data-status="error"] {
-  --studio-semantic-lock: 1;
-}
-html.nx-studio .bc5,
-html.nx-studio .success,
-html.nx-studio [data-status="success"] {
-  --studio-semantic-lock: 1;
-}
+/* ── Login, splash y actualización ──────────────────────────────────────── */
+html.nx-studio #loginScreen { background: radial-gradient(circle at 50% 18%, rgba(201, 162, 39, .06), transparent 34%), var(--studio-black); }
+html.nx-studio #loginScreen .lx-st-glow { background: rgba(201, 162, 39, .16); }
+html.nx-studio #loginScreen .lfi:focus-within, html.nx-studio #loginScreen input:focus { border-color: var(--studio-gold) !important; box-shadow: 0 0 0 3px rgba(201, 162, 39, .2) !important; }
+html.nx-studio #loginScreen .lbtn { background: var(--studio-gold) !important; color: var(--studio-black) !important; border-color: var(--studio-gold) !important; }
+html.nx-studio #loginScreen .lbtn:hover { background: var(--studio-gold-light) !important; }
+html.nx-studio #loginScreen .lforgot:hover { color: var(--studio-gold-light); }
+html.nx-studio #loginScreen .lchk input[type="checkbox"]:checked { background: var(--studio-gold) !important; border-color: var(--studio-gold) !important; }
+html.nx-studio #nxSplash, html.nx-studio #nxUpd { background: var(--studio-black) !important; }
+html.nx-studio #nxSplash [class*="wave"], html.nx-studio #nxSplash [class*="ring"] { border-color: rgba(201, 162, 39, .42) !important; }
+html.nx-studio #nxSplash i, html.nx-studio #nxSplash svg { color: var(--studio-gold-light); }
 
-html.nx-studio ::selection {
-  background: rgba(201, 162, 39, .32);
-  color: #111111;
-}
-html.nx-studio ::-webkit-scrollbar-thumb {
-  background: rgba(128, 101, 21, .58);
-}
-html.nx-studio ::-webkit-scrollbar-thumb:hover {
-  background: var(--studio-gold-dark);
-}
+/* ── Detalles ───────────────────────────────────────────────────────────── */
+html.nx-studio ::selection { background: rgba(201, 162, 39, .32); color: var(--studio-ink); }
+html.nx-studio ::-webkit-scrollbar-thumb { background: rgba(128, 101, 21, .45); }
+html.nx-studio ::-webkit-scrollbar-thumb:hover { background: var(--studio-gold-dark); }
 
 @media print {
-  html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th {
-    background: #171717 !important;
-    color: #ffffff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+  html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th { background: var(--studio-charcoal) !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio *, html.nx-studio *::before, html.nx-studio *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html.nx-studio .nxFacBar, html.nx-studio #v-pos .nxTTop { background: var(--studio-white); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  html.nx-studio .nc, html.nx-studio .card, html.nx-studio .nxTKpi, html.nx-studio .nxTPanel, html.nx-studio .nxApp { border-color: var(--studio-graphite); }
+  html.nx-studio .nxFacBar, html.nx-studio #v-pos .nxTTop { background: var(--studio-white); backdrop-filter: none; -webkit-backdrop-filter: none; border-color: var(--studio-graphite); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html.nx-studio *,
-  html.nx-studio *::before,
-  html.nx-studio *::after {
-    scroll-behavior: auto !important;
+/* ── STUDIO §12: shell, tipografía sin mayúsculas forzadas, movimiento ─────── */
+/* El shell de Seguros imponía MAYÚSCULAS a botones, etiquetas y celdas; el POS de STUDIO usa caja normal
+   (solo las etiquetas de sección y cabeceras de tabla van en mayúsculas pequeñas). */
+html.nx-studio #v-pos, html.nx-studio #v-pos button, html.nx-studio #v-pos .btn, html.nx-studio #v-pos td, html.nx-studio #v-pos label,
+html.nx-studio #v-pos select, html.nx-studio #v-pos input, html.nx-studio #v-pos .badge, html.nx-studio .modal.nxPrForm, html.nx-studio .modal.nxPrForm button,
+html.nx-studio .modal.nxPrForm label, html.nx-studio .modal.nxPrForm td, html.nx-studio .nxFacBar button { text-transform: none; letter-spacing: -.005em; }
+html.nx-studio #v-pos .nxTSec, html.nx-studio #v-pos .nxTKpiL, html.nx-studio #v-pos .plab, html.nx-studio #v-pos thead th, html.nx-studio #v-pos .nxAppSecT,
+html.nx-studio #v-pos .nxTBiz small, html.nx-studio #v-pos .dtit { text-transform: uppercase; letter-spacing: .06em; }
+html.nx-studio body.org-tienda .ticker { display: none; }
+html.nx-studio #v-pos .nxTBiz { font-weight: 700; }
+html.nx-studio #v-pos .nxTNav { font-size: 13px; }
+/* Feedback al tocar (Apple §10): el botón responde en pointer-down. */
+html.nx-studio #v-pos .btn, html.nx-studio #v-pos .nxTNav, html.nx-studio #v-pos .nxApp, html.nx-studio #v-pos .vchip, html.nx-studio #v-pos .vitem,
+html.nx-studio #v-pos .nxTQuick, html.nx-studio #v-pos .nxTKpi, html.nx-studio .nxFacBar button, html.nx-studio #v-pos .opt, html.nx-studio #v-pos .stp button {
+  transition: transform 100ms ease-out, background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+html.nx-studio #v-pos .btn:active, html.nx-studio #v-pos .nxTNav:active, html.nx-studio #v-pos .nxApp:active, html.nx-studio #v-pos .vchip:active,
+html.nx-studio #v-pos .vitem:active, html.nx-studio #v-pos .nxTQuick:active, html.nx-studio .nxFacBar button:active, html.nx-studio #v-pos .opt:active,
+html.nx-studio #v-pos .facTot .g1:active, html.nx-studio #v-pos .facTot .g2:active { transform: scale(.97); }
+/* Entrada en cascada al cambiar de pestaña (22 ms por superficie; la aplica parches-pos-motion.js). */
+@keyframes nxStudioIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+html.nx-studio .nxStudioEnter { animation: nxStudioIn 220ms var(--studio-ease) both; }
+/* Cabecera móvil del POS: material negro translúcido (DESIGN.md §12.5). */
+@media (max-width: 860px) {
+  html.nx-studio #v-pos .nxTTop {
+    position: sticky; top: 0; z-index: 90;
+    margin: 0 -12px 14px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+    background: var(--studio-glass-dark); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(201, 162, 39, .22); color: var(--studio-white);
   }
+  html.nx-studio #v-pos .nxTBurger, html.nx-studio #v-pos .nxTSearchBtnM { width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .06); color: var(--studio-white); font-size: 18px; }
+  html.nx-studio #v-pos .nxTTopBiz { color: var(--studio-white); font-weight: 700; }
+  html.nx-studio #v-pos .nxTBackdrop { background: rgba(10, 10, 10, .42); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  html.nx-studio #v-pos .nxTSide::after { content: ""; position: absolute; top: 50%; right: 6px; width: 4px; height: 44px; border-radius: 999px; background: rgba(255, 254, 250, .35); transform: translateY(-50%); }
+}
+
+/* ── STUDIO §12.4: Factura en modo lista (mismo DOM y mismas funciones) ────── */
+html.nx-studio #v-pos .nx-invoice-pro .nxDocCard { max-width: none; border-radius: 12px; border: 1px solid var(--studio-line); box-shadow: var(--shadow-sm); background: #fff; }
+html.nx-studio #v-pos .nx-invoice-pro .nxDocPad { padding: 14px 16px 16px; }
+html.nx-studio #v-pos .nx-invoice-pro .dh { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0; padding: 0 0 12px; border-bottom: 1px solid var(--studio-line-2); }
+html.nx-studio #v-pos .nx-invoice-pro .dhl { flex: 0 0 auto; min-width: 150px; }
+html.nx-studio #v-pos .nx-invoice-pro .emp { font-size: 15px; font-weight: 700; letter-spacing: -.015em; }
+html.nx-studio #v-pos .nx-invoice-pro .empsub { font-size: 11.5px; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .dhr { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; flex: 1 1 auto; text-align: left; margin: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .dtit { font-size: 10.5px; font-weight: 600; color: var(--studio-steel); margin: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .dnumrow { margin: 0; display: flex; align-items: center; gap: 6px; }
+html.nx-studio #v-pos .nx-invoice-pro .dnumrow .ibtn { width: 34px; height: 36px; border-radius: 9px; border: 1px solid var(--studio-hair); background: #fff; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .npfx { font-size: 11px; font-weight: 600; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .dnum, html.nx-studio #v-pos .nx-invoice-pro .dnumin { font-family: var(--studio-mono); font-size: 13.5px; font-weight: 600; color: var(--studio-ink); height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--studio-hair); border-radius: 9px; background: var(--studio-canvas); width: 130px; text-align: left; }
+html.nx-studio #v-pos .nx-invoice-pro .dsel { display: flex; gap: 8px; margin: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .dsel select, html.nx-studio #v-pos .nx-invoice-pro .dsel input { height: 36px; border: 1px solid var(--studio-hair); border-radius: 9px; padding: 0 10px; font-size: 13px; font-weight: 600; background: #fff; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .rule { display: none; }
+html.nx-studio #v-pos .nx-invoice-pro .partes { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 16px; margin: 12px 0 10px; padding: 10px 12px; border: 1px solid var(--studio-line); border-radius: 10px; background: var(--studio-canvas); }
+html.nx-studio #v-pos .nx-invoice-pro .plab { font-size: 10.5px; color: var(--studio-steel); margin-bottom: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .pcli .pav { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--studio-hair); background: #fff; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .pnom { font-size: 13.5px; font-weight: 600; }
+html.nx-studio #v-pos .nx-invoice-pro .pdet { font-size: 12px; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .seg button { height: 32px; border-radius: 8px; font-size: 12.5px; font-weight: 600; }
+html.nx-studio #v-pos .nx-invoice-pro .seg button.on { background: var(--studio-black); color: var(--studio-white); border-color: var(--studio-black); }
+html.nx-studio #v-pos .nx-invoice-pro .credrow { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--studio-steel); margin: 0; padding-top: 8px; border-top: 1px solid var(--studio-line-2); }
+html.nx-studio #v-pos .nx-invoice-pro .scan { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; height: 44px; margin: 0 0 12px; padding: 0 14px; border: 1px solid var(--studio-hair); border-radius: 10px; background: #fff; color: var(--studio-steel); font-size: 13.5px; text-align: left; }
+html.nx-studio #v-pos .nx-invoice-pro .scan:hover { border-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .scan span { flex: 1 1 auto; }
+html.nx-studio #v-pos .nx-invoice-pro .scan kbd { font-family: var(--studio-mono); font-size: 10.5px; border: 1px solid var(--studio-hair); border-radius: 5px; padding: 1px 5px; background: transparent; color: var(--studio-steel); }
+html.nx-studio #v-pos #facTabla { padding: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl { width: 100%; border: 1px solid var(--studio-line); border-radius: 10px; overflow: hidden; background: #fff; }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th { background: var(--studio-canvas-2); color: var(--studio-steel); font-size: 10.5px; font-weight: 600; padding: 8px 12px; border-bottom: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl td { padding: 9px 12px; border-top: 1px solid var(--studio-line-2); vertical-align: middle; font-size: 13px; }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl tbody tr:hover td { background: #fbf7e9; }
+html.nx-studio #v-pos .nx-invoice-pro .cN { font-family: var(--studio-mono); font-size: 12px; color: var(--studio-mute); }
+html.nx-studio #v-pos .nx-invoice-pro .dnm { font-size: 13.5px; font-weight: 600; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .dsub { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .dsub .cod, html.nx-studio #v-pos .nx-invoice-pro .dsub .imei, html.nx-studio #v-pos .nx-invoice-pro .dsub .gar { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: var(--studio-canvas-2); color: var(--studio-steel); border: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .dsub .imei { background: var(--studio-gold-soft); color: var(--studio-gold-dark); cursor: pointer; }
+html.nx-studio #v-pos .nx-invoice-pro .dsub .gar { background: #e8f5ec; color: #15803d; }
+html.nx-studio #v-pos .nx-invoice-pro .serlst { font-family: var(--studio-mono); font-size: 11px; color: var(--studio-mute); margin-top: 3px; }
+html.nx-studio #v-pos .nx-invoice-pro input.pin { height: 34px; width: 100%; box-sizing: border-box; border: 1px solid var(--studio-hair); border-radius: 8px; padding: 0 10px; font-family: var(--studio-mono); font-size: 13px; font-weight: 600; text-align: right; background: #fff; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .stp { display: inline-flex; align-items: center; gap: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .stp button { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--studio-hair); background: #fff; color: var(--studio-ink); font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+html.nx-studio #v-pos .nx-invoice-pro .stp-in { width: 40px; height: 28px; box-sizing: border-box; border: 1px solid var(--studio-hair); border-radius: 7px; text-align: center; font-family: var(--studio-mono); font-size: 13px; font-weight: 600; background: #fff; }
+html.nx-studio #v-pos .nx-invoice-pro .dsc { display: inline-flex; align-items: center; gap: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .dsc input { width: 58px; height: 28px; box-sizing: border-box; border: 1px solid var(--studio-hair); border-radius: 7px; text-align: right; padding: 0 8px; font-family: var(--studio-mono); font-size: 12.5px; background: #fff; }
+html.nx-studio #v-pos .nx-invoice-pro .dsc button { height: 28px; padding: 0 7px; border-radius: 7px; border: 1px solid var(--studio-hair); background: var(--studio-canvas); font-size: 11px; font-weight: 600; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro td.imp { font-family: var(--studio-mono); font-size: 13.5px; font-weight: 600; color: var(--studio-ink); text-align: right; font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .del { width: 28px; height: 28px; border-radius: 7px; border: 1px solid rgba(0, 0, 0, .1); background: #fff; color: var(--studio-steel); display: inline-flex; align-items: center; justify-content: center; }
+html.nx-studio #v-pos .nx-invoice-pro .del:hover { color: #b91c1c; border-color: #fbe9e9; background: #fbe9e9; }
+html.nx-studio #v-pos .nx-invoice-pro .vacio { padding: 26px 12px; text-align: center; color: var(--studio-mute); font-size: 13px; }
+html.nx-studio #v-pos .nx-invoice-pro .cnt { font-size: 12px; color: var(--studio-mute); padding: 8px 2px 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facPie { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; margin-top: 14px; }
+html.nx-studio #v-pos .nx-invoice-pro .facOtras { border: 1px solid var(--studio-line); border-radius: 12px; padding: 14px 16px; background: #fff; }
+html.nx-studio #v-pos .nx-invoice-pro .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+html.nx-studio #v-pos .nx-invoice-pro .opt { height: 34px; padding: 0 11px; border-radius: 9px; border: 1px solid rgba(0, 0, 0, .1); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--studio-ink); display: inline-flex; align-items: center; gap: 7px; }
+html.nx-studio #v-pos .nx-invoice-pro .opt:hover { border-color: var(--studio-gold); background: #fff9e8; }
+html.nx-studio #v-pos .nx-invoice-pro .nx-inv-notedet summary { font-size: 12.5px; font-weight: 600; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .facTot { border: 1px solid var(--studio-line); border-radius: 12px; padding: 14px 16px; background: #fff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .tr { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--studio-steel); margin: 0; padding: 0; border: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .tr b { font-family: var(--studio-mono); font-size: 13.5px; font-weight: 600; color: var(--studio-ink); font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .tr.big { padding-top: 8px; border-top: 1px solid var(--studio-line); color: var(--studio-ink); font-size: 15px; font-weight: 600; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .tr.big b { font-size: 26px; letter-spacing: -.02em; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .acc { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; margin-top: 6px; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .acc:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .g2 { height: 44px; border-radius: 10px; border: 1px solid var(--studio-hair); background: #fff; color: var(--studio-ink); display: inline-flex; align-items: center; justify-content: center; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .g1 { height: 44px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facTot .cancel { border: 0; background: transparent; color: var(--studio-steel); font-size: 12.5px; font-weight: 600; padding: 4px 0 0; margin: 0; box-shadow: none; }
+html.nx-studio #v-pos .nx-invoice-pro .keys { padding: 8px 2px 0; font-size: 12px; color: var(--studio-mute); }
+html.nx-studio #v-pos .nx-invoice-pro .keys b { color: var(--studio-ink); }
+/* Barra fija: total junto al botón Cobrar (lo inserta parches-pos-motion.js). */
+html.nx-studio .nxFacBar .fbT { flex: 1 1 auto; display: flex; align-items: baseline; gap: 8px; padding-left: 6px; min-width: 0; }
+html.nx-studio .nxFacBar .fbT small { font-size: 12px; font-weight: 500; color: var(--studio-steel); }
+html.nx-studio .nxFacBar .fbT b { font-family: var(--studio-mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; color: var(--studio-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.nx-studio .nxFacBar .fbP { min-width: 180px; flex: 0 0 auto; }
+@media (max-width: 760px) {
+  html.nx-studio #v-pos .nx-invoice-pro .facPie { grid-template-columns: minmax(0, 1fr); }
+  html.nx-studio #v-pos .nx-invoice-pro .partes { grid-template-columns: minmax(0, 1fr); }
+  html.nx-studio #v-pos .nx-invoice-pro .dhr { width: 100%; }
+  html.nx-studio #v-pos .nx-invoice-pro .dnum, html.nx-studio #v-pos .nx-invoice-pro .dnumin { width: auto; flex: 1; }
+  html.nx-studio #v-pos .nx-invoice-pro .docTbl td::before { color: var(--studio-mute); font-weight: 600; }
+  html.nx-studio .nxFacBar .fbT b { font-size: 17px; }
+  html.nx-studio .nxFacBar .fbP { min-width: 0; }
+}
+
+/* ── Ajustes tras la primera ronda de capturas (22-sep) ─────────────────── */
+html.nx-studio .nxPf { --pf-blue: var(--studio-gold-dark); --pf-blue-d: var(--studio-gold-dark); --pf-blue-l: #fff8df; --pf-pill-bg: #ffffff; --pf-pill-accent: var(--studio-white); }
+html.nx-studio #v-pos input::placeholder, html.nx-studio .modal.nxPrForm input::placeholder { text-transform: none; letter-spacing: -.005em; color: var(--studio-mute); }
+html.nx-studio #v-pos .vthumb { background: var(--studio-canvas); color: var(--studio-ink); }
+html.nx-studio #v-pos .vimeib { background: var(--studio-gold-soft); color: var(--studio-gold-dark); }
+html.nx-studio #v-pos .vchip { background: #ffffff; border: 1px solid var(--studio-hair); box-shadow: none; color: var(--studio-ink); font-size: 12.5px; font-weight: 600; }
+html.nx-studio #v-pos .vchip.on { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); box-shadow: none; font-weight: 600; }
+html.nx-studio #v-pos .vprecio { font-family: var(--studio-mono); font-variant-numeric: tabular-nums; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .scan, html.nx-studio #v-pos .nx-invoice-pro .scan span { color: var(--studio-steel); font-weight: 500; }
+html.nx-studio #v-pos .nx-invoice-pro .scan i { color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .docTbl td.cN, html.nx-studio #v-pos .nx-invoice-pro .docTbl .cN { color: var(--studio-mute) !important; }
+html.nx-studio #v-pos .nx-invoice-pro .dsel { flex-wrap: wrap; }
+html.nx-studio #v-pos .nx-invoice-pro .seg { background: var(--studio-canvas-2); border-radius: 9px; padding: 3px; box-shadow: none; }
+html.nx-studio #v-pos .nx-invoice-pro .seg button { box-shadow: none; }
+@media (min-width: 861px) {
+  html.nx-studio .nxFacBar { left: 288px; right: 24px; width: auto; transform: none; border-radius: 14px 14px 0 0; }
+}
+@media (max-width: 760px) {
+  html.nx-studio .nxFacBar { gap: 8px; }
+  html.nx-studio .nxFacBar .fbT { flex: 1 1 0; min-width: 0; overflow: hidden; gap: 6px; padding-left: 2px; }
+  html.nx-studio .nxFacBar .fbT b { font-size: 16px; }
+  html.nx-studio .nxFacBar .fbP { flex: 0 0 auto; width: auto; min-width: 0; padding: 0 16px; }
+  html.nx-studio #v-pos .nx-invoice-pro .dsel select, html.nx-studio #v-pos .nx-invoice-pro .dsel input { flex: 1 1 140px; min-width: 0; }
 }

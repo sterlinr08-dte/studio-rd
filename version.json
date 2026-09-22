@@ -1,7 +1,17 @@
 {
-  "version": "58.87",
+  "version": "58.88",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.88",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Línea gráfica STUDIO a código: oro plano sin degradados, tipografía San Francisco, iconos outline, chips negros.",
+        "Movimiento fluido: respuesta al tocar, entrada en cascada al cambiar de pestaña y menú móvil que sigue al dedo con resorte.",
+        "Factura en modo lista: cabecera compacta, lista densa de artículos, totales a la derecha y barra fija translúcida con el total.",
+        "Corrección: el dock de la barra lateral dejaba el contenido del POS debajo de la barra; ahora es una columna fija junto al contenido."
+      ]
+    },
     {
       "version": "58.87",
       "fecha": "2026-09-22",

@@ -269,25 +269,37 @@ html.nx-studio .sb-av {
   box-shadow: 0 6px 15px rgba(201, 162, 39, .2);
 }
 
-/* POS */
+/* POS — dock como columna pegajosa dentro de un shell flex (fix 2026-09-22: con position:relative y sin
+   flex el contenido quedaba debajo de la barra). */
 html.nx-studio body #v-pos .nxTShell {
+  display: flex;
+  align-items: stretch;
   gap: 12px;
   padding: 12px 12px 12px 0;
   background: var(--studio-canvas);
 }
-
 html.nx-studio body #v-pos .nxTSide {
   isolation: isolate;
-  position: relative;
+  position: sticky;
+  top: 12px;
+  align-self: flex-start;
+  height: calc(100dvh - 24px);
   width: 240px;
+  flex: 0 0 240px;
   margin-left: 12px;
   border: 1px solid rgba(201, 162, 39, .22);
   border-radius: 24px;
   background: var(--studio-black);
   box-shadow: 0 22px 54px rgba(10, 10, 10, .18);
   overflow: hidden;
+  transition: none;
 }
-
+html.nx-studio body #v-pos .nxTMain {
+  margin-left: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 14px 16px 96px;
+}
 html.nx-studio body #v-pos .nxTSide::before {
   content: "";
   position: absolute;
@@ -414,15 +426,25 @@ html.nx-studio body #v-pos .nxTNav.active i {
   }
 
   html.nx-studio body #v-pos .nxTShell {
+    display: block;
     gap: 0;
     padding: 0;
   }
-
   html.nx-studio body #v-pos .nxTSide {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: auto;
     width: min(300px, calc(100vw - 20px));
     margin: 10px 0 10px 10px;
     border-radius: 24px;
+    transform: translateX(calc(-100% - 12px));
+    touch-action: pan-y;
+    will-change: transform;
   }
+  html.nx-studio body #v-pos .nxTSide.open { transform: translateX(0); }
+  html.nx-studio body #v-pos .nxTMain { padding: 0 12px 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

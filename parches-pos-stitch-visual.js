@@ -562,8 +562,8 @@
   --nx-line:rgba(148,163,184,.12);--nx-line-2:rgba(148,163,184,.18);
   --nx-blue:#2563eb;--nx-blue-d:#1d4ed8;--nx-blue-l:#eff6ff;--nx-blue-b:#bfdbfe;
   --nx-r:16px;--nx-r-md:12px;--nx-r-sm:10px;
-  --nx-font:'Geist','Segoe UI',system-ui,-apple-system,sans-serif;
-  --nx-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --nx-font:-apple-system,'SF Pro Text','SF Pro Display',system-ui,Inter,'Helvetica Neue',sans-serif;
+  --nx-mono:ui-monospace,'SF Mono',Menlo,'JetBrains Mono',monospace;
   --mono:var(--nx-mono);
 }
 /* Tipografía: una sola familia; montos y referencias en mono tabular. */
@@ -630,7 +630,7 @@ body.org-tienda .fbP:active,#v-pos .fbP:active,.fbP:active{background:var(--nx-b
     function ensureFonts(){
       if(document.getElementById('nxLineaUnicaFonts'))return;
       var l=document.createElement('link');l.id='nxLineaUnicaFonts';l.rel='stylesheet';
-      l.href='https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=optional';
+      l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=optional';
       (document.head||document.documentElement).appendChild(l);
     }
     try{

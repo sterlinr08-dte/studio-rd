@@ -1,7 +1,14 @@
 {
-  "version": "58.89",
+  "version": "58.90",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.90",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Relieve visual: tarjetas con sombra y brillo, iconos con caja visible, oro con degradado suave y sombra, campos con hueco, menú lateral con profundidad. Mismos colores negro, blanco y oro."
+      ]
+    },
     {
       "version": "58.89",
       "fecha": "2026-09-22",

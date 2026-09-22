@@ -15,19 +15,19 @@ html.nx-studio {
   --studio-charcoal: #171717;
   --studio-graphite: #262626;
   --studio-white: #fffefa;
-  --studio-canvas: #f7f5ef;
+  --studio-canvas: #f3f0e8;
   --studio-canvas-2: #f0ede4;
   --studio-ink: #111111;
-  --studio-steel: #686862;
-  --studio-mute: #9a968c;
+  --studio-steel: #5b5951;
+  --studio-mute: #85817a;
   --studio-gold: #c9a227;
   --studio-gold-light: #e3c45c;
   --studio-gold-dark: #806515;
   --studio-gold-soft: rgba(201, 162, 39, .16);
   --studio-gold-ring: rgba(201, 162, 39, .28);
-  --studio-line: rgba(128, 101, 21, .14);
+  --studio-line: rgba(90, 72, 20, .18);
   --studio-line-2: rgba(128, 101, 21, .09);
-  --studio-hair: rgba(0, 0, 0, .12);
+  --studio-hair: rgba(0, 0, 0, .16);
   --studio-font: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, Inter, "Helvetica Neue", sans-serif;
   --studio-mono: ui-monospace, "SF Mono", Menlo, "JetBrains Mono", monospace;
   --studio-ease: cubic-bezier(.22, 1, .36, 1);
@@ -54,9 +54,9 @@ html.nx-studio {
   --border: #ddd8ca;
   --border-light: #ebe7dc;
   --gradient-primary: var(--studio-gold);
-  --shadow-sm: 0 1px 2px rgba(10, 10, 10, .04);
+  --shadow-sm: 0 1px 2px rgba(10, 10, 10, .07), 0 8px 20px -6px rgba(10, 10, 10, .14);
   --shadow: 0 5px 16px rgba(10, 10, 10, .08);
-  --shadow-md: 0 10px 28px rgba(10, 10, 10, .12);
+  --shadow-md: 0 2px 4px rgba(10, 10, 10, .06), 0 16px 36px -10px rgba(10, 10, 10, .20);
 }
 
 /* Tokens de la capa Stitch (parches-pos-stitch-visual.js): se redefinen en los mismos ámbitos. */
@@ -174,7 +174,7 @@ html.nx-studio #v-pos .nxTLogout { border-color: rgba(255, 255, 255, .12); color
 html.nx-studio #v-pos .nxTTop { background: var(--studio-glass); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid var(--studio-line); box-shadow: none; }
 html.nx-studio #v-pos .nxTKpiV { color: var(--studio-ink); font-family: var(--studio-mono); }
 html.nx-studio #v-pos .nxTKpi, html.nx-studio #v-pos .nxTPanel, html.nx-studio #v-pos .nxApp { border-radius: 12px; }
-html.nx-studio #v-pos .nxAppIco { background: var(--studio-canvas) !important; color: var(--studio-black) !important; }
+html.nx-studio #v-pos .nxAppIco { background: linear-gradient(180deg, #fbf9f3, #ebe7da) !important; color: var(--studio-black) !important; border: 1px solid rgba(10, 10, 10, .10); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(10, 10, 10, .08); }
 html.nx-studio #v-pos .nxFP-hero { background: var(--studio-black); border-color: rgba(201, 162, 39, .35); color: var(--studio-white); }
 html.nx-studio #v-pos .nxFP-hero * { color: var(--studio-white); }
 html.nx-studio #v-pos .nxFP-hero .primary { color: var(--studio-black); }
@@ -380,4 +380,116 @@ html.nx-studio #v-pos .nx-invoice-pro .seg button { box-shadow: none; }
   html.nx-studio .nxFacBar .fbT b { font-size: 16px; }
   html.nx-studio .nxFacBar .fbP { flex: 0 0 auto; width: auto; min-width: 0; padding: 0 16px; }
   html.nx-studio #v-pos .nx-invoice-pro .dsel select, html.nx-studio #v-pos .nx-invoice-pro .dsel input { flex: 1 1 140px; min-width: 0; }
+}
+
+/* ── STUDIO relieve (22-sep-2026) — pedido del dueño: «que no quede plano o no se vea» ──
+   Profundidad sutil tipo Apple: superficies con sombra en dos capas y brillo superior, iconos con
+   fondo/borde visibles, oro con degradado suave y sombra, controles con hueco interior. Nada de
+   colores nuevos: sigue siendo negro, blanco cálido y oro. */
+html.nx-studio {
+  --studio-relieve: inset 0 1px 0 rgba(255, 255, 255, .9);
+  --studio-gold-grad: linear-gradient(180deg, #dcb63e 0%, var(--studio-gold) 55%, #b8921f 100%);
+  --studio-gold-grad-hover: linear-gradient(180deg, #e3c45c 0%, #d0aa2d 60%, #b8921f 100%);
+  --studio-gold-grad-active: linear-gradient(180deg, #b8921f 0%, var(--studio-gold-dark) 100%);
+  --studio-gold-glow: 0 8px 18px -6px rgba(201, 162, 39, .55);
+}
+/* Superficies: blanco con brillo superior y sombra suave; se levantan al pasar el ratón. */
+html.nx-studio .nc, html.nx-studio .card, html.nx-studio .kpitile, html.nx-studio .nxTKpi, html.nx-studio .nxTPanel,
+html.nx-studio .nxMeCard, html.nx-studio .nxApp, html.nx-studio .modal-box, html.nx-studio .tw,
+html.nx-studio #v-pos .vlist, html.nx-studio #v-pos .nxPosCart, html.nx-studio #v-pos .nx-invoice-pro .nxDocCard,
+html.nx-studio #v-pos .nx-invoice-pro .facTot, html.nx-studio #v-pos .nx-invoice-pro .facOtras, html.nx-studio #v-pos .nx-invoice-pro .docTbl {
+  background-color: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fdfcf8 100%);
+  box-shadow: var(--shadow-sm), var(--studio-relieve);
+}
+html.nx-studio .nc:hover, html.nx-studio .card:hover, html.nx-studio .nxMeCard:hover, html.nx-studio .nxApp:hover {
+  border-color: rgba(201, 162, 39, .6);
+  box-shadow: var(--shadow-md), var(--studio-relieve);
+}
+html.nx-studio .modal-box, html.nx-studio .modal .modal-box { box-shadow: var(--shadow-md), var(--studio-relieve); }
+html.nx-studio #v-pos .nxApp:hover .nxAppIco {
+  background: var(--studio-gold-grad) !important;
+  border-color: #a8851b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), var(--studio-gold-glow);
+}
+/* KPI: acento dorado fino arriba para que cada tarjeta se lea como tal. */
+html.nx-studio #v-pos .nxTKpi { position: relative; overflow: hidden; }
+html.nx-studio #v-pos .nxTKpi::before { content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: linear-gradient(90deg, var(--studio-gold), rgba(201, 162, 39, .15)); pointer-events: none; }
+/* Iconos de lista y de KPI: caja visible con borde y brillo. */
+html.nx-studio #v-pos .vthumb, html.nx-studio #v-pos .nxFP-qico, html.nx-studio #v-pos .nxFP-ref, html.nx-studio #v-pos .nxFP-emptyIco, html.nx-studio #v-pos .nxFacProductIcon {
+  background: linear-gradient(180deg, #fbf9f3, #ebe7da);
+  border: 1px solid rgba(10, 10, 10, .10);
+  color: var(--studio-black);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(10, 10, 10, .08);
+}
+html.nx-studio #v-pos .nxTKpiL i { color: var(--studio-gold-dark) !important; }
+/* Oro con relieve: degradado suave, brillo arriba, sombra dorada. */
+html.nx-studio .btn.bc1, html.nx-studio .bxl, html.nx-studio .btn.primary, html.nx-studio #v-pos .nxTQuick, html.nx-studio .nxPpkElegir,
+html.nx-studio #v-pos .facTot .g1, html.nx-studio #v-pos .fbP, html.nx-studio body.org-tienda .fbP, html.nx-studio .fbP {
+  background: var(--studio-gold-grad);
+  border-color: #a8851b;
+  color: var(--studio-black);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(128, 101, 21, .3), var(--studio-gold-glow);
+}
+html.nx-studio .btn.bc1:hover, html.nx-studio .bxl:hover, html.nx-studio .btn.primary:hover, html.nx-studio #v-pos .nxTQuick:hover, html.nx-studio .nxPpkElegir:hover,
+html.nx-studio #v-pos .facTot .g1:hover, html.nx-studio .fbP:hover {
+  background: var(--studio-gold-grad-hover);
+  border-color: #a8851b;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 2px 4px rgba(128, 101, 21, .3), 0 12px 24px -8px rgba(201, 162, 39, .7);
+}
+html.nx-studio .btn.bc1:active, html.nx-studio .fbP:active, html.nx-studio #v-pos .facTot .g1:active, html.nx-studio #v-pos .nxTQuick:active, html.nx-studio .nxPpkElegir:active {
+  background: var(--studio-gold-grad-active);
+  color: var(--studio-white);
+  text-shadow: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .28);
+}
+html.nx-studio .btn:disabled, html.nx-studio .fbP:disabled { box-shadow: none; text-shadow: none; }
+/* Botones secundarios y chips: cuerpo blanco con sombra corta. */
+html.nx-studio #v-pos .btn:not(.bc1):not(.primary), html.nx-studio .nxFacBar .fbC, html.nx-studio .nxFacBar .fbG,
+html.nx-studio #v-pos .nx-invoice-pro .facTot .g2, html.nx-studio #v-pos .nx-invoice-pro .opt, html.nx-studio #v-pos .nx-invoice-pro .stp button {
+  background-image: linear-gradient(180deg, #ffffff, #f7f5ef);
+  box-shadow: 0 1px 2px rgba(10, 10, 10, .10), inset 0 1px 0 #fff;
+}
+html.nx-studio #v-pos .vchip, html.nx-studio #v-pos .nxPpkChip { box-shadow: 0 1px 2px rgba(10, 10, 10, .10), inset 0 1px 0 #fff; background-image: linear-gradient(180deg, #ffffff, #f9f7f1); }
+html.nx-studio #v-pos .vchip.on, html.nx-studio #v-pos .nxPpkChip.on, html.nx-studio .modal.nxPrForm .nxPpkChip.on {
+  background: linear-gradient(180deg, #2a2a2a, var(--studio-black));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 6px 14px -4px rgba(10, 10, 10, .55);
+}
+/* Campos: hueco interior para que se distingan del fondo. */
+html.nx-studio #v-pos input[type="text"], html.nx-studio #v-pos input[type="number"], html.nx-studio #v-pos input[type="date"], html.nx-studio #v-pos input[type="search"],
+html.nx-studio #v-pos input:not([type]), html.nx-studio #v-pos select, html.nx-studio #v-pos textarea, html.nx-studio #v-pos .nx-invoice-pro .scan,
+html.nx-studio .modal.nxPrForm input, html.nx-studio .modal.nxPrForm select {
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(10, 10, 10, .07);
+}
+html.nx-studio #v-pos input:focus, html.nx-studio #v-pos select:focus, html.nx-studio #v-pos textarea:focus, html.nx-studio .modal.nxPrForm input:focus {
+  box-shadow: inset 0 1px 2px rgba(10, 10, 10, .05), 0 0 0 3px var(--studio-gold-ring);
+}
+/* Buscadores compuestos: el hueco va en la píldora, no en el campo interior. */
+html.nx-studio #v-pos .nxBusca, html.nx-studio #v-pos .nxLupaBox, html.nx-studio #v-pos .nxFacAdd {
+  background-color: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(10, 10, 10, .07);
+}
+html.nx-studio #v-pos .nxBusca input, html.nx-studio #v-pos .nxLupaBox input, html.nx-studio #v-pos .nxFacAdd input,
+html.nx-studio #v-pos .nx-invoice-pro .scan input, html.nx-studio #v-pos .nxFacDscBox input {
+  background-color: transparent;
+  box-shadow: none;
+}
+html.nx-studio #v-pos .nxBusca input:focus, html.nx-studio #v-pos .nxLupaBox input:focus, html.nx-studio #v-pos .nxFacAdd input:focus { box-shadow: none; }
+html.nx-studio #v-pos .nxBusca:focus-within, html.nx-studio #v-pos .nxLupaBox:focus-within, html.nx-studio #v-pos .nxFacAdd:focus-within { box-shadow: inset 0 1px 2px rgba(10, 10, 10, .05), 0 0 0 3px var(--studio-gold-ring); border-color: var(--studio-gold); }
+/* Filas de producto: separación clara y resalte al pasar. */
+html.nx-studio #v-pos .vitem { border-top: 1px solid var(--studio-line-2); }
+html.nx-studio #v-pos .vitem:first-child { border-top: 0; }
+html.nx-studio #v-pos .vitem:hover { background: #fbf8ee; }
+/* Cabecera móvil: sombra hacia el contenido. */
+html.nx-studio #v-pos .nxTTop { box-shadow: 0 8px 20px -10px rgba(10, 10, 10, .45); }
+html.nx-studio #v-pos .nxTBurger, html.nx-studio #v-pos .nxTSearchBtnM { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 1px 2px rgba(0, 0, 0, .35); }
+/* Barra inferior de Factura: más presencia. */
+html.nx-studio .nxFacBar { box-shadow: 0 -10px 30px rgba(10, 10, 10, .12); }
+@media (prefers-contrast: more) {
+  html.nx-studio .nc, html.nx-studio .card, html.nx-studio .nxTKpi, html.nx-studio .nxTPanel, html.nx-studio .nxApp { border-color: var(--studio-graphite); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  html.nx-studio #v-pos .nxTTop { box-shadow: none; }
 }

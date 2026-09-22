@@ -233,3 +233,23 @@ refinement of §12.1 and §12.6; color, typography, icon and motion rules from �
 - **Implementation:** `studio-sidebar-dock.css`, loaded after `studio-brand-theme.css`; presentation only, scoped to
   `html.nx-studio`, no new business logic, no new priority overrides and reduced-motion/transparency supported.
 
+
+## 14. Relief pass — owner decision 2026-09-22 («que no quede plano o no se vea»)
+
+After seeing 58.88 the owner asked for the UI not to look flat and for elements to be clearly visible. This section
+supersedes the "flat, no gradients" wording of §12.7, §12.8 and §13. Palette (§2), typography (§3), icons (§9) and
+motion (§10) do not change; only depth and contrast do.
+
+- **Surfaces:** white with a 1px top highlight and a two-layer shadow (`--shadow-sm`: 1px contact + 8px/20px ambient
+  at 14%); hover lifts to `--shadow-md`. Canvas darkened one step to `#F3F0E8` so white cards read as cards.
+- **Icon tiles** (app launcher, product rows, KPI/label icons, nav): visible tile with a warm `#FBF9F3→#EBE7DA`
+  gradient, 1px `rgba(10,10,10,.10)` border and inner highlight. App tiles turn gold on hover.
+- **Gold:** soft vertical gradient `#DCB63E → #C9A227 → #B8921F`, top highlight, gold ambient shadow; hover brighter,
+  `:active` darker with an inset shadow. Still one accent; still black text.
+- **KPI cards:** 2px gold hairline fading to the right at the top edge.
+- **Controls:** inputs/selects with a 1px inset shadow; composite search pills carry the inset on the pill, the inner
+  field stays transparent. Chips white with a short shadow; selected chip black with a soft drop shadow.
+- **Sidebar dock:** vertical `#1D1D1D → #0A0A0A` gradient, inner top/left highlight, deeper outer shadow; icon tiles
+  and active row with gold gradient tile and gold glow.
+- **Mute/steel text** darkened (`#85817A`, `#5B5951`) and hairlines raised to 16–18% so secondary content is legible.
+- `prefers-contrast: more` keeps graphite borders; `prefers-reduced-transparency` removes the mobile header shadow.

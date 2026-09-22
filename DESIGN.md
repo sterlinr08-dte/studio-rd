@@ -127,3 +127,91 @@ Source: WWDC *Designing Fluid Interfaces* and *Principles of Great Design*, tran
 - Stitch project **STUDIO RD · POS (negro, blanco y oro)**: `projects/3084779069905725803`.
 - Design system asset `assets/11862383679991154944` (v2) generated from this file: Material-style color roles (primary #755B00 on light surfaces, primary-container #C9A227, surface #FBF9F3, outline #7F7663), Geist typography scale, spacing scale. New screens are generated with this asset; approved screens are translated to `studio-brand-theme.css`, never copied as generated HTML.
 - The previous NEXUS PRO project *POS Dominicana* (`projects/1133794898386011572`) is not used for STUDIO.
+
+## 12. Reference screens (spec for implementation, 2026-09-22) — read this before touching the POS UI
+Mockup: Claude artifact "STUDIO Línea gráfica" (6 boards). The text below is the source of truth for anyone who
+cannot open it. Every screen uses §2 colors, §3 SF Pro, §9 outline icons and §10 fluid motion.
+
+### 12.1 Shell (desktop 1440)
+- Sidebar 240px, Studio Black `#0A0A0A`, right edge 1px `rgba(201,162,39,.22)`. Top: STUDIO wordmark (ivory
+  `logo-studio.png`) + "PUNTO DE VENTA" 10.5px, tracking .14em, 50% ivory. Then "Buscar todo · Ctrl K" button
+  (rgba white .05 fill, .10 border, 9px radius). Sections labelled 10px uppercase at 38% ivory: Principal
+  (Inicio, Avisos, Vender, Factura, Prefactura, Reparaciones), Inventario (Inventario, Kardex, Compras,
+  Cotizaciones), Personas y CRM (Entidades, CRM, Clientes), Finanzas (Caja, Cuotas, Apartados, Historial),
+  Sistema (Ajustes). Items 13px, 7px 10px padding, 8px radius, 66% ivory; active item: `rgba(201,162,39,.16)`
+  fill, `inset 2px 0 0 #C9A227`, text Light Gold `#E3C45C`, weight 600. Footer: gold avatar circle (initial in
+  black), name + role, "Cerrar sesión" outlined button.
+- Workspace: Warm Canvas `#F7F5EF`, padding 26px 28px. Page header: greeting 28px/700/-.022em + 13px graphite
+  sub-line; right side: secondary white button "Abrir caja" + primary gold button "Vender".
+- Cards: white, 12px radius, 1px `rgba(128,101,21,.14)`, shadow `0 1px 2px rgba(10,10,10,.04)`.
+
+### 12.2 Inicio
+- 8 KPI cards in 4 columns: 16px icon + 12px graphite label, value 24px mono 600, 12px sub-line (green ▲ for
+  positive trend, amber for "Revisar productos"). Ventas de hoy, Caja, Utilidad, Equipos pendientes, Garantías,
+  Inventario crítico, Compras pendientes, Clientes esperando.
+- Below, grid 1.35fr / 1fr: "Ventas de hoy" table (Factura mono · Cliente · Artículo · Pago chip · Total mono
+  right; header 11px uppercase; rows 13px; "Fiado" chip amber, other payments neutral `#F0EDE4`) and "Accesos
+  rápidos" (10 white tiles in 5 columns: 36px Warm-Canvas square with 18px outline icon + 13px label).
+
+### 12.3 Vender
+- Grid: fluid left column + 380px cart. Left: white card with "No. factura" (read-only mono input on Warm Canvas)
+  and "Cliente" (40px selector button with chevron); 44px search field (gold border + 3px gold ring when focused,
+  "/" shortcut chip); category chips as pills (selected = black fill, ivory text; never gold); product grid 4
+  columns (72px Warm-Canvas image area with box icon, name 13px 600, price mono 14px, stock 11px graphite, low
+  stock amber 600).
+- Cart: title + "N artículos"; lines with name, "ITBIS incluido", −/+ 26px stepper, mono total; footer on Warm
+  Canvas: Subtotal, ITBIS 18%, Total 24px mono; 48px gold "Cobrar RD$ …" full width; two white buttons
+  "Prefactura" / "Cotizar".
+
+### 12.4 Factura — LIST MODE (owner request)
+Replace the document-shaped invoice with a dense list. Same actions and the same functions as today
+(`nxFacAdd`, `nxFacPrecio`, `nxFacQtyStep`, `nxFacDesc`, `nxFacDescTipo`, `nxPosDel`, `nxFacFacturar`,
+`nxPrefGuardar`, `nxFacCancelar`, `nxCotGuardarDesdeCart`, `facBarraSync`); zero new business logic.
+- Header strip (one white card, one row): "Factura" 15px/700 + company line 11.5px (STUDIO · RNC); "Nº" with the
+  history lupa button + read-only mono number; "Comprobante" selector (NCF type); "Fecha" date input; "Almacén"
+  selector; "Cliente" selector filling the rest (name · cédula · status such as "Cliente frecuente · sin deuda").
+  All controls 36px, 9px radius.
+- One 44px search/scan field: lupa, placeholder "Buscar artículo por nombre, código o serial, o escanéalo…",
+  scanner hint, "F2" chip.
+- Items list (white card): header row 10.5px uppercase graphite on `#F0EDE4`; columns
+  `34px | 1fr | 104px | 112px | 100px | 110px | 32px` = # (mono, muted) · Descripción (13.5px 600 + chips: code
+  neutral, IMEI `n/n` gold-soft, "Garantía 12 meses" green) · Precio (34px editable mono input, right aligned) ·
+  Cant. (28px −/+ buttons + 36px mono input) · Desc. (58px input + "%"/"RD$" toggle) · Importe (mono 600, right)
+  · quitar (28px outlined "−" button). Rows 9px 12px padding, 1px `rgba(128,101,21,.09)` dividers. Footer line:
+  "4 artículos · 6 unidades" + "F2 Buscar · F10 Limpiar".
+- Bottom grid 1fr / 340px: left card "Otras acciones" (Guardar cotización, Prefacturas, Historial, Limpiar
+  carrito as 34px outlined buttons; "Agregar nota o condiciones" ghost button); right card totals: Subtotal,
+  Descuento (red, negative), ITBIS (18 %), Total 26px mono with top rule; then 44px row `44px | 1fr` = print icon
+  button + gold "Cobrar"; "Cancelar factura" ghost below.
+- Sticky action bar (existing `.nxFacBar`, restyled): translucent `rgba(255,254,250,.72)` +
+  `backdrop-filter: blur(20px) saturate(180%)`, top hairline gold .12; [×] cancel, [save] draft, "Total RD$ …"
+  20px mono, gold "Cobrar RD$ …" (min 200px). Same buttons and functions as `facBarraSync()`.
+- Mobile: the same list stacks (each row becomes two lines: name+chips / price·qty·amount), header strip wraps to
+  two rows, sticky bar stays.
+
+### 12.5 Inicio móvil (390)
+- Top bar `rgba(10,10,10,.92)` + blur 20px, safe-area padding, bottom hairline gold .22: 38px translucent
+  buttons (menu, search, alerts with gold dot) and the wordmark. No bottom tab bar.
+- Greeting 22px/700/-.015em + 12.5px sub-line; 48px gold "Vender" full width; 4 KPI cards in 2 columns (value
+  20px mono); 8 access tiles in 4 columns (38px Warm-Canvas square + 11.5px label); "Ventas de hoy" card with
+  "Ver todas" link and 3 rows (client / item / mono amount).
+
+### 12.6 Menú móvil (drawer)
+- 300px black panel from the left, gold edge, close button top-right, sections as in 12.1 (14px items), user
+  footer; visible grab handle on its right edge. Page behind: dimmed `rgba(10,10,10,.42)` and scaled to .96.
+- Behaviour (§10): opens/closes 1:1 with the finger (Pointer Events, grab offset), spring on release (damping
+  .8, response .3) with velocity handoff and momentum projection, rubber-band past the edge, interruptible
+  mid-flight, `prefers-reduced-motion` → cross-fade.
+
+### 12.7 Tokens board (for the CSS layer)
+- Palette roles as §2; chips selected = black; focus ring = gold; state badges green/amber/red light fills;
+  buttons flat (no gradients), `:active` scale(.97) 100ms, pointer hover -1px; cards 12px; motion values as §10.
+
+### 12.8 Implementation plan (next delivery, branch, unpublished)
+1. `studio-brand-theme.css`: remove gold gradients (flat `#C9A227` + black text), reduce `!important`, apply §3
+   font stack, chips black, focus ring, translucent bars, `prefers-reduced-motion/transparency/contrast`.
+2. Icons: every `ti-*` in POS markup in outline; app tiles per 12.2; never `-filled`.
+3. New `parches-pos-motion.js` (presentational only): pointer-down feedback, 22ms stagger on real tab changes,
+   draggable mobile drawer with spring + velocity, no animation replay on data refresh.
+4. Factura list mode per 12.4 inside `renderFactura`/`pintarFactura` markup and CSS, keeping every function.
+5. QA in Chromium 390/1280 and on the owner's iPhone; bitácora; no publish without "publícalo".

@@ -267,6 +267,75 @@ html.nx-studio #loginScreen.lx-revelando .lbox{animation:lxCardOut .42s cubic-be
   html.nx-studio #loginScreen .lrow,
   html.nx-studio #loginScreen .lbtn{width:100%;max-width:100%;min-width:0}
 }
+/* Login Pro Motion — jerarquía, respuesta y profundidad sin tocar autenticación. */
+html.nx-studio #loginScreen::before{
+  display:block;inset:-12%;z-index:0;opacity:.72;
+  background:
+    radial-gradient(circle at 22% 24%,rgba(201,162,39,.10),transparent 28%),
+    radial-gradient(circle at 82% 74%,rgba(255,255,255,.055),transparent 30%);
+  animation:stLoginAtmosphere 12s ease-in-out infinite alternate;will-change:transform,opacity
+}
+html.nx-studio #loginScreen::after{
+  display:block;z-index:0;opacity:.3;
+  background:linear-gradient(115deg,transparent 36%,rgba(255,255,255,.025) 50%,transparent 64%);
+  animation:stLoginSweep 9s ease-in-out infinite;will-change:transform,opacity
+}
+html.nx-studio #loginScreen:not(.lx-revelando) .lver,
+html.nx-studio #loginScreen:not(.lx-revelando) .lh,
+html.nx-studio #loginScreen:not(.lx-revelando) .lfr,
+html.nx-studio #loginScreen:not(.lx-revelando) .lrow,
+html.nx-studio #loginScreen:not(.lx-revelando) .lbtn{
+  animation:stLoginReveal .62s cubic-bezier(.22,1,.36,1) both
+}
+html.nx-studio #loginScreen:not(.lx-revelando) .lver{animation-delay:.22s}
+html.nx-studio #loginScreen:not(.lx-revelando) .lh{animation-delay:.28s}
+html.nx-studio #loginScreen:not(.lx-revelando) .lfr{animation-delay:.36s}
+html.nx-studio #loginScreen:not(.lx-revelando) .lfr+.lfr{animation-delay:.43s}
+html.nx-studio #loginScreen:not(.lx-revelando) .lrow{animation-delay:.5s}
+html.nx-studio #loginScreen:not(.lx-revelando) .lbtn{animation-delay:.57s}
+html.nx-studio #loginScreen .lfr{transition:transform .22s cubic-bezier(.22,1,.36,1)}
+html.nx-studio #loginScreen .lfr:focus-within{transform:translateY(-1px)}
+html.nx-studio #loginScreen .lfr:focus-within label{color:var(--studio-gold-light)!important}
+html.nx-studio #loginScreen .lfr input{
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease!important
+}
+html.nx-studio #loginScreen .lfr input:focus{
+  border-color:rgba(227,196,92,.72)!important;
+  box-shadow:0 0 0 3px rgba(201,162,39,.14),0 10px 28px rgba(0,0,0,.18)!important;
+  background:rgba(255,255,255,.045)!important
+}
+html.nx-studio #loginScreen .lbtn{position:relative;isolation:isolate;overflow:hidden}
+html.nx-studio #loginScreen .lbtn::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.5) 48%,transparent 66%);
+  transform:translateX(-135%);animation:stLoginButtonShine 4.8s ease-in-out 1.4s infinite
+}
+html.nx-studio #loginScreen .lbtn:hover i{transform:translateX(3px)}
+html.nx-studio #loginScreen .lbtn:active{transform:translateY(1px)!important}
+html.nx-studio #loginPwdEye{transition:color .18s ease,transform .18s cubic-bezier(.22,1,.36,1)}
+html.nx-studio #loginPwdEye:hover,html.nx-studio #loginPwdEye:focus-visible{
+  color:var(--studio-gold-light)!important;transform:translateY(-50%) scale(1.08)
+}
+html.nx-studio #loginScreen .lerr[style*="display: block"]{
+  animation:stLoginError .38s cubic-bezier(.36,.07,.19,.97) both
+}
+@keyframes stLoginReveal{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
+@keyframes stLoginAtmosphere{from{transform:translate3d(-2%,0,0) scale(1)}to{transform:translate3d(2%,-1%,0) scale(1.05)}}
+@keyframes stLoginSweep{0%,20%{opacity:0;transform:translateX(-28%)}48%{opacity:.3}72%,100%{opacity:0;transform:translateX(28%)}}
+@keyframes stLoginButtonShine{0%,64%{transform:translateX(-135%)}82%,100%{transform:translateX(135%)}}
+@keyframes stLoginError{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+@media (prefers-reduced-motion:reduce){
+  html.nx-studio #loginScreen::before,html.nx-studio #loginScreen::after,
+  html.nx-studio #loginScreen .lver,html.nx-studio #loginScreen .lh,
+  html.nx-studio #loginScreen .lfr,html.nx-studio #loginScreen .lrow,
+  html.nx-studio #loginScreen .lbtn,html.nx-studio #loginScreen .lbtn::before,
+  html.nx-studio #loginScreen .lerr{animation:none!important;transition:none!important}
+  html.nx-studio #loginScreen .lfr:focus-within{transform:none}
+}
+@media (prefers-reduced-transparency:reduce){
+  html.nx-studio #loginScreen::before,html.nx-studio #loginScreen::after{display:none}
+  html.nx-studio #loginScreen .lfr input:focus{background:#141414!important}
+}
 @keyframes stPanelIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){html.nx-studio .lx-st-mark img,html.nx-studio .lx-st-glow,html.nx-studio .lx-st-shine::after,html.nx-studio .lx-st-tag,html.nx-studio .lx-st-panel,html.nx-studio .lx-st-h,html.nx-studio .lx-st-p{animation:none}}
 /* Splash y pantalla de contraseña con la misma piel */

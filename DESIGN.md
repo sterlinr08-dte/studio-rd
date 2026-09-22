@@ -94,3 +94,29 @@ pointer hover and press 1px. New STUDIO code must use the brand tokens instead o
 - **Multiempresa cards:** each business/module card is a 112px minimum touch surface with icon, title, role-specific description and directional affordance. On mobile it becomes a single column.
 - **Motion:** cards and KPIs enter at 24ms intervals; hover lifts 1–2px only on pointer devices. Buttons press down 1px on activation. All movement uses transform and opacity, and respects reduced-motion settings.
 - **Never:** blend business identity colors into large backgrounds, duplicate navigation actions, animate sales amounts continuously, or use cosmetic motion that delays a sale, payment or inventory action.
+
+## 9. Iconography (added 2026-09-22, Stitch design system v2)
+- Outline icons on a 24px grid, 1.75px stroke, rounded caps and joins (the app ships Tabler Icons: always the outline set, never `ti-*-filled` mixed with outline).
+- Sizes: 16px inline, 18px navigation, 20px buttons, 24px app tiles. Monochrome: ink on light, ivory on black; gold only on the active navigation item.
+- App tiles: icon inside a 36–40px rounded square filled with Warm Canvas on light or 8% white on black.
+- Never emoji, never multicolor illustrations in the operational UI.
+
+## 10. Fluid interaction (Apple design principles, added 2026-09-22)
+Source: WWDC *Designing Fluid Interfaces* and *Principles of Great Design*, translated to CSS/Pointer Events.
+- **Response:** feedback on pointer-down (`:active` → `scale(.97)` in 100ms), never only on release. Audit every debounce and artificial delay on the input path.
+- **Direct manipulation:** drawers, sheets and swipeable rows track the finger 1:1 (Pointer Events + `setPointerCapture`), respecting the grab offset.
+- **Interruptible motion:** any transition can be grabbed and reversed mid-flight; animate from the current on-screen value, never from the target; keep velocity through re-targets. Never lock input during a transition.
+- **Springs over durations** for anything the user can touch: critically damped by default (damping 1.0, response 0.3–0.4s); slight bounce (damping 0.8) only after a flick or drag release. Drawer/sheet: damping 0.8, response 0.3.
+- **Momentum:** on release, project the resting point (`(v/1000)·d/(1−d)`, d ≈ 0.998) and snap to the nearest target from there; hand the release velocity to the spring.
+- **Rubber-band** at boundaries instead of hard stops.
+- **Spatial consistency:** enter and exit along the same path; popovers/menus originate from their trigger (`transform-origin`); mirrored easing on reversible transitions.
+- **Materials:** translucent top bars and sticky action bars (`rgba(255,254,250,.72)` + `backdrop-filter: blur(20px) saturate(180%)`), content scrolls underneath, scroll-edge fade instead of a 1px divider; never stack two light translucent surfaces. Modal tasks dim with a scrim; parallel panels do not.
+- **Typography:** tracking is size-specific (28–32px −0.022em, 20–24px −0.015em, body −0.005em, 11px uppercase +0.06em); leading 1.1 display / 1.2 headings / 1.5 body; layout spacing in rem/em so larger user text never breaks it.
+- **Feedback kinds:** status, completion, warning, error. Inline validation, never only on submit. Confirmation dialogs only for destructive, irreversible actions.
+- **Accessibility:** `prefers-reduced-motion` → cross-fades, no springs; `prefers-reduced-transparency` → solid bars without blur; `prefers-contrast: more` → solid backgrounds with defined borders.
+- Non-gesture transitions keep §6 timings (160/220/320–420ms, `cubic-bezier(.22,1,.36,1)`); animate only `transform` and `opacity`.
+
+## 11. Stitch (source of visual truth for new screens)
+- Stitch project **STUDIO RD · POS (negro, blanco y oro)**: `projects/3084779069905725803`.
+- Design system asset `assets/11862383679991154944` (v2) generated from this file: Material-style color roles (primary #755B00 on light surfaces, primary-container #C9A227, surface #FBF9F3, outline #7F7663), Geist typography scale, spacing scale. New screens are generated with this asset; approved screens are translated to `studio-brand-theme.css`, never copied as generated HTML.
+- The previous NEXUS PRO project *POS Dominicana* (`projects/1133794898386011572`) is not used for STUDIO.

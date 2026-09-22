@@ -8,6 +8,11 @@
 --   5. legacy.reconciliar() compara stock, cartera y totales con el sistema anterior.
 --   6. legacy.deshacer() borra todo lo migrado (por id registrado en legacy._ids) para poder repetir.
 --   7. Usuarios: legacy.crear_usuarios(json) crea usuarios_sistema + auth.users + profiles con clave temporal.
+-- Triggers que se desactivan SOLO durante legacy.migrar() (misma transacción; se reactivan al final):
+--   pos_venta_items: pos_venta_items_recontabilizar, pos_venta_guard_stock_reservado_taller, pos_venta_item_snapshot_costo
+--   pos_ventas: trg_nx_validar_caja_venta · pos_abonos: trg_nx_validar_caja_abono
+--   pos_cajas: trg_nx_caja_asignar_propietario, trg_nx_caja_proteger_actualizacion · pos_caja_movimientos: trg_nx_validar_caja_movimiento
+-- Los asientos contables de las ventas migradas se generan después con pos_reconstruir_asiento_venta por lotes.
 -- Todo el dinero viene de la fuente de verdad del sistema anterior: ventas + ar_invoices (cartera).
 -- Nunca se suma dos veces: la deuda de cada factura = credito_monto - Σ abonos, igual que ar.balance.
 -- ---------------------------------------------------------------------------------------------
@@ -55,7 +60,7 @@ declare
   v_alm uuid := legacy.const('alm_principal');
   v_nd  uuid := legacy.const('nivel_detalle');
   v_nm  uuid := legacy.const('nivel_mayor');
-  v_n int; v_res jsonb := '{}'::jsonb; r record; v_seq bigint;
+  v_res jsonb := '{}'::jsonb; v_seq bigint;
 begin
   if exists (select 1 from public.pos_ventas v join legacy.sales s on s.id=v.id) then
     raise exception 'YA_MIGRADO: ejecutar legacy.deshacer() antes de repetir';
@@ -143,7 +148,7 @@ begin
       coalesce(e.base_salary,0), e.hire_date, coalesce(e.active,true),
       'Sucursal: '||coalesce(b.name,'')||' · código anterior '||e.employee_code, coalesce(e.created_at,now())
   from legacy.employees e left join legacy.branches b on b.id=e.branch_id
-  where e.id = (select min(e2.id) from legacy.employees e2 where lower(e2.full_name)=lower(e.full_name))
+  where e.id = (select e2.id from legacy.employees e2 where lower(e2.full_name)=lower(e.full_name) order by e2.created_at, e2.id limit 1)
   on conflict (id) do nothing;
   insert into legacy._ids select 'rrhh_empleados', id from public.rrhh_empleados where id in (select id from legacy.employees) on conflict do nothing;
 
@@ -162,7 +167,7 @@ begin
       coalesce(sum(m) filter (where met not in ('Efectivo','Tarjeta','Transferencia','Crédito')),0) otro,
       jsonb_agg(jsonb_build_object('metodo', met, 'monto', m) order by met) filter (where met<>'Crédito') pagos_sin_cred
     from pg group by 1),
-  ar as (select sale_id, min(id) inv_id, sum(amount) amount, sum(balance) balance, min(due_date) due_date from legacy.ar_invoices where sale_id is not null group by 1),
+  ar as (select sale_id, (array_agg(id order by created_at))[1] inv_id, sum(amount) amount, sum(balance) balance, min(due_date) due_date from legacy.ar_invoices where sale_id is not null group by 1),
   ncf as (select sale_id, min(ncf) ncf, min(ecf_type) ecf from legacy.invoice_queue where status='completed' and ncf is not null group by 1),
   base as (
     select s.id, s.created_at, s.status, s.customer_id, s.branch_id, s.dispatch_warehouse_id, s.cash_session_id, s.created_by,
@@ -193,7 +198,7 @@ begin
       nullif(concat_ws(' · ', 'Migrada del sistema anterior', nullif(m.discount_reason,''), nullif(m.shipping_address,''),
         case when m.faltante>0 then 'Pago sin registro en el sistema anterior: '||m.faltante end,
         case when m.total_fin<>m.total then 'Total ajustado de '||m.total||' a '||m.total_fin||' para cuadrar con la deuda registrada' end),''),
-      coalesce(pr.full_name,'Sistema anterior'), m.created_at, m.cred>0, m.cash_session_id, pj.pagos,
+      coalesce(pr.full_name,'Sistema anterior'), m.created_at, m.cred>0, null, pj.pagos,
       m.efe, m.tar, m.tra, m.otro + greatest(m.faltante,0), m.cred,
       case m.ecf when 'B01' then 'credito_fiscal' when 'B02' then 'consumo' when 'B14' then 'regimen_especial' when 'B15' then 'gubernamental' else 'sin' end,
       case when m.cred>0 then 'CR' else 'CO' end || lpad(m.num_tipo::text, 8, '0'), m.ncf,
@@ -351,6 +356,9 @@ begin
     from legacy.cash_session_movements group by 1) mv on mv.cash_session_id=cs.id
   on conflict (id) do nothing;
   insert into legacy._ids select 'pos_cajas', id from legacy.cash_sessions on conflict do nothing;
+  -- vincular ventas a su caja (las cajas se insertan después de las ventas por la FK pos_ventas.caja_id)
+  update public.pos_ventas v set caja_id = s.cash_session_id from legacy.sales s
+  where v.id=s.id and s.cash_session_id is not null and exists (select 1 from public.pos_cajas c where c.id=s.cash_session_id);
 
   with ins as (
     insert into public.pos_caja_movimientos(organizacion_id, caja_id, tipo, concepto, monto, fecha, created_by_name)

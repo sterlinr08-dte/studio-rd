@@ -1,7 +1,16 @@
 {
-  "version": "58.91",
+  "version": "58.92",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.92",
+      "fecha": "2026-09-22",
+      "notas": [
+        "Nuevas notificaciones Premium en todo STUDIO: entrada elástica, salida suave, icono, título, mensaje y cierre.",
+        "Barra de duración con pausa al pasar el cursor y apilado automático de hasta cuatro avisos.",
+        "Mejor adaptación móvil, accesibilidad y estilos diferenciados para éxito, información, advertencia y error."
+      ]
+    },
     {
       "version": "58.91",
       "fecha": "2026-09-22",

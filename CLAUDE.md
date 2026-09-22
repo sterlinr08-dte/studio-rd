@@ -2,6 +2,9 @@
 
 Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que trabaje en `sterlinr08-dte/studio-rd`.
 
+**Punto de entrada fijo para toda IA:** `AGENTS.md` en la raíz de `main`
+(`https://github.com/sterlinr08-dte/studio-rd/blob/main/AGENTS.md`). Ahí está el orden de lectura, dónde escribir y el estado vivo.
+
 ## Proyecto
 
 - Sistema: **STUDIO** — venta de motores eléctricos, patinetas, aires acondicionados, televisores y más. Se está

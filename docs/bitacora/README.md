@@ -1,5 +1,7 @@
 # Bitácora STUDIO RD
 
+Punto de entrada de toda sesión: `AGENTS.md` en la raíz del repositorio (rama `main`).
+
 Una entrada por cambio, auditoría o publicación: `AAAA-MM-DD-HHMM-claude.md` o `AAAA-MM-DD-HHMM-chatgpt.md`.
 Nunca se edita ni se borra una entrada anterior; si hay que corregir, se crea otra que la referencie.
 

@@ -1,7 +1,16 @@
 {
-  "version": "58.84",
+  "version": "58.85",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.85",
+      "fecha": "2026-09-22",
+      "notas": [
+        "STUDIO no es una empresa de seguros: se retiran del sitio los módulos de Seguros, WhatsApp corporativo, CRM de seguros, préstamos legacy, vehículos, rifas y panel del dueño (73 archivos).",
+        "El arranque ya no consulta tablas de Seguros; la auto-facturación de pólizas queda apagada.",
+        "Textos y logo del sistema pasan a Studio."
+      ]
+    },
     {
       "version": "58.84",
       "fecha": "2026-09-22",

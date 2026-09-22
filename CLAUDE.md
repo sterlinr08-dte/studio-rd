@@ -13,8 +13,10 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
   nada se comparte con NEXUS PRO Seguros (`tnwsgcxurfyuszxsewsn`) ni con Bayolsale.
 - Organización dentro de la base: `e404d1c4-24c5-4e17-88f6-84bef09d6d19` (slug `studio`, tipo `tienda`).
 - Origen del código: copia del POS de NEXUS PRO (`sterlinr08-dte/nexus-pro`, commit `6328e66`, 22-sep-2026).
-  Los módulos de Seguros, WhatsApp, rifas y vehículos siguen en los archivos pero no se usan (organización tipo
-  tienda): se irán retirando módulo a módulo con bitácora.
+  **STUDIO no es una empresa de seguros.** El 22-sep-2026 se retiraron del repositorio los parches de Seguros,
+  WhatsApp corporativo, CRM de seguros, préstamos legacy, vehículos, rifas y panel del dueño (ver bitácora
+  `2026-09-22-1100-claude.md`). Queda pendiente podar del monolito `index.html` las vistas y funciones de Seguros
+  que aún viven ahí en estado latente (el modo `tienda` nunca las muestra).
 
 ## Reglas (mismas que NEXUS PRO)
 
@@ -34,11 +36,17 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
 
 - Esquema de la base: `supabase/studio/01…14` (clon del POS + `13_compras_v2` + `14_financiamiento_v2`), ya
   aplicados en STUDIO RD. Banderas activas en `pos_config`: `compras_v2`, `financiamiento_v2`.
-- Frontend: `index.html` (monolito) + `parches-pos.js` (POS, Compras v2, Financiamiento v2) +
-  `parches-pos-stitch-visual.js` (tokens DESIGN.md). El login usa la piel STUDIO siempre (`html.nx-studio`).
+- Frontend: `index.html` (monolito: login, sesión, `API`, `toast`, `fmt`, auditoría y el shell) +
+  `parches-pos-money.js` (montos) + `parches-pos.js` (POS, Compras v2, Financiamiento v2) +
+  `parches-pos-stitch-visual.js` (tokens DESIGN.md) + capas de UI compartidas `parches-contenido-movil-ajuste.js`,
+  `parches-fase1-ui-motion.css`, `parches-motion-fase2.css`. El login usa la piel STUDIO siempre (`html.nx-studio`).
+  Al arrancar solo se consultan `organizaciones`, `usuarios_sistema`, `usuario_preferencias` y `auditoria`; el POS
+  carga lo suyo desde `pos_*`.
 - Usuario administrador: `admin` (cambio de contraseña forzado al primer acceso).
 - Despliegue: Worker `studio-rd` (cuenta `7faa18426a58d75b8d975b1e00a0d6f3`) creado el 22-sep-2026 por integración Git
   con `main`; dominios `studiord.net` y `www.studiord.net` asignados a este Worker (antes en el Worker `nexus-pro`).
   URL técnica: `studio-rd.sterlinr08.workers.dev`.
 - Pendientes: firma de cliente por link (RPC pública + `firma-financiamiento.html`), recordatorios WhatsApp,
-  reportes de financiamiento, subida de documentos, manifest/iconos PWA propios, retirar módulos de Seguros.
+  reportes de financiamiento, subida de documentos, manifest/iconos PWA propios, podar de `index.html` las
+  vistas/funciones latentes de Seguros y las tablas núcleo heredadas (`agentes`, `bancos`, `secuencias_ncf`,
+  `recibo_contador`, `saas_*`, `rrhh_*` si no se usan).

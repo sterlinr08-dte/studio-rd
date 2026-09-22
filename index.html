@@ -2830,7 +2830,7 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
       <span class="nxs-wave" style="animation-delay:.933s"></span>
       <i class="ti ti-shield"></i>
     </div>
-    <div class="nxs-brand">Cargando NEXUS PRO</div>
+    <div class="nxs-brand">Cargando Studio</div>
     <div class="nxs-tag">Preparando tu espacio de trabajo...</div>
   </div>
 </div>
@@ -2874,7 +2874,6 @@ body,.nc,.modal,.kpi,.sb,table,input,select,textarea,.ticker,.cfg-tab,.ni,.btn{
 <div id="loginScreen">
 <div class="lwrap">
 <div class="lbox">
-  <img class="llogomark llogo-nexus" src="logo-nexus-pro-mark.png" alt="NEXUS PRO — Multiempresa · POS · ERP" width="756" height="224" loading="eager"/>
   <div class="lx-st-mark"><span class="lx-st-glow" aria-hidden="true"></span><img src="logo-studio.png" alt="Studio" width="1080" height="1080" loading="eager" draggable="false"/><span class="lx-st-shine" aria-hidden="true"></span></div>
   <p class="lx-st-tag">Hogar, movilidad y tecnología</p>
   <div class="lshield"><i class="ti ti-shield-check"></i></div>
@@ -4405,14 +4404,14 @@ window.addEventListener('appinstalled', () => {
   _deferredInstall = null;
   const btn = document.getElementById('btnInstalar');
   if(btn) btn.style.display = 'none';
-  toast('ok', '¡NEXUS PRO instalado!', 'La app está en tu pantalla de inicio');
+  toast('ok', '¡Studio instalado!', 'La app está en tu pantalla de inicio');
 });
 
 function instalarApp(){
   if(_deferredInstall){
     _deferredInstall.prompt();
     _deferredInstall.userChoice.then(r=>{
-      if(r.outcome==='accepted') toast('ok','¡Instalado!','NEXUS PRO en tu pantalla de inicio');
+      if(r.outcome==='accepted') toast('ok','¡Instalado!','Studio en tu pantalla de inicio');
       _deferredInstall=null;
     });
   } else {
@@ -5760,7 +5759,7 @@ async function copiarErrorSoporte(){
   // motivo no está disponible, cae al último renglón con tipo==='error' (nunca a uno de tipo
   // info/warn, que nunca abre esta tarjeta).
   const u=_errPanelEntry||[..._errLog].reverse().find(e=>e.tipo==='error');
-  const texto=u?`NEXUS PRO SEGUROS — reporte de error\nFecha: ${u.ts}\nVersión: ${typeof APP_VERSION!=='undefined'?APP_VERSION:'—'}\nUsuario: ${u.usuario}\nPantalla: ${u.url}\nMensaje: ${u.msg}\n\n${u.stack}`:'No hay ningún error reciente registrado para copiar.';
+  const texto=u?`STUDIO — reporte de error\nFecha: ${u.ts}\nVersión: ${typeof APP_VERSION!=='undefined'?APP_VERSION:'—'}\nUsuario: ${u.usuario}\nPantalla: ${u.url}\nMensaje: ${u.msg}\n\n${u.stack}`:'No hay ningún error reciente registrado para copiar.';
   try{await navigator.clipboard.writeText(texto);toast('ok','Copiado','Pégalo en tu mensaje a soporte');}catch(e){toast('err','No se pudo copiar','Copia el texto manualmente');}
 }
 function abrirLog(){_logFiltro='todos';openM('mErrorLog');renderErrorLog();}
@@ -5821,7 +5820,7 @@ function _errOpacoTexto(n){
   return 'Falló un recurso externo al sistema (por ejemplo el servicio de correo o los iconos). '
     +'El navegador no da el detalle por seguridad, porque el archivo viene de otro dominio. '
     +'Suele ser un bloqueador de contenido, una extensión del navegador o una caída puntual del proveedor. '
-    +'No es un error de NEXUS PRO y no afecta nada de lo ya guardado.'
+    +'No es un error de Studio y no afecta nada de lo ya guardado.'
     +(n>1?` — ocurrió ${n} veces en esta sesión.`:'');
 }
 function _errOpacoRegistrar(){
@@ -6579,7 +6578,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.84';
+const APP_VERSION='58.85';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6641,7 +6640,7 @@ function aplicarCodigoManual(){
     return;
   }
   if(!codigo.includes('<html')||!codigo.includes('NEXUS')){
-    toast('err','Codigo no valido','Este no parece ser el codigo de NEXUS PRO');
+    toast('err','Codigo no valido','Este no parece ser el codigo de Studio');
     return;
   }
   // CHANGELOG AUTOMATICO: descripcion obligatoria
@@ -6709,7 +6708,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-seguros.js','parches-financiamiento.js','parches-vehiculos.js','parches-pos.js','parches-rifas.js','parches-panel-dueno.js']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -6722,7 +6721,7 @@ function nxPantallaActualizando(){
     d.id='nxUpd';
     d.style.cssText='position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0f2a52,#1d4ed8);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:var(--ff,"Segoe UI",system-ui,sans-serif);padding:24px;text-align:center';
     d.innerHTML='<div style="width:44px;height:44px;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:nxUpdSpin .8s linear infinite"></div>'
-      +'<div style="font-size:17px;font-weight:800;letter-spacing:-.3px">Actualizando NEXUS PRO</div>'
+      +'<div style="font-size:17px;font-weight:800;letter-spacing:-.3px">Actualizando Studio</div>'
       +'<div style="font-size:12.5px;opacity:.8;max-width:280px;line-height:1.6">Descargando la versión nueva. No cierres la app.</div>'
       +'<style>@keyframes nxUpdSpin{to{transform:rotate(360deg)}}</style>';
     document.body.appendChild(d);
@@ -8435,49 +8434,14 @@ function cargarAsientosBG(){
   return _asientosCargando;
 }
 async function cargarDatosNucleo(){
-  _asientosCargados=false;_asientosCargando=null; // recarga fresca de asientos en cada carga
-  const [emp,agt,cli,fac,usu,cfg]=await Promise.all([
-    API.get('empresas','select=*&order=nom'),
-    API.get('agentes','select=*&order=nom'),
-    API.get('clientes','select=*&order=nom'),
-    API.get('facturas','select=*&order=created_at.desc'),
-    API.get('usuarios_sistema','select=*&order=nom'),
-    API.get('configuracion','select=*'),
-  ]);
-  ST.empresas=emp||[];ST.agentes=agt||[];ST.clientes=cli||[];
-  ST.facturas=fac||[];ST.usuarios=usu||[];
-  ST.asientos=ST.asientos||[]; // se llena en segundo plano (cargarAsientosBG)
-  try{reconciliarDeudasClientes();}catch(_){}
-  cargarAsientosBG(); // sin await: el arranque no espera por la contabilidad
-  reconciliarPagosClientes(); // sin await: cuadra el pagado con los cobros en segundo plano
-  // Cargar config
-  (cfg||[]).forEach(c=>{ST.config[c.clave]=c.valor;});
+  _asientosCargados=false;_asientosCargando=null;
+  // STUDIO (2026-09-22): se consulta solo el núcleo. Las tablas de Seguros (empresas, agentes,
+  // clientes, facturas, configuracion, abonos, asientos) no existen en la base de STUDIO; el POS
+  // carga lo suyo desde pos_* en parches-pos.js.
+  const usu=await API.get('usuarios_sistema','select=*&order=nom');
+  ST.empresas=[];ST.agentes=[];ST.clientes=[];ST.facturas=[];ST.usuarios=usu||[];
+  ST.asientos=ST.asientos||[];
   actualizarCFG();
-  // ── Cargar ARS, roles/permisos y configs desde Supabase (para TODOS los usuarios) ──
-  (cfg||[]).forEach(c=>{
-    try{
-      if(c.clave==='ars_list'&&c.valor){
-        const arr=JSON.parse(c.valor);
-        if(Array.isArray(arr)){_arsList=arr;localStorage.setItem('nx_ars_list',c.valor);}
-      }
-      if(c.clave==='roles_perms'&&c.valor){
-        const rp=JSON.parse(c.valor);
-        if(rp){Object.assign(ROLES_PERMS,rp);localStorage.setItem('nx_roles_perms',c.valor);}
-      }
-      if(c.clave==='emailjs'&&c.valor){
-        Object.assign(_emailCfg,JSON.parse(c.valor));
-        localStorage.setItem('nx_email_cfg',c.valor);
-      }
-      if(c.clave==='auto_facturacion'&&c.valor){
-        Object.assign(autoCfg,JSON.parse(c.valor));
-        localStorage.setItem('nx_auto',c.valor);
-      }
-    }catch(e){}
-  });
-  ST.clientes.forEach(c=>{if(typeof c.deps==='string')try{c.deps=JSON.parse(c.deps);}catch{c.deps=[];}});
-  // Coerción defensiva: Supabase devuelve numéricos como texto
-  ST.clientes.forEach(c=>{['deuda_total','deuda_anterior','pagado','precio_titular','precio_dep','saldo_inicial','saldo_inicial_pagado'].forEach(k=>{if(c[k]!=null&&c[k]!=='')c[k]=Number(c[k]);});});
-  // Cargar auto config
   const ac=localStorage.getItem('nx_auto');if(ac)try{Object.assign(autoCfg,JSON.parse(ac));}catch{}
 }
 
@@ -8489,7 +8453,7 @@ async function cargarTodo(){
     verificarAlertas();
     initMesSel();initComSel();initDGIISel();rAuto();rConfig();
     // Toast de bienvenida solo en login real, no en cada recarga (ver más abajo)
-    if(!sessionStorage.getItem('nx_ya_saludo')){toast('ok','Sistema listo · NEXUS PRO','Bienvenido, '+sesion.nom.split(' ')[0]);sessionStorage.setItem('nx_ya_saludo','1');}
+    if(!sessionStorage.getItem('nx_ya_saludo')){toast('ok','Sistema listo · Studio','Bienvenido, '+sesion.nom.split(' ')[0]);sessionStorage.setItem('nx_ya_saludo','1');}
     logError('info','Sistema iniciado correctamente','Usuario: '+sesion.nom+' | Rol: '+sesion.rol,'Sistema');
     setTimeout(aplicarRolSidebar, 200);
     setTimeout(aplicarOrgSidebar, 260);
@@ -8612,7 +8576,7 @@ async function chequearVersionApp(){
     const data=await resp.json();
     if(compararVersiones(data.version,APP_VERSION)>0){
       const cambios=(data.cambios||[]).slice(0,6).map(c=>'• '+c).join('\n');
-      if(confirm('🎉 NEXUS PRO v'+data.version+' disponible\n\nNovedades:\n'+(cambios||'(correcciones varias)')+'\n\n¿Actualizar la app ahora? Se recargará.')){
+      if(confirm('🎉 Studio v'+data.version+' disponible\n\nNovedades:\n'+(cambios||'(correcciones varias)')+'\n\n¿Actualizar la app ahora? Se recargará.')){
         nxPantallaActualizando();
         // Descargar la app nueva del MISMO dominio (Cloudflare); GitHub raw solo como respaldo.
         const url=(location.origin&&location.origin.startsWith('http')?location.origin+'/index.html':null)||data.url||'https://raw.githubusercontent.com/sterlinr08-dte/studio-rd/main/index.html';
@@ -13835,27 +13799,20 @@ function rHistorialAuto(){
   </table></div>`;
 }
 // Verificar cada minuto
-setInterval(verificarAutoFacturacion, 60000);
+// STUDIO: la auto-facturación de pólizas (Seguros) queda apagada.
+// setInterval(verificarAutoFacturacion, 60000);
 // También verificar al cargar por si se perdió el momento
-setTimeout(verificarAutoFacturacion, 5000);
+// setTimeout(verificarAutoFacturacion, 5000);
 </script>
 <!-- ═══ SISTEMA DE PARCHES — se carga al final, puede sobrescribir funciones del sistema ═══
-     Dividido el 2026-08-27: el "parches.js" único (30,000+ líneas) mezclaba los
-     parches de Seguros con TODA la plataforma Multiempresa. Se separó en 6
-     archivos por tema — el nombre genérico "parches.js" ya no existe, cada
-     negocio/módulo tiene el suyo:
-       parches-seguros.js         → Nexus Pro Seguros (los parches de siempre)
-       parches-financiamiento.js  → Préstamos/Cobranza (define window.nxMERegistrar,
-                                     del que dependen los 4 de abajo — va primero)
-       parches-vehiculos.js       → Compra y venta de vehículos
-       parches-pos.js             → Punto de Venta (el más grande, ~11,000 líneas)
-       parches-rifas.js           → Rifas
-       parches-panel-dueno.js     → Panel del Dueño (superadmin) + Consultorio + Clientes SaaS
-     Verificado con grep en todo el repo que ninguno de estos 6 archivos llama
-     funciones/variables definidas en otro (son independientes entre sí, salvo
-     el patrón nxMERegistrar ya mencionado, que tolera llegar tarde con
-     reintentos propios) — se cargan en paralelo, sin depender de cuál termine
-     primero, en el mismo orden relativo que tenían dentro del archivo único. -->
+     STUDIO (2026-09-22): solo se cargan las capas del Punto de Venta. Los parches de
+     Seguros, WhatsApp, préstamos legacy, vehículos, rifas y panel del dueño de NEXUS PRO
+     se retiraron del repositorio porque STUDIO no es una empresa de seguros.
+       parches-pos-money.js       → utilidad de montos (miles con coma, teclado decimal)
+       parches-pos.js             → Punto de Venta (ventas, compras, financiamiento, contabilidad)
+       parches-pos-stitch-visual.js → línea gráfica (DESIGN.md), solo CSS
+       parches-contenido-movil-ajuste.js, parches-fase1-ui-motion.css, parches-motion-fase2.css
+                                  → capas de UI compartidas (modales móviles, motion) -->
 <script>
   (function(){
     // Cachea por versión (no por Date.now): evita re-descargarlo en cada
@@ -13875,13 +13832,19 @@ setTimeout(verificarAutoFacturacion, 5000);
       }
       cargar();
     }
-    cargarConReintento('parches-seguros.js');
-    cargarConReintento('parches-financiamiento.js');
-    cargarConReintento('parches-vehiculos.js');
+    function cargarCSS(href){
+      var l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = href + '?v=' + V;
+      document.head.appendChild(l);
+    }
+    cargarConReintento('parches-pos-money.js');
     cargarConReintento('parches-pos.js');
     cargarConReintento('parches-pos-stitch-visual.js');
-    cargarConReintento('parches-rifas.js');
-    cargarConReintento('parches-panel-dueno.js');
+    // Capas de UI compartidas (no son de Seguros): ajustes móviles de modales y motion de
+    // botones/tablas/diálogos que el POS usa a través de las clases .modal/.btn/.tw del shell.
+    cargarConReintento('parches-contenido-movil-ajuste.js');
+    cargarCSS('parches-fase1-ui-motion.css');
+    cargarCSS('parches-motion-fase2.css');
   })();
 </script>
 </body>

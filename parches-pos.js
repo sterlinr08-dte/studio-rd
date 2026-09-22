@@ -26,8 +26,8 @@
   function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
   function nomAdmin() { try { return (window.sesion && window.sesion.nom) || 'Admin'; } catch (e) { return 'Admin'; } }
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
-  function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'NEXUS PRO'; } catch (e) { return 'NEXUS PRO'; } }
-  function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'NEXUS PRO', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'Studio'; } catch (e) { return 'Studio'; } }
+  function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'Studio', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
   function authUidPOS() {
     try {
       const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
@@ -1061,7 +1061,7 @@
   // nombre real de la organización en vez de dejar el genérico.
   function facEmpresa() {
     const e = empInfo(); let nom = e.nom;
-    try { const o = (window.sesion && window.sesion.org) || null; if (o && o.nombre && (!nom || nom === 'NEXUS PRO')) nom = o.nombre; } catch (x) {}
+    try { const o = (window.sesion && window.sesion.org) || null; if (o && o.nombre && (!nom || nom === 'Studio')) nom = o.nombre; } catch (x) {}
     return { nom: nom, rnc: e.rnc, tel: e.tel, dir: e.dir };
   }
   // Bloque "Facturar a" + "Condición de pago" del documento (columna izquierda y derecha).
@@ -2596,7 +2596,7 @@
     const nItems = (v._items || []).length;
     if (window.nxReciboAnimado) {
       window.nxReciboAnimado({
-        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
+        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'Studio', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
         filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }],
         folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
       }, [
@@ -6052,7 +6052,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Fecha</th><th>Concepto</th><th class="r">Cargo</th><th class="r">Abono</th><th class="r">Saldo</th></tr></thead><tbody>${filas}</tbody></table>
         <div class="line"></div>
         <div class="c sal">SALDO PENDIENTE: ${fmt(saldo)}</div>
-        <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${fechaDMY(isoHoy())}.</div>
+        <div class="muted" style="margin-top:14px">Documento informativo generado por Studio el ${fechaDMY(isoHoy())}.</div>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
@@ -7437,7 +7437,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c"><b>${titulos[tipo] || 'Reporte'}</b></div>
         <div class="c muted">Del ${fechaDMY(_ctaDesde)} al ${fechaDMY(_ctaHasta)}</div>
         ${cuerpo}
-        <div class="muted" style="margin-top:18px">Generado el ${fechaDMY(isoHoy())} · NEXUS PRO</div>
+        <div class="muted" style="margin-top:18px">Generado el ${fechaDMY(isoHoy())} · Studio</div>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
@@ -10213,7 +10213,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Cliente</th><th>Plan</th><th>Cuota</th><th>Venció</th><th class="r">Días</th><th class="r">Pendiente</th><th class="r">Mora</th><th class="r">Total</th></tr></thead><tbody>${rowsHTML}</tbody></table>
         <div class="line"></div>
         <div class="c sal">TOTAL VENCIDO: ${fmt(granTotal)}</div>
-        <div class="muted" style="margin-top:14px">Documento informativo generado por NEXUS PRO el ${new Date().toLocaleDateString('es-DO')}.</div>
+        <div class="muted" style="margin-top:14px">Documento informativo generado por Studio el ${new Date().toLocaleDateString('es-DO')}.</div>
       </body></html>`;
     try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
@@ -10324,7 +10324,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
         window.nxReciboAnimado({
-          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'NEXUS PRO', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
+          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'Studio', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
           filas: [{ label: 'Artículos', valor: nItemsPref }, { label: 'Válida hasta', valor: 'Facturar cuando toque' }],
           folio: numero
         }, [

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es-DO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Comprar tickets · Rifa</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="🎟️ Participa en la rifa">
+<meta property="og:description" content="Elige tus números, sube tu pago y participa. ¡Mucha suerte!">
+<meta property="og:image" content="https://nexusprord.com/icon-512.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
+<style>
+:root{--c:#4f46e5;--c2:#4338ca;--gold:#e9c46a;--gold2:#caa84a;--goldsoft:#f0d98a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;color:#0f172a;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:100px}
+/* barra de acento + cabecera */
+.topaccent{height:6px;background:linear-gradient(90deg,var(--c),var(--c2))}
+.nav{display:flex;align-items:center;gap:11px;padding:11px 14px;background:#fff;border-bottom:2px solid #eef1f6;position:sticky;top:0;z-index:25}
+.nav .lg{width:46px;height:46px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--c);overflow:hidden;flex:0 0 auto}
+.nav .lg img{width:100%;height:100%;object-fit:cover}
+.nav .ttl{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.18}
+.nav .ttl b{font-size:16px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav .ttl span{font-size:11px;color:#94a3b8;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.burger{width:46px;height:46px;border-radius:12px;border:1.5px solid #e8edf3;background:#fff;color:var(--c);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .12s ease,background .15s ease}
+.burger:active{transform:scale(.93)}
+/* menu desplegable */
+.menu{background:#fff;border-bottom:2px solid #eef1f6;padding:6px 16px 18px;animation:slidedown .18s ease}
+@keyframes slidedown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.menu a{display:flex;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:800;color:#0f172a;padding:13px;text-decoration:none;cursor:pointer;border-radius:12px}
+.menu a:active{background:#f1f5f9}
+.menu a i{font-size:21px;color:var(--c)}
+.menu .lista{margin-top:6px;width:100%;border:0;border-radius:30px;padding:16px;font-size:17px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease}
+.menu .lista:active{transform:scale(.97)}
+/* banner + bloque premio */
+.banner{width:100%;display:block}
+.prem-blk{background:linear-gradient(135deg,var(--c),var(--c2));color:#fff;padding:16px;margin-bottom:8px;border-radius:0 0 22px 22px;text-align:center}
+.prem{font-size:21px;font-weight:800;line-height:1.15;text-transform:uppercase}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px;font-size:12px;justify-content:center}
+.meta span{background:rgba(255,255,255,.16);padding:5px 11px;border-radius:20px;font-weight:700}
+.meta .cerr{background:#dc2626}
+.prog{position:relative;height:24px;background:rgba(0,0,0,.20);border-radius:13px;overflow:hidden;margin-top:13px;box-shadow:inset 0 1px 3px rgba(0,0,0,.28)}
+.prog>div{height:100%;background:linear-gradient(90deg,#fde68a,#f59e0b);border-radius:13px;position:relative;width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.prog>div::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-130%);animation:progShine 2.6s ease-in-out infinite}
+@keyframes progShine{0%{transform:translateX(-130%)}60%,100%{transform:translateX(240%)}}
+.prog .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#1f2937;text-shadow:0 1px 1px rgba(255,255,255,.45);z-index:2;letter-spacing:.3px}
+/* whatsapp flotante */
+.wafab{position:fixed;right:16px;width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:31px;text-decoration:none;box-shadow:0 3px 9px rgba(15,23,42,.18);z-index:40;transition:transform .12s ease,filter .15s ease}
+.wafab:active{transform:scale(.92);filter:brightness(.95)}
+.body{padding:14px}
+/* card / section */
+.card{background:#fff;border:1px solid #e8edf3;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.sec{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.sec .nb{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sec h3{margin:0;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.sec small{display:block;color:#94a3b8;font-size:12px;font-weight:600}
+/* forms */
+label.fl{display:block;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.3px;margin:12px 0 5px}
+label.fl:first-child{margin-top:0}
+.opt{color:#94a3b8;text-transform:none;font-weight:600}
+.req{color:#ef4444}
+.in{width:100%;height:48px;padding:0 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;outline:none;font-family:inherit;background:#fff}
+.in:focus,.srch input:focus{border-color:var(--c)}
+select.in{appearance:none;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 12px center}
+/* combos / paquetes */
+.paqLbl{font-size:11px;font-weight:800;color:#7c3aed;display:flex;align-items:center;gap:5px;margin:2px 0 6px;text-transform:uppercase;letter-spacing:.3px}
+.paqLbl i{font-size:13px}
+.paqs{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
+.paq{border:1.5px solid #e2e8f0;border-radius:9px;padding:5px 7px;background:#fff;cursor:pointer;text-align:left;transition:transform .12s ease,border-color .15s ease}
+.paq:active{transform:scale(.96)}
+.paq.on{border-color:var(--c);background:#eef2ff;box-shadow:0 0 0 2px rgba(99,102,241,.25)}
+.paq b{display:block;font-size:11px;font-weight:800;color:#0f172a}
+.paq .pr{font-size:11.5px;font-weight:800;color:var(--c)}
+.paq small{display:block;font-size:8px;color:#16a34a;font-weight:700;margin-top:0}
+.paqNote{font-size:11.5px;color:#7c3aed;font-weight:700;display:flex;align-items:center;gap:6px;margin:-4px 0 12px}
+/* atajos glossy */
+.qrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.qrow button{border:1.5px solid #e2e8f0;background:#fff;border-radius:16px;padding:12px 4px;font-size:15px;font-weight:800;color:var(--c);cursor:pointer;line-height:1.1;transition:transform .12s ease,background .15s ease}
+.qrow button small{display:block;font-size:10px;color:#94a3b8;font-weight:700;margin-top:3px}
+.qrow button:active{transform:scale(.93);background:#f8fafc}
+.luck{width:100%;border:1.5px solid #e2e8f0;border-radius:30px;padding:15px;font-size:17px;font-weight:800;color:var(--c);background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-bottom:14px;transition:transform .12s ease,background .15s ease}
+.luck i{color:#f59e0b}
+.luck:active{transform:scale(.97);background:#f8fafc}
+/* stepper redondo plano */
+.stp{display:flex;align-items:center;justify-content:center;gap:22px;margin:8px 0 2px}
+.stp button{width:74px;height:74px;border-radius:50%;border:0;font-size:36px;font-weight:800;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:transform .12s ease,filter .15s ease}
+.stp .minus{background:#94a3b8}
+.stp .plus{background:var(--c)}
+.stp button:disabled{opacity:.45}
+.stp button:active{transform:scale(.9);filter:brightness(.94)}
+.stp .mid{text-align:center;min-width:90px}
+.stp .mid b{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a}
+.stp .mid input{font-size:54px;font-weight:800;font-family:ui-monospace,monospace;display:block;line-height:1;color:#0f172a;
+  width:100%;text-align:center;border:none;background:none;padding:0;-moz-appearance:textfield}
+.stp .mid input::-webkit-outer-spin-button,.stp .mid input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp .mid input:focus{outline:none}
+.stp .mid small{font-size:12px;color:#94a3b8;font-weight:800;letter-spacing:1px}
+.bigtot{text-align:center;font-size:27px;font-weight:800;color:#334155;margin:14px 0 6px}
+.bigtot b{color:var(--c)}
+/* ✨ animación "magia" (destello + titileo + dígitos con brillo) */
+@keyframes mgGlow{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 18px 2px rgba(99,102,241,.40)}}
+@keyframes mgShine{0%{transform:translateX(-140%) skewX(-18deg)}55%,100%{transform:translateX(260%) skewX(-18deg)}}
+@keyframes mgTwinkle{0%,100%{opacity:1;transform:scale(1) rotate(0)}50%{opacity:.4;transform:scale(1.4) rotate(20deg)}}
+@keyframes mgGrad{to{background-position:200% center}}
+.mg-shine{position:relative;overflow:hidden}
+.mg-shine::after{content:"";position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.7),transparent);transform:translateX(-140%) skewX(-18deg);animation:mgShine 3.6s ease-in-out infinite;pointer-events:none}
+.luck{animation:mgGlow 2.6s ease-in-out infinite}
+.luck i{animation:mgTwinkle 1.8s ease-in-out infinite}
+.luck i:last-child{animation-delay:.9s}
+.srch.mg-glow input{animation:mgGlow 2.6s ease-in-out infinite}
+.mg-card{position:relative;overflow:hidden;border:1.5px solid transparent;animation:mgCardGlow 3s ease-in-out infinite alternate}
+.mgRise{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.mgRise i{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(167,139,250,.9),0 0 2px #fff;opacity:0;animation:rise linear infinite}
+.mgRise i:nth-child(even){animation-name:riseS;box-shadow:0 0 6px 1px rgba(96,165,250,.9),0 0 2px #fff}
+.mgRise i:nth-child(3n){width:3px;height:3px}
+.mgRise i:nth-child(5n){width:5px;height:5px;box-shadow:0 0 8px 2px rgba(221,214,254,.95),0 0 2px #fff}
+@keyframes rise{0%{opacity:0;transform:translateY(12px) scale(.5)}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(-300px) scale(1.1)}}
+@keyframes riseS{0%{opacity:0;transform:translate(0,12px) scale(.5)}12%{opacity:1}50%{transform:translate(9px,-150px) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-7px,-300px) scale(1.1)}}
+.mgRise i:nth-child(1){left:6%;animation-duration:5s;animation-delay:0s}
+.mgRise i:nth-child(2){left:14%;animation-duration:6.4s;animation-delay:1.6s}
+.mgRise i:nth-child(3){left:22%;animation-duration:5.6s;animation-delay:.8s}
+.mgRise i:nth-child(4){left:30%;animation-duration:6.9s;animation-delay:2.3s}
+.mgRise i:nth-child(5){left:38%;animation-duration:5.2s;animation-delay:1.1s}
+.mgRise i:nth-child(6){left:46%;animation-duration:6.1s;animation-delay:3s}
+.mgRise i:nth-child(7){left:54%;animation-duration:5.8s;animation-delay:.4s}
+.mgRise i:nth-child(8){left:62%;animation-duration:6.6s;animation-delay:2s}
+.mgRise i:nth-child(9){left:70%;animation-duration:5.4s;animation-delay:1.3s}
+.mgRise i:nth-child(10){left:78%;animation-duration:6.3s;animation-delay:2.7s}
+.mgRise i:nth-child(11){left:86%;animation-duration:5.7s;animation-delay:.9s}
+.mgRise i:nth-child(12){left:92%;animation-duration:6.8s;animation-delay:2.4s}
+.mgRise i:nth-child(13){left:10%;animation-duration:7.1s;animation-delay:3.4s}
+.mgRise i:nth-child(14){left:34%;animation-duration:6.5s;animation-delay:4s}
+.mgRise i:nth-child(15){left:58%;animation-duration:7.3s;animation-delay:3.7s}
+.mgRise i:nth-child(16){left:82%;animation-duration:6.7s;animation-delay:4.4s}
+@keyframes mgCardGlow{
+  0%{box-shadow:0 0 0 2px rgba(99,102,241,.75),0 0 22px 3px rgba(99,102,241,.45),inset 0 0 16px rgba(99,102,241,.05)}
+  50%{box-shadow:0 0 0 2.5px rgba(139,92,246,.9),0 0 32px 6px rgba(139,92,246,.6),inset 0 0 20px rgba(139,92,246,.08)}
+  100%{box-shadow:0 0 0 2px rgba(34,211,238,.75),0 0 22px 3px rgba(34,211,238,.45),inset 0 0 16px rgba(34,211,238,.05)}}
+.mg-digits{background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:mgGrad 3s linear infinite}
+.hint{margin-top:13px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:11px 13px;font-size:12.5px;color:#166534;font-weight:600;display:flex;gap:8px;align-items:flex-start}
+.hint i{color:#16a34a;font-size:17px;flex:0 0 auto}
+.hint.sm1{margin-top:10px;padding:6px 10px;border-radius:10px;font-size:10px;line-height:1.2;gap:5px;align-items:center;white-space:nowrap;overflow:hidden}
+.hint.sm1 i{font-size:12px}
+/* preguntas frecuentes */
+.faq{border-top:1px solid #eef1f6}
+.faq summary{font-size:14px;font-weight:700;color:#0f172a;cursor:pointer;padding:11px 2px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .faqIco{color:var(--c);font-size:21px;flex:0 0 auto}
+.faq summary .faqIco.ti-minus{display:none}
+.faq[open] summary .faqIco.ti-plus{display:none}
+.faq[open] summary .faqIco.ti-minus{display:inline-block}
+.faqa{font-size:13px;color:#475569;line-height:1.5;padding:0 2px 12px}
+.rtxt{font-size:13.5px;color:#334155;line-height:1.6}
+body.rdark .rtxt{color:#cbd5e1}
+/* como jugar */
+.howto{display:flex;flex-direction:column;gap:11px}
+.hstep{display:flex;gap:11px;align-items:flex-start}
+.hstep .hn{width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.hstep .ht b{display:block;font-size:14px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.2px}
+.hstep .ht span{display:block;font-size:12.5px;color:#475569;line-height:1.45;margin-top:1px}
+/* banner "A JUGAR" entre el tutorial y el formulario */
+.ajugar{display:flex;flex-direction:column;align-items:center;gap:2px;margin:2px 0 12px}
+.ajugar .pill{font-size:25px;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));padding:11px 36px;border-radius:32px;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(79,70,229,.4);animation:ajPulse 1.5s ease-in-out infinite}
+.ajugar i{font-size:24px;color:var(--c);animation:ajBounce 1.1s ease-in-out infinite}
+@keyframes ajPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes ajBounce{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(7px);opacity:1}}
+/* terminos y condiciones */
+.terms{display:flex;align-items:flex-start;gap:11px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:13px 14px;margin-top:11px;cursor:pointer}
+.terms input{width:24px;height:24px;flex:0 0 auto;accent-color:var(--c);margin-top:1px}
+.terms span{font-size:14px;font-weight:700;color:#0f172a;line-height:1.35}
+.terms a{color:var(--c);text-decoration:underline;font-weight:800}
+.tmodal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.tbox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column;animation:tUp .25s ease}
+@keyframes tUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.thd{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #eef1f6;flex:0 0 auto}
+.thd b{font-size:16px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.3px}
+.thd button{border:0;background:#f1f5f9;width:34px;height:34px;border-radius:50%;font-size:18px;color:#475569;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tbody{padding:15px 16px;overflow-y:auto;font-size:13px;line-height:1.55;color:#334155;flex:1}
+.tok{margin:12px 16px 16px;border:0;border-radius:28px;padding:14px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));cursor:pointer;flex:0 0 auto}
+/* boton Consultar mi ticket (arriba del todo) */
+.ctkBtn{width:100%;border:0;border-radius:30px;padding:14px;font-size:16px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--c),var(--c2));display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,.32);margin-bottom:12px;animation:ctkPulse 1.9s ease-in-out infinite;transition:transform .12s ease;text-transform:uppercase;letter-spacing:.4px}
+.ctkBtn:active{transform:scale(.97)}
+.ctkBtn i{font-size:21px}
+@keyframes ctkPulse{0%,100%{box-shadow:0 7px 18px rgba(79,70,229,.28);transform:scale(1)}50%{box-shadow:0 11px 30px rgba(79,70,229,.55);transform:scale(1.015)}}
+/* search + board */
+.srch{position:relative;margin-bottom:11px}
+.srch i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--c);font-size:19px}
+.srch input{width:100%;height:50px;padding:0 14px 0 44px;border:1.5px solid #e2e8f0;border-radius:28px;font-size:16px;font-family:ui-monospace,monospace;outline:none;background:#fff;transition:border-color .15s ease}
+.srch input:focus{border-color:var(--c)}
+.legend{display:flex;gap:13px;font-size:11px;color:#475569;font-weight:600;margin-bottom:10px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .d{width:11px;height:11px;border-radius:3px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.n{aspect-ratio:1.4/1;border-radius:8px;border:1.5px solid;font-family:ui-monospace,monospace;font-size:12px;font-weight:800;cursor:pointer;background:#f0fdf4;border-color:#bbf7d0;color:#15803d;transition:transform .05s}
+.n.sold{background:#f1f5f9;border-color:#e2e8f0;color:#cbd5e1;cursor:not-allowed}
+.n.sel{background:var(--c);border-color:var(--c);color:#fff;box-shadow:0 3px 8px rgba(79,70,229,.4)}
+.n:not(.sold):active{transform:scale(.93)}
+.pager{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px;font-size:13px;font-weight:700;color:#475569}
+.pager button{width:42px;height:42px;border-radius:11px;border:1.5px solid #e2e8f0;background:#fff;font-size:18px;color:var(--c);cursor:pointer}
+.pager button:disabled{opacity:.4}
+/* selected chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;padding-top:13px;border-top:1px dashed #e2e8f0}
+.chips .lbl{width:100%;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:2px}
+.chip{display:inline-flex;align-items:center;gap:7px;background:#eef2ff;border:1.5px solid #c7d2fe;color:var(--c);font-family:ui-monospace,monospace;font-weight:800;font-size:13px;padding:6px 8px 6px 11px;border-radius:9px}
+.chip b{font-size:14px}
+.chip span{width:18px;height:18px;border-radius:50%;background:#c7d2fe;color:var(--c);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;font-family:sans-serif}
+/* bank tiles */
+.banks{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+.bk{border:2px solid #e2e8f0;border-radius:13px;padding:12px;background:#fff;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px}
+.bk.on{border-color:var(--c);background:#f5f6ff}
+.bk i{font-size:22px;color:var(--c);flex:0 0 auto}
+.bk .nm{font-size:13px;font-weight:800;line-height:1.15}
+.bk .ti{font-size:11px;color:#94a3b8;font-weight:700}
+.acct{margin-top:11px;background:#f8fafc;border:1px solid #e8edf3;border-radius:13px;padding:13px}
+.acct .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0}
+.acct .row+.row{border-top:1px dashed #e2e8f0}
+.acct .k{font-size:11px;color:#94a3b8;font-weight:800;text-transform:uppercase}
+.acct .vv{font-size:15px;font-weight:800;font-family:ui-monospace,monospace}
+.cpy{border:1.5px solid var(--c);color:var(--c);background:#fff;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.cpy:active{background:#eef2ff}
+.vfile{width:100%;padding:16px;border:1.5px dashed #c7d2fe;border-radius:13px;background:#f8fafc;font-size:13px;color:#475569;text-align:center;cursor:pointer;display:block}
+.vfile i{font-size:26px;color:var(--c);display:block;margin-bottom:6px}
+.vprev{margin-top:10px}.vprev img{max-width:100%;border-radius:11px;border:1px solid #e2e8f0}
+.chkbox{display:flex;align-items:flex-start;gap:10px;margin-top:13px;padding:12px;background:#fff;border:1.5px solid #e2e8f0;border-radius:13px;cursor:pointer}
+.chkbox input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--c);margin-top:1px}
+.chkbox .tx{font-size:13px;font-weight:700;color:#334155}
+.chkbox .tx small{display:block;color:#94a3b8;font-weight:600;font-size:11px;margin-top:2px}
+.empty{text-align:center;color:#94a3b8;padding:18px;font-size:13px}
+/* sticky pay bar */
+.cart{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e8edf3;box-shadow:0 -6px 22px rgba(15,23,42,.1);padding:11px 14px calc(11px + env(safe-area-inset-bottom));z-index:30}
+.cart-in{max-width:520px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.miss{max-width:520px;margin:0 auto 7px;font-size:11.5px;font-weight:700;color:#b45309;display:flex;align-items:center;gap:6px}
+.miss i{font-size:14px}
+.checks{max-width:520px;margin:0 auto 7px;display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.ck{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:#94a3b8;background:#f1f5f9;border-radius:16px;padding:3px 9px 3px 4px;transition:background .25s,color .25s}
+.ck .b{width:14px;height:14px;border-radius:50%;background:#cbd5e1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;transition:background .25s}
+.ck.done{color:#15803d;background:#dcfce7}
+.ck.done .b{background:#16a34a;animation:pop .34s cubic-bezier(.3,1.4,.5,1)}
+@keyframes pop{0%{transform:scale(.3)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.wabtn{display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;text-decoration:none;padding:13px 22px;border-radius:13px;font-weight:800;margin:5px}
+.cart .info{flex:1;min-width:0}
+.cart .info .a{font-size:12px;color:#64748b;font-weight:700}
+.cart .info .b{font-size:19px;font-weight:800}
+.cart .go{border:0;border-radius:30px;padding:15px 22px;font-size:16px;font-weight:800;color:#fff;background:var(--c);cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:transform .12s ease,filter .15s ease}
+.cart .go:active{transform:scale(.96);filter:brightness(.94)}
+.cart .go:disabled{opacity:.5}
+.cart .go:disabled{opacity:.5}
+/* verificador */
+.vsearch{display:flex;gap:8px;margin-bottom:14px}
+.vsearch input{flex:1}
+.vsearch button{border:0;border-radius:12px;padding:0 18px;background:var(--c);color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.tk{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.tk .num{font-family:ui-monospace,monospace;font-size:20px;font-weight:800;color:var(--c);flex:0 0 auto}
+.tk .mid{flex:1;min-width:0}
+.tk .mid .nm{font-size:14px;font-weight:800}
+.tk .mid .dt{font-size:11px;color:#94a3b8;font-weight:600}
+.tk .est{font-size:11px;font-weight:800;padding:5px 9px;border-radius:20px;white-space:nowrap}
+.est.ok{background:#dcfce7;color:#16a34a}.est.pend{background:#fef3c7;color:#b45309}.est.apar{background:#e0e7ff;color:#4338ca}
+.tk a{color:var(--c);font-size:20px;text-decoration:none}
+/* generic */
+.msg{text-align:center;color:#64748b;font-size:14px;padding:38px 20px;line-height:1.5}
+.spin{width:34px;height:34px;border:3px solid #c7d2fe;border-top-color:var(--c);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ok{text-align:center;padding:34px 20px}
+.okIc{position:relative;width:76px;height:76px;margin:0 auto 14px}
+.ok .ic{width:76px;height:76px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0;animation:okPop .65s cubic-bezier(.3,1.5,.5,1) both,okGlow 2.4s ease-in-out .7s infinite}
+.okIc .sp{position:absolute;color:#fde047;text-shadow:0 0 6px rgba(250,204,21,.7);animation:spark 1.6s ease-in-out infinite;pointer-events:none}
+.okIc .s1{top:-9px;left:46%;font-size:16px;animation-delay:0s}
+.okIc .s2{top:4px;right:-13px;font-size:12px;animation-delay:.3s}
+.okIc .s3{bottom:-7px;right:4px;font-size:15px;animation-delay:.6s}
+.okIc .s4{bottom:2px;left:-13px;font-size:13px;animation-delay:.9s}
+.okIc .s5{top:0;left:-9px;font-size:11px;animation-delay:1.25s}
+.ok h2{margin:0 0 6px;font-size:23px;text-transform:uppercase;animation:okRise .5s ease .15s both}.ok p{color:#475569;font-size:14px;margin:0 0 8px;line-height:1.5;animation:okRise .5s ease .35s both}
+.ok .nums{font-family:ui-monospace,monospace;font-weight:800;font-size:18px;margin:6px 0 16px;word-break:break-word;background:linear-gradient(90deg,var(--c),#8b5cf6,#22d3ee,var(--c));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:okRise .5s ease .3s both,mgGrad 3s linear infinite}
+.ok a{display:inline-block;background:var(--c);color:#fff;text-decoration:none;padding:13px 24px;border-radius:13px;font-weight:800;margin:5px}
+.ok a.alt{background:#f1f5f9;color:var(--c)}
+@keyframes okPop{0%{transform:scale(0) rotate(-30deg);opacity:0}60%{transform:scale(1.18) rotate(8deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes okGlow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}50%{box-shadow:0 0 0 9px rgba(34,197,94,.12),0 0 24px 4px rgba(34,197,94,.4)}}
+@keyframes okRise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+@keyframes spark{0%,100%{opacity:0;transform:scale(.3) translateY(0) rotate(0)}50%{opacity:1;transform:scale(1) translateY(-5px) rotate(25deg)}}
+/* ───── TEMA OSCURO PREMIUM (lujo dorado, por rifa) ───── */
+body.rdark{background:#08090e;color:#e5e7eb}
+body.rdark::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 55% at 50% -6%,#1a1530 0%,transparent 55%),radial-gradient(80% 45% at 100% 0%,#0f2236 0%,transparent 55%)}
+body.rdark .wrap{position:relative;z-index:1}
+/* cabecera */
+body.rdark .nav{background:rgba(11,13,18,.92);backdrop-filter:blur(8px);border-bottom-color:#23263a}
+body.rdark .nav .ttl b{color:#f3f4f6}
+body.rdark .nav .ttl span{color:var(--gold)}
+body.rdark .nav .lg{background:#171a24;border:1px solid #2a2e3c;color:var(--gold)}
+body.rdark .burger{background:#13161c;border-color:#2a2f39;color:var(--gold)}
+body.rdark .menu{background:#0f1117}
+body.rdark .menu a{color:#f3f4f6}
+body.rdark .menu a i{color:var(--gold)}
+body.rdark .menu a:active{background:#171a24}
+/* hero / bloque premio: negro luxe con filo dorado */
+body.rdark .prem-blk{background:linear-gradient(135deg,#171327,#0c0a16);border:1px solid #2a2540;border-top:0;box-shadow:0 18px 40px -22px #000,inset 0 0 0 1px rgba(233,196,106,.08)}
+body.rdark .prem{background:linear-gradient(180deg,#fff,#d8dbe6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+body.rdark .meta span{background:rgba(233,196,106,.12);color:var(--gold);border:1px solid rgba(233,196,106,.22)}
+body.rdark .meta .cerr{background:#dc2626;color:#fff;border:0}
+/* tarjetas premium */
+body.rdark .card,body.rdark .tbox{background:linear-gradient(180deg,#171a26,#13151f);border-color:#23263a;box-shadow:0 14px 30px -20px rgba(0,0,0,.9)}
+body.rdark .sec h3,body.rdark .paq b,body.rdark .ok h2,body.rdark .thd b,body.rdark .faq summary,body.rdark .hstep .ht b,body.rdark .acct .vv,body.rdark .bk .nm{color:#f3f4f6}
+body.rdark .sec small,body.rdark .faqa,body.rdark .hstep .ht span,body.rdark .ok p,body.rdark .stp .mid small,body.rdark .acct .k,body.rdark .bk .ti{color:#9aa3af}
+body.rdark .sec .nb,body.rdark .hstep .hn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1405}
+/* dígitos y totales en dorado */
+body.rdark .stp .mid b,body.rdark .bigtot b,body.rdark .mg-digits,body.rdark .ok .nums{background:linear-gradient(135deg,var(--goldsoft),var(--gold2));background-size:auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:none}
+body.rdark .bigtot{color:#cbd5e1}
+/* inputs / controles */
+body.rdark .in,body.rdark .srch input,body.rdark .qrow button,body.rdark .paq,body.rdark .luck,body.rdark .lk-roll,body.rdark .vfile,body.rdark .bk,body.rdark .acct,body.rdark .terms{background:#0d0f17;border-color:#2a2f39;color:#e5e7eb}
+body.rdark .qrow button,body.rdark .luck{color:var(--gold)}
+body.rdark .in::placeholder,body.rdark .srch input::placeholder{color:#6b7280}
+body.rdark .terms span{color:#e5e7eb}
+body.rdark .paq.on{background:#1b1206;border-color:var(--gold)}
+body.rdark .paq .pr{color:var(--gold)}
+/* tablero de números */
+body.rdark .n{background:#13161f;border-color:#2a2f39;color:#cbd5e1}
+body.rdark .n.sold{background:#23272f;border-color:#2a2f39;color:#5b6472}
+/* botones de acción en dorado con brillo */
+body.rdark .cart .go,body.rdark .stp .plus,body.rdark .menu .lista,body.rdark .tok,body.rdark .ctkBtn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1405;box-shadow:0 10px 26px -10px rgba(233,196,106,.6)}
+body.rdark .stp .minus{background:#2a2f39;color:#e5e7eb}
+body.rdark .ajugar .pill{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1405;box-shadow:0 8px 22px rgba(233,196,106,.35)}
+body.rdark .ajugar i,body.rdark .luck i{color:var(--gold)}
+body.rdark .cart{background:rgba(15,17,26,.95);backdrop-filter:blur(12px);border-top-color:#23263a}
+body.rdark .cart .info .a{color:#9aa3af}
+body.rdark .cart .info .b{color:#f3f4f6}
+body.rdark .cpy{background:#13161c;color:var(--gold);border-color:var(--gold2)}
+body.rdark .vfile{border-color:#3a3320}
+body.rdark .vfile i{color:var(--gold)}
+body.rdark .bk.on{background:#1b1206;border-color:var(--gold)}
+body.rdark .bk i{color:var(--gold)}
+body.rdark .thd{border-bottom-color:#23263a}
+body.rdark .thd button{background:#23272f;color:#cbd5e1}
+body.rdark .tbody{color:#cbd5e1}
+body.rdark .hint{background:#0d1a12;border-color:#14532d;color:#86efac}
+body.rdark .hint i{color:#4ade80}
+body.rdark .msg,body.rdark .empty{color:#9aa3af}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="msg"><div class="spin"></div>Cargando rifa…</div></div>
+<script>
+(function(){
+  var FUNC="https://tnwsgcxurfyuszxsewsn.supabase.co/functions/v1/rifa";
+  var BOLETO=location.origin+"/boleto.html";
+  var app=document.getElementById("app");
+  var id=new URLSearchParams(location.search).get("id")||"";
+  var R=null, sold={}, page=0, q="", PER=120;
+  var tab="comprar", done=false, menuOpen=false;
+  var MGSTARS='<div class="mgRise"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+  var cart=[];                          // numeros seleccionados (strings)
+  var ctaSel=null, voucherData="", doneNums=[], doneId="", qty=1, pkgSel=null, doneApartado=false, acceptedTerms=false;
+  // datos del comprador persistidos en estado (sobreviven re-render del tablero)
+  var F={nom:"",tel:""};
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c];});}
+  function fmt(n){return "RD$ "+Math.round(Number(n||0)).toLocaleString("en-US");}
+  function pad(n){return String(n).padStart(R.digitos||4,"0");}
+  function pkg(){return pkgSel?(R.paquetes||[]).filter(function(x){return String(x.id)===String(pkgSel);})[0]:null;}
+  function count(){var p=pkg();if(p)return Number(p.cantidad)||0;return (R&&R.ocultar_numeros)?qty:cart.length;}
+  function total(){var p=pkg();if(p)return Number(p.precio)||0;return count()*(R.precio||0);}
+  function paqsHTML(){
+    var ps=(R.paquetes||[]); if(!ps.length)return "";
+    return '<div class="paqLbl"><i class="ti ti-gift"></i> Combos · ahorra en paquete</div><div class="paqs">'+ps.map(function(p){
+      var normal=(R.precio||0)*Number(p.cantidad||0), ah=normal-Number(p.precio||0);
+      return '<button type="button" class="paq'+(String(pkgSel)===String(p.id)?" on":"")+'" onclick="window.__pkg(\''+p.id+'\')"><b>'+Number(p.cantidad||0)+' boletos</b><span class="pr">'+fmt(p.precio)+'</span>'+(p.etiqueta?'<small>'+esc(p.etiqueta)+'</small>':(ah>0?'<small>Ahorras '+fmt(ah)+'</small>':''))+'</button>';
+    }).join('')+'</div>'+(pkgSel&&!R.ocultar_numeros?'<div class="paqNote"><i class="ti ti-wand"></i> El combo te asigna los números al azar.</div>':'');
+  }
+  function vouReq(){return true;}                              // el comprobante es obligatorio: sin el, no se habilita Confirmar
+  function limMax(){return parseInt(R.limite_por_persona,10)||0;}
+  function onlyD(s){return String(s||"").replace(/\D/g,"");}
+  function val(idv){var e=document.getElementById(idv);return e?e.value:"";}
+  function bannerImg(){return R.hasImg?'<img class="banner" src="'+FUNC+'?id='+encodeURIComponent(id)+'&img=1" alt="">':'';}
+
+  if(!id){app.innerHTML='<div class="msg">Enlace de rifa inválido.</div>';return;}
+  load();
+  function load(){
+    return fetch(FUNC+"?id="+encodeURIComponent(id)).then(function(r){return r.ok?r.json():Promise.reject();}).then(function(d){
+      R=d; sold={}; (d.vendidos||[]).forEach(function(n){sold[n]=1;});
+      document.documentElement.style.setProperty("--c", d.color||"#4f46e5");
+      document.documentElement.style.setProperty("--c2", shade(d.color||"#4f46e5",-18));
+      document.body.classList.toggle("rdark", d.tema==="oscuro");
+      render();
+      if(d.tema==="auto") autoTheme();
+    }).catch(function(){app.innerHTML='<div class="msg">No se pudo cargar la rifa.<br>Verifica el enlace.</div>';});
+  }
+  function shade(hex,p){try{var m=/^#?([0-9a-f]{6})$/i.exec(hex);if(!m)return hex;var n=parseInt(m[1],16),r=(n>>16)&255,g=(n>>8)&255,b=n&255,f=function(x){return Math.max(0,Math.min(255,Math.round(x+x*p/100)));};return "#"+((1<<24)+(f(r)<<16)+(f(g)<<8)+f(b)).toString(16).slice(1);}catch(e){return hex;}}
+  // Tema AUTO: toma el color dominante del banner y decide claro/oscuro
+  function autoTheme(){
+    if(!R.hasImg)return;
+    var img=new Image(); img.crossOrigin="anonymous";
+    img.onload=function(){
+      try{
+        var w=28,h=28,cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        var ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);
+        var d=ctx.getImageData(0,0,w,h).data;
+        var ar=0,ag=0,ab=0,an=0; // promedio (para claro/oscuro)
+        var br=0,bg=0,bb=0,bn=0; // promedio de pixeles vivos (para el acento)
+        for(var i=0;i<d.length;i+=4){var r=d[i],g=d[i+1],b=d[i+2];ar+=r;ag+=g;ab+=b;an++;
+          var mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+          if(mx-mn>45){br+=r;bg+=g;bb+=b;bn++;}}
+        if(!an)return;
+        var R0=Math.round(ar/an),G0=Math.round(ag/an),B0=Math.round(ab/an);
+        var lum=0.299*R0+0.587*G0+0.114*B0;
+        var cr,cg,cb;
+        if(bn>an*0.05){cr=Math.round(br/bn);cg=Math.round(bg/bn);cb=Math.round(bb/bn);}else{cr=R0;cg=G0;cb=B0;}
+        var hex="#"+[cr,cg,cb].map(function(x){return ("0"+(x&255).toString(16)).slice(-2);}).join("");
+        document.documentElement.style.setProperty("--c",hex);
+        document.documentElement.style.setProperty("--c2",shade(hex,-22));
+        document.body.classList.toggle("rdark",lum<120);
+        render();
+      }catch(e){}
+    };
+    img.src=FUNC+"?id="+encodeURIComponent(id)+"&img=1";
+  }
+
+  function isCerrada(){return R.estado==="sorteada"||R.estado==="cerrada";}
+  function waNum(){var n=onlyD(R.whatsapp||"");if(n.length===10)n="1"+n;return n;}
+  function waLink(txt){var n=waNum();if(n.length<8)return "";return "https://wa.me/"+n+(txt?("?text="+txt):"");}
+  function navHTML(){
+    var logo=R.logo?'<img src="'+esc(R.logo)+'" alt="">':'<i class="ti ti-ticket"></i>';
+    return '<div class="topaccent"></div><div class="nav"><div class="lg" onclick="window.__go(\'comprar\')" style="cursor:pointer">'+logo+'</div><div class="ttl"><b>'+esc(R.biz||R.nombre||"Rifa")+'</b>'+((R.biz&&R.nombre)?'<span>'+esc(R.nombre)+'</span>':'')+'</div>'+
+      '<button class="burger" type="button" aria-label="Menú" onclick="window.__menu()"><i class="ti ti-'+(menuOpen?'x':'layout-grid')+'"></i></button></div>';
+  }
+  function menuHTML(){
+    var wa=waLink();
+    return '<div class="menu">'+
+      '<a onclick="window.__go(\'comprar\')"><i class="ti ti-home"></i> Inicio</a>'+
+      '<a onclick="window.__go(\'verificar\')"><i class="ti ti-circle-check"></i> Consultar ticket</a>'+
+      (wa?'<a href="'+wa+'" target="_blank" rel="noopener" onclick="window.__menu()"><i class="ti ti-brand-whatsapp"></i> Contacto</a>':'')+
+      '<button class="lista" type="button" onclick="window.__go(\'comprar\')"><i class="ti ti-player-play"></i> JUGAR</button>'+
+      '<a onclick="window.__faq()"><i class="ti ti-help-circle"></i> Preguntas frecuentes</a>'+
+    '</div>';
+  }
+  function premioHTML(pct,fecha,cerrada){
+    return '<div class="prem-blk"><div class="prem">'+esc(R.premio||R.nombre||"")+'</div>'+
+      '<div class="meta"><span><i class="ti ti-coin"></i> '+fmt(R.precio)+' c/u</span>'+fecha+(cerrada?'<span class="cerr">CERRADA</span>':'')+'</div>'+
+      (R.mostrar_progreso!==false?'<div class="prog"><div id="progFill" data-pct="'+pct+'"></div>'+(R.mostrar_porcentaje!==false?'<span class="pct">'+pct+'% vendido</span>':'')+'</div>':'')+'</div>';
+  }
+  function wafabAdd(cerrada){
+    var n=waNum(); if(n.length<8)return;
+    var f=document.createElement("a"); f.className="wafab"; f.id="wafab"; f.href=waLink(); f.target="_blank"; f.rel="noopener";
+    f.innerHTML='<i class="ti ti-brand-whatsapp"></i>';
+    var hasCart=(tab==="comprar"&&!cerrada&&!done);
+    f.style.bottom=hasCart?'96px':'calc(18px + env(safe-area-inset-bottom))';
+    document.body.appendChild(f);
+  }
+
+  // ── render principal (TODO en una sola pantalla con scroll)
+  function render(){
+    var totalN=R.cantidad||10000, vendN=R.count||0;
+    var pct=totalN?Math.min(100,Math.round(vendN/totalN*100)):0;
+    var cerrada=isCerrada();
+    var fecha=(R.mostrar_fecha!==false&&R.fecha_sorteo)?'<span><i class="ti ti-calendar"></i> '+esc(new Date(R.fecha_sorteo).toLocaleDateString("es-DO",{day:"2-digit",month:"short",year:"numeric"}))+'</span>':'';
+
+    var content;
+    if(done){ content=viewListo(); }
+    else if(tab==="verificar"){ content=viewVerificar(); }
+    else if(cerrada){ content='<div class="body">'+(R.numero_ganador!=null?'<div class="card mg-card" style="text-align:center">'+MGSTARS+'<div class="sec" style="justify-content:center"><h3>Número ganador</h3></div><div style="font-size:34px;color:var(--c);font-weight:800;font-family:ui-monospace,monospace;letter-spacing:5px">'+esc(pad(R.numero_ganador))+'</div></div>':'')+'<div class="msg">Esta rifa ya está cerrada. ¡Gracias por participar!</div></div>'; }
+    else { content=viewComprar(); }
+
+    var topHead=done?'':(bannerImg()+premioHTML(pct,fecha,cerrada));
+    app.innerHTML=navHTML()+(menuOpen?menuHTML():'')+topHead+content;
+    var oc=document.getElementById("cartBar"); if(oc)oc.remove();
+    var ow=document.getElementById("wafab"); if(ow)ow.remove();
+    if(tab==="comprar"&&!cerrada&&!done){ if(!R.ocultar_numeros)boardInto(); cartBar(); }
+    wafabAdd(cerrada);
+    var pf=document.getElementById("progFill"); if(pf){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ pf.style.width=(pf.getAttribute("data-pct")||0)+"%"; }); }); }
+  }
+  window.__menu=function(){ menuOpen=!menuOpen; render(); };
+  window.__go=function(t){ tab=t; menuOpen=false; done=false; window.scrollTo(0,0); render(); };
+  window.__faq=function(){ tab="comprar"; menuOpen=false; done=false; render(); setTimeout(function(){ var f=document.getElementById("faqsec")||document.getElementById("comojugar"); if(f)f.scrollIntoView({behavior:"smooth",block:"start"}); },130); };
+
+  // ── COMPRAR (1 sola pantalla): datos arriba, números, pago, y barra de total fija
+  function viewComprar(){
+    var ctas=R.cuentas||[];
+    var ATA=Array.isArray(R.atajos)?R.atajos:[1,5,10,25];
+    var pago=ctas.length?'<div class="banks">'+ctas.map(function(c){var ic=c.tipo==="tarjeta"?"ti-credit-card":(c.tipo==="movil"?"ti-device-mobile":"ti-building-bank");return '<button type="button" class="bk'+(ctaSel===c.id?" on":"")+'" onclick="window.__pickBank(\''+c.id+'\')"><i class="ti '+ic+'"></i><div><div class="nm">'+esc(c.banco||"Cuenta")+'</div><div class="ti">'+esc(c.tipo||"banco")+'</div></div></button>';}).join('')+'</div><div id="acct"></div>':'<div class="empty">El organizador le enviará la confirmación por WhatsApp.</div>';
+
+    return '<div class="body">'+
+      '<button class="ctkBtn mg-shine" type="button" onclick="window.__go(\'verificar\')"><i class="ti ti-list-search"></i> Consultar mi ticket</button>'+
+      descripcionHTML()+
+      comoJugarHTML()+
+      '<div class="ajugar"><span class="pill mg-shine">¡A JUGAR!</span><i class="ti ti-chevron-down"></i></div>'+
+      // 1) Tus datos
+      '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">1</div><div><h3>Tus datos</h3><small>Para registrar tu compra</small></div></div>'+
+        '<label class="fl">Nombre completo <span class="req">*</span></label><input id="fNom" class="in" placeholder="Tu nombre y apellido" autocomplete="name" value="'+esc(F.nom)+'" oninput="window.__sv(\'nom\',this.value)">'+
+        '<label class="fl">WhatsApp <span class="req">*</span></label><input id="fTel" class="in" inputmode="tel" placeholder="809-000-0000" autocomplete="tel" value="'+esc(F.tel)+'" oninput="window.__sv(\'tel\',this.value)">'+
+        '</div>'+
+      // 2) Elige cuántos (numeros ocultos) o tus números (tablero)
+      (R.ocultar_numeros?
+        '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>¿Cuántos tickets quieres?</h3><small>El sistema te asigna los números al azar'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
+          '<div class="stp"><button class="minus" onclick="window.__qty(-1)" '+(qty<=1?'disabled':'')+'>−</button><div class="mid"><input type="number" inputmode="numeric" min="1" id="qtyN" class="mg-digits" value="'+qty+'" aria-label="Cantidad de boletos" onclick="event.stopPropagation()" onchange="window.__qty(Math.max(1,Math.floor(Number(this.value))||1),1)"><small>'+(qty===1?'BOLETO':'BOLETOS')+'</small></div><button class="plus" onclick="window.__qty(1)">+</button></div>'+
+          '<div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div>'+
+          (ATA.length?'<div class="qrow" style="margin-top:6px">'+ATA.map(function(k){return '<button onclick="window.__qty('+k+',1)">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
+          paqsHTML()+'<div class="hint sm1"><i class="ti ti-wand"></i> Te asignamos <b id="qtyTxt">'+qty+'</b> número(s) al azar.</div></div>'
+       :
+        '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">2</div><div><h3>Elige tus números</h3><small>Toca uno o varios'+(limMax()?' · máx '+limMax():'')+'</small></div></div>'+
+          paqsHTML()+(ATA.length?'<div class="qrow">'+ATA.map(function(k){return '<button onclick="window.__luck('+k+')">+'+k+'<small>'+fmt(k*(R.precio||0))+'</small></button>';}).join('')+'</div>':'')+
+          '<button class="luck mg-shine" onclick="window.__luck(1)"><i class="ti ti-star-filled"></i> Elegir a la suerte <i class="ti ti-star-filled"></i></button>'+
+          '<div class="srch mg-glow"><i class="ti ti-search"></i><input id="q" inputmode="numeric" placeholder="Busca tu número…" value="'+esc(q)+'" oninput="window.__q(this.value)"></div>'+
+          '<div class="legend"><span><i class="d" style="background:#bbf7d0"></i>Disponible</span><span><i class="d" style="background:var(--c)"></i>Elegido</span><span><i class="d" style="background:#e2e8f0"></i>Ocupado</span></div>'+
+          '<div id="bd"></div><div id="chips"></div><div class="bigtot">Total: <b id="stTot" class="mg-digits">'+fmt(total())+'</b></div></div>')+
+      // 3) Método de pago
+      '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb">3</div><div><h3>Método de pago</h3><small>Paga y sube tu comprobante</small></div></div>'+
+        pago+
+        '<label class="fl">Comprobante de pago (voucher) '+(vouReq()?'<span class="req">*</span>':'<span class="opt">(opcional)</span>')+'</label>'+
+        '<label class="vfile" for="bVou"><i class="ti ti-camera-plus"></i>Toca para subir foto del depósito o transferencia</label>'+
+        '<input type="file" id="bVou" accept="image/*" style="display:none" onchange="window.__vou(this)"><div id="vp" class="vprev">'+(voucherData?'<img src="'+voucherData+'">':'')+'</div>'+
+        (vouReq()?'<div style="font-size:11.5px;color:#94a3b8;margin-top:8px;text-align:center">Adjunta tu comprobante para habilitar el botón <b>Confirmar</b>.</div>':'')+
+        '<div class="hint" style="margin-top:11px"><i class="ti ti-clock"></i> Tu número queda <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b> mientras el organizador confirma tu pago.</div>'+
+        '<label class="terms"><input type="checkbox" id="tck"'+(acceptedTerms?' checked':'')+' onchange="window.__terms(this.checked)"><span>Acepto los <a href="#" onclick="window.__showTerms();return false;">términos y condiciones</a>.</span></label>'+
+      '</div>'+
+      sorteoHTML()+
+      faqHTML()+
+      '</div>';
+  }
+  function descripcionHTML(){
+    var d=(R.descripcion||"").trim(); if(!d)return '';
+    return '<div class="card mg-card">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-gift"></i></div><div><h3>El premio</h3><small>Lo que te puedes ganar</small></div></div><div class="rtxt">'+esc(d).replace(/\n/g,"<br>")+'</div></div>';
+  }
+  function sorteoHTML(){
+    var d=(R.como_sorteo||"").trim(); if(!d)return '';
+    return '<div class="card mg-card" id="sorteosec">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-confetti"></i></div><div><h3>¿Cómo es el sorteo?</h3><small>Así se elige el ganador</small></div></div><div class="rtxt">'+esc(d).replace(/\n/g,"<br>")+'</div></div>';
+  }
+  function comoJugarHTML(){
+    var def=[
+      {t:'Tus datos',d:'Escribe tu nombre y tu número de WhatsApp.'},
+      {t:'Elige',d:(R.ocultar_numeros?'Indica cuántos boletos quieres; el sistema te asigna los números al azar.':'Toca los números que quieras o usa “A la suerte”.')},
+      {t:'Paga',d:'Transfiere a la cuenta indicada y sube la foto de tu comprobante.'},
+      {t:'Acepta los términos y condiciones',d:'Marca la casilla de aceptación para poder confirmar tu compra.'},
+      {t:'Recibe tu boleto',d:'Te confirmamos y te enviamos tu boleto por WhatsApp.'}
+    ];
+    var pasos=Array.isArray(R.tutorial)?R.tutorial:def;
+    if(!pasos.length)return '';
+    return '<div class="card mg-card" id="comojugar">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-player-play"></i></div><div><h3>¿Cómo jugar?</h3><small>Muy fácil, en '+pasos.length+' paso'+(pasos.length===1?'':'s')+'</small></div></div>'+
+      '<div class="howto">'+pasos.map(function(p,i){return '<div class="hstep"><div class="hn">'+(i+1)+'</div><div class="ht"><b>'+esc(p.t)+'</b><span>'+esc(p.d)+'</span></div></div>';}).join('')+'</div>'+
+    '</div>';
+  }
+  function faqHTML(){
+    var fq=R.faqs||[]; if(!fq.length)return '';
+    return '<div class="card mg-card" id="faqsec">'+MGSTARS+'<div class="sec"><div class="nb"><i class="ti ti-help-circle"></i></div><div><h3>Preguntas frecuentes</h3><small>Resolvemos tus dudas</small></div></div>'+
+      fq.map(function(f){return '<details class="faq"><summary>'+esc(f.q||'')+'<i class="ti ti-plus faqIco"></i><i class="ti ti-minus faqIco"></i></summary><div class="faqa">'+esc(f.a||'').replace(/\n/g,'<br>')+'</div></details>';}).join('')+
+    '</div>';
+  }
+  function boardInto(){
+    var wrap=document.getElementById("bd"); if(!wrap)return;
+    var totalN=R.cantidad||10000, nums=[];
+    for(var i=0;i<totalN;i++){var s=pad(i); if(!q||s.indexOf(q)>=0) nums.push(s);}
+    var pages=Math.max(1,Math.ceil(nums.length/PER)); if(page>=pages)page=0;
+    var slice=nums.slice(page*PER,page*PER+PER);
+    var selMap={}; cart.forEach(function(n){selMap[n]=1;});
+    var cells=slice.map(function(s){var so=sold[s], se=selMap[s];
+      var cls="n"+(so?" sold":(se?" sel":""));
+      return '<button class="'+cls+'" '+(so?'disabled':'onclick="window.__toggle(\''+s+'\')"')+'>'+s+'</button>';}).join('');
+    var pager=pages>1?'<div class="pager"><button onclick="window.__pg(-1)" '+(page<=0?'disabled':'')+'><i class="ti ti-chevron-left"></i></button><span>Pág '+(page+1)+' / '+pages+'</span><button onclick="window.__pg(1)" '+(page>=pages-1?'disabled':'')+'><i class="ti ti-chevron-right"></i></button></div>':'';
+    wrap.innerHTML='<div class="board">'+(slice.length?cells:'<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;font-size:13px">Sin números con ese filtro</div>')+'</div>'+pager;
+    chipsInto();
+  }
+  function chipsInto(){
+    var el=document.getElementById("chips"); if(!el)return;
+    if(!cart.length){el.innerHTML="";return;}
+    el.innerHTML='<div class="chips"><span class="lbl">Tus números ('+cart.length+')</span>'+cart.map(function(n){return '<span class="chip"><b>'+esc(n)+'</b><span onclick="window.__toggle(\''+n+'\')"><i class="ti ti-x"></i></span></span>';}).join('')+'</div>';
+  }
+  function canSubmit(){ return count()>0 && (F.nom||"").trim() && (F.tel||"").trim() && (!vouReq() || !!voucherData) && acceptedTerms; }
+  window.__terms=function(v){ acceptedTerms=!!v; refreshCart(); };
+  function termsText(){
+    var emp=(R.biz||R.nombre||"la empresa rifadora");
+    return 'TÉRMINOS Y CONDICIONES DE LA RIFA PROMOCIONADA POR '+emp+'\n\n'+
+    'Yo, en calidad de participante (en lo adelante: “Participante”) de la rifa promocionada por '+emp+' (en lo adelante: “Organizador”), con la compra de uno o más boletos acepto los siguientes términos y condiciones:\n\n'+
+    '(1) Reconozco que soy mayor de edad, que cuento con un documento de identificación y me encuentro en República Dominicana;\n\n'+
+    '(2) Declaro haber leído y tener conocimiento de las bases de esta rifa que ha sido registrada en Pro Consumidor y reconozco que el organizador puede variar estas bases, mediante una notificación a dicho ente regulador conforme la legislación aplicable;\n\n'+
+    '(3) Reconozco que los ganadores de los premios se escogerán al azar;\n\n'+
+    '(4) Declaro que la información de contacto proporcionada es el único mecanismo para ser localizado en caso de resultar ganador y que, si resulto ganador y no puedo ser contactado mediante el número de teléfono proporcionado, el promotor de la rifa elegirá a un ganador alterno según los términos indicados por este;\n\n'+
+    '(5) Si resulto ganador de la rifa, acepto que el organizador puede usar mi nombre, imagen y/o voz (incluyendo fotografía y/o grabación) para anunciarme como ganador de esta rifa por un período de tiempo ilimitado sin remuneración con propósitos publicitarios relacionados con la promoción. Además, acepto participar en cualquier publicidad razonable requerida por el organizador;\n\n'+
+    '(6) Estoy de acuerdo en que, si resulto ganador del sorteo, es posible que se me solicite que brinde más información personal y prueba de mi identidad para confirmar mi elegibilidad para reclamar el premio y transferirme la propiedad del premio;\n\n'+
+    '(7) El premio es intransferible, razón por la cual, no podrá ser cedido, ni negociado, ni canjeado por otro premio, producto, servicio, contraprestación y/o dinero;\n\n'+
+    '(8) Reconozco que debo reclamar el premio personalmente. El premio no puede ser reclamado por un tercero en mi nombre;\n\n'+
+    '(9) El premio es provisto por un tercero ajeno al organizador. Por lo tanto, acepto que el organizador no hace representaciones y no ofrece garantías sobre el premio, su valor o su condición de este. Declaro que libero al organizador de cualquier responsabilidad civil o penal suscitada por cualquier defecto, desperfecto o imperfección que provoque algún daño o reparo como consecuencia del uso del premio;\n\n'+
+    '(10) Si resulto ganador, me comprometo a firmar el acta o documento de entrega y/o cualquier otra documentación que se requiera para la entrega del premio;\n\n'+
+    '(11) Acepto que la información proporcionada al organizador de la rifa sea ingresada en una base de datos y que el organizador podrá usar esta información en cualquier medio para futuros propósitos promocionales, de mercadeo y publicidad sin referencia o pago u otra compensación para el Participante (en cualquier momento podrá solicitar la cancelación de la suscripción en la base de datos);\n\n'+
+    '(12) Debido a las existencias en el mercado, puede existir variación en el color de los premios, pero respetando el mismo modelo del producto; en caso de que el premio ofertado se agote en el país, el organizador contactará al ganador para sustituir el premio por algún otro de características y valor semejantes;\n\n'+
+    '(13) En caso de resultar ganador, acepto asumir íntegramente el costo de los impuestos, gastos legales y trámites necesarios para transferir a mi nombre el premio obtenido.';
+  }
+  window.__showTerms=function(){ var ov=document.getElementById("tmodal"); if(ov)ov.remove();
+    ov=document.createElement("div"); ov.id="tmodal"; ov.className="tmodal"; ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    ov.innerHTML='<div class="tbox"><div class="thd"><b>Términos y condiciones</b><button onclick="document.getElementById(\'tmodal\').remove()"><i class="ti ti-x"></i></button></div><div class="tbody">'+esc(termsText()).replace(/\n/g,"<br>")+'</div><button class="tok" onclick="window.__terms(true);var c=document.getElementById(\'tck\');if(c)c.checked=true;document.getElementById(\'tmodal\').remove();">Aceptar y cerrar</button></div>';
+    document.body.appendChild(ov);
+  };
+  function checksHTML(){
+    function item(idv,lbl,ok){return '<div class="ck'+(ok?' done':'')+'" id="'+idv+'"><span class="b"><i class="ti ti-check"></i></span>'+lbl+'</div>';}
+    var h=item('ckNom','Datos',!!(F.nom||"").trim()&&!!(F.tel||"").trim())
+      +item('ckNum',R.ocultar_numeros?'Ticket':'Número',count()>0)
+      +item('ckVou','Comprobante',!!voucherData)
+      +item('ckTerm','Términos',acceptedTerms);
+    return h;
+  }
+  function updChecks(){ function ck(idv,ok){var e=document.getElementById(idv);if(e)e.classList.toggle('done',!!ok);}
+    ck('ckNom',!!(F.nom||"").trim()&&!!(F.tel||"").trim()); ck('ckNum',count()>0); ck('ckVou',!!voucherData); ck('ckTerm',acceptedTerms); }
+  function cartBar(){
+    var bar=document.createElement("div"); bar.className="cart"; bar.id="cartBar";
+    bar.innerHTML='<div class="checks" id="cChecks">'+checksHTML()+'</div>'+
+      '<div class="cart-in"><div class="info"><div class="a"><span id="cInfo">'+count()+' '+(count()===1?'ticket':'tickets')+'</span> · '+fmt(R.precio)+' c/u</div><div class="b" id="cTot">'+fmt(total())+'</div></div>'+
+      '<button class="go" id="goBtn" '+(canSubmit()?'':'disabled')+' onclick="window.__confirm()"><i class="ti ti-circle-check"></i> Confirmar</button></div>';
+    document.body.appendChild(bar);
+  }
+  function refreshCart(){ var b=document.getElementById("cartBar"); if(!b){cartBar();return;} var info=b.querySelector("#cInfo"), tot=b.querySelector("#cTot"), go=b.querySelector("#goBtn");
+    if(info)info.textContent=count()+' '+(count()===1?'ticket':'tickets'); if(tot)tot.textContent=fmt(total());
+    var st=document.getElementById("stTot"); if(st)st.textContent=fmt(total());
+    updChecks();
+    go.disabled=!canSubmit(); }
+  window.__qty=function(d,abs){ qty=abs?d:Math.max(1,qty+d); if(qty>200)qty=200; if(limMax()&&qty>limMax()){qty=limMax();}
+    if(pkgSel){pkgSel=null;render();return;}
+    var n=document.getElementById("qtyN"),t=document.getElementById("qtyTxt"); if(n)n.value=qty; if(t)t.textContent=qty;
+    var box=document.querySelector(".stp"); if(box){var minus=box.querySelector(".minus"); if(minus)minus.disabled=qty<=1; var sm=box.querySelector(".mid small"); if(sm)sm.textContent=qty===1?'BOLETO':'BOLETOS';}
+    refreshCart();
+  };
+
+  window.__tab=function(t){ tab=t; var b=document.getElementById("cartBar"); if(b)b.remove(); render(); };
+  window.__sv=function(k,v){ F[k]=v; refreshCart(); };
+  function snap(){ // guarda lo escrito antes de un re-render
+    var ks={nom:"fNom",tel:"fTel"};
+    for(var k in ks){ var e=document.getElementById(ks[k]); if(e)F[k]=e.value; }
+  }
+  window.__q=function(v){q=(v||"").replace(/\D/g,"");page=0;boardInto();};
+  window.__pg=function(d){page+=d;if(page<0)page=0;boardInto();};
+  window.__pkg=function(pid){ if(String(pkgSel)===String(pid)){pkgSel=null;} else { pkgSel=pid; var p=pkg(); if(p)qty=Number(p.cantidad)||1; } window.scrollTo(0,0); render(); };
+  window.__toggle=function(n){ if(sold[n])return; var i=cart.indexOf(n); if(i>=0){cart.splice(i,1);} else { if(limMax()&&cart.length>=limMax()){alert("Máximo "+limMax()+" tickets por persona.");return;} cart.push(n); } cart.sort(); if(pkgSel){pkgSel=null;render();return;} boardInto(); refreshCart(); };
+  window.__luck=function(k){ pkgSel=null; var totalN=R.cantidad||10000, av=[], selMap={}; cart.forEach(function(n){selMap[n]=1;});
+    if(limMax()){ var room=limMax()-cart.length; if(room<=0){alert("Máximo "+limMax()+" tickets por persona.");return;} k=Math.min(k,room); }
+    for(var i=0;i<totalN;i++){var s=pad(i);if(!sold[s]&&!selMap[s])av.push(s);}
+    if(!av.length){alert("Ya no quedan números disponibles.");return;}
+    for(var j=0;j<k&&av.length;j++){var idx=Math.floor(Math.random()*av.length);cart.push(av[idx]);av.splice(idx,1);}
+    cart.sort(); render();
+  };
+
+  // pago
+  window.__pickBank=function(cid){ ctaSel=cid; var acct=document.getElementById("acct"); var c=(R.cuentas||[]).filter(function(x){return x.id===cid;})[0]; if(!c){return;}
+    var btns=document.querySelectorAll(".bk"); (R.cuentas||[]).forEach(function(x,i){if(btns[i])btns[i].classList.toggle("on",x.id===cid);});
+    if(!acct)return;
+    var clase=c.clase?(c.clase==="ahorro"?"Ahorro":(c.clase==="corriente"?"Corriente":esc(c.clase))):"";
+    acct.innerHTML='<div class="acct">'+
+      '<div class="row"><div><div class="k">Banco</div><div class="vv">'+esc(c.banco||"")+(clase?' · '+clase:'')+'</div></div></div>'+
+      (c.titular?'<div class="row"><div><div class="k">Titular</div><div class="vv">'+esc(c.titular)+'</div></div></div>':'')+
+      (c.rnc_cedula?'<div class="row"><div><div class="k">RNC / Cédula</div><div class="vv">'+esc(c.rnc_cedula)+'</div></div></div>':'')+
+      '<div class="row"><div style="min-width:0"><div class="k">No. de cuenta</div><div class="vv">'+esc(c.numero_cuenta||"")+'</div></div><button class="cpy" onclick="window.__copy(\''+esc(c.numero_cuenta||"").replace(/'/g,"")+'\',this)"><i class="ti ti-copy"></i> Copiar</button></div>'+
+      '</div>';
+  };
+  window.__copy=function(txt,btn){ var done2=function(){var o=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> Copiado';setTimeout(function(){btn.innerHTML=o;},1400);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done2,function(){fb(txt);done2();});}else{fb(txt);done2();} };
+  function fb(t){try{var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}catch(e){}}
+  window.__vou=function(input){
+    var f=input.files&&input.files[0];if(!f)return;
+    if(f.size>12*1024*1024){alert("Imagen muy grande (máx 12MB).");return;}
+    var rd=new FileReader();rd.onload=function(ev){var img=new Image();img.onload=function(){try{var max=1100,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);voucherData=cv.toDataURL("image/jpeg",0.72);}catch(e){voucherData=ev.target.result;}var p=document.getElementById("vp");if(p)p.innerHTML='<img src="'+voucherData+'">'; refreshCart(); };img.src=ev.target.result;};rd.readAsDataURL(f);
+  };
+
+  window.__confirm=function(){
+    snap();
+    if(!count()){alert("Elige al menos un ticket.");return;}
+    if(!(F.nom||"").trim()){alert("Escribe tu nombre completo.");scrollTo(0,0);return;}
+    if(!(F.tel||"").trim()){alert("Escribe tu número de WhatsApp.");scrollTo(0,0);return;}
+    if(vouReq() && !voucherData){alert("Adjunta el comprobante de pago para continuar.");return;}
+    if(!acceptedTerms){alert("Debes aceptar los términos y condiciones para continuar.");return;}
+    var btn=document.getElementById("goBtn"); btn.disabled=true; btn.innerHTML='<div class="spin" style="width:20px;height:20px;border-width:2px;margin:0"></div> Enviando…';
+    var payload={ rifa_id:id, nombre:(F.nom||"").trim(), telefono:(F.tel||"").trim(),
+      cuenta_id:ctaSel||null, voucher:voucherData||null };
+    if(pkgSel) payload.paquete_id=pkgSel; else if(R.ocultar_numeros) payload.cantidad=qty; else payload.numeros=cart;
+    fetch(FUNC,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok&&res.j.ok){ doneNums=res.j.numeros||cart; doneId=res.j.id||""; doneApartado=!!res.j.apartado; done=true; window.scrollTo(0,0); render(); }
+        else { alert(res.j.error||"No se pudo registrar. Intenta otra vez."); btn.disabled=false; btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';
+          if(/tomad/i.test(res.j.error||"")){ load().then(function(){ cart=cart.filter(function(n){return !sold[n];}); render(); }); } }
+      }).catch(function(){alert("Error de conexión. Intenta otra vez.");btn.disabled=false;btn.innerHTML='<i class="ti ti-circle-check"></i> Confirmar';});
+  };
+
+  // ── LISTO
+  function viewListo(){
+    var link=doneId?(BOLETO+"?id="+doneId):"";
+    var msg=doneApartado
+      ? 'Tu número quedó <b>apartado por '+(parseInt(R.apartado_horas,10)||24)+' horas</b>. Envía tu comprobante de pago por WhatsApp para confirmarlo; si no, se liberará.'
+      : "Recibimos tu comprobante. El organizador <b>confirmará tu pago</b> y tus boletos quedarán activos.";
+    var waTxt=encodeURIComponent('🎟️ '+(R.premio||R.biz||'Rifa')+'\nMis números: '+doneNums.join(", ")+(link?'\nMi boleto: '+link:''));
+    var bn=onlyD(F.tel||""); if(bn.length===10)bn="1"+bn;
+    var waHref='https://api.whatsapp.com/send?'+(bn.length>=8?('phone='+bn+'&'):'')+'text='+waTxt;
+    var wa=link?'<a class="wabtn mg-shine" href="'+waHref+'" target="_blank" rel="noopener"><i class="ti ti-brand-whatsapp"></i> Enviar mi boleto por WhatsApp</a>':'';
+    return '<div class="body"><div class="ok"><div class="okIc"><div class="ic"><i class="ti ti-circle-check"></i></div><span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span><span class="sp s5">✦</span></div>'+
+      '<h2>¡Listo! '+doneNums.length+' '+(doneNums.length===1?'ticket apartado':'tickets apartados')+'</h2>'+
+      '<div class="nums">'+doneNums.map(esc).join("  ")+'</div>'+
+      '<p>'+msg+'</p>'+wa+(link?'<a href="'+link+'">Ver mi boleto</a>':'')+
+      '<a class="alt" href="#" onclick="window.__reset();return false;">Comprar más</a></div></div>';
+  }
+  window.__reset=function(){ cart=[]; qty=1; pkgSel=null; voucherData=""; ctaSel=null; acceptedTerms=false; done=false; tab="comprar"; window.scrollTo(0,0); render(); };
+
+  // ── VERIFICADOR
+  function viewVerificar(){
+    return '<div class="body"><div class="card mg-card">'+MGSTARS+'<div class="sec"><div><h3>Consultar mis tickets</h3><small>Busca por tu WhatsApp o número de ticket</small></div></div>'+
+      '<div class="vsearch"><input id="vq" class="in" inputmode="numeric" placeholder="Tu WhatsApp o tu número" value="'+esc(window.__vq||"")+'" onkeydown="if(event.key===\'Enter\')window.__verif()"><button onclick="window.__verif()">Buscar</button></div>'+
+      '<div id="vres"></div></div></div>';
+  }
+  window.__verif=function(){
+    var v=(val("vq")||"").trim(); window.__vq=v;
+    var box=document.getElementById("vres"); if(!box)return;
+    if(onlyD(v).length<3){box.innerHTML='<div class="empty">Escribe tu WhatsApp o tu número de ticket.</div>';return;}
+    box.innerHTML='<div class="msg"><div class="spin"></div>Buscando…</div>';
+    fetch(FUNC+"?id="+encodeURIComponent(id)+"&buscar="+encodeURIComponent(v)).then(function(r){return r.json();}).then(function(d){
+      var ts=d.tickets||[];
+      if(!ts.length){box.innerHTML='<div class="empty">No encontramos tickets con eso.<br>Verifica el número e intenta de nuevo.</div>';return;}
+      box.innerHTML=ts.map(function(t){
+        var cls=t.estado==="confirmado"?"ok":(t.estado==="apartado"?"apar":"pend");
+        var lbl=t.estado==="confirmado"?"✓ Pagado":(t.estado==="apartado"?"Apartado":"Por confirmar");
+        var f=t.fecha?new Date(t.fecha).toLocaleDateString("es-DO",{day:"2-digit",month:"short"}):"";
+        return '<div class="tk"><div class="num">'+esc(t.numero)+'</div><div class="mid"><div class="nm">'+esc(t.comprador||"")+'</div><div class="dt">'+esc(f)+' · '+fmt(t.precio)+'</div></div><span class="est '+cls+'">'+lbl+'</span><a href="'+BOLETO+'?id='+t.id+'" title="Ver boleto"><i class="ti ti-external-link"></i></a></div>';
+      }).join('');
+    }).catch(function(){box.innerHTML='<div class="empty">No se pudo buscar. Intenta otra vez.</div>';});
+  };
+})();
+</script>
+</body>
+</html>

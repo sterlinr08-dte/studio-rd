@@ -34,6 +34,7 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en STUDIO empie
 
 - Producción: `https://studiord.net` = Worker Cloudflare `studio-rd`, integración Git con `main`. Versión publicada: **58.87** (identidad negro/blanco/oro + sidebar dock premium).
 - Repositorio independiente desde el 22-sep-2026; base Supabase propia `edbknlkjnlfmkkiizdbe`.
+- **Datos migrados del sistema anterior (22-sep-2026, 15:00):** 797 productos, 399 clientes, 6.419 seriales, 1.155 ventas, cartera RD$30,2M, bancos, cajas y 15 usuarios, ya en la base STUDIO (`supabase/studio/16_migracion_legacy.sql`, esquema `legacy` como trazabilidad). Ver `docs/bitacora/2026-09-22-1500-claude.md`.
 - Línea gráfica definida (22-sep-2026): negro `#0A0A0A`, blanco cálido `#F7F5EF`, oro `#C9A227` como único acento; tipografía San Francisco (Inter fuera de Apple); iconos outline 1.75 px; movimiento fluido Apple; Factura en modo lista. **Llevada a código en la rama `claude/linea-grafica-codigo` (58.88, sin publicar)**; ver bitácora `2026-09-22-1300-claude.md`.
 - Stitch: proyecto `projects/3084779069905725803`, design system `assets/11862383679991154944`.
 - Próximos bloques: línea gráfica a código (Claude, rama sin publicar); WhatsApp backend propio (número Zernio pendiente del dueño); Financiamiento bloques B/D/E (ChatGPT).

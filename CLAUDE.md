@@ -37,5 +37,8 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
 - Frontend: `index.html` (monolito) + `parches-pos.js` (POS, Compras v2, Financiamiento v2) +
   `parches-pos-stitch-visual.js` (tokens DESIGN.md). El login usa la piel STUDIO siempre (`html.nx-studio`).
 - Usuario administrador: `admin` (cambio de contraseña forzado al primer acceso).
+- Despliegue: Worker `studio-rd` (cuenta `7faa18426a58d75b8d975b1e00a0d6f3`) creado el 22-sep-2026 por integración Git
+  con `main`; dominios `studiord.net` y `www.studiord.net` asignados a este Worker (antes en el Worker `nexus-pro`).
+  URL técnica: `studio-rd.sterlinr08.workers.dev`.
 - Pendientes: firma de cliente por link (RPC pública + `firma-financiamiento.html`), recordatorios WhatsApp,
   reportes de financiamiento, subida de documentos, manifest/iconos PWA propios, retirar módulos de Seguros.

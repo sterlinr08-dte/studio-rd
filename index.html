@@ -1311,15 +1311,61 @@ body:not(.tema-premium) .kpi{
 .ncf-badge{font-family:var(--mono);font-size:9px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;border-radius:6px;padding:2px 8px;font-weight:600}
 /* Policy status */
 .pol-vigente{color:var(--c1)}.pol-vencida{color:var(--c3)}.pol-gracia{color:var(--c4)}.pol-sin{color:var(--tx3)}
-/* Toasts — relieve suave (mismo lenguaje que "Método de pago"): ícono en un
-   círculo hundido en vez de un ícono suelto, sin la barra de color a la izquierda. */
-#toastS{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:9px;z-index:100001;max-width:300px;pointer-events:none}
-.toast{background:#fff;border-radius:16px;padding:12px 13px;font-size:11px;display:flex;align-items:flex-start;gap:11px;animation:tIn .3s cubic-bezier(.34,1.56,.64,1);box-shadow:6px 6px 14px rgba(51,65,90,.22),-4px -4px 10px #fff;pointer-events:all}
-.toast .ti-ic{width:30px;height:30px;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:#f6f8fb;box-shadow:inset 2px 2px 5px rgba(51,65,90,.16),inset -2px -2px 5px #fff;font-size:14px}
-.toast.ok .ti-ic{color:#059669}.toast.err .ti-ic{color:#dc2626}.toast.warn .ti-ic{color:#d97706}.toast:not(.ok):not(.err):not(.warn) .ti-ic{color:#3568e0}
-.toast .ti-x{color:#94a0b4;flex:0 0 auto;cursor:pointer;background:none;border:none;padding:2px;font-size:12px;line-height:1;font-family:inherit}
-.toast .ti-x:hover{color:#475569}
-@keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+/* Toasts premium — apilado, progreso y movimiento físico sin alterar las llamadas existentes. */
+#toastS{
+  position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
+  width:min(360px,calc(100vw - 28px));display:flex;flex-direction:column-reverse;gap:10px;
+  z-index:100001;pointer-events:none
+}
+.toast{
+  --toast-accent:#3568e0;--toast-soft:rgba(53,104,224,.13);--toast-ms:4500ms;
+  position:relative;isolation:isolate;display:grid;grid-template-columns:38px minmax(0,1fr) 28px;
+  align-items:center;gap:11px;min-height:66px;padding:11px 10px 13px 12px;overflow:hidden;
+  color:#172033;background:rgba(255,255,255,.94);border:1px solid rgba(148,163,184,.24);
+  border-radius:18px;box-shadow:0 2px 6px rgba(15,23,42,.10),0 18px 42px rgba(15,23,42,.16);
+  backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+  transform-origin:100% 100%;animation:toastPremiumIn .42s cubic-bezier(.22,1,.36,1) both;
+  pointer-events:auto;will-change:transform,opacity
+}
+.toast::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,var(--toast-soft),transparent 48%)
+}
+.toast::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--toast-accent);
+  transform-origin:left center;animation:toastProgress var(--toast-ms) linear forwards
+}
+.toast.ok{--toast-accent:#16a36a;--toast-soft:rgba(22,163,106,.14)}
+.toast.warn{--toast-accent:#d58a16;--toast-soft:rgba(213,138,22,.15)}
+.toast.err{--toast-accent:#e3445a;--toast-soft:rgba(227,68,90,.14)}
+.toast .ti-ic{
+  width:38px;height:38px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto;
+  color:var(--toast-accent);background:var(--toast-soft);border:1px solid color-mix(in srgb,var(--toast-accent) 24%,transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72);font-size:19px
+}
+.toast .ti-b{min-width:0}.toast .ti-t{font-size:12.5px;line-height:1.25;font-weight:750;letter-spacing:-.01em}
+.toast .ti-m{margin-top:3px;color:#647084;font-size:10.5px;line-height:1.35;overflow-wrap:anywhere}
+.toast .ti-x{
+  width:28px;height:28px;display:grid;place-items:center;align-self:start;color:#7b8799;cursor:pointer;
+  background:rgba(255,255,255,.5);border:1px solid rgba(148,163,184,.20);border-radius:9px;
+  padding:0;font-size:13px;line-height:1;font-family:inherit;transition:color .16s ease,background .16s ease,transform .16s ease
+}
+.toast .ti-x:hover{color:#172033;background:#fff}.toast .ti-x:active{transform:translateY(1px)}
+.toast:hover::after,.toast:focus-within::after{animation-play-state:paused}
+.toast.is-leaving{animation:toastPremiumOut .24s cubic-bezier(.4,0,1,1) forwards}
+@keyframes toastPremiumIn{0%{opacity:0;transform:translate3d(115%,10px,0) scale(.94)}70%{opacity:1;transform:translate3d(-5px,0,0) scale(1.01)}100%{opacity:1;transform:none}}
+@keyframes toastPremiumOut{to{opacity:0;transform:translate3d(115%,0,0) scale(.96)}}
+@keyframes toastProgress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media (max-width:600px){
+  #toastS{right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:calc(100vw - 20px)}
+  .toast{min-height:62px;border-radius:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .toast{animation:toastReducedIn .12s ease both}.toast.is-leaving{animation:toastReducedOut .12s ease forwards}
+  .toast::after{animation:none;transform:scaleX(1)}
+  @keyframes toastReducedIn{from{opacity:0}to{opacity:1}}@keyframes toastReducedOut{to{opacity:0}}
+}
+@media (prefers-reduced-transparency:reduce){.toast{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none}}
 /* ── ANIMACIONES DEL SISTEMA (movimiento sutil, respeta accesibilidad) ── */
 @media (prefers-reduced-motion:no-preference){
   @keyframes nxPopIn{0%{opacity:0;transform:scale(.94) translateY(6px)}100%{opacity:1;transform:none}}
@@ -5687,14 +5733,31 @@ function getEstPol(c){
   return{est:'vigente',lbl:`Vigente ${diffDays}d`,cls:'pol-vigente',badge:'bC1'};
 }
 
-// ── Toast ────────────────────────────────────────────────────────────────────
+// ── Toast premium ────────────────────────────────────────────────────────────
 function toast(tp,ttl,msg=''){
   const icons={ok:'ti-circle-check',err:'ti-alert-circle',warn:'ti-alert-triangle',info:'ti-info-circle'};
+  const host=document.getElementById('toastS');
+  if(!host)return;
+  const tipo=['ok','err','warn','info'].includes(tp)?tp:'info';
   const el=document.createElement('div');
-  el.className='toast '+(tp==='err'?'err':tp==='warn'?'warn':tp==='ok'?'ok':'');
-  el.innerHTML=`<div class="ti-ic"><i class="ti ${icons[tp]||'ti-info-circle'}"></i></div><div class="ti-b"><div class="ti-t">${ttl}</div>${msg?`<div class="ti-m">${msg}</div>`:''}</div><button type="button" class="ti-x" aria-label="Cerrar aviso" onclick="this.closest('.toast').remove()"><i class="ti ti-x"></i></button>`;
-  document.getElementById('toastS').appendChild(el);
-  setTimeout(()=>el.remove(),4500);
+  el.className='toast '+tipo;
+  el.setAttribute('role',tipo==='err'?'alert':'status');
+  el.setAttribute('aria-live',tipo==='err'?'assertive':'polite');
+  const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  el.innerHTML=`<div class="ti-ic" aria-hidden="true"><i class="ti ${icons[tipo]}"></i></div><div class="ti-b"><div class="ti-t">${safe(ttl)}</div>${msg?`<div class="ti-m">${safe(msg)}</div>`:''}</div><button type="button" class="ti-x" aria-label="Cerrar aviso"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+  const close=()=>{
+    if(el.classList.contains('is-leaving'))return;
+    el.classList.add('is-leaving');
+    clearTimeout(el._toastTimer);
+    setTimeout(()=>el.remove(),260);
+  };
+  el.querySelector('.ti-x').addEventListener('click',close);
+  const arm=()=>{clearTimeout(el._toastTimer);el._toastTimer=setTimeout(close,4500)};
+  el.addEventListener('mouseenter',()=>clearTimeout(el._toastTimer));
+  el.addEventListener('mouseleave',arm);
+  host.appendChild(el);
+  while(host.children.length>4)host.firstElementChild?.remove();
+  requestAnimationFrame(arm);
 }
 
 // ════════ VISOR DE ERRORES ══════════════════════════════════════════════════

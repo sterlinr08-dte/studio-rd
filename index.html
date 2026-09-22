@@ -6708,7 +6708,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-stitch-visual.js','parches-whatsapp.js','studio-brand-theme.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -13849,6 +13849,8 @@ function rHistorialAuto(){
     cargarConReintento('parches-contenido-movil-ajuste.js');
     cargarCSS('parches-fase1-ui-motion.css');
     cargarCSS('parches-motion-fase2.css');
+    // Identidad propia STUDIO RD: capa final negro, blanco y oro.
+    cargarCSS('studio-brand-theme.css');
   })();
 </script>
 </body>

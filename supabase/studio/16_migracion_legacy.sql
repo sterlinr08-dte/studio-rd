@@ -280,6 +280,11 @@ begin
     from legacy.m_abonos m where m.cliente_id is not null and m.monto<>0
     returning id)
   insert into legacy._ids select 'pos_abonos', id from ins;
+  -- Abonos de ventas anuladas: en el sistema anterior esas facturas quedaron en 0 y la venta anulada no cuenta
+  -- como deuda en el POS; dejarlos duplicaría el crédito a favor del cliente (detectado en la reconciliación).
+  delete from public.pos_abonos a using public.pos_ventas v
+  where a.venta_id=v.id and v.estado='anulada' and a.id in (select id from legacy._ids where tabla='pos_abonos');
+  delete from legacy._ids i where i.tabla='pos_abonos' and not exists (select 1 from public.pos_abonos a where a.id=i.id);
 
   -- 9) Seriales / IMEI --------------------------------------------------------------------
   insert into public.pos_seriales(id, organizacion_id, producto_id, serial, estado, almacen_id, venta_id, notas, created_at, color)

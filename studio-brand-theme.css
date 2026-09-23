@@ -750,3 +750,60 @@ html.nx-studio #v-pos .nx-invoice-pro #facTabla { container: factab / inline-siz
 /* Nombre, código y serial legibles en cualquier ancho */
 html.nx-studio #v-pos .nx-invoice-pro .docTbl .cod { white-space: nowrap; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl .serlst { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
+/* 15 · Agregar artículos en Factura / Prefactura en MODO LISTA (2026-09-23): una tabla con cabecera,
+ *      filas de 48 px separadas por línea fina, precio en cifras tabulares y «+» para agregar directo. */
+html.nx-studio .nxPpkLista { border: 1px solid var(--studio-line); border-radius: 12px; background: #fff; overflow: hidden; }
+html.nx-studio .nxPpkLHead, html.nx-studio .nxPpkLista .nxPpkRow {
+  display: grid; grid-template-columns: 112px minmax(0, 1fr) 104px 124px 40px; align-items: center; column-gap: 12px;
+}
+html.nx-studio .nxPpkLHead {
+  padding: 8px 12px; background: var(--studio-canvas-2); color: var(--studio-steel);
+  font: 600 10.5px/1.2 var(--studio-font); letter-spacing: .06em; text-transform: uppercase;
+}
+html.nx-studio .nxPpkLHead span:nth-child(3), html.nx-studio .nxPpkLHead span:nth-child(4) { text-align: right; }
+html.nx-studio .nxPpkLista .nxPpkLWrap { border: 0; border-radius: 0; border-top: 1px solid var(--studio-line-2); background: transparent; box-shadow: none; }
+html.nx-studio .nxPpkLista .nxPpkLWrap:first-of-type { border-top: 0; }
+html.nx-studio .nxPpkLista .nxPpkRow {
+  min-height: 48px; padding: 6px 12px; border: 0; border-radius: 0; background: transparent; cursor: pointer; text-align: left;
+  transition: background-color 120ms ease;
+}
+html.nx-studio .nxPpkLista .nxPpkRow:hover, html.nx-studio .nxPpkLista .nxPpkLWrap.on .nxPpkRow { background: #fbf8ee; }
+html.nx-studio .nxPpkLista .nxPpkRow:active { background: #f6efd9; }
+html.nx-studio .nxPpkLista .nxPpkRow:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--studio-gold-ring); }
+html.nx-studio .nxPpkLista .pk-cod { font: 500 12px/1.2 var(--studio-mono); color: var(--studio-steel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.nx-studio .nxPpkLista .pk-nom { font: 600 13.5px/1.3 var(--studio-font); color: var(--studio-ink); overflow-wrap: anywhere; }
+html.nx-studio .nxPpkLista .pk-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--studio-gold-soft); color: var(--studio-gold-dark); font-size: 10px; font-weight: 700; vertical-align: 1px; }
+html.nx-studio .nxPpkLista .pk-stk { text-align: right; }
+html.nx-studio .nxPpkLista .pk-stk .nxPosStkB { font-size: 10.5px; }
+html.nx-studio .nxPpkLista .pk-pre { text-align: right; font-family: var(--studio-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.nx-studio .nxPpkLista .pk-pre b { color: var(--studio-ink) !important; font-size: 14px !important; font-weight: 600; }
+html.nx-studio .nxPpkLista .pk-add {
+  width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 10px; border: 1px solid #a8851b; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; justify-self: end;
+  background: var(--studio-gold-grad); color: var(--studio-black); font-size: 17px; box-shadow: 0 1px 2px rgba(128, 101, 21, .3);
+}
+html.nx-studio .nxPpkLista .pk-add:active { transform: scale(.94); background: var(--studio-gold-grad-active); color: var(--studio-white); }
+html.nx-studio .nxPpkLista .nxPpkDet { border-top: 1px dashed var(--studio-line); background: #fdfbf5; }
+html.nx-studio .nxPpkLista .nxPpkBox { margin: 8px 12px 10px; }
+@media (max-width: 760px) {
+  html.nx-studio .nxPpkLHead { display: none; }
+  html.nx-studio .nxPpkLista .nxPpkRow {
+    grid-template-columns: minmax(0, 1fr) auto 44px; grid-template-areas: "nom pre add" "cod stk add";
+    row-gap: 3px; min-height: 60px; padding: 8px 10px 8px 12px;
+  }
+  html.nx-studio .nxPpkLista .pk-nom { grid-area: nom; font-size: 15px; }
+  html.nx-studio .nxPpkLista .pk-cod { grid-area: cod; }
+  html.nx-studio .nxPpkLista .pk-stk { grid-area: stk; }
+  html.nx-studio .nxPpkLista .pk-pre { grid-area: pre; }
+  html.nx-studio .nxPpkLista .pk-add { grid-area: add; width: 40px; height: 40px; min-height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) { html.nx-studio .nxPpkLista .pk-add:active { transform: none; } }
+/* 15b · Las filas heredaban el aspecto de tarjeta (borde propio, radio, separación, borde azul al abrir) */
+html.nx-studio .nxPpkLista .nxPpkWrap, html.nx-studio .nxPpkLista .nxPpkWrap.on {
+  margin: 0 !important; border: 0 !important; border-top: 1px solid var(--studio-line-2) !important; border-radius: 0 !important;
+  box-shadow: none !important; background: transparent !important;
+}
+html.nx-studio .nxPpkLista .nxPpkLHead + .nxPpkWrap { border-top: 0 !important; }
+html.nx-studio .nxPpkLista .nxPpkWrap .nxPpkIt { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+html.nx-studio .nxPpkLista .pk-pre b { color: var(--studio-ink) !important; }

@@ -6,7 +6,8 @@
       "version": "59.04",
       "fecha": "2026-09-23",
       "notas": [
-        "Factura en PC con ventana mediana o iPad: cada artículo usa dos líneas (nombre completo e importe arriba; precio, cantidad y descuento abajo) y el nombre ya no se parte en cuatro renglones."
+        "Factura en PC con ventana mediana o iPad: cada artículo usa dos líneas (nombre completo e importe arriba; precio, cantidad y descuento abajo) y el nombre ya no se parte en cuatro renglones.",
+        "Factura y Prefactura: «Agregar artículo» en modo lista (Código · Artículo · Existencia · Precio) con botón + para agregar directo; al tocar la fila se ve el detalle de precios y existencia."
       ]
     },
     {

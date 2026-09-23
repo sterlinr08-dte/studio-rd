@@ -1486,6 +1486,21 @@
       const aplicaHTML = aplica > 0
         ? `${hayDif ? `<div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-decoration:line-through">${fmt(pf)}</div>` : ''}<b style="color:#2563eb;font-size:14px">${fmt(aplica)}</b>`
         : '<span class="nxPosStkB" style="background:#fffbeb;color:#d97706">SIN PRECIO</span>';
+      if (_prodPickDest === 'factura') {
+        // Factura / Prefactura: MODO LISTA (pedido del dueño, 2026-09-23). Una fila por artículo con Código ·
+        // Artículo · Existencia · Precio y «+» para agregar directo (misma acción que «Elegir»: con IMEI abre la
+        // ventanilla de seriales). Tocar la fila sigue abriendo el detalle (niveles, existencia por almacén, IMEI).
+        return `<div class="nxPpkWrap nxPpkLWrap${abierto ? ' on' : ''}">
+        <div class="nxPpkIt nxPpkRow" onclick="window.nxProdPickToggle('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button" aria-expanded="${abierto ? 'true' : 'false'}">
+          <span class="pk-cod">${esc(p.codigo || '—')}</span>
+          <span class="pk-nom">${esc(p.nombre || '')}${p.serial ? ' <span class="pk-tag">IMEI</span>' : ''}</span>
+          <span class="pk-stk">${stkChip}</span>
+          <span class="pk-pre">${aplicaHTML}</span>
+          <button type="button" class="pk-add" aria-label="Agregar ${esc(p.nombre || '')}" title="Agregar" onclick="event.stopPropagation();window.nxProdPickElegir('${p.id}')"><i class="ti ti-plus"></i></button>
+        </div>
+        ${abierto ? ppkDetailHTML(p) : ''}
+      </div>`;
+      }
       return `<div class="nxPpkWrap${abierto ? ' on' : ''}${animate ? ' nxPpkReveal' : ''}">
         <div class="nxPpkIt" onclick="window.nxProdPickToggle('${p.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
           <div style="min-width:0;text-align:left"><div style="font-weight:700;font-size:12.5px;color:#1e293b;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25">${esc(p.nombre || '')}</div><div style="font-size:10px;color:#475569;display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px">${p.codigo ? '<span>' + esc(p.codigo) + '</span>' : ''}${stkChip}</div></div>
@@ -1493,7 +1508,9 @@
         </div>
         ${abierto ? ppkDetailHTML(p) : ''}
       </div>`; }).join('') || '<div style="text-align:center;color:#475569;padding:24px;font-size:12px">Sin resultados</div>';
-    wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '') + `<div class="nxPpkGrid">${rows}</div>`;
+    const lista_ = _prodPickDest === 'factura';
+    wrap.innerHTML = (total > 400 ? `<div style="font-size:10.5px;color:#475569;margin-bottom:6px">Mostrando 400 de ${total} — escribe para afinar</div>` : '')
+      + (lista_ ? `<div class="nxPpkLista" role="list"><div class="nxPpkLHead" aria-hidden="true"><span>Código</span><span>Artículo</span><span>Existencia</span><span>Precio</span><span></span></div>${rows}</div>` : `<div class="nxPpkGrid">${rows}</div>`);
     if (animate) nxPpkSetupReveal();
     if (_ppkOpen) { const p = _prods.find(x => String(x.id) === String(_ppkOpen)); if (p && p.serial) nxCargarSerialesDet(p.id); }
   }

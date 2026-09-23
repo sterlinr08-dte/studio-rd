@@ -1,7 +1,16 @@
 {
-  "version": "59.25",
+  "version": "59.26",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.26",
+      "fecha": "2026-09-25",
+      "notas": [
+        "CRM con la misma pantalla del CRM de Bayol Cell Taller: Mensajes, Leads, Campañas y Redes.",
+        "Mensajes: Buscar, Filtros, Todos / No leídos / Pendientes y chat estilo WhatsApp (se activa al conectar el WhatsApp de STUDIO en Zernio).",
+        "Leads: filtros por etapa, cambiar etapa, vincular cliente, responsable y botón Nuevo lead."
+      ]
+    },
     {
       "version": "59.25",
       "fecha": "2026-09-24",

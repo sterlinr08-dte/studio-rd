@@ -29,9 +29,14 @@
   function puedeCosto() { try { const r = ctx().rolEfectivo ? ctx().rolEfectivo() : 'admin'; return r === 'admin' || r === 'gerente'; } catch (e) { return true; } }
 
   // «Con ITBIS» (casilla del dueño, 23-sep-2026): marcada = montos tal cual se cobran y costos tal cual se registran
-  // (ambos con ITBIS). Desmarcada = se le quita el 18% a ventas y costos de artículos gravados, en los dos lados por igual.
+  // (ITBIS de compras formales sumado al costo). Desmarcada = ventas sin el 18% y costos sin el ITBIS recuperable
+  // (en compras informales el ITBIS no se recupera: sigue dentro del costo).
   let conItbis = true; try { conItbis = localStorage.getItem('studio_rep_itbis') !== '0'; } catch (e) {}
-  const fx = gravado => (!conItbis && gravado !== false) ? 1 / 1.18 : 1;          // por artículo (p.itbis / it.itbis)
+  const fx = gravado => (!conItbis && gravado !== false) ? 1 / 1.18 : 1;          // VENTAS por artículo (p.itbis / it.itbis)
+  // COSTOS (23-sep-2026, tipo fiscal de la compra): el costo guardado es el costo real SIN el ITBIS recuperable.
+  //  - compra formal: costo_itbis = ITBIS pagado por unidad (crédito fiscal) → «Con ITBIS» lo suma, «Sin ITBIS» no.
+  //  - compra informal / costos migrados: costo_itbis = 0 → el ITBIS ya está dentro del costo y no se quita nunca.
+  const cReal = (cu, ci) => n(cu) + (conItbis ? n(ci) : 0);
   const tv = v => conItbis ? n(v.total) : n(v.total) - n(v.itbis);                  // total de una factura
   async function getAll(tabla, qs) {
     const out = []; const PAG = 1000;
@@ -55,15 +60,15 @@
     const pr = (p, def) => p.catch(() => def);
     try {
       const [ventas, previas, prods, cats, devol, abonos, creditos, abonosTodos, compras, cxp, cajas, cajaMov, asientos, reps, stockAlm, almacenes] = await Promise.all([
-        getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,subtotal,itbis,total,descuento,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,a_credito,estado,vendedor_id,vendedor_nombre,created_by_name,ncf,tipo_comprobante,pos_venta_items(producto_id,nombre,cantidad,precio,importe,itbis,costo_unitario)&' + rng('fecha') + '&order=fecha.asc'),
+        getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,subtotal,itbis,total,descuento,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,a_credito,estado,vendedor_id,vendedor_nombre,created_by_name,ncf,tipo_comprobante,pos_venta_items(producto_id,nombre,cantidad,precio,importe,itbis,costo_unitario,costo_itbis_unit)&' + rng('fecha') + '&order=fecha.asc'),
         pr(getAll('pos_ventas', 'select=total,estado&estado=eq.completada&fecha=gte.' + tsDesde(pDesde) + '&fecha=lt.' + tsHasta(pHasta)), []),
-        getAll('pos_productos', 'select=id,nombre,codigo,categoria_id,marca,costo,precio,stock,stock_min,tipo,activo,serial&order=nombre.asc'),
+        getAll('pos_productos', 'select=id,nombre,codigo,categoria_id,marca,costo,costo_itbis,precio,stock,stock_min,tipo,activo,serial&order=nombre.asc'),
         pr(getAll('pos_categorias', 'select=id,nombre'), []),
         pr(getAll('pos_devoluciones', 'select=id,numero,ncf,fecha,cliente_nombre,subtotal,itbis,total,metodo,estado,venta_id&' + rngD('fecha')), []),
         pr(getAll('pos_abonos', 'select=id,numero,fecha,monto,metodo,cliente_id,venta_id&' + rngD('fecha')), []),
         pr(getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,credito_monto,credito_vencimiento&estado=eq.completada&a_credito=is.true'), []),
         pr(getAll('pos_abonos', 'select=venta_id,monto'), []),
-        pr(getAll('pos_compras', 'select=id,numero,fecha,proveedor_nombre,ncf,subtotal,itbis,total,a_credito,estado,moneda,tasa,es_importacion,total_desembarcado&' + rngD('fecha')), []),
+        pr(getAll('pos_compras', 'select=id,numero,fecha,proveedor_nombre,ncf,subtotal,itbis,total,a_credito,estado,tipo_fiscal,moneda,tasa,es_importacion,total_desembarcado&' + rngD('fecha')), []),
         pr(getAll('pos_cxp_v', 'select=*&saldo=gt.0'), []),
         pr(getAll('pos_cajas', 'select=id,apertura,cierre,estado,usuario_nombre,created_by_name,monto_inicial,ventas_efectivo,ventas_tarjeta,ventas_transferencia,abonos_efectivo,entradas,salidas,efectivo_esperado,efectivo_contado,descuadre&' + rng('apertura') + '&order=apertura.desc'), []),
         pr(getAll('pos_caja_movimientos', 'select=tipo,monto,concepto,fecha,created_by_name&' + rng('fecha')), []),
@@ -103,7 +108,7 @@
         // así que se comparan contra la venta CON ITBIS (antes se le quitaba el 18% solo a la venta y salían pérdidas falsas).
         const p = prodBy[it.producto_id];
         const cu = it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo);
-        const cst = (p && p.tipo === 'servicio') ? 0 : cu * c * fI;
+        const cst = (p && p.tipo === 'servicio') ? 0 : cReal(cu, it.costo_itbis_unit != null ? it.costo_itbis_unit : (p && p.costo_itbis)) * c;
         costo += cst;
         const k = it.producto_id || it.nombre;
         porProd[k] = porProd[k] || { nom: String(it.nombre || (p && p.nombre) || '—').trim(), cod: p ? (p.codigo || '') : '', cant: 0, monto: 0, costo: 0, gan: 0 };
@@ -303,7 +308,7 @@
 
   // ── Definición de cada reporte ─────────────────────────────────────
   function construir(id, C, x, rid) {
-    const cP = p => n(p.costo) * fx(p.itbis), pP = p => n(p.precio) * fx(p.itbis);
+    const cP = p => cReal(p.costo, p.costo_itbis), pP = p => n(p.precio) * fx(p.itbis);
     const vc = puedeCosto(); const fv = fsel[rid || id] || ''; const fq = String(fbus[rid || id] || '').trim().toLowerCase();
     const almBy = {}; D.almacenes.forEach(a => { almBy[a.id] = a.nombre; });
     const catBy = {}; D.cats.forEach(c => { catBy[c.id] = c.nombre; });
@@ -350,7 +355,7 @@
         Object.keys(C.porProd).forEach((k, i) => { const p = C.prodBy[k]; arr[i].cat = p && p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría'; });
         const cols = [T('Código', { m: 1 }), T('Artículo'), $('Cant.', { fmt: fmtN }), $('Vendido')].concat(vc ? [$('Costo'), $('Ganancia'), T('Margen', { r: 1 })] : []);
         const fila = o => [o.cod, o.nom + (vc && o.sinCosto ? ' *' : ''), o.cant, o.monto].concat(vc ? [o.costo, o.gan, o.monto ? pct(o.gan, o.monto) + '%' : ''] : []);
-        if (id === 'cli_prod') return { cols, grupos: [grupo('', arr.sort((a, b) => b.monto - a.monto).map(fila), cols)], nota: vc ? 'Ganancia = lo vendido − el costo que tenía el artículo al venderse (ambos ' + (conItbis ? 'con' : 'sin') + ' ITBIS).' + (arr.filter(o => o.sinCosto).length ? ' Atención: ' + arr.filter(o => o.sinCosto).length + ' artículo(s) se vendieron sin costo registrado (marcados con *); su ganancia sale inflada hasta que se les ponga costo.' : '') : '' };
+        if (id === 'cli_prod') return { cols, grupos: [grupo('', arr.sort((a, b) => b.monto - a.monto).map(fila), cols)], nota: vc ? 'Ganancia = lo vendido − el costo que tenía el artículo al venderse (' + (conItbis ? 'ambos con ITBIS' : 'venta sin ITBIS; costo sin el ITBIS recuperable de compras con ITBIS; en las informales el ITBIS es parte del costo') + ').' + (arr.filter(o => o.sinCosto).length ? ' Atención: ' + arr.filter(o => o.sinCosto).length + ' artículo(s) se vendieron sin costo registrado (marcados con *); su ganancia sale inflada hasta que se les ponga costo.' : '') : '' };
         return { cols, grupos: agrupar(arr.sort((a, b) => b.monto - a.monto), o => o.cat, fila, cols, porTotalDesc(3)) };
       }
       case 'cli_cxc': {
@@ -389,7 +394,7 @@
           grupo('Costo', [['Costo de lo vendido', C.costo], ['Ganancia bruta', C.ganBruta]], cols),
           grupo('Gastos', Object.entries(C.porGasto).sort().map(([k, v]) => [k, v]).concat([['Total gastos', C.gastos]]), cols)
         ];
-        return { cols, grupos: g, total: ['Resultado del período', C.ganBruta - C.gastos], nota: 'Ventas y costo ' + (conItbis ? 'con ITBIS incluido, como se registran en STUDIO' : 'sin ITBIS (se le quitó el 18% a los artículos gravados)') + ' (ITBIS de las ventas del período: ' + m2(C.itbis - C.devItb) + '; ver Resumen de ITBIS). El costo es el que tenía cada artículo al venderse. Gastos: cuentas 6xxx.' };
+        return { cols, grupos: g, total: ['Resultado del período', C.ganBruta - C.gastos], nota: 'Ventas y costo ' + (conItbis ? 'con ITBIS incluido, como se registran en STUDIO' : 'sin ITBIS (ventas sin el 18%; costos sin el ITBIS recuperable de compras con comprobante; en compras informales el ITBIS es parte del costo)') + ' (ITBIS de las ventas del período: ' + m2(C.itbis - C.devItb) + '; ver Resumen de ITBIS). El costo es el que tenía cada artículo al venderse. Gastos: cuentas 6xxx.' };
       }
       case 'con_diario': {
         const cols = [T('Cuenta', { m: 1 }), T('Nombre'), T('Descripción'), $('Débito'), $('Crédito')];
@@ -453,7 +458,7 @@
       // Proveedores
       case 'prov_comp': case 'prov_porprov': {
         const cs = D.compras.filter(c => c.estado !== 'anulada');
-        if (id === 'prov_comp') { const cols = [T('Fecha'), T('No.', { m: 1 }), T('Proveedor'), T('NCF', { m: 1 }), T('Tipo'), $('ITBIS'), $('Total RD$')]; return { cols, grupos: [grupo('', cs.map(c => [dmy(c.fecha), c.numero || '', c.proveedor_nombre || '', c.ncf || '', (c.a_credito ? 'Crédito' : 'Contado') + (c.es_importacion ? ' · Import.' : ''), n(c.itbis) * tasa(c), n(c.total) * tasa(c)]), cols)] }; }
+        if (id === 'prov_comp') { const cols = [T('Fecha'), T('No.', { m: 1 }), T('Proveedor'), T('NCF', { m: 1 }), T('Tipo'), $('ITBIS'), $('Total RD$')]; return { cols, grupos: [grupo('', cs.map(c => [dmy(c.fecha), c.numero || '', c.proveedor_nombre || '', c.ncf || '', (c.a_credito ? 'Crédito' : 'Contado') + (c.es_importacion ? ' · Import.' : '') + (c.tipo_fiscal === 'formal' ? ' · Con ITBIS' : c.tipo_fiscal === 'informal' ? ' · Informal' : ''), n(c.itbis) * tasa(c), n(c.total) * tasa(c)]), cols)] }; }
         const cols = [T('Fecha'), T('No.', { m: 1 }), T('NCF', { m: 1 }), T('Tipo'), $('Total RD$')];
         return { cols, grupos: agrupar(cs, c => c.proveedor_nombre || 'Sin proveedor', c => [dmy(c.fecha), c.numero || '', c.ncf || '', c.a_credito ? 'Crédito' : 'Contado', n(c.total) * tasa(c)], cols, porTotalDesc(4)) };
       }
@@ -612,9 +617,9 @@
       }
       case 'inv_gandia': {
         const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Vendido'), $('Costo'), $('Ganancia'), T('Margen', { r: 1 })];
-        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += (v.pos_venta_items || []).reduce((a, it) => a + (it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad)) * fx(it.itbis), 0); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += (it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo)) * n(it.cantidad) * fx(it.itbis); }); });
+        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += (v.pos_venta_items || []).reduce((a, it) => a + (it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad)) * fx(it.itbis), 0); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += cReal(it.costo_unitario != null ? it.costo_unitario : (p && p.costo), it.costo_itbis_unit != null ? it.costo_itbis_unit : (p && p.costo_itbis)) * n(it.cantidad); }); });
         const l = Object.keys(d).sort().map(k => { const o = d[k]; return [dmy(k), o.n, o.vta, o.c, o.vta - o.c, pct(o.vta - o.c, o.vta) + '%']; });
-        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia por día: lo vendido menos el costo que tenía cada artículo al venderse (ambos ' + (conItbis ? 'con' : 'sin') + ' ITBIS). No descuenta devoluciones ni gastos.' };
+        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia por día: lo vendido menos el costo que tenía cada artículo al venderse (' + (conItbis ? 'ambos con ITBIS' : 'venta sin ITBIS; costo sin el ITBIS recuperable de compras con ITBIS; en las informales el ITBIS es parte del costo') + '). No descuenta devoluciones ni gastos.' };
       }
       case 'inv_vemp': {
         const cols = [T('Vendedor'), $('Facturas', { fmt: v => String(v) }), $('Unidades', { fmt: fmtN }), $('Vendido'), $('Ticket promedio', { sum: 0 })].concat(vc ? [$('Ganancia')] : []);

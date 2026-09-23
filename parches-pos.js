@@ -6227,6 +6227,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="fr"><label>Empleado (quién compra)</label><input type="hidden" id="compEmp"><button type="button" id="compEmpBtn" onclick="window.nxCompraEmpBuscar()" style="width:100%;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e2e8f0;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;text-align:left"><i class="ti ti-search" style="color:#6d28d9;flex:0 0 auto"></i><span id="compEmpTxt" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8">Buscar empleado…</span><i class="ti ti-chevron-down" style="color:#94a3b8;flex:0 0 auto"></i></button></div>
       <div class="fr-row"><div class="fr"><label>Fecha</label><input id="compFecha" type="date" value="${hoy()}"></div><div class="fr"><label>Vencimiento (crédito)</label><input id="compVenc" type="date"></div></div>
       ${monedaRow}
+      ${v2 ? `<div class="fr"><label>¿La compra fue con ITBIS o informal?</label><div class="compTipo" role="radiogroup" aria-label="Tipo de compra">
+        <label class="compTipoOp"><input type="radio" name="compTipo" value="formal" onchange="window.nxCompGastoSync()"><span><b>Con ITBIS</b><small>Tiene comprobante fiscal (NCF B01). El ITBIS es crédito fiscal y no se suma al costo.</small></span></label>
+        <label class="compTipoOp"><input type="radio" name="compTipo" value="informal" onchange="window.nxCompGastoSync()"><span><b>Informal</b><small>Sin comprobante fiscal. Si pagaste ITBIS no se recupera: se suma al costo.</small></span></label>
+      </div></div>` : ''}
       <div class="fr-row"><div class="fr"><label>Factura No. (proveedor)</label><input id="compFact" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>NCF del proveedor</label><input id="compNcf" class="no-upper" placeholder="B01... (opcional)"></div></div>
       <div class="fr-row"><div class="fr"><label>Orden No.</label><input id="compOrden" class="no-upper" placeholder="Opcional"></div><div class="fr"><label>Liquidación No.</label><input id="compLiq" class="no-upper" placeholder="Opcional"></div></div>
       <div class="fr" style="display:flex;align-items:flex-end;flex-wrap:wrap"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#475569;cursor:pointer"><input type="checkbox" id="compCred" style="width:18px;height:18px"> Compra a crédito (CxP)</label>${impChk}</div>
@@ -6462,18 +6466,22 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
   }
   // Compras v2: cada línea muestra costo de factura y costo desembarcado (gastos prorrateados por VALOR).
+  function compTipoFiscal() { const r = document.querySelector('input[name="compTipo"]:checked'); return r ? r.value : ''; }
   function pintarCompraItemsV2(cont) {
     const mon = val('compMoneda') || 'DOP';
     const subtotal = r2(_compraItems.reduce((s, it) => s + r2(it.costo * it.cantidad), 0));
     const g = compGastosTotal(subtotal);
     const esImp = !!(document.getElementById('compImp') && document.getElementById('compImp').checked);
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const tipoF = compTipoFiscal(); const itbisTot = r2(parseMoney(val('compItbis')));
     cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => {
       const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial;
       const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : [];
       const importe = r2(it.costo * it.cantidad);
       const gastoUnit = g.total > 0 ? (subtotal > 0 ? r2(g.total * (importe / subtotal) / it.cantidad) : r2(g.total / _compraItems.length / it.cantidad)) : 0;
-      const finalUnit = r2(it.costo + gastoUnit);
+      // Informal: el ITBIS no se recupera y entra al costo (mismo prorrateo por valor que hace el servidor)
+      const itbisUnit = tipoF === 'informal' && itbisTot > 0 ? (subtotal > 0 ? r2(itbisTot * (importe / subtotal) / it.cantidad) : r2(itbisTot / _compraItems.length / it.cantidad)) : 0;
+      const finalUnit = r2(it.costo + gastoUnit + itbisUnit);
       const orig = (mon !== 'DOP' && it.costo_original != null) ? ' · ' + fmtMon(it.costo_original, mon) : '';
       return `<div style="padding:8px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
         <div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 92px;gap:6px;align-items:center">
@@ -6481,14 +6489,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="text-align:right;color:#475569">${fmt2(it.costo)}</div>
           <div style="text-align:right;font-weight:800;color:${gastoUnit > 0 ? '#16a34a' : '#0f172a'}">${fmt2(finalUnit)}</div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="color:#94a3b8;font-size:10px">Importe factura ${fmt2(importe)}${gastoUnit > 0 ? ' · gasto/und ' + fmt2(gastoUnit) : ''}</span><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="color:#94a3b8;font-size:10px">Importe factura ${fmt2(importe)}${gastoUnit > 0 ? ' · gasto/und ' + fmt2(gastoUnit) : ''}${itbisUnit > 0 ? ' · ITBIS/und ' + fmt2(itbisUnit) : ''}</span><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>
         ${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}
       </div>`;
     }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const itbis = r2(parseMoney(val('compItbis')));
     const deuda = r2(subtotal + (esImp ? 0 : itbis));
-    set('compSubtotal', fmt2(subtotal)); set('compGastosTot', fmt2(g.total)); set('compDesemb', fmt2(subtotal + g.total)); set('compDeuda', fmt2(deuda)); set('compTotal', fmt(deuda));
-    set('compItbisHint', esImp ? '(pagado en aduana)' : '(de la factura)');
+    set('compSubtotal', fmt2(subtotal)); set('compGastosTot', fmt2(g.total)); set('compDesemb', fmt2(subtotal + g.total + (tipoF === 'informal' ? itbis : 0))); set('compDeuda', fmt2(deuda)); set('compTotal', fmt(deuda));
+    set('compItbisHint', (esImp ? '(pagado en aduana)' : '(de la factura)') + (tipoF === 'formal' ? ' · crédito fiscal' : tipoF === 'informal' ? ' · se suma al costo' : ''));
+    const ncfIn = document.getElementById('compNcf'); if (ncfIn) ncfIn.placeholder = tipoF === 'formal' ? 'B01… (obligatorio)' : 'B01… (opcional)';
     set('compDeudaLbl', esImp ? 'Se debe al proveedor (mercancía; ITBIS y gastos van a aduana)' : 'Se debe al proveedor (mercancía + ITBIS)');
     const gr = document.getElementById('compGResumen');
     if (gr) gr.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Factura${mon !== 'DOP' ? ' (' + mon + ' × ' + (Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1) + ')' : ''}</span><b style="color:#1e293b">${fmt2(subtotal)}</b></div>
@@ -6514,8 +6523,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const mon = v2 ? (val('compMoneda') || 'DOP') : 'DOP';
     const tasa = v2 ? (Number(String(val('compTasa') || '1').replace(/[^0-9.]/g, '')) || 1) : 1;
     const totalProv = v2 ? r2(subtotal + (esImp ? 0 : itbis)) : subtotal;
+    // El dueño pidió que cada compra diga si fue con ITBIS (formal) o informal: es obligatorio elegirlo.
+    const tipoFiscal = v2 ? compTipoFiscal() : '';
+    if (v2 && !tipoFiscal) { toast('err', 'Falta el tipo de compra', 'Elige si la compra fue con ITBIS o informal'); try { document.querySelector('.compTipo').scrollIntoView({ block: 'center' }); } catch (e) {} return; }
+    if (tipoFiscal === 'formal' && !(val('compNcf') || '').trim()) { toast('err', 'Falta el NCF', 'Una compra con ITBIS necesita el NCF del proveedor (B01…)'); try { document.getElementById('compNcf').focus(); } catch (e) {} return; }
     const body = { proveedor_id: provId, proveedor_nombre: provNom, fecha: val('compFecha') || hoy(), ncf: (val('compNcf') || '').trim() || null, subtotal: subtotal, itbis: itbis, total: totalProv, a_credito: !!aCred, estado: 'recibida', almacen_id: almCompra, empleado_id: empId, empleado_nombre: empNom, vencimiento: val('compVenc') || null, orden_no: (val('compOrden') || '').trim() || null, liquidacion_no: (val('compLiq') || '').trim() || null, notas: (val('compFact') || '').trim() ? 'Factura ' + (val('compFact') || '').trim() : null, created_by_name: nomAdmin() };
-    if (v2) { body.moneda = mon; body.tasa = tasa; body.es_importacion = esImp; body.gastos = { flete: r2(_compraGastos.flete), impuesto_modo: _compraGastos.impuesto_modo, impuesto_valor: Number(_compraGastos.impuesto_valor) || 0, otros: (_compraGastos.otros || []).filter(o => (Number(o.monto) || 0) > 0).map(o => ({ concepto: String(o.concepto || '').trim(), monto: r2(o.monto) })) }; }
+    if (v2) { body.tipo_fiscal = tipoFiscal; body.moneda = mon; body.tasa = tasa; body.es_importacion = esImp; body.gastos = { flete: r2(_compraGastos.flete), impuesto_modo: _compraGastos.impuesto_modo, impuesto_valor: Number(_compraGastos.impuesto_valor) || 0, otros: (_compraGastos.otros || []).filter(o => (Number(o.monto) || 0) > 0).map(o => ({ concepto: String(o.concepto || '').trim(), monto: r2(o.monto) })) }; }
     try {
       if (!_compraOperacionId) {
         try { _compraOperacionId = crypto.randomUUID(); }
@@ -6548,7 +6561,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px;max-height:88vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-receipt"></i> Compra No. ${c.numero || ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCompraDet').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.vencimiento ? ' · vence ' + (c.vencimiento || '').slice(0, 10) : ''}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}${c.empleado_nombre ? '<br>Empleado: ' + esc(c.empleado_nombre) : ''}${c.orden_no ? ' · Orden ' + esc(c.orden_no) : ''}${c.liquidacion_no ? ' · Liq. ' + esc(c.liquidacion_no) : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.proveedor_nombre || 'Sin proveedor')} · ${(c.fecha || '').slice(0, 10)} · ${c.a_credito ? 'Crédito' : 'Contado'}${c.tipo_fiscal ? ' · ' + (c.tipo_fiscal === 'formal' ? 'Con ITBIS' : 'Informal') : ''}${c.vencimiento ? ' · vence ' + (c.vencimiento || '').slice(0, 10) : ''}${c.ncf ? ' · NCF ' + esc(c.ncf) : ''}${c.empleado_nombre ? '<br>Empleado: ' + esc(c.empleado_nombre) : ''}${c.orden_no ? ' · Orden ' + esc(c.orden_no) : ''}${c.liquidacion_no ? ' · Liq. ' + esc(c.liquidacion_no) : ''}</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">${filas}</table>
           <div style="display:flex;justify-content:space-between;border-top:1px dashed #e2e8f0;margin-top:8px;padding-top:8px;font-weight:800"><span>TOTAL</span><span>${fmt(c.total)}</span></div>
           ${imeiHTML}

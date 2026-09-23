@@ -977,3 +977,13 @@ html.nx-studio #nxPosPago .nxPgOkBtn:active { background: var(--studio-canvas); 
 @media (prefers-reduced-motion: reduce) {
   html.nx-studio #nxPosPago :is(.nxPgTab, .nxPgQ button, .nxPgGo) { transition: none; transform: none !important; }
 }
+
+/* 18 · Compra: ¿con ITBIS o informal? (2026-09-23). Dos opciones grandes; obligatorio elegir una. */
+html.nx-studio .compTipo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+html.nx-studio .compTipoOp { display: flex; align-items: flex-start; gap: 10px; padding: 12px; min-height: 44px; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; cursor: pointer; text-transform: none !important; letter-spacing: 0 !important; font-weight: 500 !important; }
+html.nx-studio .compTipoOp input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--studio-black); }
+html.nx-studio .compTipoOp span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+html.nx-studio .compTipoOp b { font-size: 14px; font-weight: 700; color: var(--studio-ink); }
+html.nx-studio .compTipoOp small { font-size: 12px; line-height: 1.35; color: var(--studio-steel); }
+html.nx-studio .compTipoOp:has(input:checked) { border-color: var(--studio-gold); background: var(--studio-gold-soft); box-shadow: 0 0 0 3px var(--studio-gold-ring); }
+@media (max-width: 520px) { html.nx-studio .compTipo { grid-template-columns: 1fr; } }

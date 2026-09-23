@@ -1,10 +1,10 @@
-/* STUDIO · Reportes (2026-09-23)
- * Pedido del dueño: «Vamos con los reportes, vamos a ordenar bien y completar todo lo que hace falta».
- * Módulo propio enganchado igual que Reacondicionado (window.nxReportes = { cargar, render, postRender }).
- * Solo LECTURA: no escribe nada en la base. Carga por rango de fechas y por páginas de 1,000 filas
- * (el reporte anterior pedía todo sin filtro y Supabase corta en 1,000 filas: se perdían ventas y líneas).
- * Costo de lo vendido = pos_venta_items.costo_unitario (costo al momento de la venta), no el costo actual.
- * Secciones: Resumen · Ventas · Productos · Inventario · Clientes y cobros · Compras · Caja · Fiscal · Taller.
+/* STUDIO · Reportes (2026-09-23, rehecho al estilo Infoplus el mismo día)
+ * Pedido del dueño: «vamos con el reporte, yo quiero que sea parecido a los reportes de Infoplus» + captura del
+ * menú de Infoplus: Reportes → Bancos · Clientes · Contabilidad · Inventario · Proveedores · Recursos Humanos · Caja.
+ * Catálogo por módulo (acordeón) → cada reporte sale como HOJA formal: empresa/RNC, título, rango o fecha de corte,
+ * grupos con subtotal, total general, pie con usuario y hora; Imprimir (carta) y Excel (CSV).
+ * Solo LECTURA. Carga por rango y por páginas de 1,000 filas; bancos, diario, balanza, kárdex, proveedores y
+ * RR. HH. cargan aparte solo al abrir su reporte. Costos, sueldos, bancos y contabilidad: solo admin y gerente.
  */
 (function () {
   'use strict';
@@ -38,15 +38,7 @@
     return out;
   }
 
-  const TABS = [
-    ['resumen', 'Resumen', 'ti-layout-dashboard'], ['ventas', 'Ventas', 'ti-receipt'], ['productos', 'Productos', 'ti-box'],
-    ['inventario', 'Inventario', 'ti-building-warehouse'], ['cobros', 'Clientes y cobros', 'ti-users'], ['compras', 'Compras', 'ti-truck-delivery'],
-    ['caja', 'Caja', 'ti-cash'], ['fiscal', 'Fiscal', 'ti-file-certificate'], ['taller', 'Taller', 'ti-tool']
-  ];
-  let tab = 'resumen';
-  try { const t = localStorage.getItem('studio_rep_tab'); if (t && TABS.some(x => x[0] === t)) tab = t; } catch (e) {}
   let desde = '', hasta = '', D = null, cargando = false, error = '';
-  const tablas = {}; // id sección → { titulo, cols, filas } para exportar
 
   async function cargar() {
     if (!desde) desde = mesIni();
@@ -63,14 +55,14 @@
         getAll('pos_productos', 'select=id,nombre,codigo,categoria_id,marca,costo,precio,stock,stock_min,tipo,activo,serial&order=nombre.asc'),
         pr(getAll('pos_categorias', 'select=id,nombre'), []),
         pr(getAll('pos_devoluciones', 'select=id,numero,ncf,fecha,cliente_nombre,subtotal,itbis,total,metodo,estado,venta_id&' + rngD('fecha')), []),
-        pr(getAll('pos_abonos', 'select=id,fecha,monto,metodo,cliente_id,venta_id&' + rngD('fecha')), []),
+        pr(getAll('pos_abonos', 'select=id,numero,fecha,monto,metodo,cliente_id,venta_id&' + rngD('fecha')), []),
         pr(getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,credito_monto,credito_vencimiento&estado=eq.completada&a_credito=is.true'), []),
         pr(getAll('pos_abonos', 'select=venta_id,monto'), []),
         pr(getAll('pos_compras', 'select=id,numero,fecha,proveedor_nombre,ncf,subtotal,itbis,total,a_credito,estado,moneda,tasa,es_importacion,total_desembarcado&' + rngD('fecha')), []),
         pr(getAll('pos_cxp_v', 'select=*&saldo=gt.0'), []),
-        pr(getAll('pos_cajas', 'select=id,apertura,cierre,estado,usuario_nombre,created_by_name,monto_inicial,efectivo_esperado,efectivo_contado,descuadre&' + rng('apertura') + '&order=apertura.desc'), []),
-        pr(getAll('pos_caja_movimientos', 'select=tipo,monto,concepto,fecha&' + rng('fecha')), []),
-        pr(getAll('pos_asientos', 'select=fecha,tipo,concepto,pos_asiento_lineas(cuenta_codigo,cuenta_nombre,debito,credito)&' + rngD('fecha')), []),
+        pr(getAll('pos_cajas', 'select=id,apertura,cierre,estado,usuario_nombre,created_by_name,monto_inicial,ventas_efectivo,ventas_tarjeta,ventas_transferencia,efectivo_esperado,efectivo_contado,descuadre&' + rng('apertura') + '&order=apertura.desc'), []),
+        pr(getAll('pos_caja_movimientos', 'select=tipo,monto,concepto,fecha,created_by_name&' + rng('fecha')), []),
+        pr(getAll('pos_asientos', 'select=fecha,tipo,concepto,numero,pos_asiento_lineas(cuenta_codigo,cuenta_nombre,debito,credito)&' + rngD('fecha')), []),
         pr(getAll('pos_reparaciones', 'select=numero,equipo,cliente_nombre,cobrado,cobrado_monto,costo_piezas,presupuesto,estado,entregado_at,created_at&' + rng('created_at')), []),
         pr(getAll('pos_stock_almacen', 'select=producto_id,almacen_id,stock'), []),
         pr(getAll('pos_almacenes', 'select=id,nombre,activo'), [])
@@ -143,17 +135,6 @@
   // ── Piezas de UI ────────────────────────────────────────────────────
   function kpi(l, v, sub, tono) { return `<div class="nxRpK${tono ? ' ' + tono : ''}"><span>${esc(l)}</span><b>${v}</b>${sub ? `<small>${sub}</small>` : ''}</div>`; }
   function variacion(a, b) { if (!b) return ''; const d = pct(a - b, b); return `<em class="${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)}% vs. período anterior</em>`; }
-  function tabla(id, titulo, cols, filas, opts) {
-    opts = opts || {};
-    tablas[id] = { titulo, cols, filas };
-    const head = cols.map(c => `<th class="${c.r ? 'r' : ''}">${esc(c.l)}</th>`).join('');
-    const max = opts.max || 200;
-    const body = filas.length ? filas.slice(0, max).map(f => `<tr>${cols.map((c, i) => `<td class="${c.r ? 'r' : ''}${c.m ? ' m' : ''}">${c.fmt ? c.fmt(f[i]) : esc(f[i])}</td>`).join('')}</tr>`).join('')
-      : `<tr><td colspan="${cols.length}" class="vac">${esc(opts.vacio || 'Sin datos en el período.')}</td></tr>`;
-    const pie = opts.pie ? `<tfoot><tr>${opts.pie.map((p, i) => `<td class="${cols[i] && cols[i].r ? 'r' : ''}">${p}</td>`).join('')}</tr></tfoot>` : '';
-    return `<section class="nxRpCard"><header><h3>${esc(titulo)}</h3><div class="nxRpAcc">${filas.length > max ? `<span class="nxRpNote">Mostrando ${max} de ${filas.length}</span>` : ''}<button type="button" class="btn bsm bghost" onclick="window.nxReportes.csv('${id}')"><i class="ti ti-file-spreadsheet"></i> Excel</button></div></header>
-      <div class="nxRpTw"><table class="nxRpT"><thead><tr>${head}</tr></thead><tbody>${body}</tbody>${pie}</table></div>${opts.nota ? `<p class="nxRpNote">${opts.nota}</p>` : ''}</section>`;
-  }
   function barras(porDia) {
     const dias = []; for (let d = desde; d <= hasta && dias.length < 400; d = addDays(d, 1)) dias.push(d);
     let serie;
@@ -168,7 +149,7 @@
     return Object.entries(met).filter(e => e[1] > 0).map(([k, v]) => `<div class="nxRpMet"><div><span>${esc(k)}</span><b>${fmt(v)}</b></div><div class="bar"><i style="width:${pct(v, tot)}%"></i></div></div>`).join('') || '<p class="nxRpNote">Sin cobros en el período.</p>';
   }
 
-  // ── Secciones ───────────────────────────────────────────────────────
+  // ── Resumen general ────────────────────────────────────────────────
   function secResumen(C) {
     const vc = puedeCosto();
     return `<div class="nxRpKpis">
@@ -195,130 +176,375 @@
           <tr class="t"><td>Resultado del período</td><td class="r">${fmt(C.ganBruta - C.gastos)}</td></tr>
         </tbody></table><p class="nxRpNote">El costo es el que tenía cada artículo al venderse. Los gastos salen de Contabilidad (gastos, nómina, salidas de caja).</p></section>` : ''}`;
   }
-  function secVentas(C) {
-    const vc = puedeCosto();
-    const dias = Object.keys(C.porDia).sort();
-    const filasDia = dias.map(d => { const vs = C.ven.filter(v => diaRD(v.fecha) === d); return [dmy(d), vs.length, C.porDia[d], vs.reduce((s, v) => s + n(v.itbis), 0)]; });
-    const vend = Object.entries(C.porVend).sort((a, b) => b[1].t - a[1].t).map(([k, o]) => vc ? [k, o.n, o.t, o.n ? o.t / o.n : 0, o.g] : [k, o.n, o.t, o.n ? o.t / o.n : 0]);
-    const tipos = Object.entries(C.porTipo).map(([k, o]) => [k, o.n, o.t, pct(o.t, C.bruto) + '%']);
-    const facturas = C.ven.slice().reverse().map(v => [dmy(v.fecha), v.numero_factura || v.numero || '', v.ncf || '', v.cliente_nombre || 'Consumidor final', v.vendedor_nombre || v.created_by_name || '', n(v.credito_monto) > 0 ? 'Crédito' : 'Contado', v.total]);
-    const $ = { l: '', r: 1, fmt: fmt };
-    return tabla('ven_dia', 'Ventas por día', [{ l: 'Fecha' }, { l: 'Ventas', r: 1 }, Object.assign({}, $, { l: 'Total' }), Object.assign({}, $, { l: 'ITBIS' })], filasDia, { pie: ['Total', C.ven.length, fmt(C.bruto), fmt(C.itbis)] })
-      + tabla('ven_vend', 'Ventas por vendedor', [{ l: 'Vendedor' }, { l: 'Ventas', r: 1 }, Object.assign({}, $, { l: 'Total' }), Object.assign({}, $, { l: 'Ticket promedio' })].concat(vc ? [Object.assign({}, $, { l: 'Ganancia' })] : []), vend)
-      + tabla('ven_tipo', 'Contado y crédito', [{ l: 'Tipo' }, { l: 'Ventas', r: 1 }, Object.assign({}, $, { l: 'Total' }), { l: '% del total', r: 1 }], tipos)
-      + tabla('ven_fact', 'Facturas del período', [{ l: 'Fecha' }, { l: 'Factura', m: 1 }, { l: 'NCF', m: 1 }, { l: 'Cliente' }, { l: 'Vendedor' }, { l: 'Tipo' }, Object.assign({}, $, { l: 'Total' })], facturas, { max: 300 })
-      + (C.anul.length ? tabla('ven_anul', 'Facturas anuladas', [{ l: 'Fecha' }, { l: 'Factura', m: 1 }, { l: 'Cliente' }, Object.assign({}, $, { l: 'Total' })], C.anul.map(v => [dmy(v.fecha), v.numero_factura || v.numero || '', v.cliente_nombre || '', v.total])) : '')
-      + (C.dev.length ? tabla('ven_dev', 'Devoluciones y notas de crédito', [{ l: 'Fecha' }, { l: 'Número', m: 1 }, { l: 'NCF', m: 1 }, { l: 'Cliente' }, { l: 'Método' }, Object.assign({}, $, { l: 'Total' })], C.dev.map(d => [dmy(d.fecha), d.numero || '', d.ncf || '', d.cliente_nombre || '', d.metodo || '', d.total]), { pie: ['Total', '', '', '', '', fmt(C.devTot)] }) : '');
-  }
-  function secProductos(C) {
-    const vc = puedeCosto(); const $ = { r: 1, fmt: fmt };
-    const arr = Object.values(C.porProd);
-    const top = arr.slice().sort((a, b) => b.monto - a.monto).map(o => vc ? [o.cod, o.nom, fmtN(o.cant), o.monto, o.costo, o.gan, pct(o.gan, o.monto / 1.18 || 1) + '%'] : [o.cod, o.nom, fmtN(o.cant), o.monto]);
-    const cols = [{ l: 'Código', m: 1 }, { l: 'Artículo' }, { l: 'Cant.', r: 1 }, Object.assign({ l: 'Vendido' }, $)].concat(vc ? [Object.assign({ l: 'Costo' }, $), Object.assign({ l: 'Ganancia' }, $), { l: 'Margen', r: 1 }] : []);
-    const cats = Object.entries(C.porCat).sort((a, b) => b[1].monto - a[1].monto).map(([k, o]) => vc ? [k, fmtN(o.cant), o.monto, o.gan, pct(o.monto, C.bruto) + '%'] : [k, fmtN(o.cant), o.monto, pct(o.monto, C.bruto) + '%']);
-    const vendidos = new Set(Object.keys(C.porProd));
-    const sinVenta = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio' && n(p.stock) > 0 && !vendidos.has(p.id)).sort((a, b) => n(b.stock) * n(b.costo) - n(a.stock) * n(a.costo))
-      .map(p => vc ? [p.codigo || '', p.nombre, fmtN(p.stock), n(p.stock) * n(p.costo)] : [p.codigo || '', p.nombre, fmtN(p.stock)]);
-    return tabla('pro_top', 'Artículos vendidos (de más a menos)', cols, top, { max: 300 })
-      + tabla('pro_cat', 'Ventas por categoría', [{ l: 'Categoría' }, { l: 'Cant.', r: 1 }, Object.assign({ l: 'Vendido' }, $)].concat(vc ? [Object.assign({ l: 'Ganancia' }, $)] : []).concat([{ l: '% del total', r: 1 }]), cats)
-      + tabla('pro_sin', 'Artículos con existencia que no se vendieron en el período', [{ l: 'Código', m: 1 }, { l: 'Artículo' }, { l: 'Existencia', r: 1 }].concat(vc ? [Object.assign({ l: 'Dinero detenido (costo)' }, $)] : []), sinVenta, { max: 200, vacio: 'Todos los artículos con existencia tuvieron ventas.' });
-  }
-  function secInventario() {
-    const vc = puedeCosto(); const $ = { r: 1, fmt: fmt };
-    const act = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio');
-    let vCosto = 0, vPrecio = 0, unidades = 0;
-    act.forEach(p => { const s = Math.max(0, n(p.stock)); unidades += s; vCosto += s * n(p.costo); vPrecio += s * n(p.precio); });
-    const bajo = act.filter(p => n(p.stock) <= 0 || (n(p.stock_min) > 0 && n(p.stock) <= n(p.stock_min))).map(p => [p.codigo || '', p.nombre, fmtN(p.stock), fmtN(p.stock_min), n(p.stock) <= 0 ? 'Agotado' : 'Bajo']);
-    const almBy = {}; D.almacenes.forEach(a => { almBy[a.id] = a.nombre; });
-    const prodBy = C_prod(); const porAlm = {};
-    D.stockAlm.forEach(s => { const p = prodBy[s.producto_id]; if (!p || p.tipo === 'servicio') return; const k = almBy[s.almacen_id] || 'Sin almacén'; porAlm[k] = porAlm[k] || { u: 0, c: 0, p: 0 }; const q = Math.max(0, n(s.stock)); porAlm[k].u += q; porAlm[k].c += q * n(p.costo); porAlm[k].p += q * n(p.precio); });
-    const alm = Object.entries(porAlm).sort((a, b) => b[1].c - a[1].c).map(([k, o]) => vc ? [k, fmtN(o.u), o.c, o.p] : [k, fmtN(o.u), o.p]);
-    const valor = act.filter(p => n(p.stock) > 0).sort((a, b) => n(b.stock) * n(b.costo) - n(a.stock) * n(a.costo)).map(p => vc ? [p.codigo || '', p.nombre, fmtN(p.stock), n(p.costo), n(p.stock) * n(p.costo), n(p.stock) * n(p.precio)] : [p.codigo || '', p.nombre, fmtN(p.stock), n(p.stock) * n(p.precio)]);
-    return `<div class="nxRpKpis">${vc ? kpi('Valor al costo', fmt(vCosto), 'Lo que costó la mercancía en existencia', 'main') : ''}${kpi('Valor a precio de venta', fmt(vPrecio), vc ? 'Ganancia potencial ' + fmt(vPrecio / 1.18 - vCosto) : '', '')}${kpi('Unidades en existencia', fmtN(unidades), act.length + ' artículos activos', '')}${kpi('Agotados o bajos', String(bajo.length), 'Revisa la lista abajo', bajo.length ? 'warn' : '')}</div>`
-      + (alm.length ? tabla('inv_alm', 'Existencia por almacén', [{ l: 'Almacén' }, { l: 'Unidades', r: 1 }].concat(vc ? [Object.assign({ l: 'Valor al costo' }, $)] : []).concat([Object.assign({ l: 'Valor a precio' }, $)]), alm) : '')
-      + tabla('inv_bajo', 'Agotados y bajo el mínimo', [{ l: 'Código', m: 1 }, { l: 'Artículo' }, { l: 'Existencia', r: 1 }, { l: 'Mínimo', r: 1 }, { l: 'Estado' }], bajo, { vacio: 'No hay artículos agotados ni bajo el mínimo.' })
-      + tabla('inv_val', 'Inventario valorizado', [{ l: 'Código', m: 1 }, { l: 'Artículo' }, { l: 'Existencia', r: 1 }].concat(vc ? [Object.assign({ l: 'Costo unit.' }, $), Object.assign({ l: 'Valor al costo' }, $)] : []).concat([Object.assign({ l: 'Valor a precio' }, $)]), valor, { max: 300, nota: 'Existencia y costo actuales (no dependen del rango de fechas).' });
-  }
-  function C_prod() { const m = {}; D.prods.forEach(p => { m[p.id] = p; }); return m; }
-  function secCobros(C) {
-    const $ = { r: 1, fmt: fmt };
-    const tr = Object.entries(C.tramos).map(([k, v]) => [k, v, pct(v, C.cxcTot) + '%']);
-    const porCli = {}; C.cxc.forEach(x => { const k = x.v.cliente_id || x.v.cliente_nombre; porCli[k] = porCli[k] || { nom: x.v.cliente_nombre || '—', n: 0, s: 0, mx: 0 }; porCli[k].n++; porCli[k].s += x.saldo; porCli[k].mx = Math.max(porCli[k].mx, x.dias); });
-    const cli = Object.values(porCli).sort((a, b) => b.s - a.s).map(o => [o.nom, o.n, o.s, o.mx > 0 ? o.mx + ' días' : 'Al día']);
-    const det = C.cxc.slice().sort((a, b) => b.dias - a.dias).map(x => [x.v.cliente_nombre || '', x.v.numero_factura || x.v.numero || '', dmy(x.v.fecha), dmy(x.vence), x.saldo, x.dias > 0 ? x.dias + ' días' : 'Al día']);
-    const met = {}; D.abonos.forEach(a => { const k = a.metodo || 'Otro'; met[k] = met[k] || { n: 0, m: 0 }; met[k].n++; met[k].m += n(a.monto); });
-    const cobros = Object.entries(met).sort((a, b) => b[1].m - a[1].m).map(([k, o]) => [k, o.n, o.m]);
-    const top = Object.values(C.porCli).filter(o => o.nom !== 'Consumidor final').sort((a, b) => b.t - a.t).map(o => [o.nom, o.n, o.t]);
-    return `<div class="nxRpKpis">${kpi('Por cobrar hoy', fmt(C.cxcTot), C.cxc.length + ' factura(s)', 'main')}${kpi('Vencido más de 90 días', fmt(C.tramos['Más de 90']), pct(C.tramos['Más de 90'], C.cxcTot) + '% de la cartera', C.tramos['Más de 90'] ? 'bad' : '')}${kpi('Cobrado en abonos (período)', fmt(C.cobrosAbonos), 'Sin ajustes ni notas de crédito', 'ok')}${kpi('Vendido a crédito (período)', fmt(C.credito), '', '')}</div>`
-      + tabla('cxc_tr', 'Antigüedad de saldos', [{ l: 'Tramo (según vencimiento)' }, Object.assign({ l: 'Saldo' }, $), { l: '% ', r: 1 }], tr, { pie: ['Total', fmt(C.cxcTot), '100%'] })
-      + tabla('cxc_cli', 'Clientes con saldo', [{ l: 'Cliente' }, { l: 'Facturas', r: 1 }, Object.assign({ l: 'Saldo' }, $), { l: 'Atraso máx.', r: 1 }], cli, { max: 300 })
-      + tabla('cxc_det', 'Facturas pendientes', [{ l: 'Cliente' }, { l: 'Factura', m: 1 }, { l: 'Fecha' }, { l: 'Vence' }, Object.assign({ l: 'Saldo' }, $), { l: 'Atraso', r: 1 }], det, { max: 300, nota: 'Si la factura no tiene fecha de vencimiento se toman 30 días desde la venta.' })
-      + tabla('cxc_cob', 'Cobros del período por método', [{ l: 'Método' }, { l: 'Recibos', r: 1 }, Object.assign({ l: 'Monto' }, $)], cobros)
-      + tabla('cli_top', 'Mejores clientes del período', [{ l: 'Cliente' }, { l: 'Compras', r: 1 }, Object.assign({ l: 'Total' }, $)], top, { max: 50 });
-  }
-  function secCompras() {
-    const $ = { r: 1, fmt: fmt };
-    const c = D.compras.filter(x => x.estado !== 'anulada');
-    const tot = c.reduce((s, x) => s + n(x.total) * (n(x.tasa) || 1), 0);
-    const porProv = {}; c.forEach(x => { const k = x.proveedor_nombre || 'Sin proveedor'; porProv[k] = porProv[k] || { n: 0, t: 0 }; porProv[k].n++; porProv[k].t += n(x.total) * (n(x.tasa) || 1); });
-    const cxpTot = D.cxp.reduce((s, x) => s + n(x.saldo), 0);
-    return `<div class="nxRpKpis">${kpi('Compras del período', fmt(tot), c.length + ' compra(s)', 'main')}${kpi('Por pagar a proveedores', fmt(cxpTot), D.cxp.length + ' factura(s)', cxpTot ? 'warn' : '')}</div>`
-      + tabla('com_prov', 'Compras por proveedor', [{ l: 'Proveedor' }, { l: 'Compras', r: 1 }, Object.assign({ l: 'Total (RD$)' }, $)], Object.entries(porProv).sort((a, b) => b[1].t - a[1].t).map(([k, o]) => [k, o.n, o.t]))
-      + tabla('com_det', 'Compras del período', [{ l: 'Fecha' }, { l: 'No.', m: 1 }, { l: 'Proveedor' }, { l: 'NCF', m: 1 }, { l: 'Tipo' }, Object.assign({ l: 'Total (RD$)' }, $)], c.map(x => [dmy(x.fecha), x.numero || '', x.proveedor_nombre || '', x.ncf || '', (x.a_credito ? 'Crédito' : 'Contado') + (x.es_importacion ? ' · Importación' : ''), n(x.total) * (n(x.tasa) || 1)]), { vacio: 'No hay compras en el período.' })
-      + tabla('com_cxp', 'Cuentas por pagar (hoy)', [{ l: 'Proveedor' }, { l: 'Compra', m: 1 }, { l: 'Fecha' }, { l: 'Vence' }, Object.assign({ l: 'Saldo' }, $), { l: 'Estado' }], D.cxp.map(x => [x.proveedor_nombre || '', x.numero || '', dmy(x.fecha), dmy(x.vencimiento), x.saldo, x.tramo || x.estado_pago || '']), { vacio: 'No hay cuentas por pagar.' });
-  }
-  function secCaja() {
-    const $ = { r: 1, fmt: fmt };
-    const cer = D.cajas.filter(c => c.estado === 'cerrada');
-    const desc = cer.reduce((s, c) => s + n(c.descuadre), 0);
-    const ent = D.cajaMov.filter(m => m.tipo === 'entrada').reduce((s, m) => s + n(m.monto), 0), sal = D.cajaMov.filter(m => m.tipo !== 'entrada').reduce((s, m) => s + n(m.monto), 0);
-    return `<div class="nxRpKpis">${kpi('Cierres de caja', String(cer.length), '', 'main')}${kpi('Descuadre acumulado', fmt(desc), desc < 0 ? 'Faltante' : desc > 0 ? 'Sobrante' : 'Cuadrado', desc ? 'warn' : 'ok')}${kpi('Entradas de efectivo', fmt(ent), '', '')}${kpi('Salidas / gastos de caja', fmt(sal), '', '')}</div>`
-      + tabla('caj_cie', 'Cierres de caja', [{ l: 'Apertura' }, { l: 'Cierre' }, { l: 'Usuario' }, Object.assign({ l: 'Fondo' }, $), Object.assign({ l: 'Esperado' }, $), Object.assign({ l: 'Contado' }, $), Object.assign({ l: 'Descuadre' }, $)], cer.map(c => [dmy(c.apertura), dmy(c.cierre), c.usuario_nombre || c.created_by_name || '', c.monto_inicial, c.efectivo_esperado, c.efectivo_contado, c.descuadre]), { vacio: 'No hay cierres en el período.' })
-      + tabla('caj_mov', 'Entradas y salidas de caja', [{ l: 'Fecha' }, { l: 'Tipo' }, { l: 'Concepto' }, Object.assign({ l: 'Monto' }, $)], D.cajaMov.map(m => [dmy(m.fecha), m.tipo === 'entrada' ? 'Entrada' : 'Salida', m.concepto || '', m.monto]), { vacio: 'Sin movimientos en el período.' });
-  }
-  function secFiscal(C) {
-    const $ = { r: 1, fmt: fmt };
-    const v607 = C.ven.filter(v => v.ncf).map(v => [v.ncf, dmy(v.fecha), v.cliente_nombre || 'Consumidor final', n(v.total) - n(v.itbis), n(v.itbis), n(v.total)]);
-    const nc = C.dev.filter(d => d.ncf).map(d => [d.ncf, dmy(d.fecha), d.cliente_nombre || '', -(n(d.total) - n(d.itbis)), -n(d.itbis), -n(d.total)]);
-    const r607 = v607.concat(nc);
-    const s = i => r607.reduce((a, f) => a + n(f[i]), 0);
-    const c606 = D.compras.filter(x => x.ncf && x.estado !== 'anulada').map(x => [x.ncf, dmy(x.fecha), x.proveedor_nombre || '', (n(x.subtotal)) * (n(x.tasa) || 1), n(x.itbis) * (n(x.tasa) || 1), n(x.total) * (n(x.tasa) || 1)]);
-    const s6 = i => c606.reduce((a, f) => a + n(f[i]), 0);
-    const itbCob = C.itbis - C.devItb, itbPag = s6(4);
-    return `<div class="nxRpKpis">${kpi('ITBIS cobrado (ventas − devoluciones)', fmt(itbCob), '', 'main')}${kpi('ITBIS pagado en compras con NCF', fmt(itbPag), '', '')}${kpi('ITBIS estimado a pagar', fmt(itbCob - itbPag), 'Referencia; confirma con tu contador', itbCob - itbPag > 0 ? 'warn' : 'ok')}</div>`
-      + tabla('fis_607', '607 · Ventas con comprobante (incluye notas de crédito)', [{ l: 'NCF', m: 1 }, { l: 'Fecha' }, { l: 'Cliente' }, Object.assign({ l: 'Monto sin ITBIS' }, $), Object.assign({ l: 'ITBIS' }, $), Object.assign({ l: 'Total' }, $)], r607, { max: 400, pie: ['Total', '', '', fmt(s(3)), fmt(s(4)), fmt(s(5))], vacio: 'No hay ventas con NCF en el período.' })
-      + tabla('fis_606', '606 · Compras con comprobante', [{ l: 'NCF', m: 1 }, { l: 'Fecha' }, { l: 'Proveedor' }, Object.assign({ l: 'Monto sin ITBIS' }, $), Object.assign({ l: 'ITBIS' }, $), Object.assign({ l: 'Total' }, $)], c606, { pie: ['Total', '', '', fmt(s6(3)), fmt(s6(4)), fmt(s6(5))], vacio: 'No hay compras con NCF en el período.' });
-  }
-  function secTaller() {
-    const $ = { r: 1, fmt: fmt };
-    const ent = D.reps.filter(r => r.cobrado || r.entregado_at);
-    const cob = ent.reduce((s, r) => s + n(r.cobrado_monto), 0), pz = ent.reduce((s, r) => s + n(r.costo_piezas), 0);
-    const abiertas = D.reps.filter(r => !r.entregado_at && !/entregad|cancel/i.test(r.estado || ''));
-    return `<div class="nxRpKpis">${kpi('Reparaciones recibidas', String(D.reps.length), abiertas.length + ' todavía en taller', 'main')}${kpi('Cobrado en taller', fmt(cob), '', 'ok')}${puedeCosto() ? kpi('Costo de piezas', fmt(pz), 'Ganancia ' + fmt(cob - pz), '') : ''}</div>`
-      + tabla('tal_det', 'Reparaciones del período', [{ l: 'Número', m: 1 }, { l: 'Fecha' }, { l: 'Cliente' }, { l: 'Equipo' }, { l: 'Estado' }, Object.assign({ l: 'Cobrado' }, $)], D.reps.map(r => [r.numero || '', dmy(r.created_at), r.cliente_nombre || '', r.equipo || '', r.entregado_at ? 'Entregada' : (r.estado || ''), n(r.cobrado_monto)]), { vacio: 'No hay reparaciones en el período.' })
-      + `<p class="nxRpNote">La rentabilidad de los equipos reacondicionados está en Reacondicionado → Rentabilidad.</p>`;
+
+  // ── Catálogo estilo Infoplus: Reportes → módulo → reporte ─────────────────
+  // Cada reporte devuelve { cols, grupos:[{t, filas, sub}], total, nota, alCorte, filtro } y se pinta como
+  // una hoja formal (empresa, título, rango, grupos con subtotal, total general, pie con usuario y hora).
+  const CAT = [
+    ['bancos', 'Bancos', 'ti-building-bank', [
+      ['ban_saldos', 'Saldos de cuentas bancarias'], ['ban_mov', 'Movimientos bancarios'], ['ban_conc', 'Movimientos sin conciliar']]],
+    ['clientes', 'Clientes', 'ti-users', [
+      ['cli_fact', 'Ventas por fecha (facturas)'], ['cli_vend', 'Ventas por vendedor'], ['cli_cli', 'Ventas por cliente'],
+      ['cli_prod', 'Ventas por artículo'], ['cli_cat', 'Ventas por categoría'], ['cli_cxc', 'Cuentas por cobrar'],
+      ['cli_ant', 'Antigüedad de saldos'], ['cli_cob', 'Cobros recibidos'], ['cli_dev', 'Devoluciones y notas de crédito'],
+      ['cli_anul', 'Facturas anuladas'], ['cli_taller', 'Reparaciones (taller)']]],
+    ['conta', 'Contabilidad', 'ti-notebook', [
+      ['con_er', 'Estado de resultados'], ['con_diario', 'Libro diario'], ['con_bal', 'Balanza de comprobación'],
+      ['con_gastos', 'Gastos por cuenta'], ['con_607', 'Formato 607 · ventas'], ['con_606', 'Formato 606 · compras'], ['con_itbis', 'Resumen de ITBIS']]],
+    ['inv', 'Inventario', 'ti-list-details', [
+      ['inv_val', 'Existencia valorizada'], ['inv_alm', 'Existencia por almacén'], ['inv_bajo', 'Agotados y bajo mínimo'],
+      ['inv_kardex', 'Movimientos de inventario (kárdex)'], ['inv_sin', 'Artículos sin ventas en el período']]],
+    ['prov', 'Proveedores', 'ti-truck', [
+      ['prov_comp', 'Compras por fecha'], ['prov_porprov', 'Compras por proveedor'], ['prov_cxp', 'Cuentas por pagar'],
+      ['prov_pagos', 'Pagos a proveedores'], ['prov_lista', 'Listado de proveedores']]],
+    ['rrhh', 'Recursos Humanos', 'ti-user-circle', [
+      ['rh_emp', 'Listado de empleados'], ['rh_nom', 'Nóminas del período'], ['rh_det', 'Detalle de nómina por empleado']]],
+    ['caja', 'Caja', 'ti-currency-dollar', [
+      ['caja_cie', 'Cuadres de caja'], ['caja_mov', 'Entradas y salidas de caja'], ['caja_met', 'Ventas por forma de pago'], ['caja_dia', 'Ventas diarias']]]
+  ];
+  const REP = {}; CAT.forEach(c => c[3].forEach(r => { REP[r[0]] = { t: r[1], cat: c[0] }; }));
+  // Reportes con datos sensibles (costos, sueldos, bancos, contabilidad): solo administrador y gerente.
+  const SENSIBLE = /^(ban_|con_|rh_|inv_val|inv_alm)/;
+  let rep = '', abierto = {}, fsel = {};
+  try { const r = localStorage.getItem('studio_rep_sel'); if (r && REP[r]) rep = r; } catch (e) {}
+  try { abierto = JSON.parse(localStorage.getItem('studio_rep_cat') || '{}') || {}; } catch (e) { abierto = {}; }
+  if (rep) abierto[REP[rep].cat] = true;
+
+  // Datos extra que solo cargan al abrir un reporte que los usa (cache por rango).
+  const X = {}; let xCargando = '';
+  function xKey(k) { return k + '|' + desde + '|' + hasta; }
+  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh' };
+  function xDe(id) { for (const k in XNEED) if (id === k || (k.endsWith('_') && id.startsWith(k))) return XNEED[k]; return ''; }
+  async function cargarX(k) {
+    const key = xKey(k); if (X[key]) return X[key];
+    const pr = (p, def) => p.catch(() => def);
+    const rngD = (col) => col + '=gte.' + desde + '&' + col + '=lte.' + hasta;
+    let r = {};
+    if (k === 'bancos') {
+      const [cuentas, movs, conc] = await Promise.all([
+        pr(getAll('pos_cuentas_bancarias', 'select=id,banco_nombre,alias,numero,tipo,moneda,saldo_inicial,fecha_saldo_inicial,activa&order=banco_nombre.asc'), []),
+        pr(getAll('pos_banco_movimientos', 'select=id,cuenta_bancaria_id,fecha,monto,concepto,referencia,origen_tipo&fecha=lt.' + tsHasta(hasta) + '&order=fecha.asc'), []),
+        pr(getAll('pos_banco_conciliaciones', 'select=movimiento_id'), [])
+      ]);
+      r = { cuentas, movs, conc };
+    } else if (k === 'diario') {
+      r.asientos = await pr(getAll('pos_asientos', 'select=numero,fecha,tipo,concepto,referencia,pos_asiento_lineas(cuenta_codigo,cuenta_nombre,descripcion,debito,credito)&' + rngD('fecha') + '&order=fecha.asc,numero.asc'), []);
+    } else if (k === 'balanza') {
+      const [cuentas, lineas] = await Promise.all([
+        pr(getAll('pos_cuentas', 'select=codigo,nombre,tipo,naturaleza&order=codigo.asc'), []),
+        pr(getAll('pos_asiento_lineas', 'select=cuenta_codigo,cuenta_nombre,debito,credito,pos_asientos!inner(fecha)&pos_asientos.fecha=lte.' + hasta), [])
+      ]);
+      r = { cuentas, lineas };
+    } else if (k === 'kardex') {
+      r.movs = await pr(getAll('pos_inv_movimientos', 'select=producto_id,producto_nombre,tipo,cantidad,stock_anterior,stock_nuevo,referencia,motivo,created_by_name,fecha&fecha=gte.' + tsDesde(desde) + '&fecha=lt.' + tsHasta(hasta) + '&order=fecha.asc'), []);
+    } else if (k === 'prov') {
+      const [provs, pagos] = await Promise.all([
+        pr(getAll('pos_proveedores', 'select=id,nombre,rnc,telefono,direccion,contacto,activo&order=nombre.asc'), []),
+        pr(getAll('pos_compra_pagos', 'select=numero,fecha,monto,metodo,referencia,proveedor_id,compra_id,created_by_name&' + rngD('fecha') + '&order=fecha.asc'), [])
+      ]);
+      r = { provs, pagos };
+    } else if (k === 'rrhh') {
+      const [emps, noms] = await Promise.all([
+        pr(getAll('rrhh_empleados', 'select=nombre,cedula,telefono,puesto,departamento,salario,tipo_pago,fecha_ingreso,activo&order=nombre.asc'), []),
+        pr(getAll('rrhh_nominas', 'select=numero,periodo,descripcion,fecha,tipo,total_bruto,total_deducciones,total_neto,estado,rrhh_nomina_lineas(empleado_nombre,salario_bruto,bonos,sfs,afp,isr,otras_deducciones,neto)&' + rngD('fecha') + '&order=fecha.asc'), [])
+      ]);
+      r = { emps, noms };
+    }
+    X[key] = r; return r;
   }
 
-  // ── Render ──────────────────────────────────────────────────────────
+  // ── Formatos de hoja ───────────────────────────────────────────────
+  function m2(v) { const x = Math.round(n(v) * 100) / 100; return (x === 0 ? 0 : x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  const $ = (l, o) => Object.assign({ l, r: 1, fmt: m2, sum: 1 }, o || {});
+  const T = (l, o) => Object.assign({ l }, o || {});
+  function sumas(cols, filas) { return cols.map((c, i) => c.sum ? filas.reduce((s, f) => s + n(f[i]), 0) : null); }
+  function grupo(t, filas, cols) { return { t, filas, sub: sumas(cols, filas) }; }
+  function agrupar(lista, clave, fila, cols, ordenGrupos) {
+    const g = {}; lista.forEach(x => { const k = clave(x) || '—'; (g[k] = g[k] || []).push(fila(x)); });
+    let ks = Object.keys(g); ks = ordenGrupos ? ordenGrupos(ks, g) : ks.sort((a, b) => a.localeCompare(b, 'es'));
+    return ks.map(k => grupo(k, g[k], cols));
+  }
+  const porTotalDesc = col => (ks, g) => ks.sort((a, b) => g[b].reduce((s, f) => s + n(f[col]), 0) - g[a].reduce((s, f) => s + n(f[col]), 0));
+
+  // ── Definición de cada reporte ─────────────────────────────────────
+  function construir(id, C, x) {
+    const vc = puedeCosto(); const fv = fsel[id] || '';
+    const almBy = {}; D.almacenes.forEach(a => { almBy[a.id] = a.nombre; });
+    const catBy = {}; D.cats.forEach(c => { catBy[c.id] = c.nombre; });
+    const tasa = c => n(c.tasa) || 1;
+    switch (id) {
+      // Bancos
+      case 'ban_saldos': {
+        const cols = [T('Banco'), T('Cuenta', { m: 1 }), T('Tipo'), T('Moneda'), $('Saldo inicial'), $('Entradas'), $('Salidas'), $('Saldo')];
+        const filas = x.cuentas.map(c => { const ms = x.movs.filter(m => m.cuenta_bancaria_id === c.id && (!c.fecha_saldo_inicial || diaRD(m.fecha) >= c.fecha_saldo_inicial)); const e = ms.filter(m => n(m.monto) > 0).reduce((s, m) => s + n(m.monto), 0), s = -ms.filter(m => n(m.monto) < 0).reduce((s2, m) => s2 + n(m.monto), 0); return [c.banco_nombre || '', (c.alias ? c.alias + ' · ' : '') + (c.numero || ''), c.tipo || '', c.moneda || 'DOP', n(c.saldo_inicial), e, s, n(c.saldo_inicial) + e - s]; });
+        return { cols, grupos: [grupo('', filas, cols)], alCorte: 1, nota: 'Saldo = saldo inicial + entradas − salidas registradas en STUDIO hasta la fecha de corte.' };
+      }
+      case 'ban_mov': case 'ban_conc': {
+        const concSet = new Set(x.conc.map(c => c.movimiento_id));
+        const cols = [T('Fecha'), T('Concepto'), T('Referencia', { m: 1 }), T('Origen'), $('Entrada'), $('Salida')].concat(id === 'ban_mov' ? [$('Balance', { sum: 0 })] : []);
+        const cuentas = x.cuentas.filter(c => !fv || c.id === fv);
+        const grupos = cuentas.map(c => {
+          let bal = n(c.saldo_inicial);
+          const ms = x.movs.filter(m => m.cuenta_bancaria_id === c.id && (!c.fecha_saldo_inicial || diaRD(m.fecha) >= c.fecha_saldo_inicial));
+          ms.filter(m => diaRD(m.fecha) < desde).forEach(m => { bal += n(m.monto); });
+          const antes = bal;
+          const filas = ms.filter(m => diaRD(m.fecha) >= desde && (id === 'ban_mov' || !concSet.has(m.id))).map(m => { bal += n(m.monto); const f = [dmy(m.fecha), m.concepto || '', m.referencia || '', m.origen_tipo || '', n(m.monto) > 0 ? n(m.monto) : 0, n(m.monto) < 0 ? -n(m.monto) : 0]; if (id === 'ban_mov') f.push(bal); return f; });
+          if (id === 'ban_mov') filas.unshift(Object.assign(['', 'Balance anterior', '', '', 0, 0, antes], { _ini: 1 }));
+          return grupo((c.banco_nombre || '') + ' · ' + (c.alias || c.numero || ''), filas, cols);
+        }).filter(g => id === 'ban_mov' || g.filas.length);
+        return { cols, grupos, filtro: { l: 'Cuenta', o: x.cuentas.map(c => [c.id, (c.banco_nombre || '') + ' · ' + (c.alias || c.numero || '')]) } };
+      }
+      // Clientes
+      case 'cli_fact': {
+        const cols = [T('Factura', { m: 1 }), T('NCF', { m: 1 }), T('Cliente'), T('Vendedor'), T('Tipo'), $('Subtotal'), $('ITBIS'), $('Total')];
+        return { cols, grupos: agrupar(C.ven, v => dmy(v.fecha), v => [v.numero_factura || v.numero || '', v.ncf || '', v.cliente_nombre || 'Consumidor final', v.vendedor_nombre || v.created_by_name || '', n(v.credito_monto) > 0 ? 'Crédito' : 'Contado', n(v.total) - n(v.itbis), n(v.itbis), n(v.total)], cols, ks => ks.sort((a, b) => a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')))) };
+      }
+      case 'cli_vend': {
+        const vendNom = v => v.vendedor_nombre || v.created_by_name || 'Sin vendedor';
+        const lista = C.ven.filter(v => !fv || vendNom(v) === fv);
+        const cols = [T('Fecha'), T('Factura', { m: 1 }), T('Cliente'), T('Tipo'), $('Total')];
+        return { cols, grupos: agrupar(lista, vendNom, v => [dmy(v.fecha), v.numero_factura || v.numero || '', v.cliente_nombre || 'Consumidor final', n(v.credito_monto) > 0 ? 'Crédito' : 'Contado', n(v.total)], cols, porTotalDesc(4)), filtro: { l: 'Vendedor', o: Object.keys(C.porVend).sort().map(k => [k, k]) } };
+      }
+      case 'cli_cli': {
+        const cols = [T('Fecha'), T('Factura', { m: 1 }), T('Vendedor'), T('Tipo'), $('Total')];
+        return { cols, grupos: agrupar(C.ven, v => v.cliente_nombre || 'Consumidor final', v => [dmy(v.fecha), v.numero_factura || v.numero || '', v.vendedor_nombre || v.created_by_name || '', n(v.credito_monto) > 0 ? 'Crédito' : 'Contado', n(v.total)], cols, porTotalDesc(4)) };
+      }
+      case 'cli_prod': case 'cli_cat': {
+        const arr = Object.values(C.porProd).map(o => Object.assign({}, o, { cat: 'Sin categoría' }));
+        Object.keys(C.porProd).forEach((k, i) => { const p = C.prodBy[k]; arr[i].cat = p && p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría'; });
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Cant.', { fmt: fmtN }), $('Vendido')].concat(vc ? [$('Costo'), $('Ganancia')] : []);
+        const fila = o => [o.cod, o.nom, o.cant, o.monto].concat(vc ? [o.costo, o.gan] : []);
+        if (id === 'cli_prod') return { cols, grupos: [grupo('', arr.sort((a, b) => b.monto - a.monto).map(fila), cols)], nota: vc ? 'Ganancia = venta sin ITBIS − costo que tenía el artículo al venderse.' : '' };
+        return { cols, grupos: agrupar(arr.sort((a, b) => b.monto - a.monto), o => o.cat, fila, cols, porTotalDesc(3)) };
+      }
+      case 'cli_cxc': {
+        const cols = [T('Factura', { m: 1 }), T('Fecha'), T('Vence'), T('Atraso', { r: 1 }), $('Saldo')];
+        return { cols, grupos: agrupar(C.cxc, c => c.v.cliente_nombre || '—', c => [c.v.numero_factura || c.v.numero || '', dmy(c.v.fecha), dmy(c.vence), c.dias > 0 ? c.dias + ' días' : 'Al día', c.saldo], cols, porTotalDesc(4)), alCorte: 1, nota: 'Saldos a hoy. Sin fecha de vencimiento se toman 30 días desde la venta.' };
+      }
+      case 'cli_ant': {
+        const trs = Object.keys(C.tramos);
+        const cols = [T('Cliente')].concat(trs.map(t => $(t))).concat([$('Total')]);
+        const pc = {}; C.cxc.forEach(c => { const k = c.v.cliente_nombre || '—'; pc[k] = pc[k] || trs.map(() => 0); pc[k][trs.indexOf(c.tr)] += c.saldo; });
+        const filas = Object.entries(pc).map(([k, a]) => [k].concat(a).concat([a.reduce((s, v) => s + v, 0)])).sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        return { cols, grupos: [grupo('', filas, cols)], alCorte: 1 };
+      }
+      case 'cli_cob': {
+        const cols = [T('Fecha'), T('Recibo', { m: 1 }), T('Cliente'), T('Factura', { m: 1 }), $('Monto')];
+        const cliNom = {}; D.creditos.forEach(v => { cliNom[v.id] = v; });
+        return { cols, grupos: agrupar(D.abonos.filter(a => n(a.monto) > 0), a => a.metodo || 'Otro', a => { const v = cliNom[a.venta_id]; return [dmy(a.fecha), a.numero || '', v ? v.cliente_nombre || '' : '', v ? v.numero_factura || v.numero || '' : '', n(a.monto)]; }, cols, porTotalDesc(4)) };
+      }
+      case 'cli_dev': {
+        const cols = [T('Fecha'), T('Número', { m: 1 }), T('NCF', { m: 1 }), T('Cliente'), T('Método'), $('ITBIS'), $('Total')];
+        return { cols, grupos: [grupo('', C.dev.map(d => [dmy(d.fecha), d.numero || '', d.ncf || '', d.cliente_nombre || '', d.metodo || '', n(d.itbis), n(d.total)]), cols)] };
+      }
+      case 'cli_anul': {
+        const cols = [T('Fecha'), T('Factura', { m: 1 }), T('NCF', { m: 1 }), T('Cliente'), T('Estado'), $('Total')];
+        return { cols, grupos: [grupo('', C.anul.map(v => [dmy(v.fecha), v.numero_factura || v.numero || '', v.ncf || '', v.cliente_nombre || '', v.estado || '', n(v.total)]), cols)] };
+      }
+      case 'cli_taller': {
+        const cols = [T('Número', { m: 1 }), T('Fecha'), T('Cliente'), T('Equipo'), $('Presupuesto'), $('Cobrado')].concat(vc ? [$('Piezas')] : []);
+        return { cols, grupos: agrupar(D.reps, r => r.entregado_at ? 'Entregadas' : (r.estado || 'Sin estado').replace(/_/g, ' '), r => [r.numero || '', dmy(r.created_at), r.cliente_nombre || '', r.equipo || '', n(r.presupuesto), n(r.cobrado_monto)].concat(vc ? [n(r.costo_piezas)] : []), cols) };
+      }
+      // Contabilidad
+      case 'con_er': {
+        const cols = [T('Concepto'), $('Monto', { sum: 0 })];
+        const g = [
+          grupo('Ingresos', [['Ventas (con ITBIS)', C.bruto], ['− Devoluciones', -C.devTot], ['− ITBIS incluido', -(C.itbis - C.devItb)], ['Ventas netas sin ITBIS', C.netasSinItb]], cols),
+          grupo('Costo', [['Costo de lo vendido', C.costo], ['Ganancia bruta', C.ganBruta]], cols),
+          grupo('Gastos', Object.entries(C.porGasto).sort().map(([k, v]) => [k, v]).concat([['Total gastos', C.gastos]]), cols)
+        ];
+        return { cols, grupos: g, total: ['Resultado del período', C.ganBruta - C.gastos], nota: 'El costo es el que tenía cada artículo al venderse. Gastos: cuentas 6xxx de Contabilidad.' };
+      }
+      case 'con_diario': {
+        const cols = [T('Cuenta', { m: 1 }), T('Nombre'), T('Descripción'), $('Débito'), $('Crédito')];
+        const grupos = x.asientos.map(a => grupo(dmy(a.fecha) + ' · ' + (a.numero || '') + ' · ' + (a.concepto || a.tipo || ''), (a.pos_asiento_lineas || []).map(l => [l.cuenta_codigo || '', l.cuenta_nombre || '', l.descripcion || '', n(l.debito), n(l.credito)]), cols));
+        return { cols, grupos };
+      }
+      case 'con_bal': {
+        const cols = [T('Cuenta', { m: 1 }), T('Nombre'), $('Débitos'), $('Créditos'), $('Saldo deudor'), $('Saldo acreedor')];
+        const acc = {}; x.lineas.forEach(l => { const k = l.cuenta_codigo || '?'; acc[k] = acc[k] || { nom: l.cuenta_nombre || '', d: 0, c: 0 }; acc[k].d += n(l.debito); acc[k].c += n(l.credito); });
+        x.cuentas.forEach(c => { if (acc[c.codigo]) acc[c.codigo].nom = c.nombre; });
+        const tipo = k => ({ '1': 'Activos', '2': 'Pasivos', '3': 'Capital', '4': 'Ingresos', '5': 'Costos', '6': 'Gastos' })[k[0]] || 'Otras';
+        const filas = Object.keys(acc).sort().map(k => { const a = acc[k], s = a.d - a.c; return [k, a.nom, a.d, a.c, s > 0 ? s : 0, s < 0 ? -s : 0]; });
+        return { cols, grupos: agrupar(filas, f => tipo(f[0]), f => f, cols, ks => ks.sort((a, b) => ['Activos', 'Pasivos', 'Capital', 'Ingresos', 'Costos', 'Gastos', 'Otras'].indexOf(a) - ['Activos', 'Pasivos', 'Capital', 'Ingresos', 'Costos', 'Gastos', 'Otras'].indexOf(b))), alCorte: 1, nota: 'Acumulado de todos los asientos hasta la fecha de corte. Débitos y créditos totales deben ser iguales.' };
+      }
+      case 'con_gastos': {
+        const cols = [T('Fecha'), T('Concepto'), T('Cuenta', { m: 1 }), $('Monto')];
+        const ls = []; D.asientos.forEach(a => (a.pos_asiento_lineas || []).forEach(l => { if (String(l.cuenta_codigo || '').startsWith('6')) ls.push({ a, l }); }));
+        return { cols, grupos: agrupar(ls, o => o.l.cuenta_codigo + ' · ' + (o.l.cuenta_nombre || ''), o => [dmy(o.a.fecha), o.a.concepto || '', o.l.cuenta_codigo || '', n(o.l.debito) - n(o.l.credito)], cols) };
+      }
+      case 'con_607': {
+        const cols = [T('NCF', { m: 1 }), T('Fecha'), T('Cliente'), $('Monto sin ITBIS'), $('ITBIS'), $('Total')];
+        return { cols, grupos: [grupo('Ventas', C.ven.filter(v => v.ncf).map(v => [v.ncf, dmy(v.fecha), v.cliente_nombre || 'Consumidor final', n(v.total) - n(v.itbis), n(v.itbis), n(v.total)]), cols), grupo('Notas de crédito', C.dev.filter(d => d.ncf).map(d => [d.ncf, dmy(d.fecha), d.cliente_nombre || '', -(n(d.total) - n(d.itbis)), -n(d.itbis), -n(d.total)]), cols)].filter(g => g.filas.length) };
+      }
+      case 'con_606': {
+        const cols = [T('NCF', { m: 1 }), T('Fecha'), T('Proveedor'), $('Monto sin ITBIS'), $('ITBIS'), $('Total')];
+        return { cols, grupos: [grupo('', D.compras.filter(c => c.ncf && c.estado !== 'anulada').map(c => [c.ncf, dmy(c.fecha), c.proveedor_nombre || '', n(c.subtotal) * tasa(c), n(c.itbis) * tasa(c), n(c.total) * tasa(c)]), cols)] };
+      }
+      case 'con_itbis': {
+        const cols = [T('Concepto'), $('Monto', { sum: 0 })];
+        const pag = D.compras.filter(c => c.ncf && c.estado !== 'anulada').reduce((s, c) => s + n(c.itbis) * tasa(c), 0), cob = C.itbis - C.devItb;
+        return { cols, grupos: [grupo('', [['ITBIS en ventas', C.itbis], ['− ITBIS en devoluciones', -C.devItb], ['ITBIS cobrado neto', cob], ['ITBIS pagado en compras con NCF', pag]], cols)], total: ['ITBIS estimado a pagar', cob - pag], nota: 'Referencia para el IT-1; confirma con tu contador.' };
+      }
+      // Inventario
+      case 'inv_val': case 'inv_bajo': {
+        let act = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio' && (!fv || p.categoria_id === fv));
+        const cat = p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría';
+        if (id === 'inv_bajo') {
+          const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia', { fmt: fmtN, sum: 0 }), $('Mínimo', { fmt: fmtN, sum: 0 }), T('Estado')];
+          act = act.filter(p => n(p.stock) <= 0 || (n(p.stock_min) > 0 && n(p.stock) <= n(p.stock_min)));
+          return { cols, grupos: agrupar(act, cat, p => [p.codigo || '', p.nombre, n(p.stock), n(p.stock_min), n(p.stock) <= 0 ? 'Agotado' : 'Bajo'], cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+        }
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia', { fmt: fmtN }), $('Costo unit.', { sum: 0 }), $('Valor al costo'), $('Precio', { sum: 0 }), $('Valor a precio')];
+        return { cols, grupos: agrupar(act.filter(p => n(p.stock) > 0), cat, p => [p.codigo || '', p.nombre, n(p.stock), n(p.costo), n(p.stock) * n(p.costo), n(p.precio), n(p.stock) * n(p.precio)], cols, porTotalDesc(4)), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+      }
+      case 'inv_alm': {
+        const prodBy = C.prodBy;
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia', { fmt: fmtN }), $('Valor al costo')];
+        const lista = D.stockAlm.filter(s => n(s.stock) !== 0 && prodBy[s.producto_id] && prodBy[s.producto_id].tipo !== 'servicio' && (!fv || s.almacen_id === fv));
+        return { cols, grupos: agrupar(lista, s => almBy[s.almacen_id] || 'Sin almacén', s => { const p = prodBy[s.producto_id]; return [p.codigo || '', p.nombre, n(s.stock), n(s.stock) * n(p.costo)]; }, cols), alCorte: 1, filtro: { l: 'Almacén', o: D.almacenes.map(a => [a.id, a.nombre]) } };
+      }
+      case 'inv_kardex': {
+        const cols = [T('Fecha'), T('Tipo'), T('Referencia', { m: 1 }), T('Usuario'), $('Entrada', { fmt: fmtN }), $('Salida', { fmt: fmtN }), $('Existencia', { fmt: fmtN, sum: 0 })];
+        return { cols, grupos: agrupar(x.movs, m => m.producto_nombre || '—', m => { const q = n(m.cantidad), d = m.stock_nuevo != null && m.stock_anterior != null ? n(m.stock_nuevo) - n(m.stock_anterior) : q; return [dmy(m.fecha), (m.tipo || '').replace(/_/g, ' '), m.referencia || m.motivo || '', m.created_by_name || '', d > 0 ? d : 0, d < 0 ? -d : 0, m.stock_nuevo != null ? n(m.stock_nuevo) : '']; }, cols) };
+      }
+      case 'inv_sin': {
+        const vend = new Set(Object.keys(C.porProd));
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia', { fmt: fmtN })].concat(vc ? [$('Dinero detenido (costo)')] : []);
+        const l = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio' && n(p.stock) > 0 && !vend.has(p.id));
+        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre, n(p.stock)].concat(vc ? [n(p.stock) * n(p.costo)] : []), cols) };
+      }
+      // Proveedores
+      case 'prov_comp': case 'prov_porprov': {
+        const cs = D.compras.filter(c => c.estado !== 'anulada');
+        if (id === 'prov_comp') { const cols = [T('Fecha'), T('No.', { m: 1 }), T('Proveedor'), T('NCF', { m: 1 }), T('Tipo'), $('ITBIS'), $('Total RD$')]; return { cols, grupos: [grupo('', cs.map(c => [dmy(c.fecha), c.numero || '', c.proveedor_nombre || '', c.ncf || '', (c.a_credito ? 'Crédito' : 'Contado') + (c.es_importacion ? ' · Import.' : ''), n(c.itbis) * tasa(c), n(c.total) * tasa(c)]), cols)] }; }
+        const cols = [T('Fecha'), T('No.', { m: 1 }), T('NCF', { m: 1 }), T('Tipo'), $('Total RD$')];
+        return { cols, grupos: agrupar(cs, c => c.proveedor_nombre || 'Sin proveedor', c => [dmy(c.fecha), c.numero || '', c.ncf || '', c.a_credito ? 'Crédito' : 'Contado', n(c.total) * tasa(c)], cols, porTotalDesc(4)) };
+      }
+      case 'prov_cxp': {
+        const cols = [T('Compra', { m: 1 }), T('Fecha'), T('Vence'), T('Estado'), $('Total'), $('Pagado'), $('Saldo')];
+        return { cols, grupos: agrupar(D.cxp, c => c.proveedor_nombre || '—', c => [c.numero || '', dmy(c.fecha), dmy(c.vencimiento), c.tramo || c.estado_pago || '', n(c.total), n(c.pagado), n(c.saldo)], cols, porTotalDesc(6)), alCorte: 1 };
+      }
+      case 'prov_pagos': {
+        const pn = {}; x.provs.forEach(p => { pn[p.id] = p.nombre; });
+        const cols = [T('Fecha'), T('Recibo', { m: 1 }), T('Método'), T('Referencia', { m: 1 }), $('Monto')];
+        return { cols, grupos: agrupar(x.pagos, p => pn[p.proveedor_id] || 'Sin proveedor', p => [dmy(p.fecha), p.numero || '', p.metodo || '', p.referencia || '', n(p.monto)], cols, porTotalDesc(4)) };
+      }
+      case 'prov_lista': {
+        const cols = [T('Proveedor'), T('RNC', { m: 1 }), T('Teléfono'), T('Contacto'), T('Dirección')];
+        return { cols, grupos: [grupo('', x.provs.filter(p => p.activo !== false).map(p => [p.nombre || '', p.rnc || '', p.telefono || '', p.contacto || '', p.direccion || '']), cols)], alCorte: 1 };
+      }
+      // Recursos Humanos
+      case 'rh_emp': {
+        const cols = [T('Empleado'), T('Cédula', { m: 1 }), T('Puesto'), T('Ingreso'), T('Pago'), $('Salario')];
+        return { cols, grupos: agrupar(x.emps.filter(e => e.activo !== false), e => e.departamento || 'General', e => [e.nombre || '', e.cedula || '', e.puesto || '', dmy(e.fecha_ingreso), e.tipo_pago || '', n(e.salario)], cols), alCorte: 1 };
+      }
+      case 'rh_nom': {
+        const cols = [T('Nómina', { m: 1 }), T('Fecha'), T('Período'), T('Estado'), $('Bruto'), $('Deducciones'), $('Neto')];
+        return { cols, grupos: [grupo('', x.noms.map(m => [m.numero || '', dmy(m.fecha), m.periodo || m.descripcion || '', m.estado || '', n(m.total_bruto), n(m.total_deducciones), n(m.total_neto)]), cols)] };
+      }
+      case 'rh_det': {
+        const cols = [T('Empleado'), $('Salario'), $('Bonos'), $('SFS'), $('AFP'), $('ISR'), $('Otras'), $('Neto')];
+        return { cols, grupos: x.noms.map(m => grupo((m.numero || '') + ' · ' + (m.periodo || m.descripcion || '') + ' · ' + dmy(m.fecha), (m.rrhh_nomina_lineas || []).map(l => [l.empleado_nombre || '', n(l.salario_bruto), n(l.bonos), n(l.sfs), n(l.afp), n(l.isr), n(l.otras_deducciones), n(l.neto)]), cols)) };
+      }
+      // Caja
+      case 'caja_cie': {
+        const cols = [T('Apertura'), T('Cierre'), $('Fondo'), $('Efectivo'), $('Tarjeta'), $('Transf.'), $('Esperado'), $('Contado'), $('Descuadre')];
+        return { cols, grupos: agrupar(D.cajas.filter(c => c.estado === 'cerrada'), c => c.usuario_nombre || c.created_by_name || '—', c => [dmy(c.apertura), dmy(c.cierre), n(c.monto_inicial), n(c.ventas_efectivo), n(c.ventas_tarjeta), n(c.ventas_transferencia), n(c.efectivo_esperado), n(c.efectivo_contado), n(c.descuadre)], cols) };
+      }
+      case 'caja_mov': {
+        const cols = [T('Fecha'), T('Concepto'), T('Usuario'), $('Monto')];
+        return { cols, grupos: agrupar(D.cajaMov, m => m.tipo === 'entrada' ? 'Entradas' : 'Salidas', m => [dmy(m.fecha), m.concepto || '', m.created_by_name || '', n(m.monto)], cols) };
+      }
+      case 'caja_met': {
+        const cols = [T('Forma de pago'), $('Monto'), T('% del total', { r: 1 })];
+        const tot = Object.values(C.met).reduce((a, b) => a + b, 0);
+        return { cols, grupos: [grupo('', Object.entries(C.met).filter(e => e[1]).map(([k, v]) => [k, v, pct(v, tot) + '%']), cols)], nota: 'Abonos a cuentas por cobrar del período: ' + m2(C.cobrosAbonos) + ' (ver Clientes → Cobros recibidos).' };
+      }
+      case 'caja_dia': {
+        const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Efectivo'), $('Tarjeta'), $('Transferencia'), $('Crédito'), $('Total')];
+        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); d[k] = d[k] || [dmy(k), 0, 0, 0, 0, 0, 0]; const r = d[k]; r[1]++; r[2] += n(v.pagado_efectivo); r[3] += n(v.pagado_tarjeta); r[4] += n(v.pagado_transferencia); r[5] += n(v.credito_monto); r[6] += n(v.total); });
+        return { cols, grupos: [grupo('', Object.keys(d).sort().map(k => d[k]), cols)] };
+      }
+    }
+    return null;
+  }
+
+  // ── Hoja formal ────────────────────────────────────────────────────
+  let ultimo = null; // { titulo, cols, grupos, total } para Excel/Imprimir
+  function celda(c, v) { return c.fmt && v !== '' && v != null ? c.fmt(v) : esc(v); }
+  function hoja(id, R) {
+    const e = (window.CFG || {}); const emp = { nom: e.empNom || 'STUDIO', rnc: e.empRNC || '', dir: e.empDir || '', tel: e.empTel || '' };
+    const s = (ctx().sesion && ctx().sesion()) || {};
+    const ahora = new Date().toLocaleString('es-DO', { timeZone: 'America/Santo_Domingo', dateStyle: 'short', timeStyle: 'short' });
+    const cols = R.cols; const nc = cols.length;
+    const firstSum = cols.findIndex(c => c.sum);
+    const filaSum = (lbl, arr, cls) => `<tr class="${cls}"><td colspan="${firstSum > 0 ? firstSum : 1}">${esc(lbl)}</td>${cols.slice(firstSum > 0 ? firstSum : 1).map((c, j) => { const i = j + (firstSum > 0 ? firstSum : 1); return `<td class="r">${arr[i] != null ? (cols[i].fmt || m2)(arr[i]) : ''}</td>`; }).join('')}</tr>`;
+    let body = '', nFilas = 0; const tot = cols.map(c => c.sum ? 0 : null);
+    const conGrupos = R.grupos.length > 1 || (R.grupos[0] && R.grupos[0].t);
+    R.grupos.forEach(g => {
+      if (g.t) body += `<tr class="g"><td colspan="${nc}">${esc(g.t)}</td></tr>`;
+      g.filas.forEach(f => { if (!f._ini) nFilas++; body += `<tr>${cols.map((c, i) => `<td class="${c.r ? 'r' : ''}${c.m ? ' m' : ''}">${celda(c, f[i])}</td>`).join('')}</tr>`; });
+      g.sub.forEach((v, i) => { if (v != null) tot[i] += v; });
+      if (conGrupos && g.t && g.filas.length && firstSum > 0) body += filaSum('Subtotal ' + g.t + ' (' + g.filas.length + ')', g.sub, 'st');
+    });
+    if (!nFilas) body = `<tr><td colspan="${nc}" class="vac">No hay datos para este reporte${R.alCorte ? '' : ' en el rango elegido'}.</td></tr>`;
+    let pie = '';
+    if (R.total) pie = `<tr class="tt"><td colspan="${nc - 1}">${esc(R.total[0])}</td><td class="r">${m2(R.total[1])}</td></tr>`;
+    else if (nFilas && firstSum > 0) pie = filaSum('Total general (' + nFilas + ' registro' + (nFilas === 1 ? '' : 's') + ')', tot, 'tt');
+    ultimo = { titulo: REP[id].t, cols, grupos: R.grupos, total: R.total, tot };
+    const rango = R.alCorte ? 'Al ' + dmy(hasta) : 'Desde ' + dmy(desde) + ' hasta ' + dmy(hasta);
+    const fTxt = R.filtro && fsel[id] ? ((R.filtro.o.find(o => o[0] === fsel[id]) || [])[1] || '') : '';
+    return `<article class="nxRpSheet" id="nxRpSheet">
+      <header class="nxRpSH"><div class="emp"><b>${esc(emp.nom)}</b>${emp.rnc ? `<span>RNC ${esc(emp.rnc)}</span>` : ''}${emp.dir || emp.tel ? `<span>${esc([emp.dir, emp.tel].filter(Boolean).join(' · '))}</span>` : ''}</div>
+        <div class="tit"><h3>${esc(REP[id].t)}</h3><span>${rango}</span>${fTxt ? `<span>${esc(R.filtro.l)}: ${esc(fTxt)}</span>` : ''}<span>Valores en RD$</span></div></header>
+      <div class="nxRpTw"><table class="nxRpT nxRpST"><thead><tr>${cols.map(c => `<th class="${c.r ? 'r' : ''}">${esc(c.l)}</th>`).join('')}</tr></thead><tbody>${body}</tbody>${pie ? `<tfoot>${pie}</tfoot>` : ''}</table></div>
+      ${R.nota ? `<p class="nxRpNote">${esc(R.nota)}</p>` : ''}
+      <footer class="nxRpSF"><span>Generado por ${esc(s.nom || s.nombre || 'usuario')} · ${esc(ahora)}</span><span>STUDIO · Reportes</span></footer>
+    </article>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────
+  function catalogo() {
+    const vc = puedeCosto();
+    return `<nav class="nxRpCat" aria-label="Reportes">
+      <button type="button" class="nxRpCatRes${!rep ? ' on' : ''}" onclick="window.nxReportes.abrir('')"><i class="ti ti-layout-dashboard"></i><span>Resumen general</span></button>
+      ${CAT.map(c => { const reps = c[3].filter(r => vc || !SENSIBLE.test(r[0])); if (!reps.length) return ''; const ab = !!abierto[c[0]]; return `<div class="nxRpCatG${ab ? ' ab' : ''}">
+        <button type="button" class="nxRpCatH" aria-expanded="${ab}" onclick="window.nxReportes.cat('${c[0]}')"><i class="ti ${c[2]}"></i><span>${esc(c[1])}</span><i class="ti ti-chevron-${ab ? 'down' : 'left'} chev"></i></button>
+        ${ab ? `<div class="nxRpCatL">${reps.map(r => `<button type="button" class="nxRpCatI${rep === r[0] ? ' on' : ''}" onclick="window.nxReportes.abrir('${r[0]}')">${esc(r[1])}</button>`).join('')}</div>` : ''}
+      </div>`; }).join('')}
+    </nav>`;
+  }
+  function barraRango(R) {
+    const rangos = [['hoy', 'Hoy'], ['sem', '7 días'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['anio', 'Este año']];
+    const f = R && R.filtro ? `<label class="nxRpFil">${esc(R.filtro.l)}<select onchange="window.nxReportes.filtro(this.value)"><option value="">Todos</option>${R.filtro.o.map(o => `<option value="${esc(o[0])}"${fsel[rep] === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>` : '';
+    const alCorte = R && R.alCorte;
+    return `<div class="nxRpTop">
+      ${rep ? `<button type="button" class="nxRpBack" onclick="window.nxReportes.abrir('')"><i class="ti ti-chevron-left"></i> Reportes</button>` : ''}
+      <div class="nxRpRange">${alCorte ? '' : `<label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label>`}<label>${alCorte ? 'Al' : 'Hasta'}<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label>${f}</div>
+      ${alCorte ? '' : `<div class="nxRpPres">${rangos.map(r => `<button type="button" class="nxRpChip" onclick="window.nxReportes.preset('${r[0]}')">${r[1]}</button>`).join('')}</div>`}
+      <div class="nxRpTools">${rep ? `<button type="button" class="btn bsm bghost" onclick="window.nxReportes.csv()"><i class="ti ti-file-spreadsheet"></i> Excel</button><button type="button" class="btn bsm" onclick="window.nxReportes.imprimir()"><i class="ti ti-printer"></i> Imprimir</button>` : `<button type="button" class="btn bsm bghost" onclick="window.nxRepImei && window.nxRepImei()"><i class="ti ti-device-mobile-search"></i> Buscar IMEI</button>`}</div>
+    </div>`;
+  }
   function render() {
     ensureCSS();
-    const rangos = [['hoy', 'Hoy'], ['sem', 'Últimos 7 días'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['anio', 'Este año']];
-    const barraTop = `<div class="nxRpTop">
-        <div class="nxRpRange"><label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label><label>Hasta<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label></div>
-        <div class="nxRpPres">${rangos.map(r => `<button type="button" class="nxRpChip" onclick="window.nxReportes.preset('${r[0]}')">${r[1]}</button>`).join('')}</div>
-        <div class="nxRpTools"><button type="button" class="btn bsm bghost" onclick="window.nxRepImei && window.nxRepImei()"><i class="ti ti-device-mobile-search"></i> Buscar IMEI</button><button type="button" class="btn bsm bghost" onclick="window.nxReportes.imprimir()"><i class="ti ti-printer"></i> Imprimir</button></div>
-      </div>
-      <nav class="nxRpTabs" role="tablist">${TABS.map(t => `<button type="button" role="tab" aria-selected="${tab === t[0]}" class="nxRpTab${tab === t[0] ? ' on' : ''}" onclick="window.nxReportes.tab('${t[0]}')"><i class="ti ${t[2]}"></i>${t[1]}</button>`).join('')}</nav>`;
-    let body;
+    if (rep && SENSIBLE.test(rep) && !puedeCosto()) rep = '';
+    let body, R = null;
     if (cargando && !D) body = '<div class="nxRpLoad"><div class="spin"></div> Cargando reportes…</div>';
     else if (error) body = `<div class="nxRpErr">No se pudieron cargar los datos: ${esc(error)} <button class="btn bsm" type="button" onclick="window.nxReportes.recargar()">Reintentar</button></div>`;
     else if (!D) body = '<div class="nxRpLoad">Sin datos.</div>';
     else {
       const C = calc();
-      body = ({ resumen: secResumen, ventas: secVentas, productos: secProductos, inventario: secInventario, cobros: secCobros, compras: secCompras, caja: secCaja, fiscal: secFiscal, taller: secTaller }[tab] || secResumen)(C);
+      if (!rep) body = secResumen(C);
+      else {
+        const xk = xDe(rep); const x = xk ? X[xKey(xk)] : {};
+        if (xk && !x) { body = '<div class="nxRpLoad"><div class="spin"></div> Preparando reporte…</div>'; if (xCargando !== xKey(xk)) { xCargando = xKey(xk); cargarX(xk).then(() => { xCargando = ''; repintar(); }).catch(err => { xCargando = ''; error = String(err && err.message || err); repintar(); }); } }
+        else { R = construir(rep, C, x || {}); body = R ? hoja(rep, R) : '<div class="nxRpLoad">Reporte no disponible.</div>'; }
+      }
     }
-    const titulo = (TABS.find(t => t[0] === tab) || TABS[0])[1];
-    return `<div class="nxRp" id="nxRpRoot"><div class="nxRpHead"><div><h2>Reportes</h2><p>${esc(titulo)} · del ${dmy(desde)} al ${dmy(hasta)}${cargando ? ' · actualizando…' : ''}</p></div></div>${barraTop}<div class="nxRpBody">${body}</div></div>`;
+    const sub = rep ? (CAT.find(c => c[0] === REP[rep].cat) || [])[1] + ' · ' + REP[rep].t : 'Resumen general · del ' + dmy(desde) + ' al ' + dmy(hasta);
+    return `<div class="nxRp${rep ? ' conRep' : ''}" id="nxRpRoot"><div class="nxRpHead"><h2>Reportes</h2><p>${esc(sub)}${cargando ? ' · actualizando…' : ''}</p></div>
+      <div class="nxRpLay">${catalogo()}<div class="nxRpMain">${barraRango(R)}<div class="nxRpBody">${body}</div></div></div></div>`;
   }
   function postRender() {}
 
@@ -332,22 +558,30 @@
     else if (k === 'anio') { desde = h.slice(0, 5) + '01-01'; hasta = h; }
     recargar();
   }
-  function csv(id) {
-    const t = tablas[id]; if (!t) return;
+  function nombreArchivo(ext) { return ('STUDIO ' + (ultimo ? ultimo.titulo : 'Reporte') + ' ' + desde + ' a ' + hasta).replace(/[^\w\s\-áéíóúñÁÉÍÓÚÑ.]/g, '').replace(/\s+/g, '_') + '.' + ext; }
+  function csv() {
+    const t = ultimo; if (!t) return;
     const q = v => { const s = String(v == null ? '' : v); return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    const lineas = [t.cols.map(c => q(c.l)).join(',')].concat(t.filas.map(f => f.map(v => q(typeof v === 'number' ? Math.round(v * 100) / 100 : v)).join(',')));
-    const blob = new Blob(['﻿' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = ('STUDIO ' + t.titulo + ' ' + desde + ' a ' + hasta).replace(/[^\w\s\-áéíóúñÁÉÍÓÚÑ.]/g, '').replace(/\s+/g, '_') + '.csv';
+    const val = v => typeof v === 'number' ? Math.round(v * 100) / 100 : v;
+    const conG = t.grupos.some(g => g.t);
+    const lin = [(conG ? ['Grupo'] : []).concat(t.cols.map(c => c.l)).map(q).join(',')];
+    t.grupos.forEach(g => g.filas.forEach(f => lin.push((conG ? [g.t] : []).concat(f).map(v => q(val(v))).join(','))));
+    if (t.total) lin.push([t.total[0], val(t.total[1])].map(q).join(','));
+    else if (t.tot.some(v => v != null)) lin.push((conG ? ['Total general'] : []).concat(t.cols.map((c, i) => t.tot[i] != null ? val(t.tot[i]) : (i === 0 && !conG ? 'Total general' : ''))).map(q).join(','));
+    const blob = new Blob(['﻿' + lin.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombreArchivo('csv');
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     toast('ok', 'Exportado', t.titulo);
   }
   function imprimir() {
-    const root = document.getElementById('nxRpRoot'); if (!root) return;
+    const src = document.getElementById(rep ? 'nxRpSheet' : 'nxRpRoot'); if (!src) return;
     const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     const css = (document.getElementById('nxRpCSS') || {}).textContent || '';
-    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reportes STUDIO</title><style>${css} body{font-family:-apple-system,system-ui,sans-serif;margin:18px;color:#111} .nxRpTop,.nxRpTabs,.nxRpAcc,button{display:none!important} .nxRpCard{break-inside:avoid}</style></head><body>${root.outerHTML}</body></html>`);
-    w.document.close(); setTimeout(() => { try { w.print(); } catch (e) {} }, 300);
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(nombreArchivo('pdf').replace(/\.pdf$/, ''))}</title><style>${css}
+      @page{size:letter;margin:12mm} body{font-family:-apple-system,system-ui,"Helvetica Neue",Arial,sans-serif;margin:0;color:#111;background:#fff}
+      .nxRpSheet{box-shadow:none!important;border:0!important;padding:0!important;max-width:none!important} .nxRpTw{overflow:visible!important}
+      .nxRpT thead{display:table-header-group} .nxRpT tr{break-inside:avoid} .nxRpCat,.nxRpTop,button{display:none!important}</style></head><body>${src.outerHTML}</body></html>`);
+    w.document.close(); setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 300);
   }
 
   function ensureCSS() {
@@ -386,13 +620,39 @@
 .nxRpMet .bar{height:7px;border-radius:5px;background:rgba(10,10,10,.06);overflow:hidden}.nxRpMet .bar i{display:block;height:100%;background:var(--rp-gold)}
 .nxRpLoad,.nxRpErr{padding:30px;text-align:center;color:var(--rp-mute);display:flex;gap:10px;align-items:center;justify-content:center}.nxRpErr{color:#b91c1c}
 @media(max-width:760px){.nxRpKpis{grid-template-columns:1fr 1fr;gap:8px}.nxRpK{padding:10px 12px}.nxRpK.main{grid-column:1/-1}.nxRpTools{margin-left:0}.nxRpRange{width:100%}.nxRpRange label{flex:1}.nxRpRange input{width:100%;height:40px;font-size:16px}.nxRpK b{font-size:18px}.nxRpChip{height:36px}.nxRpTab{height:38px}}
-@media(prefers-reduced-motion:reduce){.nxRpChip:active{transform:none}}`;
+@media(prefers-reduced-motion:reduce){.nxRpChip:active{transform:none}}
+.nxRpLay{display:grid;grid-template-columns:270px minmax(0,1fr);min-width:0;gap:16px;align-items:start}
+.nxRpCat{position:sticky;top:12px;background:#0a0a0a;border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:2px;color:#fffefa;max-height:calc(100vh - 120px);overflow-y:auto}
+.nxRpCat button{font-family:inherit;text-transform:none;letter-spacing:0}
+.nxRpCatRes,.nxRpCatH{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:rgba(255,254,250,.86);font-size:14.5px;font-weight:600;cursor:pointer;text-align:left}
+.nxRpCatRes i,.nxRpCatH>i:first-child{font-size:19px;color:var(--studio-gold,#c9a227);flex:none}.nxRpCatH span,.nxRpCatRes span{flex:1}
+.nxRpCatH .chev{font-size:15px;color:rgba(255,254,250,.45)}.nxRpCatRes.on,.nxRpCatG.ab>.nxRpCatH{background:rgba(255,255,255,.08);color:#fffefa}
+.nxRpCatRes:hover,.nxRpCatH:hover{background:rgba(255,255,255,.06)}
+.nxRpCatL{display:flex;flex-direction:column;gap:1px;padding:2px 0 6px 29px;margin-left:12px;border-left:1px solid rgba(255,255,255,.1)}
+.nxRpCatI{display:block;width:100%;min-height:36px;padding:6px 10px;border:0;border-radius:9px;background:transparent;color:rgba(255,254,250,.66);font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;line-height:1.3}
+.nxRpCatI:hover{background:rgba(255,255,255,.06);color:#fffefa}.nxRpCatI.on{background:var(--studio-gold,#c9a227);color:#0a0a0a;font-weight:700}
+.nxRpBack{display:none;align-items:center;gap:4px;height:36px;padding:0 12px 0 8px;border:1px solid rgba(0,0,0,.14);border-radius:999px;background:#fff;color:var(--rp-ink);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.nxRpFil{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--rp-mute)}.nxRpFil select{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;color:var(--rp-ink);max-width:240px;text-transform:none}
+.nxRpSheet{background:#fff;border:1px solid var(--rp-line);border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px -12px rgba(0,0,0,.18);padding:26px 28px 18px;max-width:1100px}
+.nxRpSH{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:12px;margin-bottom:12px;border-bottom:2px solid #0a0a0a}
+.nxRpSH .emp{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--rp-mute)}.nxRpSH .emp b{font-size:17px;font-weight:800;color:var(--rp-ink);letter-spacing:.02em;text-transform:uppercase}
+.nxRpSH .tit{text-align:right;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--rp-mute)}.nxRpSH .tit h3{margin:0 0 2px;font-size:17px;font-weight:700;color:var(--rp-ink);text-transform:uppercase;letter-spacing:.01em}
+.nxRpST th{background:#0a0a0a!important;color:#fffefa!important;font-size:10.5px}.nxRpST td{padding:6px 8px;font-size:12.5px}
+.nxRpST tr.g td{background:var(--studio-canvas,#f3f0e8);font-weight:700;font-size:12.5px;color:var(--rp-ink);border-top:1px solid rgba(0,0,0,.14)}
+.nxRpST tr.st td{font-weight:700;border-top:1px solid rgba(0,0,0,.35);background:#fcfbf7}.nxRpST tr.st td.r,.nxRpST tfoot td.r{font-variant-numeric:tabular-nums}
+.nxRpST tfoot tr.tt td{font-weight:800;font-size:13px;border-top:2px solid #0a0a0a;border-bottom:3px double #0a0a0a;background:#fff}
+.nxRpST tbody tr:hover td{background:#fbf8ee}.nxRpST tbody tr.g:hover td{background:var(--studio-canvas,#f3f0e8)}
+.nxRpSF{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:8px;border-top:1px solid var(--rp-line);font-size:11px;color:var(--rp-mute)}
+@media(max-width:900px){.nxRpLay{grid-template-columns:minmax(0,1fr)}.nxRpMain{min-width:0}.nxRpRange{flex-wrap:wrap}.nxRpRange label{flex:1 1 40%}.nxRpST{min-width:600px}.nxRpST td{white-space:nowrap}.nxRpCat{position:static;max-height:none}.nxRp.conRep .nxRpCat{display:none}.nxRpBack{display:inline-flex}
+.nxRpSheet{padding:16px 14px 12px;border-radius:12px}.nxRpSH{flex-direction:column;gap:8px}.nxRpSH .tit{text-align:left}.nxRpFil{flex:1 1 100%}.nxRpFil select{max-width:none;height:40px;font-size:16px}.nxRpCatI{min-height:42px;font-size:14.5px}}`;
     document.head.appendChild(st);
   }
 
   window.nxReportes = {
     cargar, render, postRender, recargar, preset, csv, imprimir,
-    tab: function (t) { tab = t; try { localStorage.setItem('studio_rep_tab', t); } catch (e) {} repintar(); },
-    rango: function (k, v) { if (!v) return; if (k === 'd') desde = v; else hasta = v; if (desde > hasta) { const x = desde; desde = hasta; hasta = x; } recargar(); }
+    abrir: function (id) { rep = REP[id] ? id : ''; if (rep) abierto[REP[rep].cat] = true; try { localStorage.setItem('studio_rep_sel', rep); localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); try { const m = document.querySelector('#nxRpRoot .nxRpMain'); if (m && window.innerWidth < 900 && rep) m.scrollIntoView({ block: 'start' }); } catch (e) {} },
+    cat: function (k) { abierto[k] = !abierto[k]; try { localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); },
+    filtro: function (v) { if (rep) fsel[rep] = v; repintar(); },
+    rango: function (k, v) { if (!v) return; if (k === 'd') desde = v; else { hasta = v; if (desde > hasta) desde = hasta; } if (desde > hasta) { const x = desde; desde = hasta; hasta = x; } recargar(); }
   };
 })();

@@ -12092,7 +12092,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function renderFinV2() {
     nxFinV2EnsureCSS();
     let body = '';
-    if (_finV2Vista === 'planes') body = finV2PlanesHTML();
+    if (_finV2Vista === 'planes') body = finV2PlanesHTML() + finLegalCardHTML();
     else if (_finV2Vista === 'solicitud') body = finV2SolicitudHTML();
     else if (_finV2Vista === 'aprobacion') body = finV2AprobacionHTML();
     else if (_finV2Vista === 'detalle') body = finV2DetalleHTML();
@@ -13011,6 +13011,39 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${f.contrato_en ? `<div class="nxF2Line"><span>Contrato congelado</span><span class="nxF2Mono" style="color:#94a3b8">${finFechaCorta(f.contrato_en)}</span></div>` : ''}
       </div></div>`;
   }
+  // ── Fase 5 (réplica NEXUS PRO): datos legales del contrato ─────────────────────────────────
+  // Acreedor (quien vende a crédito), abogado notario (legalización de firmas, matrícula CARD) y dos testigos.
+  // Se configuran una vez en pos_config; cada financiamiento los CONGELA en contrato_legal al crearse (migración 29).
+  const FIN_LEGAL = [
+    ['Acreedor (quien vende a crédito)', [['fin_acreedor_nombre', 'Nombre o razón social', 'Ej: STUDIO, SRL'], ['fin_acreedor_doc', 'RNC / Cédula', '0-00-00000-0'], ['fin_acreedor_tel', 'Teléfono', '809-000-0000'], ['fin_acreedor_dir', 'Dirección', 'Calle, sector, ciudad']]],
+    ['Abogado notario (legalización de firmas)', [['fin_abogado_nombre', 'Nombre del abogado(a)', 'Lic. Nombre Apellido'], ['fin_abogado_cedula', 'Cédula', '000-0000000-0'], ['fin_abogado_matricula', 'Matrícula (CARD)', 'No. de matrícula'], ['fin_abogado_tel', 'Teléfono / estudio', '809-000-0000']]],
+    ['Testigos (opcional)', [['fin_testigo1_nombre', 'Testigo 1 — nombre', 'Nombre Apellido'], ['fin_testigo1_cedula', 'Cédula', '000-0000000-0'], ['fin_testigo2_nombre', 'Testigo 2 — nombre', 'Nombre Apellido'], ['fin_testigo2_cedula', 'Cédula', '000-0000000-0']]]
+  ];
+  function finLegalCardHTML() {
+    if (!puedeVerMin()) return '';
+    const c = _posCfg || {};
+    return `<div class="nxF2Card" id="finLegalCard"><div class="h">Datos legales del contrato</div>
+      <div class="nxF2Note">Salen en cada contrato nuevo: quién vende a crédito, la legalización de firmas del abogado notario y los testigos. Cada contrato guarda los datos que había al crearse.</div>
+      ${FIN_LEGAL.map(g => `<div class="nxF2Lbl" style="margin-top:4px">${g[0]}</div><div class="nxF2G2">${g[1].map(x => `<div class="nxF2F"><label for="lg_${x[0]}">${x[1]}</label><input id="lg_${x[0]}" value="${esc(c[x[0]] || '')}" placeholder="${esc(x[2])}"></div>`).join('')}</div>`).join('')}
+      <button type="button" class="nxF2Btn p" onclick="window.nxFinLegalGuardar()"><i class="ti ti-device-floppy"></i> Guardar datos legales</button>
+    </div>`;
+  }
+  window.nxFinLegalGuardar = async function () {
+    if (!puedeVerMin()) { toast('err', 'Solo admin o gerente'); return; }
+    const body = {}; FIN_LEGAL.forEach(g => g[1].forEach(x => { body[x[0]] = (val('lg_' + x[0]) || '').trim() || null; }));
+    if (body.fin_abogado_nombre && !body.fin_abogado_matricula) { toast('warn', 'Falta la matrícula del abogado', 'La legalización de firmas lleva la matrícula del Colegio de Abogados (CARD)'); }
+    try {
+      const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+      if (!(ex && ex.length)) throw new Error('No se encontró la configuración del POS');
+      await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, body);
+      Object.assign(_posCfg, body);
+      try { window.logAudit && window.logAudit('POS_FIN_DATOS_LEGALES', 'Datos legales del contrato actualizados' + (body.fin_abogado_nombre ? ' · notario ' + body.fin_abogado_nombre : ''), 'Financiamiento'); } catch (e) {}
+      toast('ok', 'Datos legales guardados', 'Se usarán en los contratos nuevos');
+    } catch (e) { toast('err', 'No se pudieron guardar', String(e && e.message || e)); }
+  };
+  function finFechaLarga(d) {
+    try { const dt = new Date(String(d || hoyISOPos()).slice(0, 10) + 'T12:00:00'); const m = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']; return dt.getDate() + ' días del mes de ' + m[dt.getMonth()] + ' del año ' + dt.getFullYear(); } catch (e) { return ''; }
+  }
   window.nxFinV2Contrato = async function (id) {
     const f = finFinDe(id); if (!f) return;
     const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
@@ -13036,8 +13069,21 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       clausula = `<p><b>Fiador solidario:</b> ${esc(pfF.fiador_nombre)}${pfF.fiador_cedula ? ', cédula ' + esc(pfF.fiador_cedula) : ''}${pfF.fiador_direccion ? ', domiciliado en ' + esc(pfF.fiador_direccion) : ''}${pfF.fiador_telefono ? ', teléfono ' + esc(pfF.fiador_telefono) : ''}, se constituye en fiador solidario de EL COMPRADOR y responde junto a él por el pago total de las cuotas, la mora y los gastos de cobro previstos en este contrato, renunciando a los beneficios de excusión y división.</p>` + clausula;
       firmasFin = firmas + `<div class="fir"><div>${esc(pfF.fiador_nombre)}<br>Fiador solidario${pfF.fiador_cedula ? ' · ' + esc(pfF.fiador_cedula) : ''}</div><div style="border-top:0"></div></div>`;
     }
+    // Datos legales congelados de este contrato (fase 5): partes, testigos y legalización del notario.
+    let leg = f.contrato_legal;
+    if (!leg) { try { leg = await finRpc('pos_fin_contrato_legal_fijar', { p_financiamiento_id: f.id }); if (leg) f.contrato_legal = leg; } catch (e) {} }
+    leg = leg || {};
+    const cliL = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {};
+    const acre = leg.acreedor_nombre || empNom();
+    const partes = `<div class="pt"><b>EL VENDEDOR (ACREEDOR):</b> ${esc(acre)}${leg.acreedor_doc ? ', RNC/Cédula <b>' + esc(leg.acreedor_doc) + '</b>' : ''}${leg.acreedor_dir ? ', con domicilio en ' + esc(leg.acreedor_dir) : ''}${leg.acreedor_tel ? ', teléfono ' + esc(leg.acreedor_tel) : ''}.</div>
+      <div class="pt"><b>EL COMPRADOR (DEUDOR):</b> ${esc(f.cliente_nombre || cliL.nombre || '____________')}${cliL.cedula ? ', portador(a) de la cédula No. <b>' + esc(cliL.cedula) + '</b>' : ''}${cliL.direccion ? ', con domicilio en ' + esc(cliL.direccion) : ''}${cliL.telefono ? ', teléfono ' + esc(cliL.telefono) : ''}.</div>`;
+    const hayTest = !!(leg.testigo1_nombre || leg.testigo2_nombre);
+    const cierre = `<p>Hecho y firmado de buena fe en la República Dominicana, a los ${esc(finFechaLarga(f.created_at))}, en dos (2) originales de un mismo tenor y efecto, uno para cada parte${hayTest ? ', ante los testigos que firman al pie' : ''}.</p>`;
+    const testigos = hayTest ? `<div class="stt">TESTIGOS</div><div class="fir">${[[leg.testigo1_nombre, leg.testigo1_cedula], [leg.testigo2_nombre, leg.testigo2_cedula]].filter(t => t[0]).map(t => `<div>${esc(t[0])}${t[1] ? '<br>Céd. ' + esc(t[1]) : ''}</div>`).join('')}</div>` : '';
+    const legaliz = leg.abogado_nombre ? `<div class="lg"><p><b>LEGALIZACIÓN DE FIRMAS.</b> Yo, <b>${esc(leg.abogado_nombre)}</b>, Abogado(a) Notario(a)${leg.abogado_matricula ? ', con Matrícula del Colegio de Abogados de la República Dominicana (CARD) No. <b>' + esc(leg.abogado_matricula) + '</b>' : ''}${leg.abogado_cedula ? ', portador(a) de la cédula de identidad y electoral No. <b>' + esc(leg.abogado_cedula) + '</b>' : ''}${leg.abogado_tel ? ', Tel. ' + esc(leg.abogado_tel) : ''}, CERTIFICO Y DOY FE de que las firmas que anteceden fueron puestas libre y voluntariamente en mi presencia por las partes contratantes, quienes me declararon que esas son las firmas que acostumbran usar en todos los actos de su vida pública y privada. En la República Dominicana, a los ${esc(finFechaLarga(f.created_at))}.</p><div class="fir" style="margin-top:46px"><div style="flex:0 1 60%;margin:0 auto">${esc(leg.abogado_nombre)}<br>Abogado(a) Notario(a)${leg.abogado_matricula ? ' · CARD No. ' + esc(leg.abogado_matricula) : ''}</div></div></div>` : '';
+    firmasFin = firmasFin.replace('Por ' + esc(empNom()), 'Por ' + esc(acre) + '<br>EL VENDEDOR');
     w.document.open();
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}.axg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ax img{width:100%;border:1px solid #cbd5e1;border-radius:6px}.axl{font-size:10px;font-weight:bold;letter-spacing:.05em;text-transform:uppercase;color:#475569;margin-bottom:4px}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${clausula}${firmasFin}${anexo}<script>window.onload=function(){setTimeout(function(){window.print();},400)};</` + `script></body></html>`);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}.axg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ax img{width:100%;border:1px solid #cbd5e1;border-radius:6px}.axl{font-size:10px;font-weight:bold;letter-spacing:.05em;text-transform:uppercase;color:#475569;margin-bottom:4px}.pt{background:#f7f5ee;border:1px solid #e6e1d3;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:12.5px}.stt{text-align:center;font-size:12px;font-weight:bold;letter-spacing:.1em;color:#475569;margin-top:34px}.lg{margin-top:40px;border-top:1px dashed #94a3b8;padding-top:14px;font-size:12px}@media print{body{margin:0}}h1{text-transform:uppercase;letter-spacing:.08em}</style></head><body><h1>${esc(acre)}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2>${partes}<pre>${esc(f.contrato_texto || '')}</pre>${clausula}${cierre}${firmasFin}${testigos}${legaliz}${anexo}<script>window.onload=function(){setTimeout(function(){window.print();},400)};</` + `script></body></html>`);
     w.document.close();
   };
   window.nxFinV2LinkFirma = async function (id) {

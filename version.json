@@ -1,7 +1,15 @@
 {
-  "version": "59.18",
+  "version": "59.19",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.19",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento → Planes: nueva sección «Datos legales del contrato» (acreedor, abogado notario con matrícula CARD y dos testigos).",
+        "El contrato ahora trae las partes (vendedor y comprador), el cierre «hecho y firmado», firmas de testigos y la legalización de firmas del notario. Cada contrato guarda los datos legales que había al crearse."
+      ]
+    },
     {
       "version": "59.18",
       "fecha": "2026-09-24",

@@ -32,7 +32,7 @@ Este archivo no cambia de sitio ni de nombre. Toda sesión de IA en STUDIO empie
 
 ## 4. Estado vivo (actualizar aquí en cada entrega)
 
-- Producción: `https://studiord.net` = Worker Cloudflare `studio-rd`, integración Git con `main`. Versión publicada: **58.98** (23-sep-2026: escala única de botones, anchos de módulo y formularios, menús de acción — bitácora `2026-09-23-0130-claude.md`; incluye el login Gold 58.97 de ChatGPT, bitácora `2026-09-22-2052-chatgpt.md`).
+- Producción: `https://studiord.net` = Worker Cloudflare `studio-rd`, integración Git con `main`. Versión publicada: **58.99** (23-sep-2026: «Facturar a» y «Elegir cliente» rediseñados, módulo «IA NEXUS» retirado — bitácora `2026-09-23-0230-claude.md`; 58.98 escala de botones; 58.97 login Gold de ChatGPT).
 - Repositorio independiente desde el 22-sep-2026; base Supabase propia `edbknlkjnlfmkkiizdbe`.
 - **Datos migrados del sistema anterior (22-sep-2026, 15:00):** 797 productos, 399 clientes, 6.419 seriales, 1.155 ventas, cartera RD$30,2M, bancos, cajas y 15 usuarios, ya en la base STUDIO (`supabase/studio/16_migracion_legacy.sql`, esquema `legacy` como trazabilidad). Ver `docs/bitacora/2026-09-22-1500-claude.md`.
 - Línea gráfica definida (22-sep-2026): negro `#0A0A0A`, blanco cálido `#F7F5EF`, oro `#C9A227` como único acento; tipografía San Francisco (Inter fuera de Apple); iconos outline 1.75 px; movimiento fluido Apple; Factura en modo lista. **Publicada en `main` (58.88 → 58.91, 22-sep-2026)**; ver bitácora `2026-09-22-1300-claude.md`.

@@ -271,6 +271,8 @@ html.nx-studio #loginScreen.lx-revelando .lbox{animation:lxCardOut .42s cubic-be
 @media (prefers-reduced-motion:reduce){html.nx-studio .lx-st-mark img,html.nx-studio .lx-st-glow,html.nx-studio .lx-st-shine::after,html.nx-studio .lx-st-tag,html.nx-studio .lx-st-panel,html.nx-studio .lx-st-h,html.nx-studio .lx-st-p{animation:none}}
 /* Splash y pantalla de contraseña con la misma piel */
 html.nx-studio #nxSplash,html.nx-studio #nxLoader{background:#0c0c0c}
+/* STUDIO no usa el panel de Seguros de NEXUS (#v-dashboard es la vista inicial heredada): nunca se pinta. */
+html.nx-studio #v-dashboard{display:none!important}
 /* Carga de STUDIO: logo propio (sin el escudo azul de NEXUS PRO) + línea dorada indeterminada */
 .nxs-badge.nxs-st{width:auto;height:auto;flex-direction:column;gap:18px}
 .nxs-logo{display:block;width:220px;height:62px;object-fit:cover;object-position:center;animation:nxsLogo 2.4s ease-in-out infinite}
@@ -3089,6 +3091,11 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
   // Mantener el splash/loader hasta que parches.js termine de aplicar los estilos
   // (evita el "flash" del sistema sin estilos al actualizar en redes lentas).
   var ready = !!window.__NX_PARCHES_READY__;
+  // STUDIO: no quitar la carga hasta que el punto de venta esté dibujado (o, sin sesión, hasta que se vea el login).
+  // Antes se quitaba al cargar los estilos y por un instante se veía el panel de Seguros heredado de NEXUS.
+  var studioListo = function(){ try{ if(!document.documentElement.classList.contains('nx-studio')) return true;
+    if(document.querySelector('#v-pos .nxTShell')) return true;
+    var a=document.getElementById('app'); return !a || getComputedStyle(a).display==='none'; }catch(e){ return true; } };
   window.addEventListener('nexus:parches-ready', function(){ ready = true; }, {once:true});
   try{
     if(sessionStorage.getItem('nx_splash_shown')){
@@ -3099,7 +3106,7 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
         L.style.display='flex';
         var t0=Date.now(), hid=false;
         var hideL=function(){ if(hid)return; hid=true; L.classList.add('nxl-out'); setTimeout(function(){try{L.remove();}catch(e){L.style.display='none';}},230); };
-        (function tick(){ var el=Date.now()-t0; if(ready&&el>=600){hideL();return;} if(el>=7000){hideL();return;} setTimeout(tick,120); })();
+        (function tick(){ var el=Date.now()-t0; if(ready&&el>=600&&studioListo()){hideL();return;} if(el>=7000){hideL();return;} setTimeout(tick,120); })();
       }
       return;
     }
@@ -3108,7 +3115,7 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
   // Primera vez: bienvenida; espera a que apliquen estilos (mín 2.8s, máx 8s)
   var t1=Date.now();
   var hideS=function(){ s.classList.add('nxs-out'); setTimeout(function(){try{s.remove();}catch(e){s.style.display='none';}},230); };
-  (function tickS(){ var el=Date.now()-t1; if((ready&&el>=2800)||el>=8000){hideS();return;} setTimeout(tickS,150); })();
+  (function tickS(){ var el=Date.now()-t1; if((ready&&el>=2800&&studioListo())||el>=8000){hideS();return;} setTimeout(tickS,150); })();
 })();
 </script>
 
@@ -6854,7 +6861,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.02';
+const APP_VERSION='59.03';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

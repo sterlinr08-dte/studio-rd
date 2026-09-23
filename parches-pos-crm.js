@@ -41,7 +41,7 @@
   function repintar() { try { ctx().renderPOS && ctx().renderPOS(); } catch (e) {} }
   function cerrar(id) { const o = document.getElementById(id); if (o) o.remove(); }
 
-  const ET = [['nuevo', 'Nuevo', 'ti-sparkles'], ['contactado', 'Contactado', 'ti-message-circle'], ['cotizado', 'Cotizado', 'ti-file-dollar'], ['ganado', 'Ganado', 'ti-trophy'], ['perdido', 'Perdido', 'ti-circle-x']];
+  const ET = [['nuevo', 'Nuevo', 'ti-sparkles'], ['contactado', 'Contactado', 'ti-message-circle'], ['cotizado', 'Cotizado', 'ti-file-dollar'], ['ganado', 'Vendido', 'ti-trophy'], ['perdido', 'Perdido', 'ti-circle-x']];
   const etN = e => (ET.find(x => x[0] === e) || ET[0])[1];
   const ABIERTAS = ['nuevo', 'contactado', 'cotizado'];
   const abierta = o => ABIERTAS.indexOf(o.etapa) >= 0;
@@ -49,8 +49,10 @@
   const MOTIVOS = ['Precio alto', 'Compró en otro lugar', 'Crédito no aprobado', 'No respondió', 'Ya no le interesa', 'Sin existencia', 'Otro'];
   const ACT = { nota: ['Nota', 'ti-note'], llamada: ['Llamada', 'ti-phone'], whatsapp: ['WhatsApp', 'ti-brand-whatsapp'], visita: ['Visita', 'ti-building-store'], tarea: ['Tarea', 'ti-checkbox'], etapa: ['Etapa', 'ti-arrows-right'], sistema: ['Asignación', 'ti-user-check'] };
 
-  const S = { ops: [], tareas: [], usuarios: [], vista: 'tablero', filtro: 'todas', q: '', cargado: false, error: '', ficha: null, acts: [], docs: {}, reps: [], pendiente: null, repDesde: '', repHasta: '', avisosCargando: false };
-  try { const v = localStorage.getItem('studio_crm_vista'); if (['bandeja', 'tablero', 'tareas', 'reportes'].indexOf(v) >= 0) S.vista = v; } catch (e) {}
+  // Colores de etapa iguales a los de Bayol Cell (LEADS_ETAPA_INFO); «ganado» se muestra como «Vendido».
+  const ETC = { nuevo: ['#1d4ed8', '#dbeafe'], contactado: ['#a16207', '#fef9c3'], cotizado: ['#7c3aed', '#ede9fe'], ganado: ['#15803d', '#dcfce7'], perdido: ['#b91c1c', '#fee2e2'] };
+  const S = { ops: [], tareas: [], usuarios: [], vista: 'mensajes', leadsF: 'todos', cargado: false, error: '', ficha: null, acts: [], docs: {}, reps: [], pendiente: null, avisosCargando: false };
+  try { const v = localStorage.getItem('studio_crm_vista'); if (['mensajes', 'leads', 'campanas', 'redes'].indexOf(v) >= 0) S.vista = v; } catch (e) {}
 
   async function cargar() {
     S.error = '';
@@ -65,150 +67,78 @@
   }
   async function recargar() { await cargar(); repintar(); if (S.ficha) pintarFicha(); }
 
-  // ── Filtros ────────────────────────────────────────────────────────
-  function visibles() {
-    const q = S.q.trim().toLowerCase(), me = yo();
-    return S.ops.filter(o => {
-      if (S.filtro === 'mias' && String(o.asignado_id || '') !== String(me || '')) return false;
-      if (S.filtro === 'libres' && o.asignado_id) return false;
-      if (!q) return true;
-      const c = cliDe(o.cliente_id);
-      return [o.nombre, o.contacto, o.telefono, o.email, o.interes, o.numero, c && c.nombre, o.asignado_nombre].join(' ').toLowerCase().indexOf(q) >= 0;
-    });
-  }
-  function tareaDe(crmId) { return S.tareas.find(t => String(t.crm_id) === String(crmId)); }
-
-  // ── Render principal ───────────────────────────────────────────────
+  // ── Pantalla igual a la del CRM de BAYOL CELL (pedido del dueño: «Yo quiero el CRM que tengo en bayol cell taller»):
+  // selector de línea, pestañas Mensajes · Leads · Campañas · Redes, Buscar + Filtros, chips Todos/No leídos/Pendientes.
   function render() {
     ensureCSS();
-    if (!S.cargado && !S.error) { cargar().then(repintar); return '<div class="nxCrm"><div class="nxCrmLoad"><span class="spin"></span> Cargando CRM…</div></div>'; }
-    const abiertas = S.ops.filter(abierta), hoy = hoyISO();
-    const pipe = abiertas.reduce((s, o) => s + n(o.monto_estimado), 0);
-    const mesIni = hoy.slice(0, 8) + '01';
-    const ganMes = S.ops.filter(o => o.etapa === 'ganado' && diaRD(o.cerrado_at) >= mesIni);
-    const cerradasMes = S.ops.filter(o => (o.etapa === 'ganado' || o.etapa === 'perdido') && diaRD(o.cerrado_at) >= mesIni);
-    const venc = S.tareas.filter(t => t.vence_at && diaRD(t.vence_at) <= hoy).length;
-    const tab = (k, l, ic, badge) => `<button type="button" role="tab" aria-selected="${S.vista === k}" class="${S.vista === k ? 'on' : ''}" onclick="window.nxCRM.vista('${k}')"><i class="ti ${ic}"></i> ${l}${badge ? `<span class="b">${badge}</span>` : ''}</button>`;
-    let body = '';
-    if (S.error) body = `<div class="nxCrmErr">No se pudo cargar el CRM: ${esc(S.error)} <button class="btn bsm" type="button" onclick="window.nxCRM.recargar()">Reintentar</button></div>`;
-    else if (S.vista === 'tareas') body = vistaTareas();
-    else if (S.vista === 'reportes') body = vistaReportes();
-    else if (S.vista === 'bandeja') body = vistaBandeja();
-    else body = vistaTablero();
-    return `<div class="nxCrm">
-      <div class="nxCrmHead"><div><h2>CRM</h2><p>Oportunidades de venta, seguimiento y tareas</p></div>
-        <button type="button" class="nxCrmBtn p" onclick="window.nxCRM.nueva()"><i class="ti ti-plus"></i> Nueva oportunidad</button></div>
-      <div class="nxCrmKpis"${S.vista === 'bandeja' ? ' hidden' : ''}>
-        <div class="k"><span>Abiertas</span><b>${abiertas.length}</b></div>
-        <div class="k"><span>En el embudo</span><b>${fmt(pipe)}</b></div>
-        <div class="k"><span>Ganado este mes</span><b>${fmt(ganMes.reduce((s, o) => s + n(o.monto_estimado), 0))}</b><small>${ganMes.length} oportunidad(es)</small></div>
-        <div class="k"><span>Conversión del mes</span><b>${cerradasMes.length ? Math.round(ganMes.length / cerradasMes.length * 100) + ' %' : '—'}</b><small>ganadas / cerradas</small></div>
-        <div class="k${venc ? ' warn' : ''}"><span>Tareas vencidas o de hoy</span><b>${venc}</b></div>
+    if (!S.cargado && !S.error) { cargar().then(repintar); }
+    if (!BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); }
+    const leadsAb = S.ops.filter(abierta).length;
+    const tab = (k, l, ic, extra) => `<button class="crm-tab-seg${S.vista === k ? ' on pill-hundido' : ''}" onclick="window.nxCRM.tab('${k}')"><i class="ti ${ic}"${k === 'campanas' ? ' style="color:#e31e24"' : ''}></i> ${l}${extra || ''}</button>`;
+    const lineas = BD.canales.filter(c => c.plataforma === 'whatsapp');
+    const lin = lineas.find(c => String(c.id) === String(BD.linea));
+    const selector = `<div class="crm-selectores"><div class="crm-selector">
+        <button type="button" class="crm-pill-select pill-elevado" onclick="window.nxCRM.lineaMenu(event)"><i class="ti ti-brand-whatsapp"></i><span class="txt"><b>Línea</b>${lin ? esc(lin.nombre || lin.identificador || 'WhatsApp') : lineas.length ? 'Todas las líneas' : 'Sin línea conectada'}</span><i class="ti ti-chevron-down chev"></i></button>
+        <div class="crm-selector-menu" id="crmLineaMenu">${[['', 'Todas las líneas']].concat(lineas.map(c => [c.id, (c.nombre || c.identificador || 'WhatsApp') + (c.activo ? '' : ' (apagada)')])).map(o => `<button type="button" class="crm-selector-option${String(BD.linea || '') === String(o[0]) ? ' activa' : ''}" onclick="window.nxCRM.linea('${o[0]}')">${esc(o[1])}<i class="ti ti-check"></i></button>`).join('')}</div>
+      </div></div>`;
+    let body;
+    if (S.vista === 'leads') body = vistaLeads();
+    else if (S.vista === 'campanas') body = vistaCampanas();
+    else if (S.vista === 'redes') body = vistaRedes();
+    else body = vistaMensajes('whatsapp');
+    return `<div class="nxCrm crmB${BD.sel && (S.vista === 'mensajes' || S.vista === 'redes') ? ' chat-abierto' : ''}">
+      <div class="crm-ocultar-en-chat">${S.vista === 'mensajes' ? selector : ''}
+      <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
+        ${tab('mensajes', 'Mensajes', 'ti-brand-whatsapp')}${tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '')}${tab('campanas', 'Campañas', 'ti-speakerphone')}${tab('redes', 'Redes', 'ti-share')}
       </div>
-      <div class="nxCrmTabs" role="tablist">${tab('bandeja', 'Bandeja', 'ti-messages', BD.convs.reduce((s, c) => s + (c.no_leidos > 0 ? 1 : 0), 0) || '')}${tab('tablero', 'Tablero', 'ti-layout-kanban')}${tab('tareas', 'Tareas', 'ti-checklist', S.tareas.length || '')}${tab('reportes', 'Reportes', 'ti-chart-bar')}</div>
+      <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}
     </div>`;
   }
 
-  function barraFiltros() {
-    const chip = (k, l) => `<button type="button" class="nxCrmChip${S.filtro === k ? ' on' : ''}" aria-pressed="${S.filtro === k}" onclick="window.nxCRM.filtro('${k}')">${l}</button>`;
-    return `<div class="nxCrmBar"><div class="nxCrmChips">${chip('todas', esAdmin() ? 'Todas' : 'Todas las visibles')}${chip('mias', 'Mías')}${chip('libres', 'Sin asignar')}</div>
-      <label class="nxCrmQ"><i class="ti ti-search"></i><input type="search" value="${esc(S.q)}" placeholder="Buscar nombre, teléfono, cliente…" oninput="window.nxCRM.buscar(this.value)" aria-label="Buscar oportunidad"></label></div>`;
+  function vistaLeads() {
+    if (S.error) return `<div class="crm-vacio">No se pudieron cargar los leads: ${esc(S.error)}</div>`;
+    if (!S.cargado) return '<div class="crm-vacio">Cargando leads…</div>';
+    const opciones = [['todos', 'Todos']].concat(ET.map(e => [e[0], e[1]]));
+    const filtros = opciones.map(o => `<button class="crm-lead-f${S.leadsF === o[0] ? ' on' : ''}" onclick="window.nxCRM.leadsFiltro('${o[0]}')">${esc(o[1])}</button>`).join('');
+    let l = S.ops.slice();
+    if (S.leadsF !== 'todos') l = l.filter(o => o.etapa === S.leadsF);
+    const me = yo(), admin = esAdmin();
+    const usrOpts = sel => `<option value="">Sin asignar</option>` + S.usuarios.map(u => `<option value="${u.id}"${String(sel || '') === String(u.id) ? ' selected' : ''}>${esc(u.nom)}</option>`).join('');
+    const cards = l.map(o => {
+      const c = ETC[o.etapa] || ETC.nuevo, cli = cliDe(o.cliente_id), tel = o.telefono || (cli && cli.telefono) || '', wa = waNum(tel);
+      const asig = admin ? `<span class="crm-asig"><i class="ti ti-user-check"></i><select onchange="window.nxCRM.guardarCampo('${o.id}','asignado_id',this.value||null)">${usrOpts(o.asignado_id)}</select></span>`
+        : o.asignado_id ? `<span class="crm-asig"><i class="ti ti-user-check"></i> ${esc(o.asignado_nombre || '')}${String(o.asignado_id) === String(me) ? ` <button class="btn-mini" onclick="window.nxCRM.soltar('${o.id}')">Soltar</button>` : ''}</span>`
+        : `<button class="btn-mini" onclick="window.nxCRM.tomar('${o.id}')"><i class="ti ti-hand-grab"></i> Tomar</button>`;
+      return `<div class="crm-lead card">
+        <div class="t"><div class="d"><div class="n">${esc(o.nombre || o.contacto || tel || 'Sin nombre')}</div>
+          ${tel || o.interes ? `<div class="s">${tel ? `<i class="ti ti-phone"></i> ${esc(tel)}` : ''}${tel && o.interes ? ' · ' : ''}${o.interes ? esc(o.interes) : ''}</div>` : ''}
+          ${n(o.monto_estimado) ? `<div class="s"><b>Cotizado:</b> ${fmt(o.monto_estimado)}</div>` : ''}</div>
+          <span class="et" style="background:${c[1]};color:${c[0]}">${etN(o.etapa)}</span></div>
+        <div class="a"><select onchange="window.nxCRM.leadEtapa('${o.id}', this)">${ET.map(e => `<option value="${e[0]}"${o.etapa === e[0] ? ' selected' : ''}>${e[1]}</option>`).join('')}</select>
+          ${cli ? `<span class="vinc"><i class="ti ti-user-check"></i> Vinculado a cliente</span>` : `<button class="btn-mini" onclick="window.nxCRM.leadCliente('${o.id}')"><i class="ti ti-user-plus"></i> Vincular cliente</button>`}
+          ${asig}
+          ${wa ? `<a class="btn-mini wa" href="https://wa.me/${wa}" target="_blank" rel="noopener" onclick="window.nxCRM.waAbierto('${o.id}')"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
+          <button class="btn-mini" onclick="window.nxCRM.abrir('${o.id}')"><i class="ti ti-pencil"></i> Editar</button></div>
+        ${o.etapa === 'perdido' && o.motivo_perdida ? `<div class="nota" style="color:#b91c1c"><i class="ti ti-circle-x"></i> ${esc(o.motivo_perdida)}</div>` : ''}
+        ${o.notas ? `<div class="nota"><i class="ti ti-note"></i> ${esc(o.notas)}</div>` : ''}
+      </div>`;
+    }).join('') || '<div class="card crm-vacio">No hay leads en esta vista.</div>';
+    return `<div class="crm-leads-top"><div class="crm-leads-f">${filtros}</div><button class="crm-nuevo" onclick="window.nxCRM.nueva()"><i class="ti ti-plus"></i> Nuevo lead</button></div><div>${cards}</div>`;
   }
 
-  function tarjeta(o) {
-    const c = cliDe(o.cliente_id), hoy = hoyISO();
-    const dias = o.etapa_at ? Math.max(0, diasEntre(diaRD(o.etapa_at), hoy)) : 0;
-    const t = tareaDe(o.id);
-    const tVenc = t && t.vence_at && diaRD(t.vence_at) <= hoy;
-    const sig = ABIERTAS.indexOf(o.etapa) >= 0 ? ET[ET.findIndex(x => x[0] === o.etapa) + 1] : null;
-    return `<article class="nxCrmCard" draggable="true" data-id="${o.id}" ondragstart="window.nxCRM.drag(event,'${o.id}')" onclick="window.nxCRM.abrir('${o.id}')" tabindex="0" onkeydown="if(event.key==='Enter')window.nxCRM.abrir('${o.id}')">
-      <div class="t"><b>${esc(o.nombre)}</b></div>
-      ${n(o.monto_estimado) ? `<div class="m">${fmt(o.monto_estimado)}</div>` : ''}
-      <div class="s">${esc((c && c.nombre) || o.contacto || 'Sin contacto')}${o.interes ? ' · ' + esc(o.interes) : ''}</div>
-      ${o.etapa === 'perdido' && o.motivo_perdida ? `<div class="s mot"><i class="ti ti-circle-x"></i> ${esc(o.motivo_perdida)}</div>` : ''}
-      ${t ? `<div class="tk${tVenc ? ' venc' : ''}"><i class="ti ti-checkbox"></i> ${esc(t.texto)}${t.vence_at ? ' · ' + (diaRD(t.vence_at) === hoy ? 'hoy' : dmy(t.vence_at)) : ''}</div>` : ''}
-      <div class="f"><span class="av" title="${esc(o.asignado_nombre || 'Sin asignar')}">${o.asignado_nombre ? esc(ini(o.asignado_nombre)) : '<i class="ti ti-user-question"></i>'}</span>
-        ${abierta(o) ? `<span class="d${dias >= 7 ? ' old' : ''}" title="Días en esta etapa">${dias === 0 ? 'hoy' : dias + ' d'}</span>` : `<span class="d">${dmy(o.cerrado_at)}</span>`}
-        ${sig && sig[0] !== 'perdido' ? `<button type="button" class="adv" title="Pasar a ${sig[1]}" aria-label="Pasar a ${sig[1]}" onclick="event.stopPropagation();window.nxCRM.mover('${o.id}','${sig[0]}')"><i class="ti ti-arrow-right"></i></button>` : ''}
-      </div>
-    </article>`;
+  function vistaCampanas() {
+    return `<div class="card crm-campanas"><i class="ti ti-speakerphone"></i><h3>Campañas</h3>
+      <p>Aquí se crean los envíos masivos con plantillas aprobadas por Meta, solo a clientes que dieron su permiso.</p>
+      <p>Se activa cuando el WhatsApp de STUDIO esté conectado. Ninguna campaña sale sin tu autorización.</p></div>`;
   }
 
-  function vistaTablero() {
-    const lista = visibles(), hoy = hoyISO(), desde30 = addDays(hoy, -30);
-    const cols = ET.map(e => {
-      let items = lista.filter(o => o.etapa === e[0]);
-      if (e[0] === 'ganado' || e[0] === 'perdido') items = items.filter(o => diaRD(o.cerrado_at) >= desde30);
-      const tot = items.reduce((s, o) => s + n(o.monto_estimado), 0);
-      return `<section class="nxCrmCol c-${e[0]}" data-et="${e[0]}" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="window.nxCRM.drop(event,'${e[0]}');this.classList.remove('over')" aria-label="${e[1]}">
-        <header><span><i class="ti ${e[2]}"></i> ${e[1]} <b class="n">${items.length}</b></span><span class="c">${tot ? fmt(tot) : ''}</span></header>
-        <div class="lst">${items.map(tarjeta).join('') || `<div class="vac">${e[0] === 'ganado' || e[0] === 'perdido' ? 'Nada en los últimos 30 días' : 'Arrastra aquí'}</div>`}</div>
-      </section>`;
-    }).join('');
-    return barraFiltros() + `<div class="nxCrmBoard">${cols}</div><p class="nxCrmNote">Ganado y Perdido muestran los últimos 30 días; el historial completo está en Reportes.</p>`;
-  }
-
-  function vistaTareas() {
-    const hoy = hoyISO(), me = yo();
-    let l = S.tareas.slice();
-    if (S.filtro === 'mias') l = l.filter(t => String(t.asignado_id || '') === String(me || ''));
-    if (S.filtro === 'libres') l = l.filter(t => !t.asignado_id);
-    const grupos = [['Vencidas', t => t.vence_at && diaRD(t.vence_at) < hoy], ['Hoy', t => t.vence_at && diaRD(t.vence_at) === hoy], ['Próximas', t => t.vence_at && diaRD(t.vence_at) > hoy], ['Sin fecha', t => !t.vence_at]];
-    const opN = id => { const o = S.ops.find(x => String(x.id) === String(id)); return o ? o.nombre : ''; };
-    const html = grupos.map(([g, f]) => {
-      const ts = l.filter(f); if (!ts.length) return '';
-      return `<div class="nxCrmTG"><h4 class="${g === 'Vencidas' ? 'bad' : ''}">${g} <span>${ts.length}</span></h4>${ts.map(t => `<div class="nxCrmTask">
-        <button type="button" class="chk" aria-label="Marcar como hecha" onclick="window.nxCRM.tareaHecha('${t.id}')"><i class="ti ti-square"></i></button>
-        <div class="tx" onclick="${t.crm_id ? `window.nxCRM.abrir('${t.crm_id}')` : ''}"><b>${esc(t.texto)}</b><small>${esc(opN(t.crm_id))}${t.vence_at ? ' · ' + dmy(t.vence_at) + ' ' + hora(t.vence_at) : ''}${t.asignado_nombre ? ' · ' + esc(t.asignado_nombre) : ''}</small></div>
-      </div>`).join('')}</div>`;
-    }).join('');
-    return barraFiltros().replace(/<label class="nxCrmQ">[\s\S]*<\/label>/, '') + (html || '<div class="nxCrmEmpty"><i class="ti ti-checks"></i><b>Sin tareas pendientes</b><span>Agrega tareas con fecha desde la ficha de una oportunidad.</span></div>');
-  }
-
-  // ── Reportes ───────────────────────────────────────────────────────
-  function vistaReportes() {
-    const hoy = hoyISO();
-    if (!S.repDesde) S.repDesde = hoy.slice(0, 8) + '01';
-    if (!S.repHasta) S.repHasta = hoy;
-    const en = ts => { const d = diaRD(ts); return d >= S.repDesde && d <= S.repHasta; };
-    const cerr = S.ops.filter(o => (o.etapa === 'ganado' || o.etapa === 'perdido') && en(o.cerrado_at));
-    const gan = cerr.filter(o => o.etapa === 'ganado'), per = cerr.filter(o => o.etapa === 'perdido');
-    const creadas = S.ops.filter(o => en(o.created_at));
-    const ciclo = gan.length ? Math.round(gan.reduce((s, o) => s + Math.max(0, diasEntre(diaRD(o.created_at), diaRD(o.cerrado_at))), 0) / gan.length) : null;
-    const pct = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
-    // Por vendedor
-    const pv = {};
-    const k = o => o.asignado_nombre || 'Sin asignar';
-    S.ops.forEach(o => { const x = pv[k(o)] = pv[k(o)] || { ab: 0, g: 0, p: 0, m: 0 }; if (abierta(o)) x.ab++; });
-    cerr.forEach(o => { const x = pv[k(o)] = pv[k(o)] || { ab: 0, g: 0, p: 0, m: 0 }; if (o.etapa === 'ganado') { x.g++; x.m += n(o.monto_estimado); } else x.p++; });
-    const filasV = Object.entries(pv).sort((a, b) => b[1].m - a[1].m).map(([nm, x]) => `<tr><td>${esc(nm)}</td><td class="r">${x.ab}</td><td class="r">${x.g}</td><td class="r">${x.p}</td><td class="r">${pct(x.g, x.g + x.p)}</td><td class="r">${fmt(x.m)}</td></tr>`).join('') || '<tr><td colspan="6" class="vac">Sin datos</td></tr>';
-    // Por fuente
-    const pf = {};
-    creadas.forEach(o => { const f = o.fuente || 'Sin fuente'; const x = pf[f] = pf[f] || { c: 0, g: 0 }; x.c++; });
-    gan.forEach(o => { const f = o.fuente || 'Sin fuente'; const x = pf[f] = pf[f] || { c: 0, g: 0 }; x.g++; });
-    const filasF = Object.entries(pf).sort((a, b) => b[1].c - a[1].c).map(([f, x]) => `<tr><td>${esc(f)}</td><td class="r">${x.c}</td><td class="r">${x.g}</td></tr>`).join('') || '<tr><td colspan="3" class="vac">Sin datos</td></tr>';
-    // Motivos de pérdida
-    const pm = {}; per.forEach(o => { const m = o.motivo_perdida || 'Sin motivo'; pm[m] = (pm[m] || 0) + 1; });
-    const maxM = Math.max(1, ...Object.values(pm));
-    const barrasM = Object.entries(pm).sort((a, b) => b[1] - a[1]).map(([m, c]) => `<div class="nxCrmBarR"><span>${esc(m)}</span><div><i style="width:${Math.round(c / maxM * 100)}%"></i></div><b>${c}</b></div>`).join('') || '<div class="vac">Ninguna oportunidad perdida en el período</div>';
-    // Embudo actual
-    const maxE = Math.max(1, ...ABIERTAS.map(e => S.ops.filter(o => o.etapa === e).length));
-    const embudo = ABIERTAS.map(e => { const c = S.ops.filter(o => o.etapa === e); return `<div class="nxCrmBarR"><span>${etN(e)}</span><div><i style="width:${Math.round(c.length / maxE * 100)}%"></i></div><b>${c.length} · ${fmt(c.reduce((s, o) => s + n(o.monto_estimado), 0))}</b></div>`; }).join('');
-    return `<div class="nxCrmRange"><label>Desde<input type="date" value="${S.repDesde}" onchange="window.nxCRM.rango('d',this.value)"></label><label>Hasta<input type="date" value="${S.repHasta}" onchange="window.nxCRM.rango('h',this.value)"></label></div>
-      <div class="nxCrmKpis sm">
-        <div class="k"><span>Creadas</span><b>${creadas.length}</b></div>
-        <div class="k"><span>Ganadas</span><b>${gan.length}</b><small>${fmt(gan.reduce((s, o) => s + n(o.monto_estimado), 0))}</small></div>
-        <div class="k"><span>Perdidas</span><b>${per.length}</b></div>
-        <div class="k"><span>Conversión</span><b>${pct(gan.length, cerr.length)}</b><small>ganadas / cerradas</small></div>
-        <div class="k"><span>Ciclo promedio</span><b>${ciclo == null ? '—' : ciclo + ' días'}</b><small>de creada a ganada</small></div>
-      </div>
-      <div class="nxCrmGrid">
-        <section class="nxCrmPanel"><h4>Embudo actual</h4>${embudo}</section>
-        <section class="nxCrmPanel"><h4>Motivos de pérdida</h4>${barrasM}</section>
-      </div>
-      <section class="nxCrmPanel"><h4>Por vendedor</h4><div class="tw"><table class="nxCrmT"><thead><tr><th>Vendedor</th><th class="r">Abiertas</th><th class="r">Ganadas</th><th class="r">Perdidas</th><th class="r">Conversión</th><th class="r">Monto ganado</th></tr></thead><tbody>${filasV}</tbody></table></div></section>
-      <section class="nxCrmPanel"><h4>Por fuente</h4><div class="tw"><table class="nxCrmT"><thead><tr><th>Fuente</th><th class="r">Creadas</th><th class="r">Ganadas</th></tr></thead><tbody>${filasF}</tbody></table></div></section>`;
+  function vistaRedes() {
+    const pch = (k, l, ic, col) => `<button class="rs-canal${BD.red === k ? ' on' : ''}" onclick="window.nxCRM.red('${k}')"><i class="ti ${ic}" style="color:${col}"></i> ${l}</button>`;
+    return `<div class="rs-hub crm-ocultar-en-chat"><div class="rs-hub-head"><div class="rs-hub-title"><div class="rs-hub-icon"><i class="ti ti-affiliate"></i></div><div><h3>Redes Sociales</h3><p>Gestiona tus mensajes desde un solo lugar</p></div></div>
+        <div class="rs-hub-buscar"><i class="ti ti-search"></i><input type="text" value="${esc(BD.q)}" placeholder="Buscar conversaciones..." oninput="window.nxCRM.bdBuscar(this.value)"></div></div>
+      <div class="rs-canales">${pch('instagram', 'Instagram', 'ti-brand-instagram', '#c13584')}${pch('facebook', 'Facebook', 'ti-brand-messenger', '#1877f2')}</div></div>
+      ${bdShellHTML()}`;
   }
 
   // ── Mover etapa ────────────────────────────────────────────────────
@@ -449,7 +379,7 @@
   // Lectura con la RLS del usuario; el envío pasa SIEMPRE por la función crm-enviar (clave de idempotencia, ventana de
   // 24 h de WhatsApp, canal activo). Nada se envía solo: únicamente cuando el empleado pulsa Enviar.
   const PLAT = { whatsapp: ['WhatsApp', 'ti-brand-whatsapp', '#15803d'], instagram: ['Instagram', 'ti-brand-instagram', '#c13584'], facebook: ['Facebook', 'ti-brand-messenger', '#1877f2'] };
-  const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todas', canalF: '', q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '' };
+  const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todos', asig: 'todas', linea: '', red: 'instagram', buscando: false, q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '' };
   function apiBase() { const a = api() || {}; return { url: a.url, key: a.key, tok: a.token || a.key }; }
   function bdPendiente(c) { return c.ultimo_inbound_at && (!c.ultima_respuesta_at || c.ultima_respuesta_at < c.ultimo_inbound_at); }
   function bdVentana(c) { if (!c || c.plataforma !== 'whatsapp') return true; return !!c.ultimo_inbound_at && (Date.now() - new Date(c.ultimo_inbound_at).getTime()) < 24 * 3600e3; }
@@ -470,77 +400,101 @@
   function bdLista() {
     const q = BD.q.trim().toLowerCase(), me = yo();
     return BD.convs.filter(c => {
-      if (BD.canalF && c.plataforma !== BD.canalF) return false;
-      if (BD.filtro === 'noleidas' && !(c.no_leidos > 0)) return false;
+      if (S.vista === 'redes') { if (c.plataforma !== BD.red) return false; }
+      else { if (c.plataforma !== 'whatsapp') return false; if (BD.linea && String(c.canal_id) !== String(BD.linea)) return false; }
+      if (BD.filtro === 'no_leidos' && !(c.no_leidos > 0)) return false;
       if (BD.filtro === 'pendientes' && !bdPendiente(c)) return false;
-      if (BD.filtro === 'mias' && String(c.asignado_id || '') !== String(me || '')) return false;
-      if (BD.filtro === 'libres' && c.asignado_id) return false;
+      if (BD.asig === 'mias' && String(c.asignado_id || '') !== String(me || '')) return false;
+      if (BD.asig === 'sin_asignar' && c.asignado_id) return false;
       if (q && [bdNombre(c), c.telefono_e164, c.contacto_usuario, c.ultimo_mensaje_preview].join(' ').toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
   }
-  function bdListaHTML() {
-    const l = bdLista();
-    if (!l.length) return `<div class="bdVac">${BD.convs.length ? 'Ninguna conversación con este filtro.' : 'Todavía no hay conversaciones.'}</div>`;
-    return l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp; return `<button type="button" class="bdIt${String(BD.sel) === String(c.id) ? ' on' : ''}${c.no_leidos > 0 ? ' unread' : ''}" onclick="window.nxCRM.bdAbrir('${c.id}')">
-      <span class="av"><b>${esc(ini(bdNombre(c)))}</b><i class="ti ${p[1]}" style="color:${p[2]}" aria-label="${p[0]}"></i></span>
-      <span class="tx"><span class="r1"><b>${esc(bdNombre(c))}</b><small>${bdHora(c.ultimo_mensaje_at)}</small></span>
-        <span class="r2"><span class="pv">${esc(c.ultimo_mensaje_preview || '')}</span>${c.no_leidos > 0 ? `<span class="nl">${c.no_leidos}</span>` : bdPendiente(c) ? '<span class="pd" title="Sin responder"></span>' : ''}</span>
-        ${c.asignado_nombre ? `<span class="r3"><i class="ti ti-user"></i> ${esc(c.asignado_nombre)}</span>` : ''}</span></button>`; }).join('');
+  function bdHoraRel(iso) {
+    if (!iso) return ''; const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 1) return 'ahora'; if (m < 60) return m + ' min'; const h = Math.round(m / 60); if (h < 24) return h + ' h'; const d = Math.round(h / 24); if (d < 7) return d + ' d';
+    return dmy(iso).slice(0, 5);
   }
-  function bdBurbuja(m) {
-    const media = m.media_path ? (BD.urls[m.media_path] ? (m.tipo === 'imagen' ? `<a href="${esc(BD.urls[m.media_path])}" target="_blank" rel="noopener"><img src="${esc(BD.urls[m.media_path])}" alt="Imagen"></a>` : m.tipo === 'audio' ? `<audio controls src="${esc(BD.urls[m.media_path])}"></audio>` : m.tipo === 'video' ? `<video controls src="${esc(BD.urls[m.media_path])}"></video>` : `<a class="doc" href="${esc(BD.urls[m.media_path])}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : `<span class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</span>`) : '';
-    const tick = m.direccion === 'out' ? ({ pendiente: '<i class="ti ti-clock" title="Enviando"></i>', enviado: '<i class="ti ti-check" title="Enviado"></i>', entregado: '<i class="ti ti-checks" title="Entregado"></i>', leido: '<i class="ti ti-checks lei" title="Leído"></i>', fallido: '<i class="ti ti-alert-circle err" title="No se envió"></i>' }[m.estado] || '') : '';
-    return `<div class="bdM ${m.direccion}${m.estado === 'fallido' ? ' fail' : ''}">${media}${m.cuerpo ? `<p>${esc(m.cuerpo)}</p>` : ''}<small>${m.direccion === 'out' && (m.enviado_por_nombre || m.desde_telefono) ? esc(m.enviado_por_nombre || 'desde el teléfono') + ' · ' : ''}${bdHora(m.created_at)} ${tick}</small>${m.estado === 'fallido' && m.error ? `<em>No se envió. ${esc(String(m.error).slice(0, 120))}</em>` : ''}</div>`;
+  function bdListaHTML() {
+    const base = BD.convs.filter(c => S.vista === 'redes' ? c.plataforma === BD.red : c.plataforma === 'whatsapp');
+    if (!base.length) return `<div class="crm-vacio">${S.vista === 'redes' ? 'Todavía no han llegado mensajes de ' + (BD.red === 'instagram' ? 'Instagram' : 'Facebook') + '.' : 'Todavía no han llegado mensajes de WhatsApp.'}</div>`;
+    const l = bdLista();
+    if (!l.length) return '<div class="crm-vacio">Ninguna conversación coincide con lo que buscas.</div>';
+    return l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp, nl = c.no_leidos > 0, pend = bdPendiente(c);
+      return `<div class="wa-row${String(BD.sel) === String(c.id) ? ' active' : ''}${nl ? ' no-leido' : ''}${pend ? ' pendiente' : ''}" onclick="window.nxCRM.bdAbrir('${c.id}')">
+        <div class="wa-avatar-wrap"><div class="wa-avatar">${esc(ini(bdNombre(c)))}</div><span class="wa-wa-badge p-${c.plataforma}"><i class="ti ${p[1]}"></i></span></div>
+        <div style="min-width:0;flex:1"><div class="r1"><span class="fila-nombre">${esc(bdNombre(c))}</span><span class="fila-hora">${bdHoraRel(c.ultimo_mensaje_at)}</span></div>
+          <div class="r2"><span class="fila-preview">${esc(c.ultimo_mensaje_preview || '')}</span><span class="r2b">${pend ? '<span class="fila-pendiente"><i class="ti ti-user-exclamation"></i> Atender</span>' : ''}${nl ? `<span class="fila-badge">${c.no_leidos}</span>` : ''}${c.asignado_nombre ? `<span class="fila-asignado">${esc(c.asignado_nombre)}</span>` : ''}</span></div></div>
+      </div>`; }).join('');
+  }
+  function bdIcono(e) { return ({ pendiente: '<i class="ti ti-clock"></i>', enviado: '<i class="ti ti-check"></i>', entregado: '<i class="ti ti-checks"></i>', leido: '<i class="ti ti-checks" style="color:#53bdeb"></i>', fallido: '<i class="ti ti-alert-circle" style="color:#dc2626"></i>' })[e] || ''; }
+  function bdBurbuja(m, nombre) {
+    const out = m.direccion === 'out', u = m.media_path ? BD.urls[m.media_path] : null;
+    const media = m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen"></a>` : m.tipo === 'audio' ? `<audio controls src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls src="${esc(u)}"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`) : '';
+    return `<div class="wa-brow ${out ? 'out' : 'in'}"><div class="wa-bubble-wrap" style="background:${m.estado === 'fallido' ? '#fee2e2' : out ? '#dcf8c6' : '#fff'}">
+      <div class="who" style="color:${out ? '#166534' : '#128C7E'}">${out ? 'Tú (STUDIO)' + (m.enviado_por_nombre ? ' · ' + esc(m.enviado_por_nombre) : m.desde_telefono ? ' · desde el teléfono' : '') : esc(nombre)}</div>
+      ${media}${m.cuerpo ? `<div class="tx">${esc(m.cuerpo)}</div>` : ''}
+      <div class="wa-tick-line">${hora(m.created_at)} ${out ? bdIcono(m.estado) : ''}</div>
+      ${m.estado === 'fallido' ? `<div class="err">No se envió.${m.error ? ' ' + esc(String(m.error).slice(0, 120)) : ''}</div>` : ''}</div></div>`;
   }
   function bdMsgsHTML() {
-    if (!BD.msgs.length) return '<div class="bdVac">Cargando mensajes…</div>';
-    let dia = '';
-    return BD.msgs.map(m => { const d = diaRD(m.created_at); const sep = d !== dia ? `<div class="bdDia">${d === hoyISO() ? 'Hoy' : dmy(m.created_at)}</div>` : ''; dia = d; return sep + bdBurbuja(m); }).join('');
+    const c = BD.convs.find(x => String(x.id) === String(BD.sel));
+    if (!BD.msgs.length) return '<div class="wa-chat-empty">Cargando mensajes…</div>';
+    let dia = ''; const nom = c ? bdNombre(c) : '';
+    return BD.msgs.map(m => { const d = diaRD(m.created_at); const sep = d !== dia ? `<div class="wa-dia">${d === hoyISO() ? 'Hoy' : dmy(m.created_at)}</div>` : ''; dia = d; return sep + bdBurbuja(m, nom); }).join('');
   }
   function bdChatHTML() {
     const c = BD.convs.find(x => String(x.id) === String(BD.sel));
-    if (!c) return `<div class="bdEmpty"><i class="ti ti-messages"></i><b>Elige una conversación</b><span>Los mensajes de WhatsApp, Instagram y Facebook de STUDIO llegan aquí.</span></div>`;
-    const p = PLAT[c.plataforma] || PLAT.whatsapp, cli = cliDe(c.cliente_id), op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null;
-    const canal = BD.canales.find(x => String(x.id) === String(c.canal_id));
-    const abierta = bdVentana(c), me = yo();
+    if (!c) return '<div class="wa-chat-empty">Selecciona una conversación de la lista.</div>';
+    const cli = cliDe(c.cliente_id), op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null;
+    const canal = BD.canales.find(x => String(x.id) === String(c.canal_id)), me = yo(), nom = bdNombre(c);
     const usrOpts = `<option value="">Sin asignar</option>` + S.usuarios.map(u => `<option value="${u.id}"${String(c.asignado_id || '') === String(u.id) ? ' selected' : ''}>${esc(u.nom)}</option>`).join('');
-    return `<header class="bdH"><button type="button" class="bdBack" onclick="window.nxCRM.bdCerrar()" aria-label="Volver a la lista"><i class="ti ti-arrow-left"></i></button>
-        <span class="av"><b>${esc(ini(bdNombre(c)))}</b></span>
-        <div class="who"><b>${esc(bdNombre(c))}</b><small><i class="ti ${p[1]}" style="color:${p[2]}"></i> ${p[0]}${canal && canal.nombre ? ' · ' + esc(canal.nombre) : ''}${c.telefono_e164 ? ' · ' + esc(c.telefono_e164) : c.contacto_usuario ? ' · @' + esc(c.contacto_usuario) : ''}</small></div>
-        <button type="button" class="nxCrmBtn sm" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar conversación" aria-label="Archivar"><i class="ti ti-archive"></i></button></header>
-      <div class="bdTools">
-        <button type="button" class="nxCrmChip" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user"></i> ${cli ? esc(cli.nombre) : 'Vincular cliente'}</button>
-        ${op ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-target-arrow"></i> ${esc(op.nombre)} · ${etN(op.etapa)}</button>` : `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear oportunidad</button>`}
-        ${esAdmin() ? `<label class="bdAsig"><i class="ti ti-user-check"></i><select aria-label="Responsable" onchange="window.nxCRM.bdAsignar('${c.id}', this.value || null)">${usrOpts}</select></label>` : !c.asignado_id ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdAsignar('${c.id}','${me}')"><i class="ti ti-hand-grab"></i> Tomarla</button>` : String(c.asignado_id) === String(me) ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdAsignar('${c.id}', null)">Soltarla</button>` : ''}
-      </div>
-      <div class="bdMsgs" id="bdMsgs">${bdMsgsHTML()}</div>
-      ${canal && !canal.activo ? '<div class="bdAviso">Este canal está apagado. Actívalo en «Canales» para poder responder.</div>' : abierta ? `<div class="bdComp">
-        <label class="bdClip" title="Adjuntar archivo" aria-label="Adjuntar archivo"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
-        <textarea id="bdTx" rows="1" placeholder="Escribe una respuesta…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
-        <button type="button" class="bdSend" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
-      : '<div class="bdAviso"><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas; el envío de plantillas llega en la Fase 3.</div>'}`;
+    const asig = esAdmin() ? `<span class="crm-asig"><i class="ti ti-user-check"></i><select onchange="window.nxCRM.bdAsignar('${c.id}', this.value || null)">${usrOpts}</select></span>`
+      : !c.asignado_id ? `<button class="btn-mini" onclick="window.nxCRM.bdAsignar('${c.id}','${me}')"><i class="ti ti-hand-grab"></i> Atender yo</button>`
+      : `<span class="crm-asig"><i class="ti ti-user-check"></i> ${esc(c.asignado_nombre || '')}${String(c.asignado_id) === String(me) ? ` <button class="btn-mini" onclick="window.nxCRM.bdAsignar('${c.id}', null)">Soltar</button>` : ''}</span>`;
+    const sub = c.plataforma === 'whatsapp' ? `<i class="ti ti-phone"></i> ${esc(c.telefono_e164 || (String(c.contacto_id).startsWith('bsid:') ? 'Contacto desde anuncio' : ''))}` : `<i class="ti ${(PLAT[c.plataforma] || PLAT.whatsapp)[1]}"></i> ${c.contacto_usuario ? '@' + esc(c.contacto_usuario) : (PLAT[c.plataforma] || PLAT.whatsapp)[0]}`;
+    const tel = c.telefono_e164 && !String(c.contacto_id).startsWith('bsid:') ? c.telefono_e164 : '';
+    const puede = canal && canal.activo, abierta = bdVentana(c);
+    return `<div class="wa-chat-head"><button class="wa-back" onclick="window.nxCRM.bdCerrar()" aria-label="Volver a la lista"><i class="ti ti-arrow-left"></i></button>
+        <div class="wa-avatar">${esc(ini(nom))}</div>
+        <div style="flex:1;min-width:0"><div class="hn">${esc(nom)}</div><div class="hs">${sub}</div></div>
+        ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
+        ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
+        <button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button></div>
+      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>`}</div>
+      <div id="bdMsgs" class="wa-msgs">${bdMsgsHTML()}</div>
+      ${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
+        : abierta ? `<div class="wa-input-bar"><label class="wa-clip" title="Adjuntar" aria-label="Adjuntar"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
+          <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <button class="wa-send-btn" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
+        : '<div class="wa-aviso"><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas.</div>'}`;
   }
-  function bdCanalesHTML() {
-    if (!esAdmin()) return '';
-    const filas = BD.canales.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp; return `<div class="bdCan"><i class="ti ${p[1]}" style="color:${p[2]}"></i><div><b>${esc(c.nombre || p[0])}</b><small>${p[0]}${c.identificador ? ' · ' + esc(c.identificador) : ''}${c.ultimo_evento_at ? ' · último evento ' + dmy(c.ultimo_evento_at) + ' ' + hora(c.ultimo_evento_at) : ''}</small></div>
-      <label class="sw"><input type="checkbox" ${c.activo ? 'checked' : ''} onchange="window.nxCRM.bdCanal('${c.id}', this.checked)"><span>${c.activo ? 'Activo' : 'Apagado'}</span></label></div>`; }).join('');
-    return `<details class="bdCanales"${BD.canales.some(c => c.activo) ? '' : ' open'}><summary><i class="ti ti-plug-connected"></i> Canales (${BD.canales.filter(c => c.activo).length} activos)</summary>
-      ${filas || '<p class="bdNota">Aún no se ha conectado ninguna cuenta. Cuando conectes el WhatsApp, el Facebook y el Instagram de STUDIO en Zernio y llegue el primer mensaje, cada cuenta aparecerá aquí <b>apagada</b> para que la actives.</p>'}
-      <p class="bdNota">Un canal apagado no guarda ni envía mensajes. Nada se envía solo: solo cuando alguien pulsa Enviar.</p></details>`;
+  function bdShellHTML() {
+    return `<div class="wa-shell${BD.sel ? ' con-chat' : ''}"><div class="wa-list-col"><div class="wa-list-scroll" id="bdList">${bdListaHTML()}</div></div><div class="wa-chat-col" id="bdChat">${bdChatHTML()}</div></div>`;
   }
-  function vistaBandeja() {
-    if (!BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); return '<div class="nxCrmLoad"><span class="spin"></span> Cargando bandeja…</div>'; }
+  function vistaMensajes() {
+    if (BD.error) return `<div class="crm-vacio">No se pudieron cargar los mensajes: ${esc(BD.error)}</div>`;
+    if (!BD.cargado) return '<div class="crm-vacio">Cargando mensajes…</div>';
     bdTimer();
-    if (BD.error) return `<div class="nxCrmErr">No se pudo cargar la bandeja: ${esc(BD.error)}</div>`;
-    const chip = (k, l) => `<button type="button" class="nxCrmChip${BD.filtro === k ? ' on' : ''}" aria-pressed="${BD.filtro === k}" onclick="window.nxCRM.bdFiltro('${k}')">${l}</button>`;
-    const pch = (k, l) => `<button type="button" class="nxCrmChip${BD.canalF === k ? ' on' : ''}" aria-pressed="${BD.canalF === k}" onclick="window.nxCRM.bdCanalF('${k}')">${l}</button>`;
-    return bdCanalesHTML() + `<div class="nxCrmBd${BD.sel ? ' sel' : ''}">
-      <aside class="bdL"><div class="bdF"><label class="nxCrmQ"><i class="ti ti-search"></i><input type="search" value="${esc(BD.q)}" placeholder="Buscar nombre o teléfono…" oninput="window.nxCRM.bdBuscar(this.value)" aria-label="Buscar conversación"></label>
-        <div class="nxCrmChips">${chip('todas', 'Todas')}${chip('noleidas', 'No leídas')}${chip('pendientes', 'Sin responder')}${chip('mias', 'Mías')}${chip('libres', 'Sin asignar')}</div>
-        <div class="nxCrmChips">${pch('', 'Todos los canales')}${pch('whatsapp', '<i class="ti ti-brand-whatsapp"></i> WhatsApp')}${pch('instagram', '<i class="ti ti-brand-instagram"></i> Instagram')}${pch('facebook', '<i class="ti ti-brand-messenger"></i> Facebook')}</div></div>
-        <div class="bdList" id="bdList">${bdListaHTML()}</div></aside>
-      <section class="bdC" id="bdChat">${bdChatHTML()}</section></div>`;
+    const base = BD.convs.filter(c => c.plataforma === 'whatsapp' && (!BD.linea || String(c.canal_id) === String(BD.linea)));
+    const def = [['todos', 'Todos', base.length], ['no_leidos', 'No leídos', base.filter(c => c.no_leidos > 0).length], ['pendientes', 'Pendientes', base.filter(bdPendiente).length]];
+    const chips = def.map(d => `<button class="crm-chip pill-elevado${BD.filtro === d[0] ? ' on pill-hundido' : ''}" onclick="window.nxCRM.bdFiltro('${d[0]}')">${d[1]}${d[2] ? ` <span class="cuenta">${d[2]}</span>` : ''}</button>`).join('');
+    return `<div class="crm-ocultar-en-chat"><div class="crm-busq-row">
+        ${BD.buscando || BD.q ? `<input type="text" id="crmBuscarInput" class="crm-buscar-input" value="${esc(BD.q)}" placeholder="Buscar nombre o número..." oninput="window.nxCRM.bdBuscar(this.value)" onblur="window.nxCRM.bdBuscarBlur()">` : `<button class="crm-buscar pill-elevado" onclick="window.nxCRM.bdBuscarAbrir()"><i class="ti ti-search"></i> <span>Buscar</span></button>`}
+        <button class="crm-filtros-btn pill-elevado${BD.asig !== 'todas' ? ' activo' : ''}" onclick="window.nxCRM.filtrosMenu(event)"><i class="ti ti-adjustments-horizontal"></i> <span>Filtros</span></button></div>
+      <div class="crm-chips-row">${chips}</div></div>
+      ${bdShellHTML()}`;
+  }
+  function canalesModal() {
+    cerrar('crmCanalesM');
+    const ov = document.createElement('div'); ov.id = 'crmCanalesM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const filas = BD.canales.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp; return `<div class="crm-can"><i class="ti ${p[1]}" style="color:${p[2]}"></i><div><b>${esc(c.nombre || p[0])}</b><small>${p[0]}${c.identificador ? ' · ' + esc(c.identificador) : ''}${c.ultimo_evento_at ? ' · último mensaje ' + dmy(c.ultimo_evento_at) + ' ' + hora(c.ultimo_evento_at) : ''}</small></div>
+      <label class="crm-sw"><input type="checkbox" ${c.activo ? 'checked' : ''} onchange="window.nxCRM.bdCanal('${c.id}', this.checked)"><span>${c.activo ? 'Activo' : 'Apagado'}</span></label></div>`; }).join('');
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:460px"><div class="mt"><span><i class="ti ti-plug-connected"></i> Canales de STUDIO</span><button class="nxBack" type="button" onclick="document.getElementById('crmCanalesM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      ${filas || '<p class="crm-nota">Aún no hay ninguna cuenta conectada. Cuando conectes el WhatsApp, el Facebook y el Instagram de STUDIO en Zernio y llegue el primer mensaje, cada cuenta aparece aquí <b>apagada</b> para que la actives.</p>'}
+      <p class="crm-nota">Un canal apagado no guarda ni envía mensajes. Nada se envía solo: solo cuando alguien pulsa Enviar.</p></div>`;
+    document.body.appendChild(ov);
   }
   function bdPintarParcial() {
     const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML();
@@ -561,7 +515,7 @@
   function bdTimer() {
     if (BD.timer) return;
     BD.timer = setInterval(async () => {
-      if (!document.querySelector('.nxCrmBd') || document.hidden) { if (!document.querySelector('.nxCrmBd')) { clearInterval(BD.timer); BD.timer = null; } return; }
+      if (!document.querySelector('.crmB .wa-shell') || document.hidden) { if (!document.querySelector('.crmB .wa-shell')) { clearInterval(BD.timer); BD.timer = null; } return; }
       const antes = BD.sel ? (BD.convs.find(x => String(x.id) === String(BD.sel)) || {}).ultimo_mensaje_at : null;
       await bdCargar();
       if (BD.sel) { const c = BD.convs.find(x => String(x.id) === String(BD.sel)); if (c && c.ultimo_mensaje_at !== antes) { await bdCargarMsgs(BD.sel); if (c.no_leidos > 0) api().patch('crm_conversaciones', 'id=eq.' + c.id, { no_leidos: 0 }).catch(() => {}); } }
@@ -624,42 +578,11 @@
     if (document.getElementById('nxCrmCSS')) return;
     const st = document.createElement('style'); st.id = 'nxCrmCSS';
     st.textContent = `
-.nxCrm{--c-ink:var(--studio-ink,#111);--c-mute:var(--studio-steel,#5b5951);--c-line:var(--studio-hair,rgba(0,0,0,.1));--c-gold:var(--studio-gold,#c9a227);--c-gold-d:var(--studio-gold-dark,#806515);--c-paper:var(--studio-paper,#fff);max-width:1440px;margin:0 auto;color:var(--c-ink)}
-.nxCrm h2,.nxCrm h4{text-transform:none!important;letter-spacing:-.01em;margin:0}
-.nxCrmHead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}.nxCrmHead h2{font-size:22px;font-weight:700}.nxCrmHead p{margin:2px 0 0;color:var(--c-mute);font-size:13px}
 .nxCrmBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font:600 13px/1 inherit;cursor:pointer;white-space:nowrap}
 .nxCrmBtn.p{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}.nxCrmBtn.sm{min-height:30px;padding:0 10px;font-size:12px}.nxCrmBtn.del{color:#b91c1c;width:42px;padding:0}
 .nxCrmBtn:focus-visible,.nxCrmChip:focus-visible,.nxCrmCard:focus-visible,.nxCrmEt:focus-visible{outline:2px solid var(--c-gold);outline-offset:2px}
-.nxCrmKpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}.nxCrmKpis .k{background:var(--c-paper);border:1px solid var(--c-line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
-.nxCrmKpis .k span{font-size:11px;font-weight:600;color:var(--c-mute)}.nxCrmKpis .k b{font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nxCrmKpis .k small{font-size:11px;color:var(--c-mute)}.nxCrmKpis .k.warn b{color:#b91c1c}
-.nxCrmTabs{display:flex;gap:4px;border-bottom:1px solid var(--c-line);margin-bottom:12px;overflow-x:auto;scrollbar-width:none}.nxCrmTabs button{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:none;font:600 13px inherit;color:var(--c-mute);cursor:pointer;white-space:nowrap}
-.nxCrmTabs button.on{color:var(--c-ink);border-bottom-color:var(--c-gold)}.nxCrmTabs .b{background:var(--c-ink);color:#fff;border-radius:999px;font-size:10.5px;padding:1px 7px}
-.nxCrmBar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}.nxCrmChips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .nxCrmChip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--c-line);background:#fff;font:600 12.5px inherit;color:var(--c-ink);cursor:pointer;white-space:nowrap}.nxCrmChip.on{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}
-.nxCrmQ{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--c-line);border-radius:10px;background:#fff;padding:0 12px}.nxCrmQ input{border:0;outline:0;flex:1;min-width:0;font-size:14px;background:transparent;text-transform:none}.nxCrmQ i{color:var(--c-mute)}
-.nxCrmBoard{display:grid;grid-template-columns:repeat(5,minmax(172px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
-.nxCrmCol{background:rgba(0,0,0,.025);border:1px solid var(--c-line);border-radius:14px;display:flex;flex-direction:column;min-height:220px;scroll-snap-align:start;transition:background .15s}.nxCrmCol.over{background:rgba(201,162,39,.12);border-color:var(--c-gold)}
-.nxCrmCol header{display:flex;flex-direction:column;gap:2px;padding:10px 12px;font-size:12.5px;font-weight:700;border-bottom:1px solid var(--c-line)}.nxCrmCol header .n{font-size:11px;background:rgba(0,0,0,.07);border-radius:99px;padding:1px 7px;margin-left:2px}.nxCrmCol header .c{font-weight:600;color:var(--c-mute);font-size:11.5px;font-variant-numeric:tabular-nums}
-.nxCrmCol.c-ganado header{color:#15803d}.nxCrmCol.c-perdido header{color:#b91c1c}
-.nxCrmCol .lst{display:flex;flex-direction:column;gap:8px;padding:8px;max-height:62vh;overflow-y:auto}.nxCrmCol .vac{font-size:12px;color:var(--c-mute);text-align:center;padding:18px 6px;border:1px dashed var(--c-line);border-radius:10px}
-.nxCrmCard{background:#fff;border:1px solid var(--c-line);border-radius:12px;padding:10px 11px;cursor:pointer;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 2px rgba(0,0,0,.04)}.nxCrmCard:hover{border-color:var(--c-gold)}
-.nxCrmCard .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.nxCrmCard .t b{font-size:13px;line-height:1.25;min-width:0;overflow-wrap:anywhere}.nxCrmCard .m{font-size:13px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
-.nxCrmCard .s{font-size:11.5px;color:var(--c-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nxCrmCard .s.mot{color:#b91c1c}
-.nxCrmCard .tk{font-size:11px;color:var(--c-gold-d);background:rgba(201,162,39,.1);border-radius:7px;padding:3px 7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nxCrmCard .tk.venc{color:#b91c1c;background:rgba(185,28,28,.08)}
-.nxCrmCard .f{display:flex;align-items:center;gap:6px;margin-top:2px}.nxCrmCard .av{width:24px;height:24px;border-radius:50%;background:var(--c-ink);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none}
-.nxCrmCard .d{font-size:10.5px;color:var(--c-mute);flex:1;white-space:nowrap}.nxCrmCard .d.old{color:#b45309;font-weight:700}
-.nxCrmCard .adv{width:28px;height:28px;border-radius:8px;border:1px solid var(--c-line);background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--c-ink)}.nxCrmCard .adv:hover{background:var(--c-ink);color:#fff}
-.nxCrmNote{font-size:11.5px;color:var(--c-mute);margin:8px 2px}
-.nxCrmLoad,.nxCrmErr{padding:30px;text-align:center;color:var(--c-mute);font-size:13px}.nxCrmErr{color:#b91c1c}
-.nxCrmEmpty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 16px;color:var(--c-mute);text-align:center}.nxCrmEmpty i{font-size:30px}.nxCrmEmpty b{color:var(--c-ink)}
-.nxCrmTG{margin-bottom:14px}.nxCrmTG h4{font-size:13px;margin-bottom:6px;display:flex;gap:6px;align-items:center}.nxCrmTG h4.bad{color:#b91c1c}.nxCrmTG h4 span{font-size:11px;color:var(--c-mute);font-weight:600}
-.nxCrmTask{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--c-line);border-radius:12px;padding:9px 11px;margin-bottom:6px}.nxCrmTask .tx{flex:1;min-width:0;cursor:pointer;display:flex;flex-direction:column;gap:2px}.nxCrmTask .tx b{font-size:13px}.nxCrmTask .tx small{font-size:11.5px;color:var(--c-mute)}
 .nxCrm .chk,.nxCrmFicha .chk{border:0;background:none;font-size:20px;cursor:pointer;color:var(--c-ink,#111);padding:0 4px 0 0;line-height:1;vertical-align:middle}
-.nxCrmRange{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}.nxCrmRange label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--c-mute)}.nxCrmRange input{height:38px;border:1px solid var(--c-line);border-radius:10px;padding:0 10px;font-size:14px;background:#fff}
-.nxCrmGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nxCrmPanel{background:var(--c-paper);border:1px solid var(--c-line);border-radius:14px;padding:14px;margin-bottom:10px;min-width:0}.nxCrmPanel h4{font-size:13.5px;margin-bottom:10px}
-.nxCrmBarR{display:grid;grid-template-columns:minmax(90px,1fr) 2fr auto;gap:8px;align-items:center;font-size:12px;margin-bottom:7px}.nxCrmBarR div{height:8px;background:rgba(0,0,0,.06);border-radius:99px;overflow:hidden}.nxCrmBarR div i{display:block;height:100%;background:var(--c-gold);border-radius:99px}.nxCrmBarR b{font-variant-numeric:tabular-nums;font-size:11.5px}
-.nxCrmT{width:100%;border-collapse:collapse;font-size:12.5px}.nxCrmT th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--c-mute);padding:6px 8px;border-bottom:1px solid var(--c-line)}.nxCrmT td{padding:7px 8px;border-bottom:1px solid var(--c-line)}.nxCrmT .r{text-align:right;font-variant-numeric:tabular-nums}.nxCrmT .vac,.nxCrmPanel .vac{color:var(--c-mute);text-align:center;font-size:12px}
-.nxCrmPanel .tw{overflow-x:auto}
 .nxCrmModal{--c-ink:var(--studio-ink,#111);--c-mute:var(--studio-steel,#5b5951);--c-line:var(--studio-hair,rgba(0,0,0,.1));--c-gold:var(--studio-gold,#c9a227);color:var(--c-ink)}
 .nxCrmFicha{max-width:720px;width:100%;max-height:92vh;display:flex;flex-direction:column}.nxCrmFicha .mt small{font-size:11px;color:var(--c-mute);font-weight:600}.nxCrmFB{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
 .nxCrmEts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.nxCrmEt{flex:1;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 10px;border:1px solid var(--c-line);border-radius:10px;background:#fff;font:600 12px inherit;color:var(--c-ink);cursor:pointer}
@@ -684,41 +607,115 @@
 .nxCrmMotL{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .nxCrm *,.nxCrmModal *,.nxCrm ::placeholder,.nxCrmModal ::placeholder{text-transform:none!important}.nxCrm .nxCrmT th{text-transform:uppercase!important}
 .nxCrmFB>*{flex:none}
-.nxCrmKpis[hidden]{display:none}
-.nxCrmBd{display:grid;grid-template-columns:minmax(280px,360px) 1fr;border:1px solid var(--c-line);border-radius:16px;background:var(--c-paper);overflow:hidden;height:min(72vh,760px)}
-.nxCrmBd .bdL{display:flex;flex-direction:column;border-right:1px solid var(--c-line);min-width:0;min-height:0}
-.nxCrmBd .bdF{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid var(--c-line)}.nxCrmBd .bdF>*{flex:none}.nxCrmBd .bdF .nxCrmQ{min-width:0}.nxCrmBd .bdF .nxCrmChip{height:28px;font-size:12px;padding:0 10px}
-.nxCrmBd .bdList{overflow-y:auto;flex:1;min-height:0}
-.bdIt{display:flex;gap:10px;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--c-line);background:none;cursor:pointer;font:inherit;color:var(--c-ink)}.bdIt:hover{background:rgba(0,0,0,.025)}.bdIt.on{background:rgba(201,162,39,.12)}
-.bdIt .av,.bdH .av{position:relative;width:40px;height:40px;border-radius:50%;background:var(--c-ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:13px}.bdIt .av i{position:absolute;right:-3px;bottom:-3px;background:#fff;border-radius:50%;font-size:15px;padding:1px}
-.bdIt .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.bdIt .r1,.bdIt .r2{display:flex;justify-content:space-between;align-items:center;gap:6px}.bdIt .r1 b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdIt .r1 small{font-size:11px;color:var(--c-mute);flex:none}
-.bdIt .pv{font-size:12.5px;color:var(--c-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdIt.unread .pv{color:var(--c-ink);font-weight:600}.bdIt .nl{background:#15803d;color:#fff;border-radius:99px;font-size:10.5px;font-weight:700;padding:1px 7px;flex:none}.bdIt .pd{width:8px;height:8px;border-radius:50%;background:var(--c-gold);flex:none}
-.bdIt .r3{font-size:10.5px;color:var(--c-mute)}
-.bdVac{padding:24px;text-align:center;color:var(--c-mute);font-size:12.5px}
-.nxCrmBd .bdC{display:flex;flex-direction:column;min-width:0;min-height:0;background:linear-gradient(0deg,rgba(201,162,39,.04),rgba(201,162,39,.04)),var(--c-paper)}
-.bdEmpty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-mute);text-align:center;padding:30px}.bdEmpty i{font-size:34px}.bdEmpty b{color:var(--c-ink)}
-.bdH{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--c-line);background:var(--c-paper)}.bdH .who{flex:1;min-width:0;display:flex;flex-direction:column}.bdH .who b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdH .who small{font-size:11.5px;color:var(--c-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bdBack{display:none;border:0;background:none;font-size:20px;cursor:pointer;color:var(--c-ink);padding:4px}
-.bdTools{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--c-line);overflow-x:auto;scrollbar-width:none;background:var(--c-paper)}.bdTools .nxCrmChip{height:30px;font-size:12px;display:inline-flex;align-items:center;gap:5px;max-width:260px;overflow:hidden;text-overflow:ellipsis}
-.bdAsig{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--c-line);border-radius:999px;padding:0 4px 0 10px;background:#fff;font-size:12px}.bdAsig select{border:0;background:none;font:600 12px inherit;height:28px;max-width:160px}
-.bdMsgs{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
-.bdDia{align-self:center;font-size:11px;color:var(--c-mute);background:rgba(0,0,0,.05);border-radius:99px;padding:2px 10px;margin:6px 0}
-.bdM{max-width:min(78%,520px);padding:8px 10px 5px;border-radius:14px;background:#fff;border:1px solid var(--c-line);align-self:flex-start;display:flex;flex-direction:column;gap:4px}
-.bdM.out{align-self:flex-end;background:var(--c-ink);color:#fff;border-color:var(--c-ink)}.bdM.fail{background:#fff5f5;color:var(--c-ink);border-color:#fca5a5}
-.bdM p{margin:0;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}.bdM small{font-size:10.5px;opacity:.7;align-self:flex-end;display:inline-flex;gap:3px;align-items:center}.bdM small .lei{color:#60a5fa;opacity:1}.bdM small .err{color:#b91c1c}.bdM em{font-size:11px;color:#b91c1c;font-style:normal}
-.bdM img,.bdM video{max-width:100%;max-height:280px;border-radius:10px;display:block}.bdM audio{max-width:240px}.bdM .doc{color:inherit;font-size:13px}.bdM .ld{font-size:12px;opacity:.7}
-.bdComp{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--c-line);background:var(--c-paper);padding-bottom:max(10px,env(safe-area-inset-bottom))}
-.bdComp textarea{flex:1;min-height:40px;max-height:140px;border:1px solid var(--c-line);border-radius:20px;padding:10px 14px;font:14px/1.35 inherit;resize:none;background:#fff}
-.bdClip{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;color:var(--c-mute);flex:none}.bdClip input{display:none}
-.bdSend{width:40px;height:40px;border-radius:50%;border:0;background:var(--c-ink);color:#fff;font-size:17px;cursor:pointer;flex:none}
-.bdAviso{padding:12px 14px;border-top:1px solid var(--c-line);font-size:12.5px;color:#92400e;background:#fffbeb}
-.bdCanales{border:1px solid var(--c-line);border-radius:14px;padding:10px 12px;margin-bottom:10px;background:var(--c-paper)}.bdCanales summary{cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
-.bdCan{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--c-line)}.bdCan>i{font-size:22px}.bdCan>div{flex:1;min-width:0;display:flex;flex-direction:column}.bdCan b{font-size:13px}.bdCan small{font-size:11px;color:var(--c-mute)}
-.bdCan .sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer}.bdNota{font-size:12px;color:var(--c-mute);margin:8px 0 0}
-@media(max-width:1100px){.nxCrmKpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:760px){.nxCrmBd{grid-template-columns:1fr;height:calc(100dvh - 190px);border-radius:14px}.nxCrmBd .bdL{border-right:0}.nxCrmBd.sel .bdL{display:none}.nxCrmBd:not(.sel) .bdC{display:none}.bdBack{display:inline-flex}.bdM{max-width:86%}}
-@media(max-width:760px){.nxCrmKpis{grid-template-columns:1fr 1fr;gap:8px}.nxCrmKpis .k{padding:10px 12px}.nxCrmKpis .k b{font-size:17px}.nxCrmBoard{grid-template-columns:repeat(5,82vw)}.nxCrmGrid{grid-template-columns:1fr}.nxCrmSec .g2,.nxCrmComp .venc{grid-template-columns:1fr}.nxCrmHead h2{font-size:20px}.nxCrmHead .nxCrmBtn{padding:0 12px}}
-@media(prefers-reduced-motion:reduce){.nxCrmCol{transition:none}}
+.nxCrmFicha .nxCrmChip.on,.nxCrmMotL .nxCrmChip:hover{background:#111;color:#fff}
+/* ── CRM al estilo BAYOL CELL (mismas clases y valores de taller.html) ── */
+.crmB{color:#0f172a;max-width:1400px;margin:0 auto}
+.crmB .pill-elevado{background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(226,232,240,.54)),rgba(241,245,249,.58);border:1px solid rgba(255,255,255,.78);border-radius:9999px;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.96),inset 0 -1px 0 rgba(148,163,184,.16),0 4px 12px -7px rgba(15,23,42,.24),0 12px 28px -18px rgba(15,23,42,.30);outline:none;-webkit-tap-highlight-color:transparent;transition:box-shadow .24s cubic-bezier(.2,.8,.2,1),color .2s ease,transform .2s cubic-bezier(.2,.8,.2,1)}
+.crmB .pill-elevado:active{transform:translateY(1px)}
+.crmB .pill-hundido{background:linear-gradient(145deg,rgba(255,255,255,.68),rgba(254,226,226,.42)),rgba(248,250,252,.58);border-color:rgba(255,255,255,.82);box-shadow:inset 0 2px 7px rgba(15,23,42,.14),inset 0 -1px 0 rgba(255,255,255,.78),0 0 0 1px rgba(220,38,38,.07),0 7px 20px -15px rgba(220,38,38,.40);border-radius:9999px}
+.crmB .crm-selectores{display:flex;gap:10px;margin-bottom:12px}.crmB .crm-selector{flex:1;position:relative;min-width:0;max-width:420px}
+.crmB .crm-pill-select{width:100%;display:flex;align-items:center;gap:8px;padding:11px 15px;font:inherit;font-size:13.5px;font-weight:700;color:#1e293b;border:0;text-align:left}
+.crmB .crm-pill-select>i{color:#dc2626;font-size:18px;flex-shrink:0}.crmB .crm-pill-select .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.25}
+.crmB .crm-pill-select .txt b{display:block;font-size:9.5px;font-weight:700;color:#475569;text-transform:uppercase!important;letter-spacing:.4px}
+.crmB .crm-pill-select .chev{color:#94a3b8;font-size:14px;transition:transform .18s}.crmB .crm-pill-select.abierto .chev{transform:rotate(180deg);color:#dc2626}
+.crmB .crm-selector-menu{display:none;position:absolute;z-index:1000;top:calc(100% + 7px);left:0;width:100%;min-width:180px;padding:5px;border:1px solid #dce6f4;border-radius:14px;background:#fff;box-shadow:0 16px 30px -16px rgba(15,23,42,.38)}
+.crmB .crm-selector-menu.abierto{display:block}
+.crmB .crm-selector-option{width:100%;display:flex;align-items:center;gap:8px;border:0;border-radius:9px;padding:9px 10px;background:transparent;color:#334155;font:600 12.5px inherit;text-align:left;cursor:pointer}
+.crmB .crm-selector-option:hover{background:#eef5ff;color:#1d4ed8}.crmB .crm-selector-option.activa{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+.crmB .crm-selector-option i{margin-left:auto;opacity:0}.crmB .crm-selector-option.activa i{opacity:1}
+.crmB .crm-tabs-row{display:flex;gap:10px;margin-bottom:12px}.crmB .crm-tabs-track{flex:1;display:flex;overflow:hidden}
+.crmB .crm-tab-seg{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;font-size:13.5px;font-weight:700;line-height:1;color:#64748b;background:none;border:none;cursor:pointer;position:relative;white-space:nowrap}
+.crmB .crm-tab-seg:not(:last-child)::after{content:"";position:absolute;top:22%;bottom:22%;right:0;width:1px;background:rgba(15,23,42,.16)}
+.crmB .crm-tab-seg.on::after{opacity:0}.crmB .crm-tab-seg i{font-size:16px;opacity:.62}
+.crmB .crm-tab-seg.on{color:#dc2626;font-weight:800;filter:drop-shadow(0 0 3px rgba(220,38,38,.30))}.crmB .crm-tab-seg.on i{opacity:1}
+.crmB .crm-badge{font-size:11px;font-weight:800;opacity:.75;margin-left:2px}
+.crmB .crm-acciones-rapidas{display:flex;gap:8px}
+.crmB .crm-icon-btn{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#475569;font-size:18px;padding:0}
+@keyframes crm-girar{to{transform:rotate(360deg)}}.crmB .crm-girando{animation:crm-girar .8s linear infinite}
+.crmB .crm-busq-row{display:flex;gap:10px;margin-bottom:10px}
+.crmB .crm-buscar{flex:1;display:flex;align-items:center;gap:8px;padding:11px 16px;color:#64748b;font-size:13px;font-weight:600}
+.crmB .crm-buscar-input{flex:1;min-width:0;padding:11px 16px;font-size:16px;border-radius:9999px;background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(226,232,240,.52));color:#1e293b;outline:none;border:1px solid rgba(255,255,255,.82);box-shadow:inset 0 2px 5px rgba(15,23,42,.11),0 8px 20px -16px rgba(15,23,42,.34)}
+.crmB .crm-buscar-input:focus{box-shadow:inset 0 3px 6px rgba(15,23,42,.16),0 0 0 1px rgba(220,38,38,.14)}
+.crmB .crm-filtros-btn{display:flex;align-items:center;gap:7px;padding:11px 16px;font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap}.crmB .crm-filtros-btn.activo{color:#dc2626}
+.crmB .crm-chips-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.crmB .crm-chip{display:inline-flex;align-items:center;gap:6px;line-height:1;padding:10px 18px;font-size:12.5px;font-weight:600;color:#475569}
+.crmB .crm-chip .cuenta{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;font-size:10.5px;font-weight:800;background:rgba(15,23,42,.08);color:#475569}
+.crmB .crm-chip.on{color:#dc2626;font-weight:700;filter:drop-shadow(0 0 3px rgba(220,38,38,.28))}.crmB .crm-chip.on .cuenta{background:rgba(220,38,38,.12);color:#b91c1c}
+.crm-filtros-menu{display:none;position:fixed;flex-direction:column;background:#fff;border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.22);padding:6px;z-index:500;min-width:190px}
+.crm-filtros-menu button{display:flex;align-items:center;gap:9px;background:none;border:none;padding:9px 12px;font-size:13px;text-align:left;border-radius:8px;cursor:pointer;color:#111b21;width:100%;text-transform:none}
+.crm-filtros-menu button:hover{background:#f0f2f5}.crm-filtros-menu button.on{color:#dc2626;font-weight:800}.crm-filtros-menu button i{font-size:15px;color:#64748b}.crm-filtros-menu button.on i{color:#dc2626}
+.crmB .crm-vacio{text-align:center;color:#64748b;padding:28px 14px;font-size:13px}
+.crmB .wa-shell{display:flex;height:calc(100vh - 250px);min-height:420px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,.06);background:#fff}
+.crmB .wa-list-col{width:320px;flex-shrink:0;background:#fff;border-right:1px solid #e9edef;display:flex;flex-direction:column}.crmB .wa-list-scroll{overflow-y:auto;flex:1}
+.crmB .wa-row{display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:pointer;position:relative}
+.crmB .wa-row+.wa-row::before{content:'';position:absolute;left:67px;right:0;top:0;height:1px;background:rgba(15,23,42,.06)}
+.crmB .wa-row:hover{background:#f5f6f6}.crmB .wa-row.active{background:#f0f2f5}.crmB .wa-row.pendiente{box-shadow:inset 3px 0 0 #f59e0b}
+.crmB .wa-row .r1,.crmB .wa-row .r2{display:flex;justify-content:space-between;gap:8px;align-items:center}.crmB .wa-row .r2{margin-top:3px}.crmB .wa-row .r2b{display:flex;gap:4px;align-items:center;flex-shrink:0}
+.crmB .wa-avatar-wrap{position:relative;flex-shrink:0}
+.crmB .wa-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#128C7E,#075E54);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.crmB .wa-wa-badge{position:absolute;right:-2px;bottom:-2px;width:17px;height:17px;border-radius:50%;background:#25D366;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px}
+.crmB .wa-wa-badge.p-instagram{background:#c13584}.crmB .wa-wa-badge.p-facebook{background:#1877f2}
+.crmB .fila-nombre{font-size:14.5px;font-weight:700;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crmB .wa-row.no-leido .fila-nombre{font-weight:800;color:#0f172a}
+.crmB .fila-hora{font-size:11px;color:#64748b;font-weight:500;flex-shrink:0}.crmB .wa-row.no-leido .fila-hora{color:#dc2626;font-weight:700}
+.crmB .fila-preview{font-size:12.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crmB .wa-row.no-leido .fila-preview{color:#1e293b;font-weight:600}
+.crmB .fila-badge{background:linear-gradient(160deg,#dc2626,#b91c1c);color:#fff;border-radius:9999px;min-width:20px;height:20px;padding:0 6px;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.crmB .fila-pendiente{color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;white-space:nowrap}
+.crmB .fila-asignado{font-size:10px;font-weight:700;color:#7c3aed;background:#ede9fe;border-radius:999px;padding:2px 7px;white-space:nowrap}
+.crmB .wa-chat-col{flex:1;min-width:0;display:flex;flex-direction:column;background:#ECE5DD;background-image:radial-gradient(rgba(0,0,0,.02) 1px,transparent 1px);background-size:14px 14px}
+.crmB .wa-chat-empty{margin:auto;color:#8696a0;font-size:13px;text-align:center;padding:20px}
+.crmB .wa-chat-head{background:#f0f2f5;padding:11px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e9edef}
+.crmB .wa-chat-head .hn{font-weight:700;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crmB .wa-chat-head .hs{font-size:11.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crmB .wa-back{display:none;border:1px solid #d1d7db;background:#fff;color:#075E54;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:15px}
+.crmB .wa-icon-btn{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#54656f;font-size:18px;background:none;border:0;cursor:pointer;text-decoration:none;flex:none}.crmB .wa-icon-btn:hover{background:rgba(0,0,0,.06)}
+.crmB .wa-vinc{color:#075E54;background:#fff;border:1px solid #d1d7db;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.crmB .vinc-chip{background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.crmB .wa-chat-sub{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 18px 10px;background:#f0f2f5;border-bottom:1px solid #e9edef}
+.crmB .btn-mini{display:inline-flex;align-items:center;gap:5px;border:1px solid #d1d7db;background:#fff;color:#334155;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
+.crmB .btn-mini.wa{color:#15803d;padding:5px 8px}
+.crmB .crm-asig{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#334155}.crmB .crm-asig select{font-size:12px;padding:4px 6px;border:1px solid #d1d7db;border-radius:8px;background:#fff;max-width:170px}
+.crmB .wa-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:6px}
+.crmB .wa-dia{align-self:center;background:#e1f2fb;color:#54656f;font-size:11px;font-weight:600;border-radius:8px;padding:4px 10px;margin:6px 0;box-shadow:0 1px .5px rgba(0,0,0,.13)}
+.crmB .wa-brow{display:flex}.crmB .wa-brow.out{justify-content:flex-end}
+.crmB .wa-bubble-wrap{position:relative;max-width:70%;border-radius:8px;padding:6px 9px 7px;box-shadow:0 1px .5px rgba(0,0,0,.13);font-size:13.5px;color:#111b21}
+.crmB .wa-bubble-wrap .who{font-size:10px;font-weight:700;margin-bottom:2px}.crmB .wa-bubble-wrap .tx{white-space:pre-wrap;word-break:break-word}
+.crmB .wa-bubble-wrap img,.crmB .wa-bubble-wrap video{max-width:100%;max-height:280px;border-radius:6px;display:block;margin-bottom:3px}.crmB .wa-bubble-wrap audio{max-width:240px}
+.crmB .wa-bubble-wrap .ld{font-size:12px;color:#667781}.crmB .wa-bubble-wrap .err{font-size:11px;color:#b91c1c;margin-top:2px}
+.crmB .wa-tick-line{text-align:right;font-size:10px;color:#8696a0;margin-top:2px;display:flex;justify-content:flex-end;gap:3px;align-items:center}
+.crmB .wa-input-bar{padding:10px 14px;background:#f0f2f5;display:flex;gap:4px;align-items:flex-end;border-top:1px solid #e2e5e7;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.crmB .wa-input-bar textarea{flex:1;border:1px solid transparent;border-radius:22px;padding:10px 16px;font:13.5px/1.35 inherit;min-width:0;margin:0 6px;background:#fff;color:#111b21;box-shadow:0 1px 2px rgba(11,20,26,.08);outline:none;resize:none;min-height:40px;max-height:120px}
+.crmB .wa-input-bar textarea:focus{border-color:#128C7E;box-shadow:0 0 0 3px rgba(18,140,126,.13)}
+.crmB .wa-clip{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#54656f;flex:none}.crmB .wa-clip input{display:none}
+.crmB .wa-send-btn{width:40px;height:40px;border-radius:50%;background:#128C7E;border:none;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(7,94,84,.35)}.crmB .wa-send-btn:hover{background:#0e7c6f}
+.crmB .wa-aviso{padding:12px 16px;background:#fffbeb;color:#92400e;font-size:12.5px;border-top:1px solid #fde68a}
+.crmB .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.crmB .crm-leads-top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}.crmB .crm-leads-f{display:flex;gap:6px;flex-wrap:wrap}
+.crmB .crm-lead-f{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:#334155;cursor:pointer}.crmB .crm-lead-f.on{background:#dcfce7;color:#15803d;font-weight:700;border-color:#bbf7d0}
+.crmB .crm-nuevo{display:inline-flex;align-items:center;gap:6px;background:#dc2626;color:#fff;border:0;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+.crmB .crm-lead{margin-bottom:10px}.crmB .crm-lead .t{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}.crmB .crm-lead .d{min-width:0;flex:1}
+.crmB .crm-lead .n{font-weight:700;font-size:14px}.crmB .crm-lead .s{font-size:12.5px;color:#64748b;margin-top:1px}.crmB .crm-lead .s b{color:#0f172a}
+.crmB .crm-lead .et{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}
+.crmB .crm-lead .a{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.crmB .crm-lead .a select{font-size:12.5px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}
+.crmB .crm-lead .vinc{font-size:11.5px;color:#15803d;font-weight:600}.crmB .crm-lead .nota{font-size:12px;color:#64748b;margin-top:8px}
+.crmB .crm-campanas{text-align:center;padding:40px 20px;color:#475569}.crmB .crm-campanas>i{font-size:38px;color:#e31e24}.crmB .crm-campanas h3{margin:8px 0;color:#0f172a}.crmB .crm-campanas p{margin:4px auto;max-width:460px;font-size:13px}
+.crmB .rs-hub{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:14px;margin-bottom:12px}
+.crmB .rs-hub-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.crmB .rs-hub-title{display:flex;align-items:center;gap:10px;flex:1;min-width:220px}
+.crmB .rs-hub-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px}
+.crmB .rs-hub-title h3{margin:0;font-size:15px}.crmB .rs-hub-title p{margin:1px 0 0;font-size:12px;color:#64748b}
+.crmB .rs-hub-buscar{display:flex;align-items:center;gap:8px;border:1px solid #e2e8f0;border-radius:999px;padding:8px 14px;min-width:220px;flex:1;max-width:360px}.crmB .rs-hub-buscar input{border:0;outline:0;flex:1;min-width:0;font-size:14px;background:transparent}
+.crmB .rs-canales{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.crmB .rs-canal{display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer}.crmB .rs-canal.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.crm-can{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eef2f7}.crm-can>i{font-size:24px}.crm-can>div{flex:1;min-width:0;display:flex;flex-direction:column}.crm-can b{font-size:13px}.crm-can small{font-size:11px;color:#64748b}
+.crm-sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer}.crm-nota{font-size:12.5px;color:#64748b;margin:10px 0 0}
+@media(max-width:760px){
+  .crmB .crm-tab-seg{font-size:11px;gap:3px;padding:8px 2px;flex-direction:column}.crmB .crm-tab-seg i{font-size:17px}.crmB .crm-badge{position:absolute;top:4px;right:8px}
+  .crmB .crm-tabs-row{gap:6px}.crmB .crm-acciones-rapidas{gap:6px}.crmB .crm-icon-btn{width:40px;height:40px}
+  .crmB .crm-chips-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px}.crmB .crm-chip{padding:8px 14px;flex:none}
+  .crmB .crm-leads-f{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}.crmB .crm-lead-f{flex:none}
+  .crmB .wa-shell{height:calc(100dvh - 300px);min-height:380px}.crmB.chat-abierto .wa-shell{height:calc(100dvh - 90px)}
+  .crmB .wa-list-col{width:100%;border-right:0}.crmB .wa-shell.con-chat .wa-list-col{display:none}.crmB .wa-shell:not(.con-chat) .wa-chat-col{display:none}
+  .crmB.chat-abierto .crm-ocultar-en-chat{display:none}.crmB .wa-back{display:inline-flex}
+  .crmB .wa-chat-head{padding:8px 12px;gap:8px}.crmB .wa-chat-sub{padding:6px 12px 8px}.crmB .wa-bubble-wrap{max-width:84%}.crmB .wa-msgs{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){.crmB .pill-elevado,.crmB .crm-tab-seg{transition:none}.crmB .crm-girando{animation:none}}
 `;
     document.head.appendChild(st);
   }
@@ -727,8 +724,30 @@
     bdAbrir, bdEnviar, bdAdjuntar,
     bdCerrar: function () { BD.sel = null; BD.msgs = []; repintar(); },
     bdFiltro: function (k) { BD.filtro = k; repintar(); },
-    bdCanalF: function (k) { BD.canalF = k; repintar(); },
     bdBuscar: function (q) { BD.q = q || ''; const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML(); },
+    bdBuscarAbrir: function () { BD.buscando = true; repintar(); setTimeout(() => { const i = document.getElementById('crmBuscarInput'); if (i) i.focus(); }, 30); },
+    bdBuscarBlur: function () { if (BD.q.trim()) return; BD.buscando = false; repintar(); },
+    filtrosMenu: function (ev) {
+      ev.stopPropagation();
+      let m = document.getElementById('crmFiltrosMenu');
+      if (m && m.style.display === 'flex') { m.style.display = 'none'; return; }
+      if (!m) { m = document.createElement('div'); m.id = 'crmFiltrosMenu'; m.className = 'crm-filtros-menu'; document.body.appendChild(m); document.addEventListener('click', e => { if (!m.contains(e.target)) m.style.display = 'none'; }); }
+      const ops = [['todas', 'Todas las conversaciones', 'ti-inbox'], ['sin_asignar', 'Sin asignar', 'ti-user-question'], ['mias', 'Asignadas a mí', 'ti-user-check']];
+      m.innerHTML = ops.map(o => `<button class="${BD.asig === o[0] ? 'on' : ''}" onclick="window.nxCRM.asig('${o[0]}')"><i class="ti ${o[2]}"></i> ${o[1]}</button>`).join('');
+      m.style.display = 'flex';
+      const r = ev.currentTarget.getBoundingClientRect(); let top = r.bottom + 6; if (top + 130 > innerHeight) top = Math.max(8, r.top - 136);
+      m.style.top = top + 'px'; m.style.left = Math.max(8, r.right - 200) + 'px';
+    },
+    asig: function (k) { BD.asig = k; const m = document.getElementById('crmFiltrosMenu'); if (m) m.style.display = 'none'; repintar(); },
+    tab: function (k) { S.vista = k; BD.sel = null; BD.msgs = []; BD.q = ''; BD.buscando = false; try { localStorage.setItem('studio_crm_vista', k); } catch (e) {} repintar(); },
+    red: function (k) { BD.red = k; BD.sel = null; BD.msgs = []; repintar(); },
+    linea: function (id) { BD.linea = id || ''; BD.sel = null; BD.msgs = []; repintar(); },
+    lineaMenu: function (ev) { ev.stopPropagation(); const m = document.getElementById('crmLineaMenu'); if (!m) return; const ab = m.classList.toggle('abierto'); ev.currentTarget.classList.toggle('abierto', ab); if (ab) setTimeout(() => document.addEventListener('click', function f() { m.classList.remove('abierto'); document.removeEventListener('click', f); }), 0); },
+    leadsFiltro: function (k) { S.leadsF = k; repintar(); },
+    leadEtapa: function (id, el) { const o = S.ops.find(x => String(x.id) === String(id)); const v = el.value; if (o && v === 'perdido') el.value = o.etapa; mover(id, v); },
+    leadCliente: function (id) { try { ctx().elegirCliente(function (c) { if (c && c.id) guardarCampo(id, 'cliente_id', c.id); }); } catch (e) {} },
+    canalesModal: canalesModal,
+    actualizar: async function (b) { const i = b && b.querySelector('i'); if (i) i.classList.add('crm-girando'); await Promise.all([cargar(), bdCargar()]); if (BD.sel) await bdCargarMsgs(BD.sel); repintar(); },
     bdArchivar: function (id) { if (!confirm('¿Archivar esta conversación? Vuelve sola a la bandeja si el cliente escribe de nuevo.')) return; BD.sel = null; bdPatch(id, { archivada: true }, 'Conversación archivada').then(() => { BD.convs = BD.convs.filter(c => String(c.id) !== String(id)); repintar(); }); },
     bdAsignar: function (id, u) { bdPatch(id, { asignado_id: u || null }, u ? 'Conversación asignada' : 'Conversación liberada'); },
     bdCliente: function (id) { try { ctx().elegirCliente(function (c) { if (c && c.id) bdPatch(id, { cliente_id: c.id }, 'Cliente vinculado'); }); } catch (e) {} },
@@ -746,12 +765,6 @@
     cargar, render, recargar, avisosHTML, docGuardado, ventaCreada, abrir, nueva, guardar, guardarCampo, agregarAct, tareaHecha, consentimiento, cotizar, facturar,
     mover: function (id, etapa) { mover(id, etapa); },
     motivo: function (id, m) { m = String(m || '').trim(); if (!m) { toast('warn', 'Escribe o elige el motivo'); return; } cerrar('nxCrmMot'); mover(id, 'perdido', m); },
-    vista: function (k) { S.vista = k; try { localStorage.setItem('studio_crm_vista', k); } catch (e) {} repintar(); },
-    filtro: function (k) { S.filtro = k; repintar(); },
-    buscar: function (q) { S.q = q || ''; const b = document.querySelector('.nxCrmBoard'); if (!b) { repintar(); return; } const tmp = document.createElement('div'); tmp.innerHTML = vistaTablero(); const nb = tmp.querySelector('.nxCrmBoard'); if (nb) b.replaceWith(nb); },
-    rango: function (k, v) { if (!v) return; if (k === 'd') S.repDesde = v; else S.repHasta = v; if (S.repDesde > S.repHasta) { const x = S.repDesde; S.repDesde = S.repHasta; S.repHasta = x; } repintar(); },
-    drag: function (ev, id) { try { ev.dataTransfer.setData('text/plain', String(id)); ev.dataTransfer.effectAllowed = 'move'; } catch (e) {} },
-    drop: function (ev, etapa) { ev.preventDefault(); let id = ''; try { id = ev.dataTransfer.getData('text/plain'); } catch (e) {} if (id) mover(id, etapa); },
     etNueva: function (e) { if (e === 'perdido' || e === 'ganado') { toast('warn', 'Primero crea la oportunidad'); return; } _etNueva = e; document.querySelectorAll('#nxCrmFicha .nxCrmEt').forEach(b => { const on = b.className.indexOf('e-' + e) >= 0; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); },
     cerrarFicha: function () { cerrar('nxCrmFicha'); S.ficha = null; _etNueva = 'nuevo'; },
     elegirCliente: function () {

@@ -11886,6 +11886,73 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
 
   // ── Aprobación ────────────────────────────────────────────────────────────────────────────
+  // ── Documentos del cliente (cédula, carta de trabajo…) — bucket privado «documentos», tabla pos_fin_documentos ──
+  // Se listan por cliente (sirven para todas sus solicitudes). Ver = link firmado de 10 minutos; nunca URL pública.
+  const FIN_DOC_TIPOS = [['cedula_frente', 'Cédula (frente)'], ['cedula_dorso', 'Cédula (dorso)'], ['carta_trabajo', 'Carta de trabajo'], ['ingresos', 'Comprobante de ingresos'], ['servicio', 'Recibo de luz/agua (dirección)'], ['contrato_firmado', 'Contrato firmado en papel'], ['otro', 'Otro']];
+  const _finDocs = {}; const _finDocsCargando = {};
+  function finDocTipoTxt(t) { return (FIN_DOC_TIPOS.find(x => x[0] === t) || [t, t || 'Documento'])[1]; }
+  async function finV2DocsCargar(cliId, forzar) {
+    if (!cliId || (_finDocsCargando[cliId] && !forzar)) return;
+    _finDocsCargando[cliId] = true;
+    try { _finDocs[cliId] = await getAPI().get('pos_fin_documentos', 'select=*&cliente_id=eq.' + cliId + '&order=created_at.desc') || []; }
+    catch (e) { _finDocs[cliId] = []; }
+    finV2Repintar();
+  }
+  function finV2DocsCard(cliId, solId, finId) {
+    if (!cliId) return '';
+    const docs = _finDocs[cliId];
+    if (!docs) { setTimeout(() => finV2DocsCargar(cliId), 0); }
+    const lista = !docs ? '<div class="nxF2Note">Cargando documentos…</div>' : docs.length ? docs.map(d => `<div class="nxF2Item"><div style="min-width:0"><div style="font-size:12px;font-weight:700">${esc(finDocTipoTxt(d.tipo))}</div><div style="font-size:10.5px;color:var(--f2-steel);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.nombre || '')} · ${finFechaCorta(d.created_at)}</div></div><div style="display:flex;gap:6px;flex:none"><button type="button" class="nxF2Btn" style="min-height:36px;padding:0 12px;font-size:12px" onclick="window.nxFinV2DocVer('${d.id}','${cliId}')"><i class="ti ti-eye"></i> Ver</button>${puedeVerMin() ? `<button type="button" class="nxF2Btn" style="min-height:36px;padding:0 10px;font-size:12px;color:#b91c1c" aria-label="Borrar documento" onclick="window.nxFinV2DocBorrar('${d.id}','${cliId}')"><i class="ti ti-trash"></i></button>` : ''}</div></div>`).join('') : '<div class="nxF2Note">Sin documentos todavía.</div>';
+    const faltan = docs ? ['cedula_frente', 'cedula_dorso'].filter(t => !docs.some(d => d.tipo === t)).map(finDocTipoTxt) : [];
+    return `<div class="nxF2Card"><div class="h">Documentos del cliente <span style="font-size:10px;color:var(--f2-steel);font-weight:700">${docs ? docs.length : ''}</span></div>
+      ${lista}
+      ${faltan.length ? `<div style="font-size:11px;color:#b45309;font-weight:700"><i class="ti ti-alert-circle"></i> Falta: ${esc(faltan.join(', '))}</div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="finDocTipo" style="flex:1;min-width:160px;min-height:40px;border:1.5px solid #e2e8f0;border-radius:10px;padding:0 10px;font-size:14px;background:#fff">${FIN_DOC_TIPOS.map(t => `<option value="${t[0]}">${esc(t[1])}</option>`).join('')}</select>
+        <label class="nxF2Btn" style="flex:1;min-width:140px;min-height:40px;font-size:13px;cursor:pointer;margin:0"><i class="ti ti-upload"></i> Subir foto o PDF<input type="file" accept="image/*,application/pdf" style="display:none" onchange="window.nxFinV2DocSubir(this,'${cliId}','${solId || ''}','${finId || ''}')"></label>
+      </div>
+      <div style="font-size:10px;color:var(--f2-steel)">En el celular puedes tomar la foto directo con la cámara. Máximo 8 MB. Los archivos son privados.</div>
+    </div>`;
+  }
+  window.nxFinV2DocSubir = async function (inp, cliId, solId, finId) {
+    const file = inp && inp.files && inp.files[0]; if (!file) return;
+    if (file.size > 8 * 1024 * 1024) { toast('err', 'Archivo muy grande', 'Máximo 8 MB'); inp.value = ''; return; }
+    if (!/^image\/|^application\/pdf$/.test(file.type || '')) { toast('err', 'Solo fotos o PDF'); inp.value = ''; return; }
+    const tipo = (document.getElementById('finDocTipo') || {}).value || 'otro';
+    const A = getAPI(); const limpio = String(file.name || 'archivo').normalize('NFD').replace(/[^\w.\-]+/g, '_').slice(-60);
+    const path = 'fin/' + cliId + '/' + Date.now() + '-' + limpio;
+    toast('info', 'Subiendo documento…', finDocTipoTxt(tipo));
+    try {
+      const r = await fetch(A.url + '/storage/v1/object/documentos/' + path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' }, body: file });
+      if (!r.ok) throw new Error('Storage ' + r.status);
+      await A.post('pos_fin_documentos', { cliente_id: cliId, solicitud_id: solId || null, financiamiento_id: finId || null, tipo: tipo, nombre: file.name || limpio, storage_path: path });
+      toast('ok', 'Documento guardado', finDocTipoTxt(tipo));
+      await finV2DocsCargar(cliId, true);
+    } catch (e) { toast('err', 'No se pudo subir', String(e && e.message || e)); }
+    inp.value = '';
+  };
+  window.nxFinV2DocVer = async function (docId, cliId) {
+    const d = (_finDocs[cliId] || []).find(x => String(x.id) === String(docId)); if (!d) return;
+    const w = window.open('', '_blank'); // abrir antes del await (Safari bloquea ventanas abiertas después)
+    try {
+      const A = getAPI();
+      const r = await fetch(A.url + '/storage/v1/object/sign/documentos/' + d.storage_path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 600 }) });
+      const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin link');
+      const url = /^https?:/.test(u) ? u : A.url + '/storage/v1' + u;
+      if (w) w.location.href = url; else window.open(url, '_blank');
+    } catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo abrir el documento', String(e && e.message || e)); }
+  };
+  window.nxFinV2DocBorrar = async function (docId, cliId) {
+    const d = (_finDocs[cliId] || []).find(x => String(x.id) === String(docId)); if (!d) return;
+    if (!confirm('¿Borrar «' + finDocTipoTxt(d.tipo) + '»? No se puede deshacer.')) return;
+    try {
+      const A = getAPI();
+      await fetch(A.url + '/storage/v1/object/documentos/' + d.storage_path, { method: 'DELETE', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) } });
+      await A.del('pos_fin_documentos', 'id=eq.' + d.id);
+      toast('ok', 'Documento borrado'); await finV2DocsCargar(cliId, true);
+    } catch (e) { toast('err', 'No se pudo borrar', String(e && e.message || e)); }
+  };
+
   function finV2AprobacionHTML() {
     const pend = _finSols.filter(s => s.estado === 'pendiente');
     const sel = _finV2SolSel ? _finSols.find(s => String(s.id) === String(_finV2SolSel)) : null;
@@ -11914,6 +11981,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxF2Line tot"><span>Capital ${r2(cap).toLocaleString('en-US')} · interés ${r2(it).toLocaleString('en-US')}</span><span class="nxF2Mono">Total ${r2(cap + it).toLocaleString('en-US')}</span></div>
         <div style="font-size:10px;color:var(--f2-steel);line-height:1.5">Los intereses se reconocen al cobrar cada cuota. La cuenta por cobrar solo lleva el capital. Mora: ${esc(finMoraTxt(pl))}.</div>
       </div>` : ''}
+      ${finV2DocsCard(s.cliente_id, s.id, s.financiamiento_id)}
       ${pendiente ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura en el POS: inicial ${r2(s.inicial).toLocaleString('en-US')} cobrada ${s.inicial_metodo === 'efectivo' ? 'en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y crédito ${r2(cap).toLocaleString('en-US')} al cliente.</span></div><div><i>2</i><span>El servidor genera el plan y las ${pl ? pl.num_cuotas : ''} cuotas con capital e interés.</span></div><div><i>3</i><span>Se congela el contrato y queda listo el link de firma (se envía solo cuando tú lo decides).</span></div></div>
         <div class="nxF2F"><label for="apNota">Nota del aprobador (opcional)</label><input id="apNota" placeholder="Ej. Verificado por teléfono con referencia"></div></div>
       <div class="nxF2Foot"><button type="button" class="nxF2Btn d" style="flex:1" onclick="window.nxFinSolRechazar('${s.id}')">Rechazar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinSolAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y facturar</button></div>`
@@ -11957,7 +12025,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const venta = f.venta_id ? (_ventas || []).find(v => String(v.id) === String(f.venta_id)) : null;
     const pagos = (_finPagos || []).filter(p => String(p.financiamiento_id) === String(f.id)).slice().sort((a, b) => String(b.created_at || b.fecha).localeCompare(String(a.created_at || a.fecha)));
     let capPend = 0, intPend = 0, moraPend = 0; cs.forEach(c => { if (c.pagado) return; const p = finV2Pend(c); capPend += p.capital; intPend += p.interes; moraPend += p.mora; });
-    const puedeFirmaLink = !!(f.firma_token && !f.firma_cliente && cli.telefono);
+    const puedeFirmaLink = !!(!f.firma_cliente && cli.telefono && f.estado === 'activo');
     const cuotaRow = c => { const p = finV2Pend(c); const at = finV2Atraso(c); const st = c.pagado ? '<span class="nxF2Badge ok">PAGADA</span>' : at > 0 ? `<span class="nxF2Badge bad">${at} d</span>` : (p.pagado.total > 0 ? '<span class="nxF2Badge warn">PARCIAL</span>' : '<span class="nxF2Badge gris">PEND.</span>'); return `<div class="nxF2Tbl nxF2Tbl6"><span>${c.numero}</span><span>${finFechaCorta(c.fecha_venc)}</span><span class="r">${r2(c.capital != null ? c.capital : c.monto).toLocaleString('en-US')}</span><span class="r m">${r2(c.interes || 0).toLocaleString('en-US')}</span><span class="r ${p.mora > 0 ? 'b' : 'm'}" style="${p.mora > 0 ? 'color:#b91c1c' : ''}">${c.pagado ? r2(finPagosCuota(c.id).mora).toLocaleString('en-US') : r2(p.mora).toLocaleString('en-US')}</span><span class="r">${st}</span></div>`; };
     const pagoRow = p => `<div class="nxF2Item" style="border-color:${p.tipo === 'reversa' ? '#fecaca' : '#f1f5f9'}"><div><div style="font-size:12px;font-weight:700">${p.tipo === 'reversa' ? 'Reversa' : 'Pago'} · cuota ${(finCuotaDe(p.cuota_id) || {}).numero || '?'} · ${esc(p.metodo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div><div style="font-size:11px;color:var(--f2-steel)">${finFechaCorta(p.fecha)} · capital ${r2(p.monto_principal).toLocaleString('en-US')} · interés ${r2(p.monto_interes || 0).toLocaleString('en-US')} · mora ${r2(p.monto_mora).toLocaleString('en-US')}${p.motivo_reversa ? ' · ' + esc(p.motivo_reversa) : ''}</div></div><div style="display:flex;align-items:center;gap:6px"><span class="nxF2Mono" style="font-size:13px;${p.tipo === 'reversa' ? 'color:#b91c1c' : ''}">${p.tipo === 'reversa' ? '−' : ''}${r2(p.monto).toLocaleString('en-US')}</span>${p.tipo === 'pago' && f.estado === 'activo' && puedeVerMin() && !pagos.some(x => x.tipo === 'reversa' && String(x.reversa_de_id) === String(p.id)) ? `<button type="button" class="x" aria-label="Reversar pago" title="Reversar" onclick="window.nxFinV2Reversar('${p.id}')"><i class="ti ti-arrow-back-up"></i></button>` : ''}</div></div>`;
     return finV2HeaderHTML((f.codigo || finRefCorta(f)), (f.cliente_nombre || '') + ' · ' + (f.descripcion || '') + (venta ? ' · factura ' + (venta.numero_factura || venta.numero) : ''), 'cartera', `<span class="nxF2Badge ${est.cls}">${est.label}</span>`) + `
@@ -11975,11 +12043,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxF2Pre">${esc(f.contrato_texto)}</div>
         <button type="button" class="nxF2Btn" style="min-height:40px;font-size:12px;color:#1d4ed8" onclick="window.nxFinV2Contrato('${f.id}')"><i class="ti ti-printer"></i> Ver completo · imprimir</button>
         <div class="nxF2G2">
-          <div class="nxF2Sig ${f.firma_cliente ? 'ok' : ''}"><span class="nxF2Lbl" style="color:${f.firma_cliente ? '#15803d' : ''}">Cliente</span>${f.firma_cliente ? `<img src="${f.firma_cliente}" alt="Firma del cliente"><span style="font-size:10px;color:var(--f2-steel)">${finFechaCorta(f.firma_cliente_en)}${f.firma_cliente_tel ? ' · ' + esc(f.firma_cliente_tel) : ''}</span>` : '<span style="font-size:11px;color:var(--f2-steel);line-height:1.4">Pendiente. Firma desde su teléfono con el link.</span>'}</div>
+          <div class="nxF2Sig ${f.firma_cliente ? 'ok' : ''}"><span class="nxF2Lbl" style="color:${f.firma_cliente ? '#15803d' : ''}">Cliente</span>${f.firma_cliente ? `<img src="${f.firma_cliente}" alt="Firma del cliente"><span style="font-size:10px;color:var(--f2-steel)">${finFechaCorta(f.firma_cliente_en)}${f.firma_cliente_tel ? ' · ' + esc(f.firma_cliente_tel) : ''}${f.firma_cliente_meta && f.firma_cliente_meta.ip ? ' · IP ' + esc(f.firma_cliente_meta.ip) : ''}${f.firma_cliente_meta && f.firma_cliente_meta.nombre_escrito ? '<br>Nombre escrito: ' + esc(f.firma_cliente_meta.nombre_escrito) : ''}</span>` : '<span style="font-size:11px;color:var(--f2-steel);line-height:1.4">Pendiente. Firma desde su teléfono con el link.</span>'}</div>
           <div class="nxF2Sig ${f.firma_tienda ? 'ok' : ''}"><span class="nxF2Lbl" style="color:${f.firma_tienda ? '#15803d' : ''}">Tienda</span>${f.firma_tienda ? `<img src="${f.firma_tienda}" alt="Firma de la tienda"><span style="font-size:10px;color:var(--f2-steel)">${esc(f.firma_tienda_por || '')} · ${finFechaCorta(f.firma_tienda_en)}</span>` : `<button type="button" class="nxF2Btn" style="min-height:36px;font-size:11px" onclick="window.nxFinV2FirmarTienda('${f.id}')"><i class="ti ti-signature"></i> Firmar</button>`}</div>
         </div>
         ${!f.firma_cliente ? `<button type="button" class="nxF2Btn wa" ${puedeFirmaLink ? '' : 'disabled'} onclick="window.nxFinV2LinkFirma('${f.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar link de firma por WhatsApp</button><div style="font-size:10px;color:var(--f2-steel);line-height:1.5">${puedeFirmaLink ? 'Abre WhatsApp con el mensaje listo; tú decides si lo envías. El link abre el contrato congelado y guarda la firma con fecha, hora y teléfono.' : (!cli.telefono ? 'El cliente no tiene teléfono registrado.' : 'Sin token de firma.')}${f.firma_token_vence ? ' Vence ' + finFechaCorta(f.firma_token_vence) + '.' : ''}</div>` : ''}
       </div>` : ''}
+      ${finV2DocsCard(f.cliente_id, f.solicitud_id, f.id)}
       ${pagos.length ? `<div class="nxF2Card"><div class="h">Pagos</div>${pagos.map(pagoRow).join('')}</div>` : ''}
       <div class="nxF2Card"><div class="h">Trazabilidad</div><div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#475569">
         <div class="nxF2Line"><span>Creado</span><span class="nxF2Mono" style="color:#94a3b8">${finFechaCorta(f.created_at)}</span></div>
@@ -11995,13 +12064,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${firmas}<script>window.print();</` + `script></body></html>`);
     w.document.close();
   };
-  window.nxFinV2LinkFirma = function (id) {
-    const f = finFinDe(id); if (!f || !f.firma_token) return;
+  window.nxFinV2LinkFirma = async function (id) {
+    const f = finFinDe(id); if (!f) return;
     const cli = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {}; const num = waNum(cli.telefono); if (!num) { toast('err', 'El cliente no tiene teléfono válido'); return; }
+    // Link vencido, bloqueado por intentos o sin token: se genera uno nuevo (el anterior deja de servir).
+    // La ventana se abre ANTES del await para que Safari no la bloquee como ventana emergente.
+    const vencido = !f.firma_token || (f.firma_token_vence && new Date(f.firma_token_vence) < new Date()) || Number(f.firma_intentos || 0) >= 5;
+    let w = null;
+    if (vencido) {
+      w = window.open('', '_blank');
+      try { const r = await finRpc('pos_fin_firma_renovar', { p_financiamiento_id: f.id }); const o = Array.isArray(r) ? r[0] : r; f.firma_token = o.token; f.firma_token_vence = o.vence; f.firma_intentos = 0; }
+      catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo crear el link nuevo', finErrTxt(e)); return; }
+    }
     const link = location.origin + '/firma-financiamiento.html?t=' + encodeURIComponent(f.firma_token);
     const msg = 'Hola ' + (f.cliente_nombre || '') + ', gracias por tu compra en ' + empNom() + '. Aquí está tu contrato de financiamiento ' + (f.codigo || '') + ' para que lo revises y firmes desde tu teléfono:\n' + link + '\n\nEl link es personal y vence ' + (f.firma_token_vence ? 'el ' + new Date(f.firma_token_vence).toLocaleDateString('es-DO') : 'pronto') + '.';
     try { window.logAudit && window.logAudit('POS_FIN_LINK_FIRMA', (f.codigo || '') + ' · ' + (f.cliente_nombre || '') + ' · abierto en WhatsApp', 'Financiamiento'); } catch (e) {}
-    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank');
+    const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+    if (w) w.location.href = url; else window.open(url, '_blank');
+    if (vencido) { toast('ok', 'Link nuevo creado', 'El anterior ya no sirve'); finV2Repintar(); }
   };
   window.nxFinV2FirmarTienda = function (id) {
     const f = finFinDe(id); if (!f) return;

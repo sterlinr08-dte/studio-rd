@@ -202,6 +202,10 @@
       ['cli_cotfalt', 'Materiales Faltantes Cotizaciones'], ['cli_taller', 'Reporte Órdenes de Servicio'], ['cli_datacr', 'Datacrédito (morosos)'],
       ['cli_pref', 'Reporte Prefactura'], ['cli_prefpend', 'Reporte Prefacturas Pendientes'], ['cli_vend', 'Reporte Ventas por Vendedor'],
       ['cli_cli', 'Reporte Ventas por Clientes'], ['cli_anul', 'Facturas Anuladas']]],
+    ['fin', 'Financiamiento', 'ti-calendar-dollar', [
+      ['fin_resumen', 'Resumen de Financiamiento'], ['fin_cartera', 'Cartera de Financiamientos'], ['fin_venc', 'Cuotas Vencidas por Antigüedad'],
+      ['fin_prox', 'Cuotas por Cobrar'], ['fin_cobros', 'Cobros de Cuotas'], ['fin_otorgados', 'Financiamientos Otorgados'],
+      ['fin_sol', 'Solicitudes de Crédito'], ['fin_firmas', 'Contratos sin Firma del Cliente']]],
     ['conta', 'Contabilidad', 'ti-notebook', [
       ['con_er', 'Estado de Resultados'], ['con_diario', 'Libro Diario'], ['con_bal', 'Balanza de Comprobación'],
       ['con_gastos', 'Gastos por Cuenta'], ['con_607', 'Formato 607 · Ventas'], ['con_606', 'Formato 606 · Compras'], ['con_itbis', 'Resumen de ITBIS']]],
@@ -234,7 +238,7 @@
   // Datos extra que solo cargan al abrir un reporte que los usa (cache por rango).
   const X = {}; let xCargando = '';
   function xKey(k) { return k + '|' + desde + '|' + hasta; }
-  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', inv_ajustes: 'kardex', inv_altabaja: 'kardex', inv_resumen: 'kardex', inv_nomov: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh', cli_nov: 'hist', cli_datacr: 'hist', cli_cot: 'cot', cli_cotfalt: 'cot', cli_pref: 'pref', cli_prefpend: 'pref', inv_desp: 'transf', inv_recep: 'transf', inv_seriales: 'seriales', inv_serdisp: 'seriales' };
+  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', inv_ajustes: 'kardex', inv_altabaja: 'kardex', inv_resumen: 'kardex', inv_nomov: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh', fin_: 'fin', cli_nov: 'hist', cli_datacr: 'hist', cli_cot: 'cot', cli_cotfalt: 'cot', cli_pref: 'pref', cli_prefpend: 'pref', inv_desp: 'transf', inv_recep: 'transf', inv_seriales: 'seriales', inv_serdisp: 'seriales' };
   function xDe(id) { for (const k in XNEED) if (id === k || (k.endsWith('_') && id.startsWith(k))) return XNEED[k]; return ''; }
   async function cargarX(k) {
     const key = xKey(k); if (X[key]) return X[key];
@@ -289,6 +293,18 @@
         pr(getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_nombre'), [])
       ]);
       r = { sers, vtas };
+    }
+    else if (k === 'fin') {
+      const [fins, cuotas, pagos, planes, sols, clientes, cfg] = await Promise.all([
+        pr(getAll('pos_financiamientos', 'select=id,codigo,venta_id,cliente_id,cliente_nombre,descripcion,monto_total,inicial,monto_financiado,interes_total,cuotas_total,frecuencia,estado,plan_id,created_at,firma_cliente_en,firma_tienda_en,firma_token_vence&order=created_at.asc'), []),
+        pr(getAll('pos_fin_cuotas', 'select=id,financiamiento_id,numero,fecha_venc,monto,capital,interes,pagado,mora_generada,mora_exenta&order=fecha_venc.asc'), []),
+        pr(getAll('pos_fin_pagos', 'select=id,financiamiento_id,cuota_id,monto,metodo,fecha,tipo,monto_principal,monto_interes,monto_mora,created_by_name&order=fecha.asc'), []),
+        pr(getAll('pos_fin_planes', 'select=id,nombre,mora_tipo,mora_valor,mora_dias_gracia'), []),
+        pr(getAll('pos_fin_solicitudes', 'select=codigo,cliente_nombre,precio_total,inicial,estado,plan_id,created_at,decidido_en,motivo_rechazo,creado_por_nombre&order=created_at.asc'), []),
+        pr(getAll('pos_clientes', 'select=id,telefono,cedula'), []),
+        pr(getAll('pos_config', 'select=mora_pct,mora_dias_gracia'), [])
+      ]);
+      r = { fins, cuotas, pagos, planes, sols, clientes, cfg: cfg[0] || {} };
     }
     X[key] = r; return r;
   }
@@ -353,6 +369,30 @@
       </div>${barra}
       ${al.length ? `<ul class="nxRpAl">${al.map(a => `<li class="${a[0]}"><i class="ti ${a[0] === 'bad' ? 'ti-alert-triangle' : a[0] === 'warn' ? 'ti-alert-circle' : 'ti-info-circle'}"></i><span>${a[1]}</span></li>`).join('')}</ul>` : ''}
     </div>`;
+  }
+
+  // ── Financiamiento: saldo por cuota con la misma regla del POS (mora → interés → capital; mora del plan con gracia) ──
+  function libroFin(x) {
+    const pgC = {}; x.pagos.forEach(p => { const s2 = p.tipo === 'reversa' ? -1 : 1; const o = pgC[p.cuota_id] = pgC[p.cuota_id] || { cap: 0, int: 0, mora: 0 }; o.cap += s2 * n(p.monto_principal); o.int += s2 * n(p.monto_interes); o.mora += s2 * n(p.monto_mora); });
+    const plan = {}; x.planes.forEach(p => { plan[p.id] = p; });
+    const fin = {}; x.fins.forEach(f => { fin[f.id] = f; });
+    const tel = {}; x.clientes.forEach(c => { tel[c.id] = c; });
+    const hoy = hoyISO();
+    const cuotas = x.cuotas.map(c => {
+      const f = fin[c.financiamiento_id] || {}; const pl = plan[f.plan_id]; const pg = pgC[c.id] || { cap: 0, int: 0, mora: 0 };
+      const capP = Math.max(0, n(c.capital != null ? c.capital : c.monto) - pg.cap), intP = Math.max(0, n(c.interes) - pg.int);
+      const venc = String(c.fecha_venc || '').slice(0, 10); const dias = !c.pagado && venc && venc < hoy ? diasEntre(venc, hoy) : 0;
+      let moraCalc = 0;
+      if (!c.pagado && dias > 0 && capP + intP > 0.01) {
+        const gr = pl ? n(pl.mora_dias_gracia) : n(x.cfg.mora_dias_gracia);
+        if (dias > gr) moraCalc = pl ? (pl.mora_tipo === 'fija' ? n(pl.mora_valor) : pl.mora_tipo === 'pct' ? n(c.monto) * n(pl.mora_valor) / 100 : 0) : n(c.monto) * n(x.cfg.mora_pct) / 100;
+      }
+      const moraTot = c.mora_exenta ? pg.mora : Math.max(n(c.mora_generada), moraCalc);
+      const moraP = c.pagado ? 0 : Math.max(0, moraTot - pg.mora);
+      return { c, f, capP: c.pagado ? 0 : capP, intP: c.pagado ? 0 : intP, moraP, dias, venc, cli: tel[f.cliente_id] || {}, pg };
+    });
+    const porFin = {}; cuotas.forEach(q => { (porFin[q.c.financiamiento_id] = porFin[q.c.financiamiento_id] || []).push(q); });
+    return { cuotas, porFin, plan, fin, tel };
   }
 
   function construir(id, C, x, rid) {
@@ -662,6 +702,72 @@
         const cols = [T('Código', { m: 1 }), T('Artículo')].concat(vc ? [$('Costo', { sum: 0 })] : []).concat([$('Contado', { sum: 0 }), $('Crédito', { sum: 0 }), $('Por mayor', { sum: 0 }), $('Mínimo', { sum: 0 })]).concat(vc ? [T('Margen', { r: 1 })] : []);
         const l = D.prods.filter(p => p.activo !== false && (!fv || p.categoria_id === fv));
         return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre].concat(vc ? [cP(p)] : []).concat([pP(p), n(p.precio_credito) * fx(p.itbis) || '', n(p.precio_mayor) * fx(p.itbis) || '', n(p.precio_minimo) * fx(p.itbis) || '']).concat(vc ? [pP(p) ? pct(pP(p) - cP(p), pP(p)) + '%' : ''] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+      }
+      case 'fin_resumen': case 'fin_cartera': {
+        const L = libroFin(x); const act = x.fins.filter(f => f.estado === 'activo');
+        const filaF = f => { const qs = L.porFin[f.id] || []; const pend = qs.filter(q => !q.c.pagado); const prox = pend[0]; const at = Math.max(0, ...pend.map(q => q.dias));
+          return { f, cap: pend.reduce((a2, q) => a2 + q.capP, 0), int: pend.reduce((a2, q) => a2 + q.intP, 0), mora: pend.reduce((a2, q) => a2 + q.moraP, 0), venc: pend.filter(q => q.dias > 0).reduce((a2, q) => a2 + q.capP + q.intP + q.moraP, 0), pag: qs.length - pend.length, tot: qs.length, prox, at }; };
+        const R2 = act.map(filaF);
+        if (id === 'fin_cartera') {
+          const cols = [T('Código', { m: 1 }), T('Cliente'), T('Plan'), T('Cuotas', { r: 1 }), $('Capital'), $('Interés'), $('Mora'), $('Total pendiente'), T('Próxima'), T('Atraso', { r: 1 })];
+          const fila = o => [o.f.codigo || '', o.f.cliente_nombre || '', (L.plan[o.f.plan_id] || {}).nombre || 'Sin plan', o.pag + '/' + o.tot, o.cap, o.int, o.mora, o.cap + o.int + o.mora, o.prox ? dmy(o.prox.venc) : '', o.at ? o.at + ' días' : 'Al día'];
+          return { cols, grupos: agrupar(R2, o => o.at > 0 ? '1 · Atrasados' : '2 · Al día', fila, cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') })), alCorte: 1, nota: 'Solo financiamientos activos. Mora calculada a hoy con la regla de cada plan (días de gracia incluidos).' };
+        }
+        const ini = desde, fin2 = hasta, enR = d => { const k = diaRD(d); return k >= ini && k <= fin2; };
+        const otor = x.fins.filter(f => enR(f.created_at));
+        const pagR = x.pagos.filter(p => enR(p.fecha)); const sg = p => p.tipo === 'reversa' ? -1 : 1;
+        const cob = { cap: 0, int: 0, mora: 0 }; pagR.forEach(p => { cob.cap += sg(p) * n(p.monto_principal); cob.int += sg(p) * n(p.monto_interes); cob.mora += sg(p) * n(p.monto_mora); });
+        const carT = R2.reduce((a2, o) => ({ cap: a2.cap + o.cap, int: a2.int + o.int, mora: a2.mora + o.mora, venc: a2.venc + o.venc, atr: a2.atr + (o.at > 0 ? 1 : 0) }), { cap: 0, int: 0, mora: 0, venc: 0, atr: 0 });
+        const k = (l, v, sub, tono) => `<div class="nxRpK${tono ? ' ' + tono : ''}"><span>${esc(l)}</span><b>${v}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+        const sinFirma = act.filter(f => !f.firma_cliente_en).length;
+        const resumen = `<div class="nxRpGan"><div class="nxRpKpis">
+          ${k('Cartera por cobrar', m2(carT.cap + carT.int), act.length + ' financiamiento(s) activos · capital ' + m2(carT.cap) + ' + interés ' + m2(carT.int), 'main')}
+          ${k('Vencido hoy', m2(carT.venc), carT.atr + ' cliente(s) atrasados · mora ' + m2(carT.mora), carT.venc > 0 ? 'bad' : 'ok')}
+          ${k('Otorgado en el rango', m2(otor.reduce((a2, f) => a2 + n(f.monto_financiado), 0)), otor.length + ' contrato(s) · interés contratado ' + m2(otor.reduce((a2, f) => a2 + n(f.interes_total), 0)), '')}
+          ${k('Cobrado en el rango', m2(cob.cap + cob.int + cob.mora), 'Capital ' + m2(cob.cap) + ' · interés ' + m2(cob.int) + ' · mora ' + m2(cob.mora), 'ok')}
+          ${k('Ganado en el rango', m2(cob.int + cob.mora), 'Interés + mora cobrados (ingreso real)', '')}
+        </div>${sinFirma ? `<ul class="nxRpAl"><li class="warn"><i class="ti ti-signature"></i><span><b>${sinFirma} contrato(s) activos sin firma del cliente.</b> Envía el link desde Cuotas → detalle del financiamiento, o mira «Contratos sin Firma del Cliente».</span></li></ul>` : ''}</div>`;
+        const cols = [T('Plan'), $('Activos', { fmt: v => String(v) }), $('Capital pendiente'), $('Interés pendiente'), $('Vencido'), $('Mora')];
+        const pp = {}; R2.forEach(o => { const nm = (L.plan[o.f.plan_id] || {}).nombre || 'Sin plan'; const a2 = pp[nm] = pp[nm] || [nm, 0, 0, 0, 0, 0]; a2[1]++; a2[2] += o.cap; a2[3] += o.int; a2[4] += o.venc; a2[5] += o.mora; });
+        return { cols, grupos: [grupo('', Object.values(pp).sort((a2, b2) => b2[2] - a2[2]), cols)], resumen, nota: 'Cartera y vencido a hoy; otorgado y cobrado según el rango de fechas. El interés se gana al cobrarlo.' };
+      }
+      case 'fin_venc': {
+        const L = libroFin(x);
+        const cols = [T('Cliente'), T('Teléfono'), T('Código', { m: 1 }), T('Cuota', { r: 1 }), T('Venció'), T('Días', { r: 1 }), $('Cuota pendiente'), $('Mora'), $('Total')];
+        const l = L.cuotas.filter(q => q.dias > 0 && q.f.estado === 'activo' && q.capP + q.intP > 0.01).sort((a2, b2) => b2.dias - a2.dias);
+        const tr = d => d > 90 ? '1 · Más de 90 días' : d > 60 ? '2 · 61 a 90 días' : d > 30 ? '3 · 31 a 60 días' : '4 · 1 a 30 días';
+        return { cols, grupos: agrupar(l, q => tr(q.dias), q => [q.f.cliente_nombre || '', q.cli.telefono || '', q.f.codigo || '', q.c.numero, dmy(q.venc), q.dias, q.capP + q.intP, q.moraP, q.capP + q.intP + q.moraP], cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') })), alCorte: 1, nota: 'Lista para cobranza: los más atrasados primero. La mora se calcula a hoy con la regla del plan.' };
+      }
+      case 'fin_prox': {
+        const L = libroFin(x);
+        const cols = [T('Cliente'), T('Teléfono'), T('Código', { m: 1 }), T('Cuota', { r: 1 }), $('Capital'), $('Interés'), $('Por cobrar')];
+        const l = L.cuotas.filter(q => !q.c.pagado && q.f.estado === 'activo' && q.venc >= desde && q.venc <= hasta);
+        return { cols, grupos: agrupar(l, q => dmy(q.venc), q => [q.f.cliente_nombre || '', q.cli.telefono || '', q.f.codigo || '', q.c.numero, q.capP, q.intP, q.capP + q.intP + q.moraP], cols, ks => ks.sort((a2, b2) => a2.split('/').reverse().join('').localeCompare(b2.split('/').reverse().join('')))), nota: 'Cuotas pendientes que vencen entre las fechas elegidas (usa «Hoy» o «7 días» para la cobranza de la semana).' };
+      }
+      case 'fin_cobros': {
+        const fin = {}; x.fins.forEach(f => { fin[f.id] = f; }); const cn = {}; x.cuotas.forEach(c => { cn[c.id] = c.numero; });
+        const l = x.pagos.filter(p => { const d = diaRD(p.fecha); return d >= desde && d <= hasta; });
+        const sg = p => p.tipo === 'reversa' ? -1 : 1;
+        const cols = [T('Fecha'), T('Código', { m: 1 }), T('Cliente'), T('Cuota', { r: 1 }), T('Tipo'), $('Capital'), $('Interés'), $('Mora'), $('Total')];
+        return { cols, grupos: agrupar(l, p => p.metodo || 'Otro', p => [dmy(p.fecha), (fin[p.financiamiento_id] || {}).codigo || '', (fin[p.financiamiento_id] || {}).cliente_nombre || '', cn[p.cuota_id] || '', p.tipo === 'reversa' ? 'Reversa' : 'Pago', sg(p) * n(p.monto_principal), sg(p) * n(p.monto_interes), sg(p) * n(p.monto_mora), sg(p) * n(p.monto)], cols, porTotalDesc(8)), nota: 'Las reversas restan. Interés y mora son ingreso; el capital solo recupera lo prestado.' };
+      }
+      case 'fin_otorgados': {
+        const cols = [T('Código', { m: 1 }), T('Fecha'), T('Cliente'), T('Artículo'), $('Precio'), $('Inicial'), $('Financiado'), $('Interés'), $('Total en cuotas')];
+        const pl = {}; x.planes.forEach(p => { pl[p.id] = p.nombre; });
+        const l = x.fins.filter(f => { const d = diaRD(f.created_at); return d >= desde && d <= hasta; });
+        return { cols, grupos: agrupar(l, f => pl[f.plan_id] || 'Sin plan', f => [f.codigo || '', dmy(f.created_at), f.cliente_nombre || '', f.descripcion || '', n(f.monto_total), n(f.inicial), n(f.monto_financiado), n(f.interes_total), n(f.monto_financiado) + n(f.interes_total)], cols, porTotalDesc(6)) };
+      }
+      case 'fin_sol': {
+        const cols = [T('Código', { m: 1 }), T('Fecha'), T('Cliente'), T('Registró'), $('Precio'), $('Inicial'), T('Decisión')];
+        const l = x.sols.filter(s2 => { const d = diaRD(s2.created_at); return d >= desde && d <= hasta; });
+        const est = { pendiente: '1 · Por aprobar', aprobada: '2 · Aprobadas', rechazada: '3 · Rechazadas', borrador: '4 · Borradores' };
+        return { cols, grupos: agrupar(l, s2 => est[s2.estado] || s2.estado, s2 => [s2.codigo || '', dmy(s2.created_at), s2.cliente_nombre || '', s2.creado_por_nombre || '', n(s2.precio_total), n(s2.inicial), s2.decidido_en ? dmy(s2.decidido_en) + (s2.motivo_rechazo ? ' · ' + s2.motivo_rechazo : '') : ''], cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') })) };
+      }
+      case 'fin_firmas': {
+        const tel = {}; x.clientes.forEach(c => { tel[c.id] = c.telefono; });
+        const cols = [T('Código', { m: 1 }), T('Cliente'), T('Teléfono'), T('Desde'), T('Link'), T('Firma tienda')];
+        const l = x.fins.filter(f => f.estado === 'activo' && !f.firma_cliente_en);
+        return { cols, grupos: [grupo('', l.map(f => [f.codigo || '', f.cliente_nombre || '', tel[f.cliente_id] || '—', dmy(f.created_at), f.firma_token_vence && new Date(f.firma_token_vence) > new Date() ? 'Vigente hasta ' + dmy(f.firma_token_vence) : 'Vencido (se crea uno nuevo al enviar)', f.firma_tienda_en ? 'Sí' : 'Falta']), cols)], alCorte: 1, nota: 'Para enviar el link: Cuotas → abre el financiamiento → «Enviar link de firma por WhatsApp». Si el link venció, el sistema crea uno nuevo.' };
       }
       case 'ganancias': {
         const L = analisisGanancia(C); const T = sumarGan(L);

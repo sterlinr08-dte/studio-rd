@@ -3541,7 +3541,7 @@
       .tots{border:1px solid var(--line);border-radius:14px;overflow:hidden}
       .tr{display:flex;justify-content:space-between;gap:10px;padding:9px 15px;font-size:13px;color:var(--mute)} .tr b{color:var(--ink);font-variant-numeric:tabular-nums}
       .tr.grand{background:var(--black);color:#fff;padding:14px 15px;align-items:baseline} .tr.grand span{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#d8d3c5}
-      .tr.grand b{color:var(--gold);font-size:24px;font-weight:800;letter-spacing:-.02em}
+      .tr.grand b{color:var(--gold);font-size:22px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
       .tr.deb{background:#fdecea} .tr.deb span,.tr.deb b{color:#b42318}
       .firma{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
       .fl{border-top:1px solid #b9b3a4;padding-top:6px;font-size:10.5px;color:var(--soft);text-align:center}
@@ -12980,13 +12980,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let capPend = 0, intPend = 0, moraPend = 0; cs.forEach(c => { if (c.pagado) return; const p = finV2Pend(c); capPend += p.capital; intPend += p.interes; moraPend += p.mora; });
     const puedeFirmaLink = !!(!f.firma_cliente && cli.telefono && f.estado === 'activo');
     const cuotaRow = c => { const p = finV2Pend(c); const at = finV2Atraso(c); const st = c.pagado ? '<span class="nxF2Badge ok">PAGADA</span>' : at > 0 ? `<span class="nxF2Badge bad">${at} d</span>` : (p.pagado.total > 0 ? '<span class="nxF2Badge warn">PARCIAL</span>' : '<span class="nxF2Badge gris">PEND.</span>'); return `<div class="nxF2Tbl nxF2Tbl6"><span>${c.numero}</span><span>${finFechaCorta(c.fecha_venc)}</span><span class="r">${r2(c.capital != null ? c.capital : c.monto).toLocaleString('en-US')}</span><span class="r m">${r2(c.interes || 0).toLocaleString('en-US')}</span><span class="r ${p.mora > 0 ? 'b' : 'm'}" style="${p.mora > 0 ? 'color:#b91c1c' : ''}">${c.pagado ? r2(finPagosCuota(c.id).mora).toLocaleString('en-US') : r2(p.mora).toLocaleString('en-US')}</span><span class="r">${st}</span></div>`; };
-    const pagoRow = p => `<div class="nxF2Item" style="border-color:${p.tipo === 'reversa' ? '#fecaca' : '#f1f5f9'}"><div><div style="font-size:12px;font-weight:700">${p.tipo === 'reversa' ? 'Reversa' : 'Pago'} · cuota ${(finCuotaDe(p.cuota_id) || {}).numero || '?'} · ${esc(p.metodo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div><div style="font-size:11px;color:var(--f2-steel)">${finFechaCorta(p.fecha)} · capital ${r2(p.monto_principal).toLocaleString('en-US')} · interés ${r2(p.monto_interes || 0).toLocaleString('en-US')} · mora ${r2(p.monto_mora).toLocaleString('en-US')}${p.motivo_reversa ? ' · ' + esc(p.motivo_reversa) : ''}</div></div><div style="display:flex;align-items:center;gap:6px"><span class="nxF2Mono" style="font-size:13px;${p.tipo === 'reversa' ? 'color:#b91c1c' : ''}">${p.tipo === 'reversa' ? '−' : ''}${r2(p.monto).toLocaleString('en-US')}</span>${p.tipo === 'pago' && f.estado === 'activo' && puedeVerMin() && !pagos.some(x => x.tipo === 'reversa' && String(x.reversa_de_id) === String(p.id)) ? `<button type="button" class="x" aria-label="Reversar pago" title="Reversar" onclick="window.nxFinV2Reversar('${p.id}')"><i class="ti ti-arrow-back-up"></i></button>` : ''}</div></div>`;
+    const pagoRow = p => `<div class="nxF2Item" style="border-color:${p.tipo === 'reversa' ? '#fecaca' : '#f1f5f9'}"><div><div style="font-size:12px;font-weight:700">${p.tipo === 'reversa' ? 'Reversa' : 'Pago'} · cuota ${(finCuotaDe(p.cuota_id) || {}).numero || '?'} · ${esc(p.metodo || '')}${p.referencia ? ' · ' + esc(p.referencia) : ''}</div><div style="font-size:11px;color:var(--f2-steel)">${finFechaCorta(p.fecha)} · capital ${r2(p.monto_principal).toLocaleString('en-US')} · interés ${r2(p.monto_interes || 0).toLocaleString('en-US')} · mora ${r2(p.monto_mora).toLocaleString('en-US')}${p.motivo_reversa ? ' · ' + esc(p.motivo_reversa) : ''}</div></div><div style="display:flex;align-items:center;gap:6px"><span class="nxF2Mono" style="font-size:13px;${p.tipo === 'reversa' ? 'color:#b91c1c' : ''}">${p.tipo === 'reversa' ? '−' : ''}${r2(p.monto).toLocaleString('en-US')}</span>${p.tipo !== 'reversa' ? `<button type="button" class="x" aria-label="Ver comprobante de pago" title="Comprobante" onclick="window.nxFinComprobante('${p.id}')"><i class="ti ti-receipt"></i></button>` : ''}${p.tipo === 'pago' && f.estado === 'activo' && puedeVerMin() && !pagos.some(x => x.tipo === 'reversa' && String(x.reversa_de_id) === String(p.id)) ? `<button type="button" class="x" aria-label="Reversar pago" title="Reversar" onclick="window.nxFinV2Reversar('${p.id}')"><i class="ti ti-arrow-back-up"></i></button>` : ''}</div></div>`;
     return finV2HeaderHTML((f.codigo || finRefCorta(f)), (f.cliente_nombre || '') + ' · ' + (f.descripcion || '') + (venta ? ' · factura ' + (venta.numero_factura || venta.numero) : ''), 'cartera', `<span class="nxF2Badge ${est.cls}">${est.label}</span>`) + `
       <div class="nxF2Card"><div class="nxF2Lbl">Capital pendiente</div><div class="nxF2Big">${fmt2(capPend)}</div>
         <div class="nxF2G3"><div class="nxF2K"><span>Interés pendiente</span><span>${r2(intPend).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Mora pendiente</span><span style="color:${moraPend > 0 ? '#b91c1c' : 'inherit'}">${r2(moraPend).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Plan</span><span style="font-family:inherit">${pl ? esc(pl.nombre) : 'Sin plan (legado)'}</span></div></div>
         <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2K"><span>Precio</span><span>${r2(f.monto_total).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Inicial</span><span>${r2(f.inicial).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Capital · interés</span><span>${r2(f.monto_financiado).toLocaleString('en-US')} · ${r2(f.interes_total || 0).toLocaleString('en-US')}</span></div></div>
         ${f.estado === 'activo' && prox ? `<button type="button" class="nxF2Btn p" onclick="window.nxFinV2Cobrar('${f.id}')"><i class="ti ti-cash"></i> Cobrar cuota ${prox.numero} · ${fmt2(finV2Pend(prox).total)}</button>` : ''}
-        ${f.cliente_id ? `<button type="button" class="nxF2Btn" onclick="window.nxFinHistCredito('${f.cliente_id}')"><i class="ti ti-history"></i> Historial crediticio del cliente</button>` : ''}
+        <div class="nxF2G2"><button type="button" class="nxF2Btn" onclick="window.nxFinEstadoCuenta('${f.id}')"><i class="ti ti-file-text"></i> Estado de cuenta</button>${f.cliente_id ? `<button type="button" class="nxF2Btn" onclick="window.nxFinHistCredito('${f.cliente_id}')"><i class="ti ti-history"></i> Historial crediticio</button>` : ''}</div>
       </div>
       <div class="nxF2Card"><div class="h">Cuotas <span style="font-size:10px;color:var(--f2-steel);font-weight:700">${cs.filter(c => c.pagado).length}/${cs.length} pagadas</span></div>
         <div class="nxF2Tbl nxF2Tbl6 hd"><span>#</span><span>Vence</span><span class="r">Capital</span><span class="r">Interés</span><span class="r">Mora</span><span class="r">Estado</span></div>
@@ -13129,16 +13129,176 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const btn = document.getElementById('fpGo'); if (btn) btn.disabled = true;
     try {
       const metodoTxt = st.metodo === 'efectivo' ? 'Efectivo' : st.metodo === 'tarjeta' ? 'Tarjeta' : 'Transferencia';
-      const pagoId = await finRpc('pos_fin_registrar_pago_v2', { p_financiamiento_id: f.id, p_cuota_id: c.id, p_monto: monto, p_metodo: metodoTxt, p_referencia: (val('fpRef') || '').trim() || null, p_operacion_id: finUuid(), p_created_by_name: nomAdmin(), p_cuenta_bancaria_id: cta });
+      const _opId = finUuid();
+      const pagoId = await finRpc('pos_fin_registrar_pago_v2', { p_financiamiento_id: f.id, p_cuota_id: c.id, p_monto: monto, p_metodo: metodoTxt, p_referencia: (val('fpRef') || '').trim() || null, p_operacion_id: _opId, p_created_by_name: nomAdmin(), p_cuenta_bancaria_id: cta });
       await finV2RecargarLedger();
       const c2 = finCuotaDe(c.id); const f2 = finFinDe(f.id);
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · ' + (f.codigo || '') + ' · cuota ' + c.numero + '/' + f.cuotas_total + ' · ' + fmt2(monto) + ' · ' + metodoTxt + ((c2 && c2.pagado) ? '' : ' (parcial)'), 'Financiamiento'); } catch (e) {}
       cerrarModal('nxFinM'); toast('ok', (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', fmt2(monto) + ((f2 && f2.estado === 'saldado') ? ' · ¡PLAN SALDADO!' : ''));
       _finV2Vista = 'detalle'; _finV2Sel = f.id; finV2Repintar();
       try { if (typeof _cajaTot !== 'undefined' && _caja) _cajaTot = await totalesCaja(_caja); } catch (e) {}
+      // Comprobante de pago (fase 4 NEXUS): se ofrece al terminar; abrirlo es un toque del usuario (Safari no lo bloquea).
+      const _pid = (typeof pagoId === 'string') ? pagoId : (pagoId && (pagoId.id || pagoId.pago_id)) || null;
+      const _pg = (_pid ? (_finPagos || []).find(x => String(x.id) === String(_pid)) : null)
+        || (_finPagos || []).find(x => x.operacion_id && String(x.operacion_id) === String(_opId))
+        || (_finPagos || []).filter(x => String(x.cuota_id) === String(c.id) && x.tipo !== 'reversa').sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0] || null;
+      if (_pg && window.nxReciboAnimado) {
+        window.nxReciboAnimado({ empresa: empNom(), titulo: (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', cliente: f.cliente_nombre || '', monto: monto,
+          filas: [{ label: 'Cuota', valor: c.numero + ' de ' + (f.cuotas_total || cuotasDe(f.id).length) }, { label: 'Balance actual', valor: fmt2(finSaldoTrasPago(f2 || f, _pg)) }], folio: finRecFolio(_pg)
+        }, [{ label: 'Ver comprobante', icon: 'ti-receipt', onclick: () => window.nxFinComprobante(_pg.id) }, { label: 'Estado de cuenta', icon: 'ti-file-text', onclick: () => window.nxFinEstadoCuenta(f.id) }]);
+      }
     } catch (e) { if (btn) btn.disabled = false; toast('err', 'No se pudo registrar el cobro', finErrTxt(e)); }
   };
 
+  // ══ Fase 4 (réplica NEXUS PRO): COMPROBANTE DE PAGO y ESTADO DE CUENTA ═════════════════════
+  // Comprobante = diseño COMPROBANTE_PAGO_V1 de NEXUS (folio REC-, balance anterior/actual, monto en
+  // letras, método, firmas, WhatsApp) con la marca STUDIO. STUDIO sí guarda el desglose por pago
+  // (capital / interés / mora) y las reversas, así que el recibo lo muestra — NEXUS no podía.
+  function finNumLetras(n) {
+    n = Math.floor(Math.abs(Number(n) || 0)); if (n === 0) return 'CERO';
+    const U = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE', 'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE', 'VEINTE'];
+    const D = ['', '', '', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+    const C = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+    const m100 = x => x <= 20 ? U[x] : x < 30 ? 'VEINTI' + U[x - 20] : D[Math.floor(x / 10)] + (x % 10 ? ' Y ' + U[x % 10] : '');
+    const m1000 = x => x === 100 ? 'CIEN' : ((Math.floor(x / 100) ? C[Math.floor(x / 100)] + ' ' : '') + (x % 100 ? m100(x % 100) : '')).trim();
+    const mill = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), cien = n % 1000; let t = '';
+    if (mill) t += (mill === 1 ? 'UN MILLÓN' : m1000(mill) + ' MILLONES') + ' ';
+    if (miles) t += (miles === 1 ? 'MIL' : m1000(miles) + ' MIL') + ' ';
+    if (cien) t += m1000(cien);
+    return t.trim();
+  }
+  function finMontoLetras(m) { const w = finNumLetras(Math.floor(m)); const c = Math.round((m - Math.floor(m)) * 100); return w.charAt(0) + w.slice(1).toLowerCase() + ' pesos dominicanos' + (c ? ' con ' + String(c).padStart(2, '0') + '/100' : ''); }
+  function finFechaDoc(iso) { const x = String(iso || '').slice(0, 10); return /^\d{4}-\d{2}-\d{2}$/.test(x) ? x.split('-').reverse().join('/') : (x || '—'); }
+  function finRecFolio(p) { return 'REC-' + String(p.id || '').replace(/-/g, '').slice(0, 6).toUpperCase(); }
+  function finFechaHora(s) { try { const d = new Date(s); if (isNaN(d)) return String(s || ''); return d.toLocaleString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return String(s || ''); } }
+  function finAbrirDoc(html, aviso) { try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes', aviso || ''); return; } w.document.write(html); w.document.close(); } catch (e) {} }
+  // Saldo (capital + interés, sin mora) del plan justo DESPUÉS de un pago, contando reversas.
+  function finSaldoTrasPago(f, pago) {
+    const plan = r2(Number(f.monto_financiado || 0) + Number(f.interes_total || 0));
+    const hasta = String(pago.created_at || pago.fecha || '');
+    const cum = finPagosDeFin(f.id).filter(q => String(q.created_at || q.fecha || '') <= hasta).reduce((s, q) => s + (q.tipo === 'reversa' ? -1 : 1) * (Number(q.monto_principal || 0) + Number(q.monto_interes || 0)), 0);
+    return Math.max(0, r2(plan - cum));
+  }
+  window.nxFinComprobante = function (pagoId) {
+    const p = (_finPagos || []).find(x => String(x.id) === String(pagoId)); if (!p) { toast('err', 'No se encontró el pago'); return; }
+    const f = finFinDe(p.financiamiento_id); if (!f) { toast('err', 'No se encontró el financiamiento'); return; }
+    const e = facEmpresa(); const cli = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {};
+    const cuota = finCuotaDe(p.cuota_id) || {}; const cs = cuotasDe(f.id);
+    const monto = Number(p.monto || 0), cap = Number(p.monto_principal || 0), int = Number(p.monto_interes || 0), mora = Number(p.monto_mora || 0);
+    const balAct = finSaldoTrasPago(f, p), balAnt = r2(balAct + cap + int);
+    const revertido = (_finPagos || []).some(x => String(x.reversa_de_id) === String(p.id));
+    const folio = finRecFolio(p); const fh = finFechaHora(p.created_at || p.fecha);
+    const ultimo = finPagosDeFin(f.id).filter(x => x.tipo !== 'reversa').every(x => String(x.created_at || '') <= String(p.created_at || ''));
+    const prox = cs.find(c => !c.pagado);
+    const qrSvg = docQRsvg('recibo', p.id);
+    const letras = finMontoLetras(monto);
+    const METS = ['Efectivo', 'Transferencia', 'Tarjeta'];
+    const met = String(p.metodo || 'Efectivo'); const metOn = METS.find(m => m.toLowerCase() === met.toLowerCase());
+    const mets = METS.map(m => `<span class="met${m === metOn ? ' on' : ''}">${m}${m === metOn ? ' ✓' : ''}</span>`).join('') + (!metOn ? `<span class="met on">${esc(met)} ✓</span>` : '');
+    const num = waNum(cli.telefono);
+    const waMsg = `*COMPROBANTE DE PAGO* — ${e.nom}\n${folio}\n\nCliente: ${f.cliente_nombre || ''}\nFinanciamiento: ${f.codigo || ''} · cuota ${cuota.numero || '?'} de ${cs.length}\nMonto recibido: ${fmt2(monto)}\n(${letras})\nMétodo: ${met}\nFecha: ${fh}\nBalance actual: ${fmt2(balAct)}\n\nVerifícalo aquí: ${docVerifUrl('recibo', p.id)}\n\nGracias por su pago.`;
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante ${folio}</title><style>${DOC_CSS}
+      .monto{border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;background:#faf8f2}
+      .monto .lab{color:var(--gold-d)} .monto b{display:block;font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+      .monto p{font-size:11.5px;color:var(--mute);margin-top:4px}
+      .mets{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px} .met{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;color:var(--soft)} .met.on{border-color:var(--black);background:var(--black);color:#fff}
+      .kv{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:5px 0;border-bottom:1px solid var(--line2)} .kv:last-child{border-bottom:0} .kv span{color:var(--mute)} .kv b{font-variant-numeric:tabular-nums;text-align:right}
+      .rev{margin:0 32px 0;border:2px solid #b42318;color:#b42318;text-align:center;font-weight:800;letter-spacing:.2em;padding:6px;border-radius:8px}
+      @media print{@page{size:letter;margin:10mm}}
+      </style></head><body>
+      <div class="bar"><button type="button" id="bX">✕ Cerrar</button><button type="button" class="pr" id="bP">Imprimir / PDF</button>${num ? '<button type="button" class="wa" id="bW">WhatsApp</button>' : ''}</div>
+      <div class="doc">
+        <div class="top">
+          <div class="brand"><div class="logo">${esc(String(e.nom || 'S').trim().charAt(0).toUpperCase())}</div><div style="min-width:0"><div class="emp" style="text-transform:uppercase;letter-spacing:.08em">${esc(e.nom)}</div><div class="empsub">${[e.rnc ? 'RNC ' + esc(e.rnc) : '', e.dir ? esc(e.dir) : '', e.tel ? 'Tel. ' + esc(e.tel) : ''].filter(Boolean).join('<br>') || 'Financiamiento'}</div></div></div>
+          <div class="idoc"><div class="tipo">Comprobante de pago</div><div class="num">${folio}</div><div class="ncf">Financiamiento <b>${esc(f.codigo || '')}</b></div><div class="est ${revertido ? 'anul' : 'ok'}">${revertido ? 'ANULADO (REVERSADO)' : 'REGISTRADO'}</div></div>
+        </div>
+        <div class="strip"><div><div class="lab">Fecha y hora</div><div class="val">${esc(fh)}</div></div><div><div class="lab">Recibido por</div><div class="val">${esc(p.created_by_name || '—')}</div></div><div><div class="lab">Cuota</div><div class="val">${cuota.numero || '?'} de ${cs.length}${cuota.fecha_venc ? ' · vence ' + esc(finFechaDoc(cuota.fecha_venc)) : ''}</div></div>${p.referencia ? `<div><div class="lab">Referencia</div><div class="val">${esc(p.referencia)}</div></div>` : ''}</div>
+        <div class="body">
+          <div class="partes">
+            <div class="pc"><div class="lab">Cliente</div><div class="pnom">${esc(f.cliente_nombre || cli.nombre || '')}</div><div class="pdet">${[cli.cedula ? 'Cédula ' + esc(cli.cedula) : '', cli.telefono ? esc(cli.telefono) : ''].filter(Boolean).join(' · ')}${cli.direccion ? '<br>' + esc(cli.direccion) : ''}</div></div>
+            <div class="pc"><div class="lab">Financiamiento</div><div class="pnom" style="font-size:13.5px">${esc(f.descripcion || f.codigo || '')}</div>
+              <div class="kv"><span>Monto financiado</span><b>${fmt2(f.monto_financiado)}</b></div>
+              <div class="kv"><span>Balance anterior</span><b>${fmt2(balAnt)}</b></div>
+              <div class="kv"><span>Balance actual</span><b style="color:#15803d">${fmt2(balAct)}</b></div>
+              ${ultimo && prox ? `<div class="kv"><span>Próxima cuota</span><b>${prox.numero} · ${esc(finFechaDoc(prox.fecha_venc))}</b></div>` : ''}
+              ${ultimo && !prox ? `<div class="kv"><span>Estado</span><b style="color:#15803d">SALDADO</b></div>` : ''}
+            </div>
+          </div>
+          ${revertido ? '<div class="rev" style="margin:0 0 14px">ESTE PAGO FUE REVERSADO — NO TIENE VALIDEZ</div>' : ''}
+          <div class="pie" style="margin-top:0">
+            <div>
+              <div class="monto"><div class="lab">Monto recibido</div><b>${fmt2(monto)}</b><p>${esc(letras)}</p></div>
+              <div class="lab" style="margin-top:14px">Método de pago</div><div class="mets">${mets}</div>
+              ${qrSvg ? `<div class="qr" style="margin-top:14px"><div class="q">${qrSvg}</div><div><b>Verifica este recibo</b><p>Escanea el código con tu teléfono para confirmar que el pago está registrado.</p></div></div>` : ''}
+            </div>
+            <div class="tots">
+              <div class="tr"><span>Aplicado a capital</span><b>${fmt2(cap)}</b></div>
+              <div class="tr"><span>Aplicado a interés</span><b>${fmt2(int)}</b></div>
+              <div class="tr"><span>Mora</span><b>${fmt2(mora)}</b></div>
+              <div class="tr grand"><span>Total pagado</span><b>${fmt2(monto)}</b></div>
+              <div class="tr"><span>${cuota.pagado ? 'Cuota ' + (cuota.numero || '') : 'Queda de la cuota'}</span><b>${cuota.pagado ? 'SALDADA' : fmt2(finV2Pend(cuota).total)}</b></div>
+            </div>
+          </div>
+          <div class="firma"><div class="fl">${esc(p.created_by_name || '')}<br>Recibido por</div><div class="fl">${esc(f.cliente_nombre || '')}<br>Firma del cliente</div></div>
+        </div>
+        <div class="foot"><span>El No. ${folio} identifica este recibo en el sistema. No es un comprobante fiscal.</span><span>Impreso el ${esc(fechaDMY(new Date().toISOString()))}</span></div>
+      </div>
+      <script>
+        document.getElementById('bX').addEventListener('click',function(){window.close()});
+        document.getElementById('bP').addEventListener('click',function(){window.print()});
+        var wa=document.getElementById('bW'); if(wa) wa.addEventListener('click',function(){ window.open('https://wa.me/${num}?text='+encodeURIComponent(${JSON.stringify(waMsg).replace(/</g, '\\u003c')}),'_blank'); });
+      <\/script></body></html>`;
+    finAbrirDoc(html, 'para ver el comprobante');
+  };
+  // Estado de cuenta del financiamiento (NEXUS nxPrestamoEstadoCuenta, ampliado con cuotas y desglose real).
+  window.nxFinEstadoCuenta = function (finId) {
+    const f = finFinDe(finId); if (!f) return;
+    const e = facEmpresa(); const cli = _clientes.find(c => String(c.id) === String(f.cliente_id)) || {};
+    const pl = finPlanDe(f); const cs = cuotasDe(f.id); const est = finV2EstadoFin(f);
+    const pagos = finPagosDeFin(f.id).slice().sort((a, b) => String(a.created_at || a.fecha).localeCompare(String(b.created_at || b.fecha)));
+    const sg = q => q.tipo === 'reversa' ? -1 : 1;
+    const pagCap = pagos.reduce((s, q) => s + sg(q) * Number(q.monto_principal || 0), 0), pagInt = pagos.reduce((s, q) => s + sg(q) * Number(q.monto_interes || 0), 0), pagMora = pagos.reduce((s, q) => s + sg(q) * Number(q.monto_mora || 0), 0);
+    let pCap = 0, pInt = 0, pMora = 0, venc = 0; cs.forEach(c => { if (c.pagado) return; const pp = finV2Pend(c); pCap += pp.capital; pInt += pp.interes; pMora += pp.mora; if (finV2Atraso(c) > 0) venc += pp.total; });
+    const saldo = r2(pCap + pInt + pMora); const prox = cs.find(c => !c.pagado);
+    const filasC = cs.map(c => { const pp = finV2Pend(c); const at = finV2Atraso(c); const pg = finPagosCuota(c.id); const st = c.pagado ? '<span class="chip gar">PAGADA</span>' : at > 0 ? `<span class="chip" style="background:#fdecea;color:#b42318">VENCIDA ${at} d</span>` : pg.total > 0 ? '<span class="chip">PARCIAL</span>' : '<span class="chip">PENDIENTE</span>';
+      return `<tr><td class="n">${c.numero}</td><td>${esc(finFechaDoc(c.fecha_venc))}</td><td class="r">${fmt2(Number(c.capital || 0) + Number(c.interes || 0))}</td><td class="r">${fmt2(pg.total)}</td><td class="r b">${c.pagado ? '—' : fmt2(pp.total)}</td><td>${st}</td></tr>`; }).join('');
+    const filasP = pagos.map(q => `<tr${q.tipo === 'reversa' ? ' style="color:#b42318"' : ''}><td>${esc(finFechaDoc(q.fecha || q.created_at))}</td><td>${q.tipo === 'reversa' ? 'Reversa' : finRecFolio(q)}</td><td>${(finCuotaDe(q.cuota_id) || {}).numero || '?'}</td><td>${esc(q.metodo || '')}</td><td class="r">${fmt2(sg(q) * Number(q.monto_principal || 0))}</td><td class="r">${fmt2(sg(q) * Number(q.monto_interes || 0))}</td><td class="r">${fmt2(sg(q) * Number(q.monto_mora || 0))}</td><td class="r b">${fmt2(sg(q) * Number(q.monto || 0))}</td></tr>`).join('');
+    const num = waNum(cli.telefono);
+    const waMsg = `*ESTADO DE CUENTA* — ${e.nom}\nFinanciamiento ${f.codigo || ''} · ${f.descripcion || ''}\nCliente: ${f.cliente_nombre || ''}\nCorte: ${finFechaDoc(hoyISOPos())}\n\nCuotas pagadas: ${cs.filter(c => c.pagado).length} de ${cs.length}\nTotal pagado: ${fmt2(pagCap + pagInt + pagMora)}\nSaldo pendiente: ${fmt2(saldo)}${venc > 0 ? '\nVencido: ' + fmt2(venc) : ''}${prox ? '\nPróxima cuota: ' + prox.numero + ' · ' + finFechaDoc(prox.fecha_venc) + ' · ' + fmt2(finV2Pend(prox).total) : ''}`;
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estado de cuenta ${esc(f.codigo || '')}</title><style>${DOC_CSS}
+      h3{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:20px 0 8px}
+      .res{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+      </style></head><body>
+      <div class="bar"><button type="button" id="bX">✕ Cerrar</button><button type="button" class="pr" id="bP">Imprimir / PDF</button>${num ? '<button type="button" class="wa" id="bW">WhatsApp</button>' : ''}</div>
+      <div class="doc">
+        <div class="top">
+          <div class="brand"><div class="logo">${esc(String(e.nom || 'S').trim().charAt(0).toUpperCase())}</div><div style="min-width:0"><div class="emp" style="text-transform:uppercase;letter-spacing:.08em">${esc(e.nom)}</div><div class="empsub">${[e.rnc ? 'RNC ' + esc(e.rnc) : '', e.dir ? esc(e.dir) : '', e.tel ? 'Tel. ' + esc(e.tel) : ''].filter(Boolean).join('<br>') || 'Financiamiento'}</div></div></div>
+          <div class="idoc"><div class="tipo">Estado de cuenta</div><div class="num">${esc(f.codigo || '')}</div><div class="ncf">Corte al <b>${esc(finFechaDoc(hoyISOPos()))}</b></div><div class="est ${est.cls === 'bad' ? 'anul' : est.cls === 'ok' ? 'ok' : 'prev'}">${esc(est.label)}</div></div>
+        </div>
+        <div class="strip"><div><div class="lab">Plan</div><div class="val">${esc(pl ? pl.nombre : '—')}</div></div><div><div class="lab">Cuotas pagadas</div><div class="val">${cs.filter(c => c.pagado).length} de ${cs.length}</div></div><div><div class="lab">Próxima cuota</div><div class="val">${prox ? prox.numero + ' · ' + esc(finFechaDoc(prox.fecha_venc)) : '—'}</div></div><div><div class="lab">Desde</div><div class="val">${esc(finFechaDoc(f.created_at))}</div></div></div>
+        <div class="body">
+          <div class="partes">
+            <div class="pc"><div class="lab">Cliente</div><div class="pnom">${esc(f.cliente_nombre || cli.nombre || '')}</div><div class="pdet">${[cli.cedula ? 'Cédula ' + esc(cli.cedula) : '', cli.telefono ? esc(cli.telefono) : ''].filter(Boolean).join(' · ')}${cli.direccion ? '<br>' + esc(cli.direccion) : ''}</div></div>
+            <div class="pc"><div class="lab">Compra financiada</div><div class="pnom" style="font-size:13.5px">${esc(f.descripcion || '')}</div><div class="pdet">Precio ${fmt2(f.monto_total)} · inicial ${fmt2(f.inicial)}<br>Financiado ${fmt2(f.monto_financiado)} · interés ${fmt2(f.interes_total || 0)}</div></div>
+          </div>
+          <div class="res">
+            <div class="tots"><div class="tr"><span>Pagado a capital</span><b>${fmt2(pagCap)}</b></div><div class="tr"><span>Pagado a interés</span><b>${fmt2(pagInt)}</b></div><div class="tr"><span>Mora pagada</span><b>${fmt2(pagMora)}</b></div><div class="tr" style="border-top:1px solid var(--line)"><span><b style="color:var(--ink)">Total pagado</b></span><b>${fmt2(pagCap + pagInt + pagMora)}</b></div></div>
+            <div class="tots"><div class="tr"><span>Capital pendiente</span><b>${fmt2(pCap)}</b></div><div class="tr"><span>Interés pendiente</span><b>${fmt2(pInt)}</b></div><div class="tr"><span>Mora pendiente</span><b>${fmt2(pMora)}</b></div><div class="tr grand"><span>Saldo</span><b>${fmt2(saldo)}</b></div>${venc > 0 ? `<div class="tr deb"><span>Vencido a hoy</span><b>${fmt2(venc)}</b></div>` : ''}</div>
+          </div>
+          <h3>Cuotas</h3>
+          <table><thead><tr><th>#</th><th>Vence</th><th class="r">Cuota</th><th class="r">Pagado</th><th class="r">Pendiente</th><th>Estado</th></tr></thead><tbody>${filasC || '<tr><td colspan="6">Sin cuotas</td></tr>'}</tbody></table>
+          <h3>Pagos (${pagos.length})</h3>
+          <table><thead><tr><th>Fecha</th><th>Recibo</th><th>Cuota</th><th>Método</th><th class="r">Capital</th><th class="r">Interés</th><th class="r">Mora</th><th class="r">Total</th></tr></thead><tbody>${filasP || '<tr><td colspan="8" style="color:#8f8a7e">Todavía no hay pagos registrados.</td></tr>'}</tbody></table>
+        </div>
+        <div class="foot"><span>Refleja los pagos registrados hasta la fecha de corte. La mora pendiente se calcula al día de hoy según el plan.</span><span>Impreso el ${esc(fechaDMY(new Date().toISOString()))}</span></div>
+      </div>
+      <script>
+        document.getElementById('bX').addEventListener('click',function(){window.close()});
+        document.getElementById('bP').addEventListener('click',function(){window.print()});
+        var wa=document.getElementById('bW'); if(wa) wa.addEventListener('click',function(){ window.open('https://wa.me/${num}?text='+encodeURIComponent(${JSON.stringify(waMsg).replace(/</g, '\\u003c')}),'_blank'); });
+      <\/script></body></html>`;
+    finAbrirDoc(html, 'para ver el estado de cuenta');
+  };
   // ── Venta a crédito desde Factura: plan + primera cuota, creación por RPC ──────────────────
   function finV2CobroCfg(c, activo) {
     const box = document.getElementById('finV2Cfg'); const leg = document.getElementById('finLegacyCfg'); const pv = document.getElementById('finPrev');

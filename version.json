@@ -1,7 +1,16 @@
 {
-  "version": "59.17",
+  "version": "59.18",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.18",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento: comprobante de pago por cada cuota o abono (folio REC-, monto en letras, balance anterior y actual, cuánto fue a capital, interés y mora, método, firmas y QR de verificación). Se ofrece al cobrar y también desde cada pago.",
+        "Estado de cuenta del financiamiento: pagado y pendiente (capital, interés y mora), saldo, vencido, todas las cuotas con su estado y todos los pagos con su recibo.",
+        "Ambos se imprimen, se guardan en PDF o se abren en WhatsApp del cliente (tú decides si lo envías)."
+      ]
+    },
     {
       "version": "59.17",
       "fecha": "2026-09-24",

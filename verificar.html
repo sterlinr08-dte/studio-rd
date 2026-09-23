@@ -40,7 +40,8 @@ body{font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-ser
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec';
   var q = new URLSearchParams(location.search), tipo = q.get('t') || 'factura', id = q.get('d') || '';
   var card = document.getElementById('card');
-  var TIT = { factura: 'Factura', prefactura: 'Prefactura', cotizacion: 'Cotización' };
+  var TIT = { factura: 'Factura', prefactura: 'Prefactura', cotizacion: 'Cotización', recibo: 'Recibo de pago' };
+  var MASC = { recibo: true };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]; }); }
   function money(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function fecha(s) { try { return new Date(s).toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
@@ -55,13 +56,13 @@ body{font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-ser
       document.getElementById('emp').textContent = String(d.empresa || 'STUDIO').toUpperCase();
       document.getElementById('ini').textContent = String(d.empresa || 'S').trim().charAt(0).toUpperCase();
       var anul = d.estado === 'anulada';
-      card.innerHTML = '<div class="st ' + (anul ? 'bad' : 'ok') + '">' + (anul ? ICO.bad + ' ' + (TIT[d.tipo] || 'Documento') + ' ANULADA' : ICO.ok + ' ' + (TIT[d.tipo] || 'Documento') + ' auténtica') + '</div>'
+      card.innerHTML = '<div class="st ' + (anul ? 'bad' : 'ok') + '">' + (anul ? ICO.bad + ' ' + (TIT[d.tipo] || 'Documento') + (MASC[d.tipo] ? ' ANULADO' : ' ANULADA') : ICO.ok + ' ' + (TIT[d.tipo] || 'Documento') + (MASC[d.tipo] ? ' auténtico' : ' auténtica')) + '</div>'
         + '<div class="row"><span>Número</span><b>' + esc(d.numero) + '</b></div>'
         + (d.ncf ? '<div class="row"><span>NCF</span><b>' + esc(d.ncf) + '</b></div>' : '')
         + '<div class="row"><span>Fecha</span><b>' + esc(fecha(d.fecha)) + '</b></div>'
         + '<div class="row"><span>Cliente</span><b>' + esc(d.cliente) + '</b></div>'
         + (d.itbis != null ? '<div class="row"><span>ITBIS</span><b>' + money(d.itbis) + '</b></div>' : '')
-        + '<div class="row tot"><span>Total</span><b>' + money(d.total) + '</b></div>'
+        + '<div class="row tot"><span>' + (d.tipo === 'recibo' ? 'Monto pagado' : 'Total') + '</span><b>' + money(d.total) + '</b></div>'
         + (d.tipo !== 'factura' ? '<p style="font-size:12px;color:#5b5951;margin-top:12px">Documento no fiscal: no es una factura.</p>' : '');
     })
     .catch(function () { card.innerHTML = '<div class="st nf">No se pudo verificar ahora</div><p style="font-size:14px;color:#5b5951">Revisa tu conexión e intenta de nuevo.</p>'; });

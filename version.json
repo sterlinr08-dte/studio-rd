@@ -1,7 +1,16 @@
 {
-  "version": "59.24",
+  "version": "59.25",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.25",
+      "fecha": "2026-09-24",
+      "notas": [
+        "CRM nuevo: tablero por etapas (arrastrar y soltar), ficha con notas, llamadas, visitas y tareas con fecha, historial automático y motivo de pérdida.",
+        "Cotizar y Facturar desde la oportunidad la enlazan sola; tareas vencidas y de hoy en Avisos; reportes de conversión, por vendedor y por fuente.",
+        "Cada vendedor ve sus oportunidades y las libres; el administrador y el gerente ven todo."
+      ]
+    },
     {
       "version": "59.24",
       "fecha": "2026-09-24",

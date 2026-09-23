@@ -1,7 +1,16 @@
 {
-  "version": "59.26",
+  "version": "59.27",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.27",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Factura: Anular siempre visible en la barra; sin factura en pantalla, te pregunta cuál anular.",
+        "Factura: el cuadro de acciones ahora avisa lo importante (precio bajo costo o mínimo, deuda o prefactura del cliente, ventas en espera) y sugiere lo que suelen llevar junto.",
+        "Factura: nueva acción «En espera» y el cuadro «Facturar a» ya no se aplasta en iPad."
+      ]
+    },
     {
       "version": "59.26",
       "fecha": "2026-09-25",

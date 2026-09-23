@@ -58,7 +58,7 @@
   let _ncfSecs = [];
   let _vendedores = [];
   let _acceso = [], _rolPreview = '';
-  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['reacond', 'Reacondicionado'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['ia', 'IA NEXUS'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
+  const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['reacond', 'Reacondicionado'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
@@ -79,6 +79,9 @@
   function puedeVer(mod) {
     const r = rolEfectivo();
     if (mod === 'reacond' && _posCfg.reacondicionado !== true) return false;
+    // STUDIO: el módulo «IA NEXUS» se retiró por decisión del dueño (2026-09-23). Oculto en menú, Inicio,
+    // buscador y accesos; su código queda intacto por si se reactiva (borrar esta línea).
+    if (mod === 'ia') return false;
     if (r === 'admin') return true;
     const a = (_acceso || []).find(x => x.rol === r);
     if (!a) { const d = ROLES_DEF.find(x => x[0] === r); return d ? d[2].indexOf(mod) >= 0 : true; }

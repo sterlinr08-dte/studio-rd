@@ -1,7 +1,17 @@
 {
-  "version": "59.12",
+  "version": "59.13",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.13",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Los botones inteligentes ahora también están en Prefactura, Cotización, Recibir equipo (reparación), Nota de crédito, Apartado y Nueva compra: cada ventana lleva solo los que tienen sentido para ese documento.",
+        "Guardar+WhatsApp envía al cliente su prefactura, cotización, orden de reparación, nota de crédito o apartado con el detalle (tú le das enviar; nada sale solo).",
+        "Debajo de los botones se lee qué hace cada uno; si falta algo, el botón te lleva a completarlo. Atajos F4, F6, F7 y F8 en todas estas ventanas.",
+        "Arreglo: al imprimir desde «Guardar+Imprimir» a veces la ventana se quedaba en «Preparando…»; ahora muestra el documento."
+      ]
+    },
     {
       "version": "59.12",
       "fecha": "2026-09-23",

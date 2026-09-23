@@ -2399,7 +2399,11 @@
   function facAbrirVentana(txt) {
     try {
       const w = window.open('', '_blank');
-      if (w) w.document.write('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STUDIO</title><body style="margin:0;font:15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center;height:90vh;color:#555;background:#faf9f6">' + esc(txt || 'Preparando…') + '</body>');
+      if (w) {
+        w.document.write('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STUDIO</title><body style="margin:0;font:15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center;height:90vh;color:#555;background:#faf9f6">' + esc(txt || 'Preparando…') + '</body>');
+        // Cerrar el flujo: así el documento real (ticket/factura) REEMPLAZA este aviso en vez de pegarse debajo.
+        w.document.close();
+      }
       return w;
     } catch (e) { return null; }
   }
@@ -2462,9 +2466,7 @@
     var pre = esPreTab(), dis = _cart.length ? '' : 'disabled';
     var html;
     if (pre) {
-      html = '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar prefactura"><i class="ti ti-x"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar(true)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
-        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>';
+      html = docBarraHTML('pref', totales().total);
     } else {
       var t = totales();
       html = '<button type="button" class="fbC fbMas" onclick="window.nxFacAccHoja()" aria-label="Todas las acciones" aria-haspopup="dialog"><i class="ti ti-dots"></i></button>'
@@ -2474,7 +2476,7 @@
         }).join('');
     }
     nxStickyBarSet('nxFacBar', html);
-    var bar = document.getElementById('nxFacBar'); if (bar) bar.classList.toggle('nxFacBar6', !pre);
+    var bar = document.getElementById('nxFacBar'); if (bar) bar.classList.add('nxFacBar6');
   }
   // Hoja con TODAS las acciones y su propósito (en el móvil la barra solo muestra Guardar).
   window.nxFacAccHoja = function () {
@@ -2519,8 +2521,8 @@
     const o = window.open(url, '_blank', 'noopener,noreferrer');
     if (!o) toast('warn', 'Permite las ventanas emergentes', 'O usa «Enviar por WhatsApp» en la ventana de venta');
   }
-  function facPedirTel(nombre) {
-    const t = prompt('¿A qué WhatsApp se envía la factura?\n' + (nombre ? nombre + ' no tiene teléfono registrado.' : 'Consumidor final: escribe el número.'), '');
+  function facPedirTel(nombre, doc) {
+    const t = prompt('¿A qué WhatsApp se envía ' + (doc || 'la factura') + '?\n' + (nombre ? nombre + ' no tiene teléfono registrado.' : 'Consumidor final: escribe el número.'), '');
     if (t === null) return null;
     const n = waNum(t);
     if (!n) { toast('err', 'Número no válido', 'Escribe 10 dígitos, ej. 809 555 1234'); return null; }
@@ -2544,7 +2546,7 @@
   window.nxFacConfirmar = async function () {
     const pg = document.getElementById('nxPosPago'); const intent = (pg && pg.dataset.intent) || 'guardar';
     _facIntentOk = intent; _facGuardoOk = false;
-    if ((intent === 'wa' || (intent === 'imprimir')) && !_facVentana) _facVentana = facAbrirVentana(intent === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…');
+    if (intent === 'wa' || intent === 'imprimir') { if (_facVentana) { try { _facVentana.close(); } catch (e) {} } _facVentana = facAbrirVentana(intent === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…'); }
     const mine = _facVentana;
     try { await window.nxPosConfirmar(); }
     finally {
@@ -2614,6 +2616,204 @@
       const m = { F4: 'guardar', F6: 'imprimir', F7: 'wa', F8: 'reimp' }[e.key];
       if (m) { e.preventDefault(); window.nxFacAccion(m); }
     });
+  }
+  // ── Acciones inteligentes de DOCUMENTOS (59.13) — mismo motor que Factura para Prefactura,
+  // Cotización, Reparación (recepción), Nota de crédito, Apartado y Compra. Pedido del dueño: «los
+  // botones no solo en Factura sino en las demás ventanas que se requieran». Cada ventana SOLO lleva
+  // las acciones que tienen sentido para ese documento (no se inventan anulaciones que el sistema no
+  // tiene). Guardar sigue siendo la función de siempre de cada módulo; cuando termina, el módulo avisa
+  // con docGuardado() y el motor hace lo que se pidió (imprimir o abrir WhatsApp).
+  const _docUlt = {};
+  function docGuardado(tipo, d) { _docUlt[tipo] = Object.assign({ tipo: tipo, en: Date.now() }, d); }
+  function docItemsTxt(arr) { return (arr || []).map(it => Number(it.cantidad || it.cant || 1) + ' x ' + (it.nombre || '')).join('\n'); }
+  function docTelCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? (c.telefono || '') : ''; }
+  function docNomCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? c.nombre : ''; }
+  // Cada documento: qué hay, qué falta, a quién se le escribe y qué acciones aplican.
+  const DOC_CFG = {
+    pref: {
+      nom: 'prefactura', modal: null,
+      acciones: ['cancelar', 'anular', 'reimp', 'wa', 'imprimir', 'guardar'],
+      listo: () => _cart.length ? { ok: true } : { ok: false, txt: 'Agrega artículos a la prefactura', fix: () => window.nxProdPicker('factura') },
+      hay: () => _cart.length > 0,
+      tel: () => { const c = clienteSel(); return c ? c.telefono : ''; }, cli: () => (clienteSel() || {}).nombre || '',
+      guardar: () => window.nxPrefGuardar(),
+      vistaPrevia: () => window.nxFacVistaPrevia(),
+      anular: d => window.nxPrefAnular(d.id), puedeAnular: () => true,
+      cancelar: () => window.nxFacCancelar()
+    },
+    cot: {
+      nom: 'cotización', modal: 'nxCotForm',
+      acciones: ['cancelar', 'reimp', 'wa', 'imprimir', 'guardar'],
+      listo: () => (_cotEdit && _cotEdit.lineas && _cotEdit.lineas.length) ? { ok: true } : { ok: false, txt: 'Agrega al menos un producto', fix: () => { const b = document.getElementById('cotBuscar'); if (b) b.focus(); } },
+      tel: () => docTelCli(_cotEdit && _cotEdit.cliente_id), cli: () => (_cotEdit && _cotEdit.cliente_nombre) || '',
+      guardar: () => window.nxCotGuardar(),
+      // Imprimir: si se está editando una cotización ya guardada, imprime esa (lo guardado)
+      actual: () => (_cotEdit && _cotEdit.id) ? { imprimir: () => window.nxCotImprimir(_cotEdit.id), numero: _cotEdit.numero } : null,
+      cancelar: () => cerrarModal('nxCotForm')
+    },
+    rep: {
+      nom: 'orden de reparación', modal: 'nxRepM',
+      acciones: ['cancelar', 'wa', 'imprimir', 'guardar'],
+      listo: () => (val('repCli').trim() && val('repEq').trim() && val('repFalla').trim()) ? { ok: true } : { ok: false, txt: 'Cliente, equipo y falla son obligatorios', fix: () => { const e = ['repCli', 'repEq', 'repFalla'].map(i => document.getElementById(i)).find(x => x && !x.value.trim()); if (e) e.focus(); } },
+      tel: () => val('repTel'), cli: () => val('repCli').trim(),
+      guardar: () => window.nxRepGuardar(),
+      cancelar: () => cerrarModal('nxRepM')
+    },
+    dev: {
+      nom: 'nota de crédito', modal: 'nxDevForm',
+      acciones: ['cancelar', 'wa', 'imprimir', 'guardar'],
+      listo: () => (_devEdit && _devEdit.lineas && _devEdit.lineas.some(l => Number(l.cant || 0) > 0)) ? { ok: true } : { ok: false, txt: 'Indica al menos una cantidad a devolver' },
+      tel: () => docTelCli(_devEdit && _devEdit.venta && _devEdit.venta.cliente_id), cli: () => (_devEdit && _devEdit.venta && _devEdit.venta.cliente_nombre) || '',
+      guardar: () => window.nxDevGuardar(),
+      cancelar: () => cerrarModal('nxDevForm')
+    },
+    apa: {
+      nom: 'apartado', art: 'el', modal: 'nxApaM',
+      acciones: ['cancelar', 'wa', 'guardar'],
+      listo: () => (val('apDesc').trim() && val('apCli').trim() && moneyVal('apTot') > 0) ? { ok: true } : { ok: false, txt: 'Artículo, cliente y precio total son obligatorios', fix: () => { const e = ['apDesc', 'apCli', 'apTot'].map(i => document.getElementById(i)).find(x => x && !String(x.value).trim()); if (e) e.focus(); } },
+      tel: () => val('apTel'), cli: () => val('apCli').trim(),
+      guardar: () => window.nxApaGuardarNuevo(),
+      cancelar: () => cerrarModal('nxApaM')
+    },
+    comp: {
+      nom: 'compra', modal: null,
+      acciones: ['cancelar', 'imprimir', 'guardar'],
+      listo: () => _compraItems.length ? { ok: true } : { ok: false, txt: 'Agrega al menos un artículo a la compra', fix: () => { const b = document.querySelector('#v-pos [id^="compArt"], #v-pos input[list]'); if (b) b.focus(); } },
+      hay: () => _compraItems.length > 0,
+      guardar: () => window.nxPosGuardarCompra(),
+      cancelar: () => window.nxPosCompraCancelar()
+    }
+  };
+  const DOC_BTN = {
+    guardar: { ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', cls: 'fbP' },
+    imprimir: { ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', cls: 'fbG2' },
+    wa: { ic: 'ti-brand-whatsapp', t: 'Guardar+WhatsApp', key: 'F7', cls: 'fbW' },
+    reimp: { ic: 'ti-printer', t: 'Imprimir', key: 'F8', cls: 'fbS' },
+    anular: { ic: 'ti-ban', t: 'Anular', cls: 'fbS fbDanger' },
+    cancelar: { ic: 'ti-x', t: 'Cancelar', cls: 'fbS' }
+  };
+  function docAcciones(tipo) {
+    const C = DOC_CFG[tipo], el = (C.art || 'la') + ' ' + C.nom, chk = C.listo(), u = _docUlt[tipo];
+    const hay = C.hay ? C.hay() : true, act = C.actual ? C.actual() : null;
+    const tel = C.tel ? waNum(C.tel()) : '', quien = (C.cli ? C.cli() : '').split(' ')[0] || 'el cliente';
+    return C.acciones.map(k => {
+      const b = Object.assign({ k: k }, DOC_BTN[k]);
+      if (k === 'guardar') { b.on = chk.ok; b.why = chk.ok ? 'Guarda ' + el : chk.txt; }
+      if (k === 'imprimir') { b.on = chk.ok; b.why = chk.ok ? 'Guarda ' + el + ' y ' + (C.art === 'el' ? 'lo' : 'la') + ' imprime' : chk.txt; }
+      if (k === 'wa') {
+        const reenv = !hay && u; if (reenv) b.t = 'WhatsApp';
+        b.on = chk.ok || !!reenv;
+        b.why = reenv ? 'Envía ' + (u.numero || el) + ' por WhatsApp' : !chk.ok ? chk.txt : tel ? 'Guarda y abre WhatsApp de ' + quien + ' (···' + tel.slice(-4) + ') con ' + el : 'Guarda y te pide el número de WhatsApp';
+      }
+      if (k === 'reimp') {
+        if (C.vistaPrevia && hay) { b.on = true; b.why = 'Vista previa de lo que hay en pantalla (sin guardar)'; }
+        else if (act) { b.on = true; b.why = 'Imprime ' + (act.numero || el) + ' tal como está guardada'; }
+        else if (u && u.imprimir) { b.on = true; b.why = 'Reimprime ' + (u.numero || el); }
+        else { b.on = false; b.why = 'Guarda primero para poder imprimir'; }
+      }
+      if (k === 'anular') { b.on = !!u && !u.anulada && C.puedeAnular(); b.why = !u ? 'Se activa después de guardar' : u.anulada ? (u.numero || '') + ' ya está anulada' : 'Anula ' + (u.numero || el); }
+      if (k === 'cancelar') { b.on = true; b.t = (C.modal || hay) ? 'Cancelar' : 'Limpiar'; b.why = C.modal ? 'Cierra sin guardar' : hay ? 'Descarta lo que hay en pantalla sin guardar' : 'Deja la pantalla lista para empezar'; }
+      return b;
+    });
+  }
+  function docBtnHTML(tipo, a) {
+    return '<button type="button" class="fbA ' + a.cls + '" data-k="' + a.k + '"' + (a.on ? '' : ' aria-disabled="true"') + ' title="' + esc(a.why) + (a.key ? ' (' + a.key + ')' : '') + '" aria-label="' + esc(a.t + ': ' + a.why) + '" onclick="window.nxDocAccion(\'' + tipo + '\',\'' + a.k + '\')"><i class="ti ' + a.ic + '" aria-hidden="true"></i><span class="fbL">' + esc(a.t) + '</span>' + (a.key ? '<kbd>' + a.key + '</kbd>' : '') + '</button>';
+  }
+  // Pie de las ventanas (modales): los botones + una línea que dice qué hace el que tienes encima.
+  function docAccPieHTML(tipo) {
+    return '<div class="docAcc" data-tipo="' + tipo + '"><div class="docAccBtns">' + docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join('') + '</div><div class="docAccWhy" aria-live="polite"></div></div>';
+  }
+  window.nxDocAccRefrescar = function (tipo) {
+    document.querySelectorAll('.docAcc[data-tipo="' + tipo + '"] .docAccBtns').forEach(el => { el.innerHTML = docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join(''); });
+  };
+  function docBarraHTML(tipo, total) {
+    return '<button type="button" class="fbC fbMas" onclick="window.nxDocAccHoja(\'' + tipo + '\')" aria-label="Todas las acciones" aria-haspopup="dialog"><i class="ti ti-dots"></i></button>'
+      + '<span class="fbT"><small>Total</small><b>' + fmt(total) + '</b></span>'
+      + docAcciones(tipo).map(a => docBtnHTML(tipo, a)).join('');
+  }
+  window.nxDocAccHoja = function (tipo) {
+    cerrarModal('nxFacAccSheet');
+    const ov = document.createElement('div'); ov.id = 'nxFacAccSheet'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxFacAccM" role="dialog" aria-label="Acciones">
+      <div class="fahd"><b>Acciones ${DOC_CFG[tipo].art === 'el' ? 'del' : 'de la'} ${esc(DOC_CFG[tipo].nom)}</b></div>
+      ${docAcciones(tipo).slice().reverse().map(a => `<button type="button" class="faIt ${a.cls}"${a.on ? '' : ' aria-disabled="true"'} onclick="document.getElementById('nxFacAccSheet').remove();window.nxDocAccion('${tipo}','${a.k}')"><i class="ti ${a.ic}" aria-hidden="true"></i><span><b>${esc(a.t)}</b><small>${esc(a.why)}</small></span>${a.key ? `<kbd>${a.key}</kbd>` : ''}</button>`).join('')}
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  function docWA(d, tel) {
+    const num = waNum(tel || d.tel || docTelCli(d.cliente_id));
+    const w = facTomarVentana();
+    if (!num || !d.waTxt) { if (w) try { w.close(); } catch (e) {} toast('err', 'Sin número de WhatsApp'); return; }
+    const url = 'https://wa.me/' + num + '?text=' + encodeURIComponent(d.waTxt);
+    if (w) { try { w.location.href = url; return; } catch (e) {} }
+    if (!window.open(url, '_blank', 'noopener,noreferrer')) toast('warn', 'Permite las ventanas emergentes');
+  }
+  window.nxDocAccion = async function (tipo, k) {
+    const C = DOC_CFG[tipo]; if (!C) return;
+    const def = docAcciones(tipo).find(x => x.k === k);
+    if (def && !def.on) { toast('warn', def.t, def.why); const c = C.listo(); if (!c.ok && c.fix && k !== 'anular' && k !== 'reimp') c.fix(); return; }
+    const u = _docUlt[tipo];
+    if (k === 'cancelar') { C.cancelar(); if (!C.modal && !(C.hay && C.hay())) { delete _docUlt[tipo]; } try { docRepintar(tipo); } catch (e) {} return; }
+    if (k === 'reimp') {
+      if (C.vistaPrevia && C.hay && C.hay()) { C.vistaPrevia(); return; }
+      const act = C.actual ? C.actual() : null;
+      if (act) { act.imprimir(); return; }
+      if (u && u.imprimir) u.imprimir();
+      return;
+    }
+    if (k === 'anular') { if (u) { await C.anular(u); u.anulada = true; try { docRepintar(tipo); } catch (e) {} } return; }
+    if (k === 'wa' && !(C.hay ? C.hay() : true) && u) {
+      let tel = u.tel || docTelCli(u.cliente_id);
+      if (!waNum(tel)) { const n = facPedirTel(u.nombre, (C.art || 'la') + ' ' + C.nom); if (!n) return; u.tel = tel = n; }
+      docWA(u, tel); return;
+    }
+    // Guardar / Guardar+Imprimir / Guardar+WhatsApp
+    let tel = '';
+    if (k === 'wa') { tel = waNum(C.tel ? C.tel() : ''); if (!tel) { const n = facPedirTel(C.cli ? C.cli() : '', (C.art || 'la') + ' ' + C.nom); if (!n) return; tel = n; } }
+    if (k !== 'guardar') { if (_facVentana) { try { _facVentana.close(); } catch (e) {} } _facVentana = facAbrirVentana(k === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…'); }
+    const mine = _facVentana, antes = _docUlt[tipo];
+    try { await C.guardar(); } catch (e) {}
+    const d = _docUlt[tipo];
+    if (!d || d === antes) { if (mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} } return; }
+    if (k === 'wa') { d.tel = tel; docWA(d, tel); }
+    else if (k === 'imprimir') { if (d.imprimir) d.imprimir(); else { facTomarVentana(); try { mine && mine.close(); } catch (e) {} } }
+    if (mine && _facVentana === mine) facSoltarVentana(mine, 20000);
+    try { docRepintar(tipo); } catch (e) {}
+  };
+  function docRepintar(tipo) {
+    if (tipo === 'pref') { try { pintarFactura(); } catch (e) {} }
+    else if (tipo === 'comp') { try { compBarraSync(); } catch (e) {} }
+    else window.nxDocAccRefrescar(tipo);
+  }
+  // Atajos en las ventanas: F4 Guardar · F6 Guardar+Imprimir · F7 Guardar+WhatsApp · F8 Imprimir
+  if (!window.__nxDocAccKeys) {
+    window.__nxDocAccKeys = true;
+    document.addEventListener('keydown', function (e) {
+      const m = { F4: 'guardar', F6: 'imprimir', F7: 'wa', F8: 'reimp' }[e.key]; if (!m) return;
+      const box = document.querySelector('.overlay.open .docAcc[data-tipo]');
+      let tipo = box ? box.getAttribute('data-tipo') : null;
+      if (!tipo && !document.querySelector('.overlay.open, .overlay.on')) tipo = _posTab === 'prefactura' ? 'pref' : (_posTab === 'compras' && _compraVista === 'nueva') ? 'comp' : null;
+      if (!tipo || DOC_CFG[tipo].acciones.indexOf(m) < 0) return;
+      e.preventDefault(); window.nxDocAccion(tipo, m);
+    });
+  }
+  // Mientras escriben en una ventana, los botones se re-evalúan (qué falta / a quién se envía).
+  if (!window.__nxDocAccLive) {
+    window.__nxDocAccLive = true;
+    let _t = null;
+    const vivo = function (e) {
+      const box = e.target && e.target.closest && e.target.closest('.overlay.open');
+      const d = box && box.querySelector('.docAcc[data-tipo]'); if (!d) return;
+      clearTimeout(_t); _t = setTimeout(() => window.nxDocAccRefrescar(d.getAttribute('data-tipo')), 250);
+    };
+    document.addEventListener('input', vivo, true); document.addEventListener('change', vivo, true); document.addEventListener('click', vivo, true);
+    // Línea «qué hace este botón» debajo de los botones de la ventana
+    const why = function (e) {
+      const b = e.target && e.target.closest && e.target.closest('.docAcc .fbA'); if (!b) return;
+      const w = b.closest('.docAcc').querySelector('.docAccWhy'); if (w) w.textContent = b.getAttribute('title') || '';
+    };
+    document.addEventListener('pointerover', why, true); document.addEventListener('focusin', why, true);
   }
   // Stepper de cantidad del rediseño (respeta stock al subir; ajusta combos)
   window.nxFacQtyStep = function (i, d) { const it = _cart[i]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; const _old = Number(it.cantidad || 0); const n = Math.max(0, _old + d); if (n === 0) { _cart.splice(i, 1); } else { it.cantidad = n; ajustarCombos(it.producto_id, n - _old); } pintarFactura(); };
@@ -5298,7 +5498,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="fr"><label>Cómo se devuelve</label><select id="devMet"><option>Efectivo</option><option>Nota de crédito</option><option>Transferencia</option><option>Rebaja a cuenta (CxC)</option></select></div>
         </div>
         <div id="devTot" class="nxAsTot"></div>
-        <div class="fe" style="margin-top:8px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxDevForm').remove()">Cancelar</button><button class="btn bghost" type="button" onclick="window.nxDevGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button><button class="btn bc1" type="button" onclick="window.nxDevGuardar()"><i class="ti ti-check"></i> Emitir devolución</button></div>
+        ${docAccPieHTML('dev')}
       </div>`;
     document.body.appendChild(ov);
     pintarDevLineas();
@@ -5360,6 +5560,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (metodo.indexOf('CxC') >= 0 && v.cliente_id) { _abonosByCli[v.cliente_id] = (_abonosByCli[v.cliente_id] || 0) + t.total; }
       // asiento contable inverso a la venta
       try { postAsientoDevolucion(dev, t, metodo, v); } catch (e) {}
+      docGuardado('dev', { id: dev.id, numero: dev.numero || numero, total: t.total, cliente_id: v.cliente_id, nombre: v.cliente_nombre || '', imprimir: () => nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v })),
+        waTxt: 'Hola' + (v.cliente_nombre ? ' ' + String(v.cliente_nombre).split(' ')[0] : '') + ', registramos tu devolución en ' + (empNom() || 'STUDIO') + '.\nNota de crédito ' + (dev.numero || numero) + (ncfDev ? ' · NCF ' + ncfDev : '') + '\nFactura ' + (v.numero_factura || v.numero || '') + '\n\n' + docItemsTxt(lineas) + '\n\nTOTAL: ' + fmt(t.total) + ' · ' + metodo });
       cerrarModal('nxDevForm');
       toast('ok', 'Devolución emitida', (ncfDev ? 'NCF ' + ncfDev + ' · ' : '') + fmt(t.total));
       if (imprimir) nxDevImprimirObj(Object.assign({}, dev, { _items: items, _venta: v }));
@@ -5394,7 +5596,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table class="tot"><tr><td>Subtotal</td><td class="r">${fmt(dev.subtotal)}</td></tr><tr><td>ITBIS (18%)</td><td class="r">${fmt(dev.itbis)}</td></tr><tr class="gran"><td>TOTAL DEVUELTO</td><td class="r">${fmt(dev.total)}</td></tr></table>
         <div class="muted" style="margin-top:8px">Forma de devolución: ${esc(dev.metodo || '')}</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   // ══════════════ HISTORIAL DE NOTAS DE CRÉDITO (mismo patrón detallado que Facturas) ══════════════
   function ncFiltradas() {
@@ -6329,7 +6531,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c sal">SALDO PENDIENTE: ${fmt(saldo)}</div>
         <div class="muted" style="margin-top:14px">Documento informativo generado por Studio el ${fechaDMY(isoHoy())}.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el estado de cuenta'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosTicketVenta = async function (ventaId) {
     let v = _ventas.find(x => String(x.id) === String(ventaId));
@@ -6497,10 +6699,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     var mostrar = (_posTab === 'compras' && _compraVista === 'nueva');
     if (mostrar) { var vpos = document.getElementById('v-pos'); mostrar = !!(vpos && vpos.classList.contains('on')); }
     if (!mostrar) { nxStickyBarSet('nxCompBar', null); return; }
-    var html = '<button type="button" class="fbC" onclick="window.nxPosCompraCancelar()" aria-label="Cancelar compra"><i class="ti ti-x"></i></button>'
-      + '<button type="button" class="fbG" onclick="window.nxPosGuardarCompra(1)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
-      + '<button type="button" class="fbP" onclick="window.nxPosGuardarCompra()"><i class="ti ti-device-floppy"></i> Guardar compra</button>';
+    var html = docBarraHTML('comp', _compraItems.reduce(function (s, it) { return s + Number(it.costo || 0) * Number(it.cantidad || 0); }, 0));
     nxStickyBarSet('nxCompBar', html);
+    var cb = document.getElementById('nxCompBar'); if (cb) cb.classList.add('nxFacBar6');
   }
   window.nxPosNuevoProvDesdeCompra = function () { abrirProv(null, true); };
   // ── Opener genérico de las lupas de Compra (proveedor/empleado). El artículo tiene el suyo aparte
@@ -6679,10 +6880,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxCompraImei = function (i, v) { if (_compraItems[i]) _compraItems[i].imeis = v; };
   function pintarCompraItems() {
     const cont = document.getElementById('compItemsList'); if (!cont) return;
-    if (cv2()) { pintarCompraItemsV2(cont); return; }
+    if (cv2()) { pintarCompraItemsV2(cont); try { compBarraSync(); } catch (e) {} return; }
     cont.innerHTML = _compraItems.length ? _compraItems.map((it, i) => { const p = _prods.find(x => String(x.id) === String(it.producto_id)); const ser = p && p.serial; const ims = (ser && it.imeis) ? String(it.imeis).split(/[\n,;]+/).map(s => s.trim()).filter(Boolean) : []; return `<div style="padding:7px 9px;border-bottom:1px solid #f1f5f9;font-size:11px;cursor:pointer" title="Toca para editar" onclick="window.nxCompraEditItem(${i})" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="color:#1e293b">${esc(it.nombre)}</b> <i class="ti ti-edit" style="font-size:11px;color:#6d28d9"></i><div style="color:#475569">${it.cantidad} × ${fmt(it.costo)}</div></div><b style="color:#0f172a">${fmt(it.costo * it.cantidad)}</b><button aria-label="Quitar este artículo de la compra" class="btn bsm bghost" type="button" onclick="event.stopPropagation();window.nxPosCompraDelItem(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>${ims.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${ims.map(s => `<span class="nxPpkChip" style="background:#f5f3ff;color:#6d28d9;font-family:var(--mono,monospace)">${esc(s)}</span>`).join('')}</div>` : ''}</div>`; }).join('') : '<div style="color:#475569;font-size:11px;padding:10px;text-align:center">Sin artículos. Agrega arriba.</div>';
     const tot = _compraItems.reduce((s, it) => s + Math.round(it.costo * it.cantidad), 0);
     const t = document.getElementById('compTotal'); if (t) t.textContent = fmt(tot);
+    try { compBarraSync(); } catch (e) {}
   }
   // Compras v2: cada línea muestra costo de factura y costo desembarcado (gastos prorrateados por VALOR).
   function compTipoFiscal() { const r = document.querySelector('input[name="compTipo"]:checked'); return r ? r.value : ''; }
@@ -6762,6 +6964,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
       _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
+      docGuardado('comp', { id: compra.id, numero: compra.numero, total: subtotal, imprimir: async () => { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) {} window.nxCompraImprimir(compra.id); } });
       _compraItems = []; _compraVista = 'lista';
       await cargarComprasTab(); await cargarPOS();
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
@@ -6809,7 +7012,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Cant.</th><th>Artículo</th><th class="r">Costo</th><th class="r">Importe</th></tr></thead><tbody>${filas}<tr style="font-weight:800"><td colspan="3" class="r">TOTAL</td><td class="r">${fmt(c.total)}</td></tr></tbody></table>
         ${imeis.length ? `<div style="margin-top:10px;font-weight:800;font-size:11px">IMEI / SERIALES RECIBIDOS (${imeis.length})</div><table><thead><tr><th>#</th><th>IMEI / Serial</th><th>Equipo</th><th>Estado</th></tr></thead><tbody>${imFilas}</tbody></table>` : ''}
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxPosDelCompra = async function (id) {
     if (!confirm('¿Eliminar esta compra? Se revierte el stock y la contabilidad.')) return;
@@ -6999,7 +7202,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="muted c">${prov ? 'Proveedor: <b>' + esc(prov) + '</b> · ' : ''}Filtro: ${esc({ pendientes: 'Pendientes', vencidas: 'Vencidas', pagadas: 'Pagadas', todas: 'Todas' }[_cxpFiltroEstado] || '')} · ${fD(hoy())}</div>
       <table><thead><tr><th>Compra</th><th>${prov ? 'Fecha' : 'Proveedor / fecha'}</th><th>Vence</th><th class="r">Total</th><th class="r">Pagado</th><th class="r">Saldo</th><th>Estado</th></tr></thead><tbody>${filas || '<tr><td colspan="7" class="c">Sin facturas</td></tr>'}<tr class="tot"><td colspan="3">TOTAL (${rows.length})</td><td class="r">${fmt2(tot('total'))}</td><td class="r">${fmt2(tot('pagado'))}</td><td class="r">${fmt2(tot('saldo'))}</td><td></td></tr></tbody></table>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   // ── Gastos de importación en Nueva compra (v2) ──
   window.nxCompGastoSync = function () {
@@ -7313,7 +7516,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${c.notas ? '<div class="muted" style="text-align:left;margin-top:6px">📝 ' + esc(c.notas) + '</div>' : ''}
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:16px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el cierre'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -7727,7 +7930,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${cuerpo}
         <div class="muted" style="margin-top:18px">Generado el ${fechaDMY(isoHoy())} · Studio</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para imprimir'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ── Editor de asiento manual ──
@@ -7999,11 +8202,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <div class="fld"><label>Notas (opcional)</label><div class="inw"><input id="cotNotas" class="no-upper" value="${esc(_cotEdit.notas || '')}" placeholder="Condiciones, entrega..." onchange="window.nxCotField('notas',this.value)"></div></div>
           </div>
         </div>
-        <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
-          <button class="ab g3" type="button" onclick="document.getElementById('nxCotForm').remove()">Cancelar</button>
-          <button class="ab g2" type="button" onclick="window.nxCotGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
-          <button class="ab g1" type="button" onclick="window.nxCotGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>
-        </div>
+        ${docAccPieHTML('cot')}
       </div>`;
     document.body.appendChild(ov);
     pintarCotTabla();
@@ -8059,6 +8258,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         } catch (eDiff) { console.warn('motor de documentos (diff cotización):', eDiff); }
       }
       _cotEditSnapshot = null;
+      docGuardado('cot', { id: cotId, numero: numero, total: body.total, cliente_id: body.cliente_id, nombre: body.cliente_nombre || '', imprimir: () => { if (!_cotizaciones.find(x => String(x.id) === String(cotId))) _cotizaciones.unshift(Object.assign({ id: cotId }, body)); window.nxCotImprimir(cotId); },
+        waTxt: 'Hola' + (body.cliente_nombre ? ' ' + String(body.cliente_nombre).split(' ')[0] : '') + ', te comparto la cotización ' + numero + ' de ' + (empNom() || 'STUDIO') + ':\n\n' + docItemsTxt(_cotEdit.lineas) + '\n\nTOTAL: ' + fmt(body.total) + '\nVálida por ' + (body.validez_dias || 15) + ' días.' });
       cerrarModal('nxCotForm'); toast('ok', 'Cotización guardada', numero);
       await cargarCotizaciones(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
       if (imprimir) window.nxCotImprimir(cotId);
@@ -8096,7 +8297,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${c.notas ? `<div class="muted" style="margin-top:10px"><b>Notas:</b> ${esc(c.notas)}</div>` : ''}
         <div class="muted" style="margin-top:16px">Esta cotización es un presupuesto y no constituye una factura. Precios sujetos a cambio después de la fecha de validez.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ════════════════════════════════════════════════════════════════════
@@ -8250,7 +8451,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="muted">Producto: <b>${esc(p.nombre)}</b>${p.codigo ? ' · Cód: ' + esc(p.codigo) : ''} · Stock total: <b>${fmtN(p.stock)}</b>${porAlm ? '<br>Por almacén: ' + porAlm : ''}<br>Generado: ${fechaDMY(isoHoy())}</div>
         <table><thead><tr><th>Fecha</th><th>Tipo</th><th class="r">Cant.</th><th class="r">Stock</th><th>Referencia</th></tr></thead><tbody>${filas}</tbody></table>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxInvAjustarProd = function (id) {
     cerrarModal('nxInvAjuste');
@@ -8503,7 +8704,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${t.notas ? `<div class="muted"><b>Notas:</b> ${esc(t.notas)}</div>` : ''}
         <div class="fz"><div>Entregado por</div><div>Recibido por</div></div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el despacho'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el despacho'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -8748,7 +8949,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>Vendedor</th><th class="r">Ventas</th><th class="r">Monto</th><th class="r">% base</th><th class="r">Comisión</th></tr></thead><tbody>${filas}<tr class="tot"><td>TOTALES</td><td class="r"></td><td class="r">${fmt(tM)}</td><td class="r"></td><td class="r">${fmt(tC)}</td></tr></tbody></table>
         ${huboEspecial ? '<div class="muted">* La comisión ya incluye artículos con una comisión especial propia (distinta al % base del vendedor), configurada en su ficha en Inventario → Ventas.</div>' : ''}
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
   window.nxRepImei = function () {
     cerrarModal('nxRepImeiM');
@@ -8811,7 +9012,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <table><thead><tr><th>NCF</th><th>Fecha</th><th>Cliente</th><th class="r">Monto sin ITBIS</th><th class="r">ITBIS</th><th class="r">Total</th></tr></thead><tbody>${filas}<tr class="tot"><td colspan="3" class="r">TOTALES</td><td class="r">${fmt(mSin)}</td><td class="r">${fmt(mItb)}</td><td class="r">${fmt(mTot)}</td></tr></tbody></table>
         <div class="muted" style="margin-top:14px">Base para el formato 607 de la DGII. Verifica los datos del cliente (RNC/Cédula) antes de declarar.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ════════════════════════════════════════════════════════════════════
@@ -9113,7 +9314,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:18px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el recibo'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
 
@@ -9332,11 +9533,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0;grid-template-columns:1fr 1fr 1fr">
-        <button class="ab g3" type="button" onclick="document.getElementById('nxRepM').remove()">Cancelar</button>
-        <button class="ab g2" type="button" onclick="window.nxRepGuardar(true)"><i class="ti ti-printer"></i> Guardar e imprimir</button>
-        <button class="ab g1" type="button" onclick="window.nxRepGuardar()"><i class="ti ti-check"></i> Guardar</button>
-      </div>
+      ${docAccPieHTML('rep')}
     </div>`;
     document.body.appendChild(ov); scanMoney(ov); window.nxRepEstim();
   };
@@ -9360,6 +9557,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (abono > 0 && _caja) { try { await getAPI().post('pos_caja_movimientos', { caja_id: _caja.id, tipo: 'entrada', monto: abono, concepto: 'Avance reparación ' + numero + ' · ' + d.cliente_nombre, fecha: new Date().toISOString() }); } catch (e) {} }
       if (abono > 0) { try { await postAsientoServicio('Avance reparación ' + numero + ' · ' + d.cliente_nombre, abono, 'Efectivo', rep.id || null); } catch (e) {} }
       try { window.logAudit && window.logAudit('REP_RECIBIDA', numero + ' · ' + eq + ' · ' + d.cliente_nombre, 'Reparaciones'); } catch (e) {}
+      docGuardado('rep', { id: rep.id || null, numero: numero, total: Number(d.presupuesto || 0), nombre: d.cliente_nombre, tel: d.cliente_telefono || '', imprimir: () => window.nxRepImprimir(rep.id || null, rep),
+        waTxt: 'Hola ' + String(d.cliente_nombre || '').split(' ')[0] + ', recibimos tu ' + eq + ' en ' + (empNom() || 'STUDIO') + '.\nOrden: ' + numero + '\nFalla: ' + falla + (Number(d.presupuesto || 0) > 0 ? '\nPresupuesto: ' + fmt(d.presupuesto) : '') + (abono > 0 ? '\nAvance recibido: ' + fmt(abono) : '') + '\n\nTe avisamos cuando esté listo.' });
       cerrarModal('nxRepM'); toast('ok', 'Equipo recibido', numero);
       if (imprimir) window.nxRepImprimir(rep.id || null, rep);
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
@@ -9485,7 +9684,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxRepImprimir = function (id, repObj) {
     const r = repObj || _reps.find(x => String(x.id) === String(id)); if (!r) return;
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     const f = (l, v) => v ? `<tr><td style="color:#64748b;white-space:nowrap;padding:4px 8px 4px 0">${l}</td><td style="font-weight:700">${esc(v)}</td></tr>` : '';
     const g = garantiaInfo(r);
     const garantiaLinea = g ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${g.vigente ? '#166534' : '#991b1b'}">Garantía de esta reparación ${g.vigente ? 'hasta' : 'vencida el'} ${g.fecha}</div>` : (r.estado !== 'entregado' && _posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:6px;font-size:11px;color:#64748b">Esta reparación incluye ${_posCfg.garantia_rep_dias} día(s) de garantía a partir de la entrega.</div>` : '');
@@ -10465,7 +10664,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const f = _fins.find(x => String(x.id) === String(id)); if (!f) return;
     const _s = curSesPOS(); const biz = (_s && _s.org && _s.org.nombre) || empNom() || 'Mi negocio';
     const rows = cuotasDe(id).map(c => `<tr><td>#${c.numero}</td><td>${String(c.fecha_venc).slice(0, 10)}</td><td style="text-align:right">${fmt(c.monto)}</td><td style="text-align:center">${c.pagado ? '<i class="ti ti-circle-check"></i> Pagada' : ''}</td></tr>`).join('');
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Acuerdo de pago</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css"><style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;padding:28px;color:#1e293b;max-width:560px;margin:0 auto;font-size:13px}h1{font-size:16px;margin:0;text-align:center}h2{font-size:12px;text-align:center;color:#64748b;font-weight:600;margin:2px 0 16px}p{line-height:1.55;text-align:justify}table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0}th{background:#f8fafc;text-align:left;padding:6px 8px;border-bottom:2px solid #1e293b;font-size:10px;text-transform:uppercase}td{padding:6px 8px;border-bottom:1px solid #e2e8f0}.fir{margin-top:54px;display:flex;justify-content:space-between;gap:24px;text-align:center;font-size:11px}.fir div{flex:1;border-top:1px solid #1e293b;padding-top:4px}</style></head><body>
       <h1>${esc(biz)}</h1><h2>ACUERDO DE PAGO EN CUOTAS · ${new Date().toLocaleDateString('es-DO')}</h2>
       <p>El cliente <b>${esc(f.cliente_nombre || '')}</b> adquirió <b>${esc(f.descripcion || '')}</b> por un total de <b>${fmt(f.monto_total)}</b>, entregando un inicial de <b>${fmt(f.inicial)}</b> y financiando <b>${fmt(f.monto_financiado)}</b> en <b>${f.cuotas_total} cuota(s) ${esc(f.frecuencia || '')}(es)</b> de <b>${fmt(f.cuota_monto)}</b>, según el calendario siguiente:</p>
@@ -10510,7 +10709,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="c sal">TOTAL VENCIDO: ${fmt(granTotal)}</div>
         <div class="muted" style="margin-top:14px">Documento informativo generado por Studio el ${new Date().toLocaleDateString('es-DO')}.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
 
@@ -10614,6 +10813,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (doc) _facOrigenDoc = { tipo: 'prefactura', documentoId: doc.id };
       }
       const nItemsPref = _cart.length;
+      if (r && r[0]) { const _pid = r[0].id; docGuardado('pref', { id: _pid, numero: numero, total: t.total, cliente_id: cli ? cli.id : null, nombre: cli ? cli.nombre : '', imprimir: () => { if (!(_prefHist || []).find(x => String(x.id) === String(_pid))) _prefHist.unshift(r[0]); window.nxPHImprimir(_pid); },
+        waTxt: 'Hola' + (cli ? ' ' + String(cli.nombre).split(' ')[0] : '') + ', te comparto la prefactura ' + numero + ' de ' + (empNom() || 'STUDIO') + ':\n\n' + docItemsTxt(_cart) + '\n\nTOTAL: ' + fmt(t.total) + '\n\nCuando quieras la facturamos.' }); }
       _cart = []; _facNota = ''; toast('ok', 'Prefactura guardada', numero + ' — la caja la factura cuando toque');
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
       if (r && r[0] && window.nxReciboAnimado) {
@@ -10931,7 +11132,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${p.notas ? `<div class="muted" style="margin-top:8px;padding-top:8px;border-top:1px dashed #ccc"><b>Nota / condiciones:</b> ${esc(p.notas)}</div>` : ''}
         <div class="muted" style="margin-top:8px">Documento no fiscal. No es una factura — vale como cotización / proforma.</div>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   };
 
   // ══════════════ CENTRO DE AVISOS (cola de cobro del día — calculada en vivo) ══════════════
@@ -11297,7 +11498,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="fld"><label>Días de plazo</label><div class="inw"><input id="apDias" inputmode="numeric" value="30"></div></div>
         </div>
       </div>
-      <div class="actions" style="margin-top:0"><button class="ab g3" type="button" onclick="document.getElementById('nxApaM').remove()">Cancelar</button><button class="ab g1" type="button" onclick="window.nxApaGuardarNuevo()"><i class="ti ti-check"></i> Crear apartado</button></div>
+      ${docAccPieHTML('apa')}
     </div>`;
     document.body.appendChild(ov); scanMoney(ov);
   };
@@ -11320,6 +11521,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         try { await postAsientoServicio('Abono apartado ' + numero + ' · ' + cli.toUpperCase(), abono, 'Efectivo', a.id); } catch (e) {}
       }
       try { window.logAudit && window.logAudit('APARTADO_NUEVO', numero + ' · ' + desc + ' · ' + cli.toUpperCase() + ' · ' + fmt(total), 'Apartados'); } catch (e) {}
+      if (a) docGuardado('apa', { id: a.id, numero: numero, total: total, nombre: cli.toUpperCase(), tel: val('apTel').trim(),
+        waTxt: 'Hola ' + cli.split(' ')[0] + ', tu apartado en ' + (empNom() || 'STUDIO') + ' quedó registrado.\n' + numero + ' · ' + desc + '\nPrecio: ' + fmt(total) + '\nAbonado: ' + fmt(abono || 0) + '\nFalta: ' + fmt(total - (abono || 0)) + '\nFecha límite: ' + lim.split('-').reverse().join('/') });
       cerrarModal('nxApaM'); toast('ok', 'Apartado creado', numero);
       const el = document.getElementById('v-pos'); if (el) renderPOS(el);
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
@@ -12401,7 +12604,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   window.nxFinV2Contrato = async function (id) {
     const f = finFinDe(id); if (!f) return;
-    const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
+    const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
     w.document.write('<p style="font-family:system-ui;padding:24px">Preparando contrato…</p>');
     const firmas = `<div class="fir"><div>${f.firma_tienda ? '<img src="' + f.firma_tienda + '" style="max-height:60px"><br>' : ''}Por ${esc(empNom())}${f.firma_tienda_por ? ' · ' + esc(f.firma_tienda_por) : ''}</div><div>${f.firma_cliente ? '<img src="' + f.firma_cliente + '" style="max-height:60px"><br>' : ''}${esc(f.cliente_nombre || '')}${f.firma_cliente_en ? '<br>' + (f.expediente_solicitud_id || (f.firma_cliente_meta && f.firma_cliente_meta.ip) ? 'Firmado electrónicamente · ' : '') + new Date(f.firma_cliente_en).toLocaleString('es-DO') : ' (pendiente de firma)'}</div></div>`;
     // Como NEXUS PRO: cláusula de firma electrónica + anexo del expediente de identidad (solo lo que exista de verdad)

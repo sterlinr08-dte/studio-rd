@@ -1058,3 +1058,38 @@ html.nx-studio .nxFacAccM .faFmt { padding: 10px 12px 0; margin-top: 6px; border
   html.nx-studio #nxFacAccSheet { align-items: flex-end; }
   html.nx-studio .nxFacAccM { border-radius: 18px 18px 0 0; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 }
+
+/* ── §20 Acciones inteligentes en las demás ventanas (59.13) ─────────────────
+   Prefactura y Compra usan la barra fija (.nxFacBar6). Cotización, Reparación, Nota de crédito y
+   Apartado llevan el mismo juego de botones en el pie de la ventana (.docAcc), con una línea que
+   explica qué hace el botón que tienes encima. */
+html.nx-studio .docAcc { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--studio-line); background: #ffffff; }
+html.nx-studio .docAccBtns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+html.nx-studio .docAcc .fbA { height: 44px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; font: 600 13.5px var(--studio-font); white-space: nowrap; cursor: pointer; background: #ffffff; border: 1px solid var(--studio-hair); color: var(--studio-ink); box-shadow: var(--studio-relieve); }
+html.nx-studio .docAcc .fbA i { font-size: 17px; }
+html.nx-studio .docAcc .fbA:hover { border-color: var(--studio-ink); }
+html.nx-studio .docAcc .fbA:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
+html.nx-studio .docAcc .fbA kbd { display: none; }
+html.nx-studio .docAcc .fbA[aria-disabled="true"] { opacity: .42; box-shadow: none; }
+html.nx-studio .docAcc .fbS { color: var(--studio-steel); }
+html.nx-studio .docAcc .fbW i { color: #16a34a; }
+html.nx-studio .docAcc .fbG2 { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); }
+html.nx-studio .docAcc .fbA.fbP { background: var(--studio-gold-grad, var(--studio-gold)); border: 0; color: var(--studio-black); box-shadow: var(--studio-gold-glow, none); }
+html.nx-studio .docAcc .fbA[data-k="cancelar"] { margin-right: auto; }
+html.nx-studio .docAccWhy { min-height: 16px; font-size: 12px; line-height: 1.35; color: var(--studio-steel); text-align: right; text-transform: none; letter-spacing: 0; }
+html.nx-studio .docAcc { container-type: inline-size; }
+@container (min-width: 561px) and (max-width: 700px) {
+  html.nx-studio .docAccBtns { gap: 6px; }
+  html.nx-studio .docAcc .fbA { padding: 0 10px; font-size: 13px; }
+  html.nx-studio .docAcc .fbA.fbS { width: 44px; padding: 0; }
+  html.nx-studio .docAcc .fbA.fbS .fbL { display: none; }
+}
+@media (max-width: 560px) {
+  html.nx-studio .docAccBtns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.nx-studio .docAcc .fbA { padding: 0 8px; font-size: 13px; }
+  html.nx-studio .docAcc .fbA kbd { display: none; }
+  html.nx-studio .docAcc .fbA.fbP { grid-column: 1 / -1; order: -1; }
+  html.nx-studio .docAcc .fbA[data-k="cancelar"] { margin-right: 0; order: 9; }
+  html.nx-studio .docAccBtns:has(> :nth-child(4):last-child) .fbA[data-k="cancelar"] { grid-column: 1 / -1; }
+  html.nx-studio .docAccWhy { text-align: left; }
+}

@@ -25,7 +25,7 @@
   function diasEntre(a, b) { return Math.round((new Date(b + 'T12:00:00Z') - new Date(a + 'T12:00:00Z')) / 86400000); }
   function dmy(ts) { const d = diaRD(ts); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : ''; }
   function hora(ts) { try { return new Date(ts).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santo_Domingo' }); } catch (e) { return ''; } }
-  function ini(nom) { const p = String(nom || '').trim().split(/\s+/).filter(Boolean); return ((p[0] || '?')[0] + (p[1] ? p[1][0] : '')).toUpperCase(); }
+  function ini(nom) { const t = String(nom || '').trim(); if (!/[a-záéíóúñ]/i.test(t)) return t.replace(/\D/g, '').slice(-2) || '?'; const p = t.split(/\s+/).filter(Boolean); return ((p[0] || '?')[0] + (p[1] ? p[1][0] : '')).toUpperCase(); }
   function yo() { try { const s = ctx().sesion ? ctx().sesion() : window.sesion; return (s && s.id) || null; } catch (e) { return null; } }
   function esAdmin() { try { const r = ctx().rolEfectivo ? ctx().rolEfectivo() : 'admin'; return r === 'admin' || r === 'gerente'; } catch (e) { return false; } }
   function clientes() { try { return ctx().clientes ? ctx().clientes() : []; } catch (e) { return []; } }
@@ -50,7 +50,7 @@
   const ACT = { nota: ['Nota', 'ti-note'], llamada: ['Llamada', 'ti-phone'], whatsapp: ['WhatsApp', 'ti-brand-whatsapp'], visita: ['Visita', 'ti-building-store'], tarea: ['Tarea', 'ti-checkbox'], etapa: ['Etapa', 'ti-arrows-right'], sistema: ['Asignación', 'ti-user-check'] };
 
   const S = { ops: [], tareas: [], usuarios: [], vista: 'tablero', filtro: 'todas', q: '', cargado: false, error: '', ficha: null, acts: [], docs: {}, reps: [], pendiente: null, repDesde: '', repHasta: '', avisosCargando: false };
-  try { const v = localStorage.getItem('studio_crm_vista'); if (['tablero', 'tareas', 'reportes'].indexOf(v) >= 0) S.vista = v; } catch (e) {}
+  try { const v = localStorage.getItem('studio_crm_vista'); if (['bandeja', 'tablero', 'tareas', 'reportes'].indexOf(v) >= 0) S.vista = v; } catch (e) {}
 
   async function cargar() {
     S.error = '';
@@ -93,18 +93,19 @@
     if (S.error) body = `<div class="nxCrmErr">No se pudo cargar el CRM: ${esc(S.error)} <button class="btn bsm" type="button" onclick="window.nxCRM.recargar()">Reintentar</button></div>`;
     else if (S.vista === 'tareas') body = vistaTareas();
     else if (S.vista === 'reportes') body = vistaReportes();
+    else if (S.vista === 'bandeja') body = vistaBandeja();
     else body = vistaTablero();
     return `<div class="nxCrm">
       <div class="nxCrmHead"><div><h2>CRM</h2><p>Oportunidades de venta, seguimiento y tareas</p></div>
         <button type="button" class="nxCrmBtn p" onclick="window.nxCRM.nueva()"><i class="ti ti-plus"></i> Nueva oportunidad</button></div>
-      <div class="nxCrmKpis">
+      <div class="nxCrmKpis"${S.vista === 'bandeja' ? ' hidden' : ''}>
         <div class="k"><span>Abiertas</span><b>${abiertas.length}</b></div>
         <div class="k"><span>En el embudo</span><b>${fmt(pipe)}</b></div>
         <div class="k"><span>Ganado este mes</span><b>${fmt(ganMes.reduce((s, o) => s + n(o.monto_estimado), 0))}</b><small>${ganMes.length} oportunidad(es)</small></div>
         <div class="k"><span>Conversión del mes</span><b>${cerradasMes.length ? Math.round(ganMes.length / cerradasMes.length * 100) + ' %' : '—'}</b><small>ganadas / cerradas</small></div>
         <div class="k${venc ? ' warn' : ''}"><span>Tareas vencidas o de hoy</span><b>${venc}</b></div>
       </div>
-      <div class="nxCrmTabs" role="tablist">${tab('tablero', 'Tablero', 'ti-layout-kanban')}${tab('tareas', 'Tareas', 'ti-checklist', S.tareas.length || '')}${tab('reportes', 'Reportes', 'ti-chart-bar')}</div>
+      <div class="nxCrmTabs" role="tablist">${tab('bandeja', 'Bandeja', 'ti-messages', BD.convs.reduce((s, c) => s + (c.no_leidos > 0 ? 1 : 0), 0) || '')}${tab('tablero', 'Tablero', 'ti-layout-kanban')}${tab('tareas', 'Tareas', 'ti-checklist', S.tareas.length || '')}${tab('reportes', 'Reportes', 'ti-chart-bar')}</div>
       ${body}
     </div>`;
   }
@@ -443,6 +444,181 @@
       `<button class="ab g3" style="height:30px;width:auto;padding:0 10px" onclick="window.nxCRM.tareaHecha('${t.id}')"><i class="ti ti-check"></i> Hecha</button><button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('crm').then(function(){window.nxCRM.abrir('${t.crm_id}')})" aria-label="Abrir oportunidad"><i class="ti ti-target-arrow"></i></button>`)).join('');
   }
 
+
+  // ── Bandeja (Fase 2): WhatsApp, Instagram y Facebook vía Zernio ─────────
+  // Lectura con la RLS del usuario; el envío pasa SIEMPRE por la función crm-enviar (clave de idempotencia, ventana de
+  // 24 h de WhatsApp, canal activo). Nada se envía solo: únicamente cuando el empleado pulsa Enviar.
+  const PLAT = { whatsapp: ['WhatsApp', 'ti-brand-whatsapp', '#15803d'], instagram: ['Instagram', 'ti-brand-instagram', '#c13584'], facebook: ['Facebook', 'ti-brand-messenger', '#1877f2'] };
+  const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todas', canalF: '', q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '' };
+  function apiBase() { const a = api() || {}; return { url: a.url, key: a.key, tok: a.token || a.key }; }
+  function bdPendiente(c) { return c.ultimo_inbound_at && (!c.ultima_respuesta_at || c.ultima_respuesta_at < c.ultimo_inbound_at); }
+  function bdVentana(c) { if (!c || c.plataforma !== 'whatsapp') return true; return !!c.ultimo_inbound_at && (Date.now() - new Date(c.ultimo_inbound_at).getTime()) < 24 * 3600e3; }
+  function bdHora(ts) { if (!ts) return ''; const d = diaRD(ts), h = hoyISO(); return d === h ? hora(ts) : d === addDays(h, -1) ? 'ayer' : dmy(ts).slice(0, 5); }
+  function bdNombre(c) { const cli = cliDe(c.cliente_id); return (cli && cli.nombre) || c.contacto_nombre || c.contacto_usuario || c.telefono_e164 || 'Contacto'; }
+  async function bdCargar() {
+    try {
+      const [convs, canales] = await Promise.all([
+        api().get('crm_conversaciones', 'select=*&archivada=eq.false&order=ultimo_mensaje_at.desc.nullslast&limit=300'),
+        api().get('crm_canales', 'select=*&order=plataforma.asc')
+      ]);
+      BD.convs = convs || []; BD.canales = canales || []; BD.cargado = true; BD.error = '';
+    } catch (e) { BD.error = errTxt(e); BD.cargado = true; }
+  }
+  async function bdCargarMsgs(id) {
+    try { BD.msgs = await api().get('crm_mensajes', 'select=*&conversacion_id=eq.' + id + '&order=created_at.asc&limit=500') || []; } catch (e) { BD.msgs = []; }
+  }
+  function bdLista() {
+    const q = BD.q.trim().toLowerCase(), me = yo();
+    return BD.convs.filter(c => {
+      if (BD.canalF && c.plataforma !== BD.canalF) return false;
+      if (BD.filtro === 'noleidas' && !(c.no_leidos > 0)) return false;
+      if (BD.filtro === 'pendientes' && !bdPendiente(c)) return false;
+      if (BD.filtro === 'mias' && String(c.asignado_id || '') !== String(me || '')) return false;
+      if (BD.filtro === 'libres' && c.asignado_id) return false;
+      if (q && [bdNombre(c), c.telefono_e164, c.contacto_usuario, c.ultimo_mensaje_preview].join(' ').toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function bdListaHTML() {
+    const l = bdLista();
+    if (!l.length) return `<div class="bdVac">${BD.convs.length ? 'Ninguna conversación con este filtro.' : 'Todavía no hay conversaciones.'}</div>`;
+    return l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp; return `<button type="button" class="bdIt${String(BD.sel) === String(c.id) ? ' on' : ''}${c.no_leidos > 0 ? ' unread' : ''}" onclick="window.nxCRM.bdAbrir('${c.id}')">
+      <span class="av"><b>${esc(ini(bdNombre(c)))}</b><i class="ti ${p[1]}" style="color:${p[2]}" aria-label="${p[0]}"></i></span>
+      <span class="tx"><span class="r1"><b>${esc(bdNombre(c))}</b><small>${bdHora(c.ultimo_mensaje_at)}</small></span>
+        <span class="r2"><span class="pv">${esc(c.ultimo_mensaje_preview || '')}</span>${c.no_leidos > 0 ? `<span class="nl">${c.no_leidos}</span>` : bdPendiente(c) ? '<span class="pd" title="Sin responder"></span>' : ''}</span>
+        ${c.asignado_nombre ? `<span class="r3"><i class="ti ti-user"></i> ${esc(c.asignado_nombre)}</span>` : ''}</span></button>`; }).join('');
+  }
+  function bdBurbuja(m) {
+    const media = m.media_path ? (BD.urls[m.media_path] ? (m.tipo === 'imagen' ? `<a href="${esc(BD.urls[m.media_path])}" target="_blank" rel="noopener"><img src="${esc(BD.urls[m.media_path])}" alt="Imagen"></a>` : m.tipo === 'audio' ? `<audio controls src="${esc(BD.urls[m.media_path])}"></audio>` : m.tipo === 'video' ? `<video controls src="${esc(BD.urls[m.media_path])}"></video>` : `<a class="doc" href="${esc(BD.urls[m.media_path])}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : `<span class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</span>`) : '';
+    const tick = m.direccion === 'out' ? ({ pendiente: '<i class="ti ti-clock" title="Enviando"></i>', enviado: '<i class="ti ti-check" title="Enviado"></i>', entregado: '<i class="ti ti-checks" title="Entregado"></i>', leido: '<i class="ti ti-checks lei" title="Leído"></i>', fallido: '<i class="ti ti-alert-circle err" title="No se envió"></i>' }[m.estado] || '') : '';
+    return `<div class="bdM ${m.direccion}${m.estado === 'fallido' ? ' fail' : ''}">${media}${m.cuerpo ? `<p>${esc(m.cuerpo)}</p>` : ''}<small>${m.direccion === 'out' && (m.enviado_por_nombre || m.desde_telefono) ? esc(m.enviado_por_nombre || 'desde el teléfono') + ' · ' : ''}${bdHora(m.created_at)} ${tick}</small>${m.estado === 'fallido' && m.error ? `<em>No se envió. ${esc(String(m.error).slice(0, 120))}</em>` : ''}</div>`;
+  }
+  function bdMsgsHTML() {
+    if (!BD.msgs.length) return '<div class="bdVac">Cargando mensajes…</div>';
+    let dia = '';
+    return BD.msgs.map(m => { const d = diaRD(m.created_at); const sep = d !== dia ? `<div class="bdDia">${d === hoyISO() ? 'Hoy' : dmy(m.created_at)}</div>` : ''; dia = d; return sep + bdBurbuja(m); }).join('');
+  }
+  function bdChatHTML() {
+    const c = BD.convs.find(x => String(x.id) === String(BD.sel));
+    if (!c) return `<div class="bdEmpty"><i class="ti ti-messages"></i><b>Elige una conversación</b><span>Los mensajes de WhatsApp, Instagram y Facebook de STUDIO llegan aquí.</span></div>`;
+    const p = PLAT[c.plataforma] || PLAT.whatsapp, cli = cliDe(c.cliente_id), op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null;
+    const canal = BD.canales.find(x => String(x.id) === String(c.canal_id));
+    const abierta = bdVentana(c), me = yo();
+    const usrOpts = `<option value="">Sin asignar</option>` + S.usuarios.map(u => `<option value="${u.id}"${String(c.asignado_id || '') === String(u.id) ? ' selected' : ''}>${esc(u.nom)}</option>`).join('');
+    return `<header class="bdH"><button type="button" class="bdBack" onclick="window.nxCRM.bdCerrar()" aria-label="Volver a la lista"><i class="ti ti-arrow-left"></i></button>
+        <span class="av"><b>${esc(ini(bdNombre(c)))}</b></span>
+        <div class="who"><b>${esc(bdNombre(c))}</b><small><i class="ti ${p[1]}" style="color:${p[2]}"></i> ${p[0]}${canal && canal.nombre ? ' · ' + esc(canal.nombre) : ''}${c.telefono_e164 ? ' · ' + esc(c.telefono_e164) : c.contacto_usuario ? ' · @' + esc(c.contacto_usuario) : ''}</small></div>
+        <button type="button" class="nxCrmBtn sm" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar conversación" aria-label="Archivar"><i class="ti ti-archive"></i></button></header>
+      <div class="bdTools">
+        <button type="button" class="nxCrmChip" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user"></i> ${cli ? esc(cli.nombre) : 'Vincular cliente'}</button>
+        ${op ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-target-arrow"></i> ${esc(op.nombre)} · ${etN(op.etapa)}</button>` : `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear oportunidad</button>`}
+        ${esAdmin() ? `<label class="bdAsig"><i class="ti ti-user-check"></i><select aria-label="Responsable" onchange="window.nxCRM.bdAsignar('${c.id}', this.value || null)">${usrOpts}</select></label>` : !c.asignado_id ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdAsignar('${c.id}','${me}')"><i class="ti ti-hand-grab"></i> Tomarla</button>` : String(c.asignado_id) === String(me) ? `<button type="button" class="nxCrmChip" onclick="window.nxCRM.bdAsignar('${c.id}', null)">Soltarla</button>` : ''}
+      </div>
+      <div class="bdMsgs" id="bdMsgs">${bdMsgsHTML()}</div>
+      ${canal && !canal.activo ? '<div class="bdAviso">Este canal está apagado. Actívalo en «Canales» para poder responder.</div>' : abierta ? `<div class="bdComp">
+        <label class="bdClip" title="Adjuntar archivo" aria-label="Adjuntar archivo"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
+        <textarea id="bdTx" rows="1" placeholder="Escribe una respuesta…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+        <button type="button" class="bdSend" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
+      : '<div class="bdAviso"><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas; el envío de plantillas llega en la Fase 3.</div>'}`;
+  }
+  function bdCanalesHTML() {
+    if (!esAdmin()) return '';
+    const filas = BD.canales.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp; return `<div class="bdCan"><i class="ti ${p[1]}" style="color:${p[2]}"></i><div><b>${esc(c.nombre || p[0])}</b><small>${p[0]}${c.identificador ? ' · ' + esc(c.identificador) : ''}${c.ultimo_evento_at ? ' · último evento ' + dmy(c.ultimo_evento_at) + ' ' + hora(c.ultimo_evento_at) : ''}</small></div>
+      <label class="sw"><input type="checkbox" ${c.activo ? 'checked' : ''} onchange="window.nxCRM.bdCanal('${c.id}', this.checked)"><span>${c.activo ? 'Activo' : 'Apagado'}</span></label></div>`; }).join('');
+    return `<details class="bdCanales"${BD.canales.some(c => c.activo) ? '' : ' open'}><summary><i class="ti ti-plug-connected"></i> Canales (${BD.canales.filter(c => c.activo).length} activos)</summary>
+      ${filas || '<p class="bdNota">Aún no se ha conectado ninguna cuenta. Cuando conectes el WhatsApp, el Facebook y el Instagram de STUDIO en Zernio y llegue el primer mensaje, cada cuenta aparecerá aquí <b>apagada</b> para que la actives.</p>'}
+      <p class="bdNota">Un canal apagado no guarda ni envía mensajes. Nada se envía solo: solo cuando alguien pulsa Enviar.</p></details>`;
+  }
+  function vistaBandeja() {
+    if (!BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); return '<div class="nxCrmLoad"><span class="spin"></span> Cargando bandeja…</div>'; }
+    bdTimer();
+    if (BD.error) return `<div class="nxCrmErr">No se pudo cargar la bandeja: ${esc(BD.error)}</div>`;
+    const chip = (k, l) => `<button type="button" class="nxCrmChip${BD.filtro === k ? ' on' : ''}" aria-pressed="${BD.filtro === k}" onclick="window.nxCRM.bdFiltro('${k}')">${l}</button>`;
+    const pch = (k, l) => `<button type="button" class="nxCrmChip${BD.canalF === k ? ' on' : ''}" aria-pressed="${BD.canalF === k}" onclick="window.nxCRM.bdCanalF('${k}')">${l}</button>`;
+    return bdCanalesHTML() + `<div class="nxCrmBd${BD.sel ? ' sel' : ''}">
+      <aside class="bdL"><div class="bdF"><label class="nxCrmQ"><i class="ti ti-search"></i><input type="search" value="${esc(BD.q)}" placeholder="Buscar nombre o teléfono…" oninput="window.nxCRM.bdBuscar(this.value)" aria-label="Buscar conversación"></label>
+        <div class="nxCrmChips">${chip('todas', 'Todas')}${chip('noleidas', 'No leídas')}${chip('pendientes', 'Sin responder')}${chip('mias', 'Mías')}${chip('libres', 'Sin asignar')}</div>
+        <div class="nxCrmChips">${pch('', 'Todos los canales')}${pch('whatsapp', '<i class="ti ti-brand-whatsapp"></i> WhatsApp')}${pch('instagram', '<i class="ti ti-brand-instagram"></i> Instagram')}${pch('facebook', '<i class="ti ti-brand-messenger"></i> Facebook')}</div></div>
+        <div class="bdList" id="bdList">${bdListaHTML()}</div></aside>
+      <section class="bdC" id="bdChat">${bdChatHTML()}</section></div>`;
+  }
+  function bdPintarParcial() {
+    const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML();
+    const m = document.getElementById('bdMsgs'); if (m) { const abajo = m.scrollHeight - m.scrollTop - m.clientHeight < 80; m.innerHTML = bdMsgsHTML(); if (abajo) m.scrollTop = m.scrollHeight; }
+    bdFirmar();
+  }
+  function bdAlFondo() { const m = document.getElementById('bdMsgs'); if (m) m.scrollTop = m.scrollHeight; }
+  async function bdFirmar() {
+    const b = apiBase(); const faltan = BD.msgs.filter(m => m.media_path && !BD.urls[m.media_path]).map(m => m.media_path);
+    for (const path of faltan) {
+      try {
+        const r = await fetch(`${b.url}/storage/v1/object/sign/crm-media/${path.split('/').map(encodeURIComponent).join('/')}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 3600 }) });
+        const j = await r.json(); if (j && (j.signedURL || j.signedUrl)) BD.urls[path] = `${b.url}/storage/v1${j.signedURL || j.signedUrl}`;
+      } catch (e) {}
+    }
+    if (faltan.length) { const m = document.getElementById('bdMsgs'); if (m) { m.innerHTML = bdMsgsHTML(); bdAlFondo(); } }
+  }
+  function bdTimer() {
+    if (BD.timer) return;
+    BD.timer = setInterval(async () => {
+      if (!document.querySelector('.nxCrmBd') || document.hidden) { if (!document.querySelector('.nxCrmBd')) { clearInterval(BD.timer); BD.timer = null; } return; }
+      const antes = BD.sel ? (BD.convs.find(x => String(x.id) === String(BD.sel)) || {}).ultimo_mensaje_at : null;
+      await bdCargar();
+      if (BD.sel) { const c = BD.convs.find(x => String(x.id) === String(BD.sel)); if (c && c.ultimo_mensaje_at !== antes) { await bdCargarMsgs(BD.sel); if (c.no_leidos > 0) api().patch('crm_conversaciones', 'id=eq.' + c.id, { no_leidos: 0 }).catch(() => {}); } }
+      bdPintarParcial();
+    }, 10000);
+  }
+  async function bdAbrir(id) {
+    BD.sel = id; BD.msgs = []; repintar();
+    await bdCargarMsgs(id);
+    const c = BD.convs.find(x => String(x.id) === String(id));
+    if (c && c.no_leidos > 0) { c.no_leidos = 0; api().patch('crm_conversaciones', 'id=eq.' + id, { no_leidos: 0 }).catch(() => {}); }
+    const ch = document.getElementById('bdChat'); if (ch) ch.innerHTML = bdChatHTML();
+    const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML();
+    bdAlFondo(); bdFirmar();
+    const t = document.getElementById('bdTx'); if (t && window.innerWidth > 760) t.focus();
+  }
+  function uuid() { try { return crypto.randomUUID(); } catch (e) { return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)); } }
+  async function bdEnviarCuerpo(body) {
+    const b = apiBase();
+    const r = await fetch(`${b.url}/functions/v1/crm-enviar`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.mensaje || ({ ventana_cerrada: 'Pasaron más de 24 horas: WhatsApp solo permite plantillas', canal_apagado: 'El canal está apagado', sin_configurar: 'Falta configurar Zernio en el servidor', sin_permiso: 'No tienes permiso para esta conversación', zernio_error: 'Zernio rechazó el envío' }[j.error]) || j.error || ('HTTP ' + r.status));
+    return j;
+  }
+  async function bdEnviar() {
+    if (BD.enviando) return;
+    const t = document.getElementById('bdTx'); const texto = t ? t.value.trim() : '';
+    if (!texto || !BD.sel) return;
+    BD.enviando = true; const key = uuid();
+    const temp = { id: 'tmp-' + key, direccion: 'out', cuerpo: texto, estado: 'pendiente', created_at: new Date().toISOString(), tipo: 'texto' };
+    BD.msgs.push(temp); t.value = ''; t.style.height = 'auto'; bdPintarParcial(); bdAlFondo();
+    try { await bdEnviarCuerpo({ conversacion_id: BD.sel, texto: texto, idempotency_key: key }); }
+    catch (e) { toast('err', 'No se envió', String(e.message || e)); }
+    BD.enviando = false;
+    await Promise.all([bdCargarMsgs(BD.sel), bdCargar()]); bdPintarParcial(); bdAlFondo();
+  }
+  async function bdAdjuntar(inp) {
+    const f = inp && inp.files && inp.files[0]; if (!f || !BD.sel) return;
+    if (f.size > 16 * 1024 * 1024) { toast('warn', 'Archivo muy grande', 'Máximo 16 MB'); inp.value = ''; return; }
+    const tipo = /^image\//.test(f.type) ? 'imagen' : /^video\//.test(f.type) ? 'video' : /^audio\//.test(f.type) ? 'audio' : 'documento';
+    const ext = (f.name.split('.').pop() || 'bin').replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const path = `salientes/${uuid()}.${ext}`; const b = apiBase();
+    const t = document.getElementById('bdTx'); const texto = t ? t.value.trim() : '';
+    try {
+      const up = await fetch(`${b.url}/storage/v1/object/crm-media/${path}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+      if (!up.ok) throw new Error('No se pudo subir el archivo');
+      await bdEnviarCuerpo({ conversacion_id: BD.sel, texto: texto, adjunto_path: path, adjunto_tipo: tipo, adjunto_nombre: f.name, idempotency_key: uuid() });
+      if (t) t.value = '';
+    } catch (e) { toast('err', 'No se envió el archivo', String(e.message || e)); }
+    inp.value = '';
+    await Promise.all([bdCargarMsgs(BD.sel), bdCargar()]); bdPintarParcial(); bdAlFondo();
+  }
+  async function bdPatch(id, body, ok) {
+    try { const r = await api().patch('crm_conversaciones', 'id=eq.' + id, body); const fila = Array.isArray(r) ? r[0] : r; const c = BD.convs.find(x => String(x.id) === String(id)); if (c) Object.assign(c, fila && fila.id ? fila : body); if (ok) toast('ok', ok); repintar(); bdAlFondo(); }
+    catch (e) { toast('err', 'No se pudo', errTxt(e)); }
+  }
+
   // ── Estilos ────────────────────────────────────────────────────────
   function ensureCSS() {
     if (document.getElementById('nxCrmCSS')) return;
@@ -508,7 +684,39 @@
 .nxCrmMotL{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .nxCrm *,.nxCrmModal *,.nxCrm ::placeholder,.nxCrmModal ::placeholder{text-transform:none!important}.nxCrm .nxCrmT th{text-transform:uppercase!important}
 .nxCrmFB>*{flex:none}
+.nxCrmKpis[hidden]{display:none}
+.nxCrmBd{display:grid;grid-template-columns:minmax(280px,360px) 1fr;border:1px solid var(--c-line);border-radius:16px;background:var(--c-paper);overflow:hidden;height:min(72vh,760px)}
+.nxCrmBd .bdL{display:flex;flex-direction:column;border-right:1px solid var(--c-line);min-width:0;min-height:0}
+.nxCrmBd .bdF{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid var(--c-line)}.nxCrmBd .bdF>*{flex:none}.nxCrmBd .bdF .nxCrmQ{min-width:0}.nxCrmBd .bdF .nxCrmChip{height:28px;font-size:12px;padding:0 10px}
+.nxCrmBd .bdList{overflow-y:auto;flex:1;min-height:0}
+.bdIt{display:flex;gap:10px;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--c-line);background:none;cursor:pointer;font:inherit;color:var(--c-ink)}.bdIt:hover{background:rgba(0,0,0,.025)}.bdIt.on{background:rgba(201,162,39,.12)}
+.bdIt .av,.bdH .av{position:relative;width:40px;height:40px;border-radius:50%;background:var(--c-ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:13px}.bdIt .av i{position:absolute;right:-3px;bottom:-3px;background:#fff;border-radius:50%;font-size:15px;padding:1px}
+.bdIt .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.bdIt .r1,.bdIt .r2{display:flex;justify-content:space-between;align-items:center;gap:6px}.bdIt .r1 b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdIt .r1 small{font-size:11px;color:var(--c-mute);flex:none}
+.bdIt .pv{font-size:12.5px;color:var(--c-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdIt.unread .pv{color:var(--c-ink);font-weight:600}.bdIt .nl{background:#15803d;color:#fff;border-radius:99px;font-size:10.5px;font-weight:700;padding:1px 7px;flex:none}.bdIt .pd{width:8px;height:8px;border-radius:50%;background:var(--c-gold);flex:none}
+.bdIt .r3{font-size:10.5px;color:var(--c-mute)}
+.bdVac{padding:24px;text-align:center;color:var(--c-mute);font-size:12.5px}
+.nxCrmBd .bdC{display:flex;flex-direction:column;min-width:0;min-height:0;background:linear-gradient(0deg,rgba(201,162,39,.04),rgba(201,162,39,.04)),var(--c-paper)}
+.bdEmpty{margin:auto;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--c-mute);text-align:center;padding:30px}.bdEmpty i{font-size:34px}.bdEmpty b{color:var(--c-ink)}
+.bdH{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--c-line);background:var(--c-paper)}.bdH .who{flex:1;min-width:0;display:flex;flex-direction:column}.bdH .who b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bdH .who small{font-size:11.5px;color:var(--c-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bdBack{display:none;border:0;background:none;font-size:20px;cursor:pointer;color:var(--c-ink);padding:4px}
+.bdTools{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--c-line);overflow-x:auto;scrollbar-width:none;background:var(--c-paper)}.bdTools .nxCrmChip{height:30px;font-size:12px;display:inline-flex;align-items:center;gap:5px;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.bdAsig{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--c-line);border-radius:999px;padding:0 4px 0 10px;background:#fff;font-size:12px}.bdAsig select{border:0;background:none;font:600 12px inherit;height:28px;max-width:160px}
+.bdMsgs{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
+.bdDia{align-self:center;font-size:11px;color:var(--c-mute);background:rgba(0,0,0,.05);border-radius:99px;padding:2px 10px;margin:6px 0}
+.bdM{max-width:min(78%,520px);padding:8px 10px 5px;border-radius:14px;background:#fff;border:1px solid var(--c-line);align-self:flex-start;display:flex;flex-direction:column;gap:4px}
+.bdM.out{align-self:flex-end;background:var(--c-ink);color:#fff;border-color:var(--c-ink)}.bdM.fail{background:#fff5f5;color:var(--c-ink);border-color:#fca5a5}
+.bdM p{margin:0;font-size:13.5px;white-space:pre-wrap;overflow-wrap:anywhere}.bdM small{font-size:10.5px;opacity:.7;align-self:flex-end;display:inline-flex;gap:3px;align-items:center}.bdM small .lei{color:#60a5fa;opacity:1}.bdM small .err{color:#b91c1c}.bdM em{font-size:11px;color:#b91c1c;font-style:normal}
+.bdM img,.bdM video{max-width:100%;max-height:280px;border-radius:10px;display:block}.bdM audio{max-width:240px}.bdM .doc{color:inherit;font-size:13px}.bdM .ld{font-size:12px;opacity:.7}
+.bdComp{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--c-line);background:var(--c-paper);padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.bdComp textarea{flex:1;min-height:40px;max-height:140px;border:1px solid var(--c-line);border-radius:20px;padding:10px 14px;font:14px/1.35 inherit;resize:none;background:#fff}
+.bdClip{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;color:var(--c-mute);flex:none}.bdClip input{display:none}
+.bdSend{width:40px;height:40px;border-radius:50%;border:0;background:var(--c-ink);color:#fff;font-size:17px;cursor:pointer;flex:none}
+.bdAviso{padding:12px 14px;border-top:1px solid var(--c-line);font-size:12.5px;color:#92400e;background:#fffbeb}
+.bdCanales{border:1px solid var(--c-line);border-radius:14px;padding:10px 12px;margin-bottom:10px;background:var(--c-paper)}.bdCanales summary{cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.bdCan{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--c-line)}.bdCan>i{font-size:22px}.bdCan>div{flex:1;min-width:0;display:flex;flex-direction:column}.bdCan b{font-size:13px}.bdCan small{font-size:11px;color:var(--c-mute)}
+.bdCan .sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer}.bdNota{font-size:12px;color:var(--c-mute);margin:8px 0 0}
 @media(max-width:1100px){.nxCrmKpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.nxCrmBd{grid-template-columns:1fr;height:calc(100dvh - 190px);border-radius:14px}.nxCrmBd .bdL{border-right:0}.nxCrmBd.sel .bdL{display:none}.nxCrmBd:not(.sel) .bdC{display:none}.bdBack{display:inline-flex}.bdM{max-width:86%}}
 @media(max-width:760px){.nxCrmKpis{grid-template-columns:1fr 1fr;gap:8px}.nxCrmKpis .k{padding:10px 12px}.nxCrmKpis .k b{font-size:17px}.nxCrmBoard{grid-template-columns:repeat(5,82vw)}.nxCrmGrid{grid-template-columns:1fr}.nxCrmSec .g2,.nxCrmComp .venc{grid-template-columns:1fr}.nxCrmHead h2{font-size:20px}.nxCrmHead .nxCrmBtn{padding:0 12px}}
 @media(prefers-reduced-motion:reduce){.nxCrmCol{transition:none}}
 `;
@@ -516,6 +724,25 @@
   }
 
   window.nxCRM = {
+    bdAbrir, bdEnviar, bdAdjuntar,
+    bdCerrar: function () { BD.sel = null; BD.msgs = []; repintar(); },
+    bdFiltro: function (k) { BD.filtro = k; repintar(); },
+    bdCanalF: function (k) { BD.canalF = k; repintar(); },
+    bdBuscar: function (q) { BD.q = q || ''; const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML(); },
+    bdArchivar: function (id) { if (!confirm('¿Archivar esta conversación? Vuelve sola a la bandeja si el cliente escribe de nuevo.')) return; BD.sel = null; bdPatch(id, { archivada: true }, 'Conversación archivada').then(() => { BD.convs = BD.convs.filter(c => String(c.id) !== String(id)); repintar(); }); },
+    bdAsignar: function (id, u) { bdPatch(id, { asignado_id: u || null }, u ? 'Conversación asignada' : 'Conversación liberada'); },
+    bdCliente: function (id) { try { ctx().elegirCliente(function (c) { if (c && c.id) bdPatch(id, { cliente_id: c.id }, 'Cliente vinculado'); }); } catch (e) {} },
+    bdOportunidad: async function (id) {
+      const c = BD.convs.find(x => String(x.id) === String(id)); if (!c) return;
+      const f = (PLAT[c.plataforma] || PLAT.whatsapp)[0];
+      try {
+        const b = { nombre: (f + ' · ' + bdNombre(c)).slice(0, 120), cliente_id: c.cliente_id || null, contacto: c.contacto_nombre || null, telefono: c.telefono_e164 || null, fuente: f, etapa: 'nuevo', asignado_id: c.asignado_id || (esAdmin() ? null : yo()) };
+        try { if (ctx().nextSeq) b.numero = await ctx().nextSeq('crm'); } catch (e) {}
+        const r = await api().post('pos_crm', b); const op = Array.isArray(r) ? r[0] : r;
+        if (op && op.id) { await bdPatch(id, { crm_id: op.id }, 'Oportunidad creada'); await cargar(); repintar(); }
+      } catch (e) { toast('err', 'No se pudo crear la oportunidad', errTxt(e)); }
+    },
+    bdCanal: async function (id, on) { try { await api().patch('crm_canales', 'id=eq.' + id, { activo: !!on }); toast('ok', on ? 'Canal activado' : 'Canal apagado'); await bdCargar(); repintar(); } catch (e) { toast('err', 'No se pudo', errTxt(e)); } },
     cargar, render, recargar, avisosHTML, docGuardado, ventaCreada, abrir, nueva, guardar, guardarCampo, agregarAct, tareaHecha, consentimiento, cotizar, facturar,
     mover: function (id, etapa) { mover(id, etapa); },
     motivo: function (id, m) { m = String(m || '').trim(); if (!m) { toast('warn', 'Escribe o elige el motivo'); return; } cerrar('nxCrmMot'); mover(id, 'perdido', m); },

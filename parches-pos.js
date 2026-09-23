@@ -4940,7 +4940,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       // financiado COMPLETO otra vez la dejaría sobre-acreditada. Solo se reversa lo que sigue
       // pendiente; lo ya cobrado se trata igual que el pago inicial (sale de Caja, asumiendo que
       // se devuelve — el aviso de arriba ya le dijo al cajero que tiene que devolverlo).
-      try {
+      // STUDIO: al pasar a 'anulada', el disparador del servidor BORRA el asiento de la venta (reversa completa);
+      // un asiento inverso aquí la reversaría dos veces.
+      if (!STUDIO_ASIENTO_VENTA_SERVIDOR) try {
         const byc = await ctasMap();
         if (Object.keys(byc).length) {
           const caja = Number(v.pagado_efectivo || 0) + Number(v.pagado_tarjeta || 0) + Number(v.pagado_transferencia || 0) + Number(v.pagado_otro || 0) + _totalPagadoCuotas;
@@ -5120,7 +5122,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const byc = await ctasMap(); if (!Object.keys(byc).length) return;
       // Reversa de la venta: Debe Ventas + ITBIS / Haber Caja o CxC
       const haberCod = (metodo.indexOf('CxC') >= 0) ? '1103' : '1101';
-      const lineas = [lnCta(byc, '4101', 'Ventas', Number(t.subtotal || 0), 0), lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0), lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0))];
+      // Si la org no separa el ITBIS (STUDIO: el servidor registra la venta completa en 4101, sin 2102),
+      // la devolución revierte 4101 por el total — mismo criterio que la venta, y el asiento cuadra.
+      const sep2102 = !!byc['2102'];
+      const lineas = [lnCta(byc, '4101', 'Ventas', sep2102 ? Number(t.subtotal || 0) : Number(t.total || 0), 0), sep2102 ? lnCta(byc, '2102', 'ITBIS por pagar', Number(t.itbis || 0), 0) : null, lnCta(byc, haberCod, haberCod === '1103' ? 'Cuentas por cobrar (clientes)' : 'Caja', 0, Number(t.total || 0))];
       await postAsientoConcepto(dev.fecha, 'Devolución ' + (dev.numero || '') + ' (fact. ' + (venta.numero_factura || '#' + venta.numero) + ')', 'devolucion', dev.id, lineas, dev.numero);
     } catch (e) {}
   }
@@ -7535,6 +7540,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 
   // ── Asiento automático desde una venta del POS ──
   async function postAsientoVenta(venta, c) {
+    // STUDIO (auditoría de automatizaciones, 2026-09-23): el asiento de la venta lo crea y lo rehace el
+    // SERVIDOR (pos_reconstruir_asiento_venta, disparadores pos_venta_items_recontabilizar /
+    // pos_ventas_recontabilizar) — única fuente. Publicarlo también aquí duplicaba el ingreso (ventas sin
+    // ITBIS) o dejaba un rastro de ASIENTO_DESCUADRADO (con ITBIS: la cuenta 2102 no existe en STUDIO).
+    if (STUDIO_ASIENTO_VENTA_SERVIDOR) return;
     try {
       let cu = _cuentas;
       if (!cu || !cu.length) { try { cu = await getAPI().get('pos_cuentas', 'select=id,codigo,nombre') || []; } catch (e) { cu = []; } }
@@ -7559,6 +7569,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       await guardarAsientoBalanceado({ numero: await nextSeq('asiento'), fecha: (String(venta.fecha || '').slice(0, 10)) || isoHoy(), concepto: 'Venta ' + (venta.numero_factura || ('No. ' + (venta.numero || ''))), referencia: venta.numero_factura || String(venta.numero || ''), tipo: 'venta', origen_id: venta.id }, lineas);
     } catch (e) {}
   }
+  // STUDIO: ventas y anulaciones se contabilizan en el servidor (ver postAsientoVenta).
+  const STUDIO_ASIENTO_VENTA_SERVIDOR = true;
   // Cuentas en memoria (carga perezosa) para los asientos automáticos
   async function ctasMap() {
     let cu = _cuentas;

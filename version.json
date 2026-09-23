@@ -1,7 +1,16 @@
 {
-  "version": "58.99",
+  "version": "59.00",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.00",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Contabilidad: cada venta y cada anulación se contabilizan una sola vez (en el servidor); la aplicación ya no publica un segundo asiento.",
+        "Devoluciones: el asiento revierte «Ventas» por el total, igual que la venta, y ya cuadra cuando la factura lleva ITBIS.",
+        "Plan de cuentas completado (sueldos, retenciones, capital y gastos): ahora se contabilizan los gastos, las salidas de caja y la nómina."
+      ]
+    },
     {
       "version": "58.99",
       "fecha": "2026-09-23",

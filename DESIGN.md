@@ -271,3 +271,19 @@ so every existing module receives the upgrade automatically.
   `prefers-reduced-transparency` gets an opaque white surface.
 - **Accessibility and safety:** status/error live regions, 28px close control with an accessible name, escaped title/message
   content, explicit dismissal, automatic dismissal after 4.5 seconds and no interaction blocking.
+
+## 16. Approved gold login — 2026-09-23
+
+The owner selected the original gold mobile reference, rejected the alternate editorial layout and white color test,
+and explicitly requested implementation and publication. This replaces the 58.96 presentation layer only.
+
+- Single centered column with the original STUDIO logo, black background, restrained orbital gold halo,
+  “Bienvenido”, “Inicia sesión en Studio”, two inputs and the gold action.
+- Preserve the approved softly shaded gold button (owner-selected reference, consistent with §14).
+- Staggered entry, slow orbital light, button sheen, arrow feedback, press response and touch ripple.
+- Loading and success come from the existing authentication path; never simulate success in production.
+- Mobile safe areas, scroll on short displays, 16px input text and 44px touch targets.
+- Honor reduced motion and pause decorative effects when the login or document is hidden.
+- Existing priority declarations are revised in place; no additional priority overrides are introduced.
+
+- Follow-up owner request: emphasize the logo. Center it at 290px (maximum 94% of the form), retaining the original mark and soft halo.

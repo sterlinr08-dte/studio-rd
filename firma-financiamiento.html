@@ -48,6 +48,24 @@ button{font-family:inherit;cursor:pointer}
 .estado.ok .ic{color:var(--ok)}.estado.bad .ic{color:var(--bad)}
 .foot{text-align:center;color:var(--mute);font-size:12px;margin-top:14px;line-height:1.5}
 .load{padding:60px 20px;text-align:center;color:var(--mute)}
+
+/* Modo expediente (como firma-prestamo.html de NEXUS PRO) */
+.paso{display:flex;align-items:center;gap:10px;margin-bottom:10px}.paso i{width:28px;height:28px;border-radius:50%;background:var(--black);color:#fffefa;font-style:normal;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+.paso.ok i{background:var(--ok)}.paso h2{margin:0}
+.aviso{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45;margin-bottom:12px}
+.decl{background:#fff;border:1px solid var(--line2);border-left:3px solid var(--gold);border-radius:10px;padding:12px;font-size:14px;line-height:1.5;margin-top:10px}
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:10px}.doc{border:1.5px dashed rgba(0,0,0,.22);border-radius:14px;background:#fff;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);position:relative;overflow:hidden}
+.doc small{font-weight:500;color:var(--mute);font-size:12px}.doc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.doc.ok{border-style:solid;border-color:var(--ok)}
+.doc .tag{position:absolute;left:8px;bottom:8px;background:rgba(10,10,10,.75);color:#fffefa;font-size:11.5px;padding:3px 8px;border-radius:999px;z-index:1}
+.doc.full{grid-column:1/-1}.guion{background:#0a0a0a;color:#fffefa;border-radius:12px;padding:14px;font-size:16px;line-height:1.5;margin:10px 0}
+.guion span{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:700}
+.vid video{width:100%;border-radius:12px;background:#000;max-height:260px;display:block}
+.bar{height:6px;border-radius:3px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:var(--gold);width:0}
+.rec{position:fixed;inset:0;background:#000;z-index:50;display:flex;flex-direction:column}.rec video{flex:1;width:100%;object-fit:cover;transform:scaleX(-1)}
+.rec .tp{position:absolute;top:0;left:0;right:0;padding:calc(12px + env(safe-area-inset-top)) 16px 16px;background:linear-gradient(180deg,rgba(0,0,0,.85),rgba(0,0,0,.4) 80%,transparent);color:#fff;font-size:19px;line-height:1.45;max-height:45vh;overflow:auto}
+.rec .ctl{position:absolute;left:0;right:0;bottom:0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(0deg,rgba(0,0,0,.8),transparent)}
+.rec .rb{width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#dc2626;cursor:pointer}.rec .rb.on{border-radius:18px;width:64px;height:64px;margin:5px}
+.rec .t{color:#fff;font-variant-numeric:tabular-nums;font-size:16px;min-width:70px}.rec .x{color:#fff;background:rgba(255,255,255,.18);border:0;border-radius:999px;height:44px;padding:0 16px;font-size:15px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -60,6 +78,7 @@ button{font-family:inherit;cursor:pointer}
   var URL_BASE = 'https://edbknlkjnlfmkkiizdbe.supabase.co/rest/v1/rpc/';
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec';
   var app = document.getElementById('app');
+  if (new URLSearchParams(location.search).get('s')) return; // modo expediente: lo maneja el segundo script
   var token = new URLSearchParams(location.search).get('t') || '';
   var D = null, pad = null, trazos = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -143,6 +162,171 @@ button{font-family:inherit;cursor:pointer}
     if (r.estado !== 'activo') return estado('bad', '!', 'Contrato no disponible', 'Este financiamiento ya no está activo.');
     pintar();
   }).catch(function () { estado('bad', '!', 'Sin conexión', 'No pudimos cargar tu contrato. Revisa tu internet y vuelve a abrir el link.'); });
+})();
+</script>
+<script>
+/* ── Modo EXPEDIENTE (?s=<token>) — réplica del link de firma de NEXUS PRO (firma-prestamo.html) para ventas a crédito ──
+   Pasos: 1 tu compra · 2 cédula frente/dorso · 3 foto con la cédula · 4 VIDEO DE COMPROMISO (grabadora con teleprompter,
+   hasta 3 min; respaldo: cámara del teléfono) · 5 firma · 6 aceptación. Los archivos van directo al bucket PRIVADO
+   fin-expediente dentro de sol/<token>/ (la base solo lo permite mientras el expediente está abierto). */
+(function () {
+  'use strict';
+  var tok = new URLSearchParams(location.search).get('s'); if (!tok) return;
+  var SB = 'https://edbknlkjnlfmkkiizdbe.supabase.co';
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec';
+  var app = document.getElementById('app');
+  var D = null, F = { cf: null, cd: null, sf: null, vd: null }, subiendo = 0, firmaTrazos = 0, pad = null;
+  var MAX_IMG = 12 * 1024 * 1024, MAX_VID = 80 * 1024 * 1024, MAX_SEG = 180;
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function rd(v) { var n = Math.round((Number(v) || 0) * 100) / 100; return 'RD$ ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fecha(iso) { if (!iso) return ''; var d = String(iso).slice(0, 10).split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
+  function rpc(fn, body) {
+    return fetch(SB + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error((j && j.message) || 'Error'); return j; }); });
+  }
+  function subir(blob, campo, ext, onProg) {
+    var path = 'sol/' + tok + '/' + campo + '-' + Date.now() + '.' + ext;
+    return new Promise(function (ok, ko) {
+      var x = new XMLHttpRequest(); x.open('POST', SB + '/storage/v1/object/fin-expediente/' + path);
+      x.setRequestHeader('apikey', ANON); x.setRequestHeader('Authorization', 'Bearer ' + ANON); x.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+      x.upload.onprogress = function (e) { if (e.lengthComputable && onProg) onProg(e.loaded / e.total); };
+      x.onload = function () { if (x.status >= 200 && x.status < 300) ok(path); else ko(new Error('No se pudo subir (' + x.status + ')')); };
+      x.onerror = function () { ko(new Error('Sin conexión')); }; x.send(blob);
+    });
+  }
+  function estado(cls, ic, t, txt) { app.innerHTML = '<div class="card estado ' + cls + '"><div class="ic">' + ic + '</div><h1>' + esc(t) + '</h1><p class="sub">' + txt + '</p></div><p class="foot">Si tienes dudas, escribe a la tienda por WhatsApp.</p>'; }
+  var FREC = { semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' };
+  function pintar() {
+    var cu = D.cuotas || [], tot = cu.reduce(function (a, c) { return a + (Number(c.monto) || 0); }, 0);
+    var arts = (D.articulos || []).map(function (a) { return esc(a.nombre) + (Number(a.cantidad) > 1 ? ' × ' + a.cantidad : ''); }).join(', ');
+    app.innerHTML =
+      (D.correccion && D.exp_estado === 'corregir' ? '<div class="aviso"><b>⚠️ Hay algo que corregir:</b> ' + esc(D.correccion) + '<br>Revisa ese punto y vuelve a enviar.</div>' : '') +
+      '<div class="card"><div class="paso"><i>1</i><h2>Tu compra a crédito</h2></div>' +
+      '<p class="sub">Hola, ' + esc((D.cliente || '').split(' ')[0]) + '. Revisa los datos y completa los pasos. Toma unos 5 minutos.</p>' +
+      '<div class="kv"><div style="grid-column:1/-1"><span>Artículo(s)</span><b style="font-size:14px">' + (arts || '—') + '</b></div>' +
+      '<div><span>Precio</span><b>' + rd(D.precio) + '</b></div><div><span>Inicial</span><b>' + rd(D.inicial) + '</b></div>' +
+      '<div class="big"><span>' + cu.length + ' cuotas ' + esc(FREC[D.frecuencia] || '') + ' · total a pagar en cuotas</span><b>' + rd(tot) + '</b></div></div>' +
+      (cu.length ? '<table style="margin-top:10px"><thead><tr><th>#</th><th>Fecha</th><th class="r">Cuota</th></tr></thead><tbody>' + cu.map(function (c) { return '<tr><td>' + c.numero + '</td><td>' + fecha(c.fecha) + '</td><td class="r">' + rd(c.monto) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      '<div class="decl">' + esc(D.declaracion || '') + '</div></div>' +
+      '<div class="card"><div class="paso" id="p2"><i>2</i><h2>Tu cédula</h2></div><div class="docs">' + slot('cf', 'Frente de la cédula', 'environment') + slot('cd', 'Dorso de la cédula', 'environment') + '</div></div>' +
+      '<div class="card"><div class="paso" id="p3"><i>3</i><h2>Foto tuya con la cédula</h2></div><p class="sub">Sostén la cédula al lado de tu cara, con buena luz.</p><div class="docs">' + slot('sf', 'Tomar la foto', 'user', true) + '</div></div>' +
+      '<div class="card"><div class="paso" id="p4"><i>4</i><h2>Video de compromiso</h2></div><p class="sub">Graba un video corto leyendo en voz alta este texto. El texto se queda en la pantalla mientras grabas.</p>' +
+      '<div class="guion"><span>Lee esto en el video</span>' + esc(D.guion || '') + '</div><div id="vidBox"></div>' +
+      '<div class="row"><button class="btn p" type="button" id="bGrabar">● Grabar el video</button></div>' +
+      '<input type="file" id="fVid" accept="video/*" capture="user" style="display:none"><button class="btn" type="button" id="bVidAlt" style="margin-top:8px;width:100%;min-height:44px;font-size:14px">¿No abre la cámara? Grabar con la cámara del teléfono</button><div class="bar" id="vBar" style="display:none"><i></i></div></div>' +
+      '<div class="card"><div class="paso" id="p5"><i>5</i><h2>Tu firma</h2></div><div class="pad"><canvas id="cv" width="1200" height="400" aria-label="Espacio para firmar"></canvas><div class="ph" id="ph">Firma aquí con tu dedo</div></div><div class="row"><button class="btn" type="button" id="bBorrar">Borrar firma</button></div></div>' +
+      '<div class="card"><div class="paso" id="p6"><i>6</i><h2>Confirmar y enviar</h2></div>' +
+      '<div class="f"><span>Tu nombre completo</span><input id="nombre" autocomplete="name" value="' + esc(D.cliente || '') + '"></div>' +
+      (D.pide_telefono ? '<div class="f"><span>Últimos 4 dígitos de tu teléfono</span><input id="tel4" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000"></div>' : '') +
+      '<label class="chk"><input type="checkbox" id="acepto"><span>Acepto los términos de esta compra a crédito tal como se describen arriba y confirmo que la cédula, la foto, el video y la firma son míos.</span></label>' +
+      '<button class="btn p" type="button" id="bEnviar" style="width:100%">Enviar a la tienda</button><div class="msg" id="msg"></div></div>' +
+      '<p class="foot">Tus documentos son privados: solo la tienda puede verlos.</p>';
+    ['cf', 'cd', 'sf'].forEach(function (k) { var i = document.getElementById('in_' + k); i.onchange = function () { foto(k, i); }; });
+    document.getElementById('bGrabar').onclick = grabar;
+    document.getElementById('bVidAlt').onclick = function () { document.getElementById('fVid').click(); };
+    document.getElementById('fVid').onchange = function () { var f = this.files && this.files[0]; if (f) subirVideo(f); this.value = ''; };
+    iniciarPad(); document.getElementById('bBorrar').onclick = function () { pad.ctx.clearRect(0, 0, pad.cv.width, pad.cv.height); firmaTrazos = 0; document.getElementById('ph').style.display = ''; revisar(); };
+    ['nombre', 'tel4', 'acepto'].forEach(function (id) { var e = document.getElementById(id); if (e) e.addEventListener(id === 'acepto' ? 'change' : 'input', revisar); });
+    document.getElementById('bEnviar').onclick = enviar; revisar();
+  }
+  function slot(k, lbl, cap, full) { return '<label class="doc' + (full ? ' full' : '') + '" id="d_' + k + '"><span class="tag" id="t_' + k + '" style="display:none">✓</span><span>📷</span>' + esc(lbl) + '<small>Toca para tomar la foto</small><input type="file" id="in_' + k + '" accept="image/*" capture="' + cap + '" style="display:none"></label>'; }
+  function reducir(file) {
+    return new Promise(function (ok, ko) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () { var w = img.naturalWidth, h = img.naturalHeight, m = 1400; if (w > m) { h = Math.round(h * m / w); w = m; } var c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); URL.revokeObjectURL(u); c.toBlob(function (b) { b ? ok(b) : ko(new Error('foto')); }, 'image/jpeg', 0.8); };
+      img.onerror = function () { ko(new Error('No se pudo leer la foto')); }; img.src = u;
+    });
+  }
+  function foto(k, inp) {
+    var f = inp.files && inp.files[0]; if (!f) return; inp.value = '';
+    if (f.size > MAX_IMG) return error('La foto es muy grande (máximo 12 MB).');
+    var d = document.getElementById('d_' + k), t = document.getElementById('t_' + k);
+    subiendo++; t.style.display = ''; t.textContent = 'Subiendo…'; revisar();
+    reducir(f).then(function (b) {
+      var prev = URL.createObjectURL(b); var old = d.querySelector('img'); if (old) old.remove(); var im = document.createElement('img'); im.src = prev; im.alt = ''; d.appendChild(im);
+      return subir(b, k, 'jpg');
+    }).then(function (p) { F[k] = p; d.classList.add('ok'); t.textContent = '✓ Lista'; })
+      .catch(function (e) { F[k] = null; t.textContent = 'Error, toca de nuevo'; error(e.message); })
+      .then(function () { subiendo--; revisar(); });
+  }
+  // ── Grabadora con teleprompter ──
+  var rec = null, chunks = [], stream = null, tmr = null, seg = 0;
+  function mime() { var o = ['video/mp4', 'video/mp4;codecs=avc1', 'video/webm;codecs=vp8,opus', 'video/webm']; for (var i = 0; i < o.length; i++) { if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(o[i])) return o[i]; } return ''; }
+  function grabar() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { document.getElementById('fVid').click(); return; }
+    var ov = document.createElement('div'); ov.className = 'rec';
+    ov.innerHTML = '<video id="rv" playsinline muted autoplay></video><div class="tp">' + esc(D.guion || '') + '</div><div class="ctl"><button class="x" type="button" id="rx">Cancelar</button><button class="rb" type="button" id="rb" aria-label="Grabar"></button><span class="t" id="rt">0:00</span></div>';
+    document.body.appendChild(ov);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true }).then(function (s) {
+      stream = s; var v = document.getElementById('rv'); v.srcObject = s; v.play();
+      document.getElementById('rb').onclick = function () { if (rec && rec.state === 'recording') parar(); else iniciar(); };
+    }).catch(function () { cerrar(); document.getElementById('fVid').click(); });
+    document.getElementById('rx').onclick = function () { if (rec && rec.state === 'recording') { rec.onstop = null; try { rec.stop(); } catch (e) {} } cerrar(); };
+    function iniciar() {
+      chunks = []; var mt = mime(); try { rec = new MediaRecorder(stream, mt ? { mimeType: mt } : undefined); } catch (e) { rec = new MediaRecorder(stream); }
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = function () { var b = new Blob(chunks, { type: (chunks[0] && chunks[0].type) || rec.mimeType || 'video/mp4' }); cerrar(); subirVideo(b); };
+      rec.start(1000); seg = 0; document.getElementById('rb').classList.add('on');
+      tmr = setInterval(function () { seg++; var e = document.getElementById('rt'); if (e) e.textContent = Math.floor(seg / 60) + ':' + ('0' + seg % 60).slice(-2) + ' / 3:00'; if (seg >= MAX_SEG) parar(); }, 1000);
+    }
+    function parar() { clearInterval(tmr); try { rec.stop(); } catch (e) {} }
+    function cerrar() { clearInterval(tmr); try { stream && stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} stream = null; ov.remove(); }
+  }
+  function subirVideo(b) {
+    if (b.size > MAX_VID) return error('El video es muy pesado (máximo 80 MB). Grábalo más corto.');
+    if (b.size < 20000) return error('El video salió vacío. Intenta de nuevo.');
+    var tipo = b.type || 'video/mp4', ext = /quicktime/.test(tipo) ? 'mov' : /webm/.test(tipo) ? 'webm' : /3gpp/.test(tipo) ? '3gp' : 'mp4';
+    var box = document.getElementById('vidBox'); box.innerHTML = '<div class="vid"><video controls playsinline src="' + URL.createObjectURL(b) + '"></video></div>';
+    var bar = document.getElementById('vBar'), bi = bar.querySelector('i'); bar.style.display = ''; bi.style.width = '0';
+    subiendo++; F.vd = null; revisar();
+    var base = String(tipo).split(';')[0].trim() || 'video/mp4'; var blob = new Blob([b], { type: base }); // el tipo sin «;codecs=…» (Storage valida el tipo exacto)
+    subir(blob, 'video', ext, function (p) { bi.style.width = Math.round(p * 100) + '%'; })
+      .then(function (p) { F.vd = p; document.getElementById('bGrabar').textContent = '● Grabar de nuevo'; bi.style.width = '100%'; })
+      .catch(function (e) { error('No se pudo subir el video: ' + e.message); bar.style.display = 'none'; })
+      .then(function () { subiendo--; revisar(); });
+  }
+  function iniciarPad() {
+    var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), dib = false;
+    ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0a0a0a';
+    function pos(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; }
+    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); dib = true; firmaTrazos++; document.getElementById('ph').style.display = 'none'; var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); try { cv.setPointerCapture(e.pointerId); } catch (x) {} });
+    cv.addEventListener('pointermove', function (e) { if (!dib) return; e.preventDefault(); var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    function up() { if (dib) { dib = false; revisar(); } } cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    pad = { cv: cv, ctx: ctx };
+  }
+  function listo() {
+    var t4 = document.getElementById('tel4'), n = document.getElementById('nombre'), a = document.getElementById('acepto');
+    return { fotos: !!(F.cf && F.cd), selfie: !!F.sf, video: !!F.vd, firma: firmaTrazos > 0, datos: !!(n && n.value.trim().length >= 5 && (!t4 || /^\d{4}$/.test(t4.value.trim())) && a && a.checked) };
+  }
+  function revisar() {
+    var L = listo(); [['p2', L.fotos], ['p3', L.selfie], ['p4', L.video], ['p5', L.firma], ['p6', L.datos]].forEach(function (x) { var e = document.getElementById(x[0]); if (e) e.classList.toggle('ok', x[1]); });
+    var b = document.getElementById('bEnviar'); if (!b) return;
+    var todo = L.fotos && L.selfie && L.video && L.firma && L.datos && subiendo === 0; b.disabled = !todo;
+    b.textContent = subiendo ? 'Subiendo archivos…' : todo ? 'Enviar a la tienda' : 'Completa los pasos para enviar';
+  }
+  var ERR = { TELEFONO_NO_COINCIDE: 'Los 4 dígitos no coinciden con el teléfono que tiene la tienda.', FALTA_ARCHIVO: 'Falta algún archivo. Revisa las fotos y el video.', FIRMA_INVALIDA: 'La firma está muy corta. Firma de nuevo.', DEBE_ACEPTAR: 'Marca la casilla de aceptación.', LINK_VENCIDO: 'Este link venció. Pide a la tienda uno nuevo.', YA_ENVIADO: 'Ya enviaste tus datos.', SOLICITUD_CERRADA: 'Esta solicitud ya fue decidida por la tienda.' };
+  function error(t) { var m = document.getElementById('msg'); if (!m) return alert(t); m.className = 'msg bad'; m.textContent = t; m.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  function enviar() {
+    var b = document.getElementById('bEnviar'); b.disabled = true; b.textContent = 'Enviando…';
+    var t4 = document.getElementById('tel4');
+    rpc('pos_fin_sol_enviar', { p_token: tok, p_cedula_frente: F.cf, p_cedula_dorso: F.cd, p_selfie: F.sf, p_video: F.vd, p_firma: pad.cv.toDataURL('image/png'), p_nombre: document.getElementById('nombre').value.trim(), p_tel4: t4 ? t4.value.trim() : '', p_acepta: true })
+      .then(function (r) {
+        if (r && r.ok) return estado('ok', '✓', '¡Listo, ' + (D.cliente || '').split(' ')[0] + '!', 'La tienda recibió tus datos y los va a revisar. Te avisarán por WhatsApp.');
+        var e = r && r.error; if (e === 'YA_ENVIADO' || e === 'LINK_VENCIDO' || e === 'SOLICITUD_CERRADA') return estado('bad', '!', 'No se pudo enviar', esc(ERR[e]));
+        error(ERR[e] || 'No se pudo enviar. Intenta de nuevo.'); revisar();
+      }).catch(function () { error('Sin conexión. Revisa tu internet e intenta de nuevo.'); revisar(); });
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(tok)) { estado('bad', '!', 'Link no válido', 'Abre el link completo que te envió la tienda por WhatsApp.'); return; }
+  document.querySelector('.top span').textContent = 'Solicitud de crédito';
+  rpc('pos_fin_sol_ver', { p_token: tok }).then(function (r) {
+    if (!r || !r.ok) return estado('bad', '!', 'Link no válido', 'Este link no existe. Pide a la tienda que te lo envíe de nuevo.');
+    D = r; document.getElementById('emp').textContent = r.empresa || 'STUDIO';
+    if (r.estado === 'aprobada') return estado('ok', '✓', 'Tu crédito ya fue aprobado', 'No tienes que hacer nada más en este link.');
+    if (r.estado !== 'pendiente') return estado('bad', '!', 'Solicitud cerrada', 'Esta solicitud ya no está activa. Escribe a la tienda si tienes dudas.');
+    if (r.exp_estado === 'enviado') return estado('ok', '✓', 'Ya enviaste tus datos', 'La tienda los está revisando. Si falta algo, te enviarán este mismo link para corregir.');
+    if (r.vencido) return estado('bad', '!', 'Este link venció', 'Pide a la tienda que te envíe uno nuevo.');
+    pintar();
+  }).catch(function () { estado('bad', '!', 'Sin conexión', 'No pudimos cargar tu solicitud. Revisa tu internet y vuelve a abrir el link.'); });
 })();
 </script>
 </body>

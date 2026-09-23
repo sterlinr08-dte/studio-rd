@@ -8,7 +8,8 @@
       "notas": [
         "Financiamiento: el cliente ya puede firmar su contrato desde el link de WhatsApp (confirma con los últimos 4 dígitos de su teléfono). Si el link venció, el sistema crea uno nuevo al enviarlo.",
         "Reportes → Financiamiento: resumen, cartera, cuotas vencidas por antigüedad, cuotas por cobrar, cobros, otorgados, solicitudes y contratos sin firma.",
-        "Documentos del cliente (cédula, carta de trabajo…) se suben desde la solicitud o el financiamiento, con foto del celular o PDF."
+        "Documentos del cliente (cédula, carta de trabajo…) se suben desde la solicitud o el financiamiento, con foto del celular o PDF.",
+        "Expediente del cliente por link (como NEXUS PRO): desde la solicitud se envía un link por WhatsApp donde el cliente sube su cédula (frente y dorso), una foto con la cédula, graba un video leyendo su compromiso y firma. La tienda lo revisa, puede pedir corrección y al aprobar todo queda en el contrato con su anexo."
       ]
     },
     {

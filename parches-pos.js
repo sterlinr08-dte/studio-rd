@@ -11889,8 +11889,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ── Documentos del cliente (cédula, carta de trabajo…) — bucket privado «documentos», tabla pos_fin_documentos ──
   // Se listan por cliente (sirven para todas sus solicitudes). Ver = link firmado de 10 minutos; nunca URL pública.
   const FIN_DOC_TIPOS = [['cedula_frente', 'Cédula (frente)'], ['cedula_dorso', 'Cédula (dorso)'], ['carta_trabajo', 'Carta de trabajo'], ['ingresos', 'Comprobante de ingresos'], ['servicio', 'Recibo de luz/agua (dirección)'], ['contrato_firmado', 'Contrato firmado en papel'], ['otro', 'Otro']];
+  const FIN_DOC_TIPOS_LINK = { selfie: 'Foto con la cédula (link)', video: 'Video de compromiso (link)' };
   const _finDocs = {}; const _finDocsCargando = {};
-  function finDocTipoTxt(t) { return (FIN_DOC_TIPOS.find(x => x[0] === t) || [t, t || 'Documento'])[1]; }
+  function finDocTipoTxt(t) { return FIN_DOC_TIPOS_LINK[t] || (FIN_DOC_TIPOS.find(x => x[0] === t) || [t, t || 'Documento'])[1]; }
   async function finV2DocsCargar(cliId, forzar) {
     if (!cliId || (_finDocsCargando[cliId] && !forzar)) return;
     _finDocsCargando[cliId] = true;
@@ -11936,7 +11937,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const w = window.open('', '_blank'); // abrir antes del await (Safari bloquea ventanas abiertas después)
     try {
       const A = getAPI();
-      const r = await fetch(A.url + '/storage/v1/object/sign/documentos/' + d.storage_path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 600 }) });
+      const r = await fetch(A.url + '/storage/v1/object/sign/' + (d.bucket || 'documentos') + '/' + d.storage_path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 600 }) });
       const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin link');
       const url = /^https?:/.test(u) ? u : A.url + '/storage/v1' + u;
       if (w) w.location.href = url; else window.open(url, '_blank');
@@ -11947,10 +11948,130 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!confirm('¿Borrar «' + finDocTipoTxt(d.tipo) + '»? No se puede deshacer.')) return;
     try {
       const A = getAPI();
-      await fetch(A.url + '/storage/v1/object/documentos/' + d.storage_path, { method: 'DELETE', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) } });
+      await fetch(A.url + '/storage/v1/object/' + (d.bucket || 'documentos') + '/' + d.storage_path, { method: 'DELETE', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key) } });
       await A.del('pos_fin_documentos', 'id=eq.' + d.id);
       toast('ok', 'Documento borrado'); await finV2DocsCargar(cliId, true);
     } catch (e) { toast('err', 'No se pudo borrar', String(e && e.message || e)); }
+  };
+
+  // ── Expediente por link (réplica de «Préstamos» de NEXUS PRO: firma-prestamo.html) ──
+  // La tienda prepara el link revisando la declaración y el guion del video; el cliente sube cédula, foto con cédula,
+  // graba el video de compromiso y firma; la tienda revisa y aprueba, pide corrección (mismo link) o rechaza.
+  function finExpBadge(s) {
+    const e = s.exp_estado;
+    if (e === 'enviado') return '<span class="nxF2Badge ok">POR REVISAR</span>';
+    if (e === 'corregir') return '<span class="nxF2Badge bad">POR CORREGIR</span>';
+    if (e === 'sin_enviar') return '<span class="nxF2Badge warn">SIN ENVIAR</span>';
+    return '<span class="nxF2Badge gris">SIN LINK</span>';
+  }
+  const FIN_FREC_PL = { semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' };
+  function finExpTextos(s, pl, rows) {
+    const nom = s.cliente_nombre || ''; const emp = empNom();
+    const arts = (s.items || []).map(i => i.nombre + (Number(i.cantidad) > 1 ? ' (' + i.cantidad + ')' : '')).join(', ') || 'artículos';
+    const n = rows.length; const c1 = rows[0] ? rows[0].cuota : 0; const iguales = rows.every(r => Math.abs(r.cuota - c1) < 1);
+    const frec = FIN_FREC_PL[(pl || {}).frecuencia] || '';
+    const cuotasTxt = n ? (iguales ? n + ' cuotas ' + frec + ' de ' + fmt2(c1) + ' cada una' : n + ' cuotas ' + frec + ' según el calendario acordado, la primera de ' + fmt2(c1)) : 'las cuotas acordadas';
+    const total = rows.reduce((a, r) => a + r.cuota, 0);
+    return {
+      decl: 'Yo, ' + nom + ', declaro que acordé esta compra a crédito con ' + emp + ' y me comprometo a pagarla según lo descrito arriba: ' + arts + ', precio ' + fmt2(s.precio_total) + ', inicial ' + fmt2(s.inicial) + ', y ' + cuotasTxt + ', para un total en cuotas de ' + fmt2(total) + '.',
+      guion: 'Yo, ' + nom + ', declaro que compré a crédito en ' + emp + ' ' + arts + ' por ' + fmt2(s.precio_total) + ', di una inicial de ' + fmt2(s.inicial) + ' y me comprometo a pagar ' + cuotasTxt + '. Reconozco esta deuda y la pagaré en los plazos acordados.'
+    };
+  }
+  function finExpLink(s) { return location.origin + '/firma-financiamiento.html?s=' + encodeURIComponent(s.exp_token); }
+  function finExpMsg(s, motivo) {
+    const nom = (s.cliente_nombre || '').split(' ')[0];
+    return motivo
+      ? 'Hola ' + nom + ', revisamos tu solicitud de crédito en ' + empNom() + ' y hay algo que corregir: ' + motivo + '.\nEntra al mismo link, corrígelo y vuelve a enviar:\n' + finExpLink(s)
+      : 'Hola ' + nom + ', para completar tu crédito en ' + empNom() + ' entra a este link desde tu celular. Tendrás que subir tu cédula, una foto tuya con la cédula, grabar un video corto leyendo el texto que aparece y firmar:\n' + finExpLink(s) + '\n\nEl link es personal.';
+  }
+  const _finSignCache = {};
+  async function finSignedUrl(bucket, path) {
+    const k = bucket + '/' + path; const c = _finSignCache[k]; if (c && c.hasta > Date.now()) return c.url;
+    const A = getAPI();
+    const r = await fetch(A.url + '/storage/v1/object/sign/' + bucket + '/' + path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 3600 }) });
+    const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin link');
+    const url = /^https?:/.test(u) ? u : A.url + '/storage/v1' + u; _finSignCache[k] = { url: url, hasta: Date.now() + 50 * 60000 }; return url;
+  }
+  function finV2ExpCard(s, pl, rows) {
+    const e = s.exp_estado; const pend = s.estado === 'pendiente';
+    if (!pend && e !== 'enviado') return '';
+    const head = `<div class="h">Expediente del cliente ${finExpBadge(s)}</div>`;
+    if (!e) return `<div class="nxF2Card">${head}<div style="font-size:12px;color:#334155;line-height:1.5">Como en NEXUS PRO: envía un link por WhatsApp para que el cliente suba su <b>cédula</b>, una <b>foto con la cédula</b>, grabe el <b>video de compromiso</b> leyendo un texto y <b>firme</b>. Tú revisas antes de aprobar.</div><button type="button" class="nxF2Btn p" onclick="window.nxFinExpPreparar('${s.id}')"><i class="ti ti-link"></i> Preparar link del expediente</button></div>`;
+    if (e === 'sin_enviar' || e === 'corregir') return `<div class="nxF2Card">${head}
+      ${e === 'corregir' ? `<div class="nxF2Note" style="border-color:#fecaca;background:#fef2f2;color:#991b1b">Pediste corregir: ${esc(s.correccion_motivo || '')}</div>` : `<div style="font-size:12px;color:#334155">Link creado ${finFechaCorta(s.exp_link_en)}${s.exp_link_por ? ' por ' + esc(s.exp_link_por) : ''}. El cliente todavía no ha enviado sus datos.</div>`}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="nxF2Btn wa" style="flex:2" onclick="window.nxFinExpWA('${s.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</button><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinExpCopiar('${s.id}')"><i class="ti ti-copy"></i> Copiar</button><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinExpPreparar('${s.id}')"><i class="ti ti-edit"></i> Textos</button></div>
+      <div style="font-size:10.5px;color:var(--f2-steel)">Vence ${finFechaCorta(s.exp_token_vence)}. No se envía nada solo: tú le das enviar en WhatsApp.</div></div>`;
+    const m = s.exp_meta || {};
+    setTimeout(() => finExpCargarMedia(s), 0);
+    return `<div class="nxF2Card">${head}
+      <div style="font-size:12px;color:#334155">Enviado ${s.exp_enviado_en ? new Date(s.exp_enviado_en).toLocaleString('es-DO') : ''}${m.nombre_escrito ? ' · nombre escrito: <b>' + esc(m.nombre_escrito) + '</b>' : ''}${m.ip ? ' · IP ' + esc(m.ip) : ''}</div>
+      <div id="finExpMedia_${s.id}" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="nxF2Note" style="grid-column:1/-1">Cargando expediente…</div></div>
+      ${s.video_guion ? `<div style="font-size:11px;color:var(--f2-steel)"><b>Texto que debía leer en el video:</b> ${esc(s.video_guion)}</div>` : ''}
+      ${pend && puedeVerMin() ? `<button type="button" class="nxF2Btn" style="color:#b45309" onclick="window.nxFinExpCorregir('${s.id}')"><i class="ti ti-arrow-back-up"></i> Pedir corrección al cliente</button>` : ''}
+    </div>`;
+  }
+  async function finExpCargarMedia(s) {
+    const box = document.getElementById('finExpMedia_' + s.id); if (!box || box.dataset.ok) return; box.dataset.ok = '1';
+    const it = [['exp_cedula_frente', 'Cédula (frente)', 'img'], ['exp_cedula_dorso', 'Cédula (dorso)', 'img'], ['exp_selfie', 'Foto con la cédula', 'img'], ['exp_video', 'Video de compromiso', 'video']];
+    const html = [];
+    for (const [k, lbl, t] of it) {
+      if (!s[k]) { html.push(`<div class="nxF2Note">${lbl}: falta</div>`); continue; }
+      try {
+        const u = await finSignedUrl('fin-expediente', s[k]);
+        html.push(t === 'video' ? `<div style="grid-column:1/-1"><div class="nxF2Lbl" style="margin-bottom:4px">${lbl}</div><video controls playsinline preload="metadata" src="${esc(u)}" style="width:100%;max-height:300px;background:#000;border-radius:10px"></video></div>`
+          : `<a href="${esc(u)}" target="_blank" rel="noopener" style="display:block;text-decoration:none"><div class="nxF2Lbl" style="margin-bottom:4px">${lbl}</div><img src="${esc(u)}" alt="${lbl}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0"></a>`);
+      } catch (e) { html.push(`<div class="nxF2Note">${lbl}: no se pudo abrir</div>`); }
+    }
+    if (s.exp_firma) html.push(`<div style="grid-column:1/-1"><div class="nxF2Lbl" style="margin-bottom:4px">Firma</div><img src="${s.exp_firma}" alt="Firma del cliente" style="width:100%;max-height:120px;object-fit:contain;background:#fff;border:1px solid #e2e8f0;border-radius:10px"></div>`);
+    box.innerHTML = html.join('');
+  }
+  window.nxFinExpPreparar = function (id) {
+    const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return;
+    const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const rows = pl ? finV2Amortizar(r2(s.precio_total - s.inicial), pl, s.primera_fecha) : [];
+    const t = finExpTextos(s, pl, rows);
+    cerrarModal('nxFinM');
+    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    const ta = 'width:100%;min-height:96px;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:14px;line-height:1.45;font-family:inherit;resize:vertical;text-transform:none';
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-link"></i> Link del expediente · ${esc(s.codigo || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:#475569">Revisa y corrige los textos antes de crear el link. El cliente verá la declaración y leerá el guion en el video.</div>
+        <label style="font-size:11px;font-weight:700;color:#475569">Declaración (lo que acepta)<textarea id="fxDecl" style="${ta}">${esc(s.declaracion || t.decl)}</textarea></label>
+        <label style="font-size:11px;font-weight:700;color:#475569">Texto que leerá en el video<textarea id="fxGuion" style="${ta}">${esc(s.video_guion || t.guion)}</textarea></label>
+      </div>
+      <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinExpCrear('${s.id}')"><i class="ti ti-check"></i> ${s.exp_token ? 'Guardar textos' : 'Crear link'}</button></div></div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxFinExpCrear = async function (id) {
+    const decl = (document.getElementById('fxDecl') || {}).value || '', guion = (document.getElementById('fxGuion') || {}).value || '';
+    if (decl.trim().length < 20 || guion.trim().length < 20) { toast('err', 'Los textos no pueden quedar vacíos'); return; }
+    try {
+      await finRpc('pos_fin_sol_link', { p_solicitud_id: id, p_declaracion: decl.trim(), p_guion: guion.trim() });
+      await finV2Cargar(); cerrarModal('nxFinM'); toast('ok', 'Link listo', 'Envíalo por WhatsApp');
+      try { window.logAudit && window.logAudit('POS_FIN_EXP_LINK', id, 'Financiamiento'); } catch (e) {}
+      finV2Repintar();
+    } catch (e) { toast('err', 'No se pudo crear el link', finErrTxt(e)); }
+  };
+  window.nxFinExpWA = function (id, motivo) {
+    const s = _finSols.find(x => String(x.id) === String(id)); if (!s || !s.exp_token) return;
+    const cli = _clientes.find(c => String(c.id) === String(s.cliente_id)) || {}; const num = waNum(cli.telefono);
+    const url = (num ? 'https://wa.me/' + num : 'https://wa.me/') + '?text=' + encodeURIComponent(finExpMsg(s, motivo || (s.exp_estado === 'corregir' ? s.correccion_motivo : '')));
+    window.open(url, '_blank');
+  };
+  window.nxFinExpCopiar = async function (id) {
+    const s = _finSols.find(x => String(x.id) === String(id)); if (!s || !s.exp_token) return;
+    try { await navigator.clipboard.writeText(finExpLink(s)); toast('ok', 'Link copiado'); } catch (e) { prompt('Copia el link:', finExpLink(s)); }
+  };
+  window.nxFinExpCorregir = async function (id) {
+    const motivo = prompt('¿Qué debe corregir el cliente? (se le envía con el mismo link)\nEj.: la foto de la cédula salió borrosa'); if (motivo === null) return;
+    if (motivo.trim().length < 5) { toast('err', 'Escribe qué debe corregir'); return; }
+    const w = window.open('', '_blank'); // abrir antes del await (Safari)
+    try {
+      await finRpc('pos_fin_sol_corregir', { p_solicitud_id: id, p_motivo: motivo.trim() });
+      await finV2Cargar(); finV2Repintar(); toast('ok', 'Corrección pedida', 'Mismo link; se abre WhatsApp');
+      const s = _finSols.find(x => String(x.id) === String(id)); const cli = s ? (_clientes.find(c => String(c.id) === String(s.cliente_id)) || {}) : {}; const num = waNum(cli.telefono);
+      const url = (num ? 'https://wa.me/' + num : 'https://wa.me/') + '?text=' + encodeURIComponent(finExpMsg(s, motivo.trim()));
+      if (w) w.location.href = url; else window.open(url, '_blank');
+    } catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo pedir la corrección', finErrTxt(e)); }
   };
 
   function finV2AprobacionHTML() {
@@ -11958,7 +12079,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const sel = _finV2SolSel ? _finSols.find(s => String(s.id) === String(_finV2SolSel)) : null;
     if (sel) return finV2SolDetalleHTML(sel);
     const otras = _finSols.filter(s => s.estado !== 'pendiente').slice(0, 20);
-    const row = s => { const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></div><div class="bot"><span>${pl ? esc(pl.nombre) : ''} · inicial ${r2(s.inicial).toLocaleString('en-US')} · ${finFechaCorta(s.created_at)}</span><span class="amt">${r2(s.precio_total - s.inicial).toLocaleString('en-US')}</span></div></div>`; };
+    const row = s => { const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${s.estado === 'pendiente' ? finExpBadge(s) : ''}<span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></span></div><div class="bot"><span>${pl ? esc(pl.nombre) : ''} · inicial ${r2(s.inicial).toLocaleString('en-US')} · ${finFechaCorta(s.created_at)}</span><span class="amt">${r2(s.precio_total - s.inicial).toLocaleString('en-US')}</span></div></div>`; };
     return finV2HeaderHTML('Solicitudes', pend.length + ' pendiente(s) de aprobación', 'cartera') + (pend.length ? pend.map(row).join('') : '<div class="nxF2Note" style="margin-bottom:10px">No hay solicitudes pendientes.</div>') + (otras.length ? '<div class="nxF2Lbl" style="margin:12px 0 8px">Decididas recientes</div>' + otras.map(row).join('') : '');
   }
   function finV2SolDetalleHTML(s) {
@@ -11981,6 +12102,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxF2Line tot"><span>Capital ${r2(cap).toLocaleString('en-US')} · interés ${r2(it).toLocaleString('en-US')}</span><span class="nxF2Mono">Total ${r2(cap + it).toLocaleString('en-US')}</span></div>
         <div style="font-size:10px;color:var(--f2-steel);line-height:1.5">Los intereses se reconocen al cobrar cada cuota. La cuenta por cobrar solo lleva el capital. Mora: ${esc(finMoraTxt(pl))}.</div>
       </div>` : ''}
+      ${finV2ExpCard(s, pl, rows)}
       ${finV2DocsCard(s.cliente_id, s.id, s.financiamiento_id)}
       ${pendiente ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura en el POS: inicial ${r2(s.inicial).toLocaleString('en-US')} cobrada ${s.inicial_metodo === 'efectivo' ? 'en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y crédito ${r2(cap).toLocaleString('en-US')} al cliente.</span></div><div><i>2</i><span>El servidor genera el plan y las ${pl ? pl.num_cuotas : ''} cuotas con capital e interés.</span></div><div><i>3</i><span>Se congela el contrato y queda listo el link de firma (se envía solo cuando tú lo decides).</span></div></div>
         <div class="nxF2F"><label for="apNota">Nota del aprobador (opcional)</label><input id="apNota" placeholder="Ej. Verificado por teléfono con referencia"></div></div>
@@ -11995,6 +12117,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxFinSolAprobar = async function (id) {
     const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return;
     if (!puedeVerMin()) { toast('err', 'Solo admin o gerente pueden aprobar'); return; }
+    if (s.exp_estado !== 'enviado' && !confirm('Esta solicitud NO tiene el expediente completo por link (cédula, foto con cédula, video de compromiso y firma).\n\n¿Aprobar y facturar de todos modos?')) return;
     if (s.inicial > 0 && s.inicial_metodo === 'efectivo' && !(_caja && _caja.id)) {
       try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
       if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja para recibir la inicial en efectivo'); return; }
@@ -12057,11 +12180,26 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${f.contrato_en ? `<div class="nxF2Line"><span>Contrato congelado</span><span class="nxF2Mono" style="color:#94a3b8">${finFechaCorta(f.contrato_en)}</span></div>` : ''}
       </div></div>`;
   }
-  window.nxFinV2Contrato = function (id) {
+  window.nxFinV2Contrato = async function (id) {
     const f = finFinDe(id); if (!f) return;
     const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes'); return; }
-    const firmas = `<div class="fir"><div>${f.firma_tienda ? '<img src="' + f.firma_tienda + '" style="max-height:60px"><br>' : ''}Por ${esc(empNom())}${f.firma_tienda_por ? ' · ' + esc(f.firma_tienda_por) : ''}</div><div>${f.firma_cliente ? '<img src="' + f.firma_cliente + '" style="max-height:60px"><br>' : ''}${esc(f.cliente_nombre || '')}${f.firma_cliente_en ? ' · ' + new Date(f.firma_cliente_en).toLocaleString('es-DO') : ' (pendiente de firma)'}</div></div>`;
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${firmas}<script>window.print();</` + `script></body></html>`);
+    w.document.write('<p style="font-family:system-ui;padding:24px">Preparando contrato…</p>');
+    const firmas = `<div class="fir"><div>${f.firma_tienda ? '<img src="' + f.firma_tienda + '" style="max-height:60px"><br>' : ''}Por ${esc(empNom())}${f.firma_tienda_por ? ' · ' + esc(f.firma_tienda_por) : ''}</div><div>${f.firma_cliente ? '<img src="' + f.firma_cliente + '" style="max-height:60px"><br>' : ''}${esc(f.cliente_nombre || '')}${f.firma_cliente_en ? '<br>' + (f.expediente_solicitud_id || (f.firma_cliente_meta && f.firma_cliente_meta.ip) ? 'Firmado electrónicamente · ' : '') + new Date(f.firma_cliente_en).toLocaleString('es-DO') : ' (pendiente de firma)'}</div></div>`;
+    // Como NEXUS PRO: cláusula de firma electrónica + anexo del expediente de identidad (solo lo que exista de verdad)
+    let clausula = '', anexo = '';
+    const sol = f.expediente_solicitud_id ? _finSols.find(x => String(x.id) === String(f.expediente_solicitud_id)) : null;
+    if (f.firma_cliente && (sol || (f.firma_cliente_meta && f.firma_cliente_meta.ip))) {
+      const piezas = ['la firma manuscrita capturada en pantalla'].concat(sol && sol.exp_cedula_frente ? ['ambas caras de su cédula de identidad'] : []).concat(sol && sol.exp_selfie ? ['una fotografía suya sosteniendo la cédula'] : []).concat(sol && sol.exp_video ? ['un video en el que declara de viva voz los términos de esta compra'] : []);
+      clausula = `<p><b>Firma electrónica y expediente digital:</b> Las partes reconocen que EL COMPRADOR aceptó y firmó el presente contrato por medios electrónicos el ${new Date(f.firma_cliente_en).toLocaleString('es-DO')}, aportando ${piezas.join(', ')}. Dichos elementos se conservan en el expediente digital de esta operación y tienen el mismo valor que la firma y los documentos en papel, conforme a la Ley 126-02 sobre Comercio Electrónico, Documentos y Firmas Digitales.</p>`;
+      if (sol) {
+        const img = async (k) => { try { return sol[k] ? await finSignedUrl('fin-expediente', sol[k]) : ''; } catch (e) { return ''; } };
+        const [cf, cd, sf] = await Promise.all([img('exp_cedula_frente'), img('exp_cedula_dorso'), img('exp_selfie')]);
+        const it = (u, l) => u ? `<div class="ax"><div class="axl">${l}</div><img src="${esc(u)}"></div>` : '';
+        anexo = `<div style="page-break-before:always"><h1>ANEXO — Expediente de identidad</h1><h2>${esc(f.codigo || '')} · ${esc(f.cliente_nombre || '')}</h2><div class="axg">${it(cf, 'Cédula (frente)')}${it(cd, 'Cédula (dorso)')}${it(sf, 'Foto con la cédula')}</div>${sol.exp_video ? `<div class="ax" style="margin-top:14px"><div class="axl">Video de compromiso</div><p style="font-size:12px">Grabación archivada en el expediente digital de esta operación. Texto declarado: «${esc(sol.video_guion || '')}»</p></div>` : ''}</div>`;
+      }
+    }
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}.axg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ax img{width:100%;border:1px solid #cbd5e1;border-radius:6px}.axl{font-size:10px;font-weight:bold;letter-spacing:.05em;text-transform:uppercase;color:#475569;margin-bottom:4px}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${clausula}${firmas}${anexo}<script>window.onload=function(){setTimeout(function(){window.print();},400)};</` + `script></body></html>`);
     w.document.close();
   };
   window.nxFinV2LinkFirma = async function (id) {

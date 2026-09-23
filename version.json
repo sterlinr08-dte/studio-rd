@@ -1,7 +1,16 @@
 {
-  "version": "59.15",
+  "version": "59.16",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.16",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento → Cobranza por prioridad (como NEXUS PRO): Críticos (más de 30 días), Alta (8 a 30), Mora reciente (1 a 7), Por vencer (7 días) y Al día, con «Cobrar hoy», pagos del día y pagos recientes.",
+        "Cada cliente muestra monto vencido, próxima cuota, saldo y último pago, con botones Cobrar, Recordar por WhatsApp (solo abre el mensaje, tú lo envías) e Historial. Exporta a Excel.",
+        "Historial crediticio del cliente: puntualidad, comportamiento de pago de 12 meses, totales, financiamientos, pagos, evaluaciones, score del sistema, monto recomendado y alertas."
+      ]
+    },
     {
       "version": "59.15",
       "fecha": "2026-09-24",

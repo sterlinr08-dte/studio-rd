@@ -1128,3 +1128,61 @@ html.nx-studio .fevDet summary { cursor: pointer; font-size: 12.5px; font-weight
 html.nx-studio .fevDet[open] summary { margin-bottom: 8px; }
 html.nx-studio .fevFiaChk { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
 html.nx-studio .fevFiaChk input { width: 18px; height: 18px; accent-color: var(--studio-gold-dark); }
+
+/* ── §22 Financiamiento: cobranza por prioridad e historial crediticio (fase 3 NEXUS) ── */
+html.nx-studio .fcobEntrada { width: 100%; min-height: 52px; justify-content: flex-start; gap: 10px; margin-bottom: 10px; text-align: left; }
+html.nx-studio .fcobEntrada small { display: block; font-size: 11px; font-weight: 500; color: var(--studio-steel); margin-top: 2px; }
+html.nx-studio .fcobKpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+html.nx-studio .fcobK { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--studio-line); background: #ffffff; text-align: left; cursor: pointer; font-family: var(--studio-font); box-shadow: var(--studio-relieve); }
+html.nx-studio .fcobK.on { border-color: var(--studio-ink); box-shadow: 0 0 0 1px var(--studio-ink); }
+html.nx-studio .fcobK .i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 15px; }
+html.nx-studio .fcobK.bad .i { background: #fee2e2; color: #b91c1c; } html.nx-studio .fcobK.bad2 .i { background: #ffedd5; color: #c2410c; }
+html.nx-studio .fcobK.warn .i { background: #fef3c7; color: #92400e; } html.nx-studio .fcobK.info .i { background: #e8eefc; color: #1d4ed8; } html.nx-studio .fcobK.ok .i { background: #dcfce7; color: #15803d; }
+html.nx-studio .fcobK .l { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--studio-steel); }
+html.nx-studio .fcobK b { font-size: 16px; font-weight: 700; color: var(--studio-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+html.nx-studio .fcobK small { font-size: 11px; color: var(--studio-mute); }
+html.nx-studio .fcobGrid { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 12px; align-items: start; }
+html.nx-studio .fcobSide { position: sticky; top: 12px; }
+html.nx-studio .fcobHoy { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--studio-black); color: var(--studio-white); }
+html.nx-studio .fcobHoy span { font-size: 11px; font-weight: 600; opacity: .75; }
+html.nx-studio .fcobHoy b { font-size: 22px; color: var(--studio-gold-light, #e3c45c); }
+html.nx-studio .fcobHoy small { font-size: 10.5px; opacity: .6; }
+html.nx-studio .fcobRow { border-left: 3px solid transparent; }
+html.nx-studio .fcobRow.critico, html.nx-studio .fcobRow.alta { border-left-color: #b91c1c; }
+html.nx-studio .fcobRow.morareciente { border-left-color: #b45309; } html.nx-studio .fcobRow.porvencer { border-left-color: #1d4ed8; }
+html.nx-studio .fcobNums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 8px 0 2px; }
+html.nx-studio .fcobNums > div { display: flex; flex-direction: column; min-width: 0; }
+html.nx-studio .fcobNums span { font-size: 10.5px; color: var(--studio-mute); font-weight: 600; }
+html.nx-studio .fcobNums b { font-size: 13px; color: var(--studio-ink); white-space: nowrap; }
+html.nx-studio .fcobNums b.rojo { color: #b91c1c; }
+html.nx-studio .fcobNums small { font-size: 10.5px; color: var(--studio-steel); }
+html.nx-studio .fcobAcc { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 8px; }
+html.nx-studio .fcobAcc .nxF2Btn { min-height: 36px; font-size: 12px; flex: 1 1 auto; }
+@media (max-width: 900px) {
+  html.nx-studio .fcobKpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.nx-studio .fcobKpis .fcobK:last-child { grid-column: 1 / -1; }
+  html.nx-studio .fcobGrid { grid-template-columns: minmax(0, 1fr); }
+  html.nx-studio .fcobSide { position: static; order: -1; }
+  html.nx-studio .fcobNums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+html.nx-studio .fhcModal { max-width: 980px; width: 96vw; max-height: 94vh; overflow-y: auto; padding: 16px; border-radius: 18px; background: var(--studio-canvas, #f3f0e8); }
+html.nx-studio .fhcCli { flex-direction: row; align-items: center; gap: 12px; }
+html.nx-studio .fhcNom { font-size: 16px; font-weight: 700; color: var(--studio-ink); }
+html.nx-studio .fhcDat { font-size: 12px; color: var(--studio-steel); margin-top: 2px; }
+html.nx-studio .fhcG { width: 78px; height: 78px; } html.nx-studio .fhcG > div { width: 60px; height: 60px; } html.nx-studio .fhcG b { font-size: 16px; }
+html.nx-studio .fhcGrid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; align-items: start; }
+html.nx-studio .fhcTl { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; }
+html.nx-studio .fhcTl > div { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 30px; }
+html.nx-studio .fhcTl small { font-size: 10.5px; color: var(--studio-mute); }
+html.nx-studio .fhcDot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #cbd5e1; }
+html.nx-studio .fhcDot.ok { background: #16a34a; } html.nx-studio .fhcDot.y { background: #eab308; } html.nx-studio .fhcDot.o { background: #ea580c; } html.nx-studio .fhcDot.r { background: #dc2626; } html.nx-studio .fhcDot.g { background: #d6d3cb; }
+html.nx-studio .fhcLeg { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--studio-steel); }
+html.nx-studio .fhcLeg span { display: inline-flex; align-items: center; gap: 4px; } html.nx-studio .fhcLeg .fhcDot { width: 10px; height: 10px; }
+html.nx-studio .fhcAl { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 7px 9px; border-radius: 9px; background: var(--studio-canvas); color: var(--studio-steel); }
+html.nx-studio .fhcAl.bad { background: #fef2f2; color: #b91c1c; } html.nx-studio .fhcAl.warn { background: #fffaeb; color: #93370d; } html.nx-studio .fhcAl.info { background: #eef2ff; color: #1d4ed8; }
+@media (max-width: 760px) {
+  html.nx-studio .fhcGrid { grid-template-columns: minmax(0, 1fr); }
+  html.nx-studio .fhcModal { width: 100vw; max-height: 100vh; border-radius: 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom)); }
+}
+html.nx-studio .fhcModal, html.nx-studio .fhcModal * { text-transform: none; letter-spacing: normal; }
+html.nx-studio .fhcModal .nxF2Lbl, html.nx-studio .fhcModal .nxF2K > span:first-child { text-transform: uppercase; letter-spacing: .04em; }

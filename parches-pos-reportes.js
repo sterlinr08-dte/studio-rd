@@ -207,7 +207,7 @@
       ['con_gastos', 'Gastos por Cuenta'], ['con_607', 'Formato 607 · Ventas'], ['con_606', 'Formato 606 · Compras'], ['con_itbis', 'Resumen de ITBIS']]],
     ['inv', 'Inventario', 'ti-list-details', [
       ['inv_ajustes', 'Reporte Ajustes'], ['inv_altabaja', 'Reporte Alta y Baja Existencia'], ['inv_compras', 'Reporte Compras', 'prov_comp'],
-      ['inv_gan', 'Reporte Ganancias', 'cli_prod'], ['inv_resumen', 'Resumen Inventario'], ['inv_ventas', 'Reporte Ventas', 'cli_prod'],
+      ['inv_gan', 'Reporte Ganancias', 'ganancias'], ['inv_resumen', 'Resumen Inventario'], ['inv_ventas', 'Reporte Ventas', 'cli_prod'],
       ['inv_fichero', 'Reporte Fichero Artículos'], ['inv_desp', 'Reporte Despachos'], ['inv_recep', 'Reporte Recepciones'],
       ['inv_seriales', 'Historial Seriales'], ['inv_fisico', 'Reporte Inventario Físico'], ['inv_nomov', 'Reporte No Movimiento Inventario'],
       ['inv_precios', 'Precios'], ['inv_gandia', 'Reporte Ganancias por Día'], ['inv_serdisp', 'Reporte Series No Vendidas'],
@@ -224,7 +224,7 @@
   ];
   const REP = {}; CAT.forEach(c => c[3].forEach(r => { REP[r[0]] = { t: r[1], cat: c[0], b: r[2] || r[0] }; }));
   // Reportes con datos sensibles (costos, sueldos, bancos, contabilidad): solo administrador y gerente.
-  const SENSIBLE = /^(ban_|con_|rh_|inv_val|inv_alm|inv_gandia)/;
+  const SENSIBLE = /^(ban_|con_|rh_|inv_val|inv_alm|inv_gandia|ganancias)/;
   const sens = id => SENSIBLE.test((REP[id] || {}).b || id);
   let rep = '', abierto = {}, fsel = {}, fbus = {};
   try { const r = localStorage.getItem('studio_rep_sel'); if (r && REP[r]) rep = r; } catch (e) {}
@@ -296,7 +296,7 @@
   // ── Formatos de hoja ───────────────────────────────────────────────
   function m2(v) { const x = Math.round(n(v) * 100) / 100; return (x === 0 ? 0 : x).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   const $ = (l, o) => Object.assign({ l, r: 1, fmt: m2, sum: 1 }, o || {});
-  const T = (l, o) => Object.assign({ l }, o || {});
+  const T = (l, o) => Object.assign({ l }, o || {}); const T0 = T;
   function sumas(cols, filas) { return cols.map((c, i) => c.sum ? filas.reduce((s, f) => s + n(f[i]), 0) : null); }
   function grupo(t, filas, cols) { return { t, filas, sub: sumas(cols, filas) }; }
   function agrupar(lista, clave, fila, cols, ordenGrupos) {
@@ -307,6 +307,54 @@
   const porTotalDesc = col => (ks, g) => ks.sort((a, b) => g[b].reduce((s, f) => s + n(f[col]), 0) - g[a].reduce((s, f) => s + n(f[col]), 0));
 
   // ── Definición de cada reporte ─────────────────────────────────────
+  // ── Análisis de ganancia (pedido del dueño: «es tema delicado, que sea muy inteligente ese reporte») ──
+  // Independiente de la casilla «Con ITBIS»: muestra las dos lecturas a la vez, línea por línea.
+  //  vendido        = lo que se cobró (precio con ITBIS si el artículo es gravado)
+  //  itbisVenta     = ITBIS contenido en lo vendido (18/118 de lo cobrado en gravados)
+  //  costo          = costo real (costo_unitario) + ITBIS recuperable (costo_itbis_unit) → lo que se pagó
+  //  ganancia       = vendido − costo  (la cuenta de mostrador: precio menos lo que me costó)
+  //  itbisPagar     = itbisVenta − ITBIS recuperable de esa mercancía (crédito fiscal de compras con comprobante)
+  //  gananciaReal   = ganancia − itbisPagar = (vendido − itbisVenta) − costo real
+  function analisisGanancia(C) {
+    const L = [];
+    C.ven.forEach(v => (v.pos_venta_items || []).forEach(it => {
+      const p = C.prodBy[it.producto_id]; const serv = p && p.tipo === 'servicio';
+      const c = n(it.cantidad), imp = it.importe != null ? n(it.importe) : n(it.precio) * c;
+      const itbV = it.itbis ? imp * 18 / 118 : 0;
+      const cu = serv ? 0 : n(it.costo_unitario != null ? it.costo_unitario : (p && p.costo));
+      const ci = serv ? 0 : n(it.costo_itbis_unit != null ? it.costo_itbis_unit : (p && p.costo_itbis));
+      L.push({ v, it, p, serv, dia: diaRD(v.fecha), k: it.producto_id || it.nombre, nom: String(it.nombre || (p && p.nombre) || '—').trim(), cod: p ? (p.codigo || '') : '', cat: p && p.categoria_id ? p.categoria_id : '', c, imp, itbV, costo: (cu + ci) * c, cr: ci * c, sinCosto: !serv && !cu && !ci });
+    }));
+    return L;
+  }
+  function sumarGan(lista) {
+    const o = { c: 0, imp: 0, itbV: 0, costo: 0, cr: 0, sinCosto: 0 };
+    lista.forEach(l => { o.c += l.c; o.imp += l.imp; o.itbV += l.itbV; o.costo += l.costo; o.cr += l.cr; if (l.sinCosto) o.sinCosto = 1; });
+    o.gan = o.imp - o.costo; o.itbPagar = o.itbV - o.cr; o.real = o.gan - o.itbPagar; o.neto = o.imp - o.itbV;
+    return o;
+  }
+  function resumenGanancia(T, extra) {
+    const pc = v => T.imp ? Math.round(v / T.imp * 1000) / 10 : 0;
+    const k = (l, v, sub, tono) => `<div class="nxRpK${tono ? ' ' + tono : ''}"><span>${esc(l)}</span><b>${v}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    // vendido = costo pagado + ITBIS a pagar + ganancia real (cuadra exacto)
+    const cien = [['Costo', Math.max(0, T.costo), 'cos'], ['ITBIS a pagar', Math.max(0, T.itbPagar), 'itb'], ['Ganancia real', Math.max(0, T.real), 'gan']];
+    const base = T.imp || 1;
+    const barra = `<div class="nxRpCien"><div class="t">De cada <b>RD$ 100</b> que cobraste: ${T.real >= 0 ? `<b>${m2(pc(T.itbPagar))}</b> son ITBIS para la DGII, <b>${m2(pc(T.costo))}</b> pagaste por la mercancía y <b class="ok">${m2(pc(T.real))}</b> te quedan de ganancia real.` : `<b>${m2(pc(T.itbPagar))}</b> son ITBIS para la DGII y <b>${m2(pc(T.costo))}</b> pagaste por la mercancía: <b class="bad">pierdes ${m2(pc(-T.real))}</b>.`}</div>
+      <div class="bar">${cien.map(([l, v, cl]) => `<i class="${cl}" style="width:${Math.max(0, Math.min(100, v / base * 100))}%" title="${esc(l)}"></i>`).join('')}</div>
+      <div class="ley"><span><i class="cos"></i>Costo</span><span><i class="itb"></i>ITBIS a pagar</span><span><i class="gan"></i>Ganancia real</span></div></div>`;
+    const al = (extra || []).filter(Boolean);
+    return `<div class="nxRpGan">
+      <div class="nxRpKpis">
+        ${k('Vendido', m2(T.imp), 'Lo que cobraste (incluye ITBIS ' + m2(T.itbV) + ')', '')}
+        ${k('Costo de lo vendido', m2(T.costo), T.cr ? 'Incluye ' + m2(T.cr) + ' de ITBIS recuperable' : 'Lo que pagaste por esa mercancía', '')}
+        ${k('Ganancia (precio − costo)', m2(T.gan), 'Margen ' + pct(T.gan, T.imp) + '% · la cuenta de mostrador', T.gan >= 0 ? '' : 'bad')}
+        ${k('ITBIS a pagar (estimado)', m2(T.itbPagar), 'ITBIS de ventas ' + m2(T.itbV) + ' − crédito fiscal ' + m2(T.cr), T.itbPagar > 0 ? 'warn' : '')}
+        ${k('Ganancia real', m2(T.real), 'Después del ITBIS · margen ' + pct(T.real, T.neto) + '% sobre venta sin ITBIS', T.real >= 0 ? 'ok main' : 'bad main')}
+      </div>${barra}
+      ${al.length ? `<ul class="nxRpAl">${al.map(a => `<li class="${a[0]}"><i class="ti ${a[0] === 'bad' ? 'ti-alert-triangle' : a[0] === 'warn' ? 'ti-alert-circle' : 'ti-info-circle'}"></i><span>${a[1]}</span></li>`).join('')}</ul>` : ''}
+    </div>`;
+  }
+
   function construir(id, C, x, rid) {
     const cP = p => cReal(p.costo, p.costo_itbis), pP = p => n(p.precio) * fx(p.itbis);
     const vc = puedeCosto(); const fv = fsel[rid || id] || ''; const fq = String(fbus[rid || id] || '').trim().toLowerCase();
@@ -615,11 +663,38 @@
         const l = D.prods.filter(p => p.activo !== false && (!fv || p.categoria_id === fv));
         return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre].concat(vc ? [cP(p)] : []).concat([pP(p), n(p.precio_credito) * fx(p.itbis) || '', n(p.precio_mayor) * fx(p.itbis) || '', n(p.precio_minimo) * fx(p.itbis) || '']).concat(vc ? [pP(p) ? pct(pP(p) - cP(p), pP(p)) + '%' : ''] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
       }
+      case 'ganancias': {
+        const L = analisisGanancia(C); const T = sumarGan(L);
+        const pp = {}; L.forEach(l => { (pp[l.k] = pp[l.k] || []).push(l); });
+        const arts = Object.values(pp).map(ls => Object.assign(sumarGan(ls), { nom: ls[0].nom, cod: ls[0].cod, cat: ls[0].cat }));
+        const cols = [T0('Código', { m: 1 }), T0('Artículo'), $('Cant.', { fmt: fmtN }), $('Vendido'), $('Costo'), $('Ganancia'), $('ITBIS a pagar'), $('Ganancia real'), T0('Margen real', { r: 1 })];
+        const fila = o => [o.cod, o.nom + (o.sinCosto ? ' *' : ''), o.c, o.imp, o.costo, o.gan, o.itbPagar, o.real, o.sinCosto ? '—' : (o.neto ? pct(o.real, o.neto) + '%' : '')];
+        const est = o => o.sinCosto ? '1 · Sin costo registrado (revisar)' : o.real < 0 ? '2 · Con pérdida real' : pct(o.real, o.neto) < 5 ? '3 · Margen bajo (menos de 5%)' : '4 · Rentables (5% o más)';
+        const modo = fv || 'estado';
+        let grupos;
+        if (modo === 'categoria') grupos = agrupar(arts.sort((a2, b2) => b2.real - a2.real), o => o.cat ? (catBy[o.cat] || 'Sin categoría') : 'Sin categoría', fila, cols, porTotalDesc(7));
+        else if (modo === 'todos') grupos = [grupo('', arts.sort((a2, b2) => b2.real - a2.real).map(fila), cols)];
+        else grupos = agrupar(arts.sort((a2, b2) => (a2.real < 0 && b2.real < 0) ? a2.real - b2.real : b2.real - a2.real), est, fila, cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') }));
+        const sinC = arts.filter(o => o.sinCosto), perd = arts.filter(o => !o.sinCosto && o.real < 0);
+        const crTot = T.cr, costoSinCF = T.costo - crTot;
+        const devTot = C.dev.reduce((a2, d) => a2 + n(d.total), 0);
+        const alertas = [
+          sinC.length ? ['bad', `<b>${sinC.length} artículo(s) se vendieron sin costo registrado</b> (marcados con *). Suman ${m2(sumarGan(L.filter(l => l.sinCosto)).imp)} en ventas y su ganancia sale inflada. Ponles el costo en Inventario.`] : null,
+          perd.length ? ['bad', `<b>${perd.length} artículo(s) dejan pérdida real</b> después del ITBIS: ${m2(-perd.reduce((a2, o) => a2 + o.real, 0))} en total. Revisa su precio o regístralos como compra «Con ITBIS» si tenías comprobante.`] : null,
+          T.costo > 0 && crTot < T.costo * 0.5 ? ['warn', `El ${Math.round((1 - crTot / T.costo) * 100)}% del costo vendido no tiene crédito fiscal (compras informales o costos anteriores a este sistema). Por eso casi todo el ITBIS de las ventas sale a pagar. Si esas compras tenían NCF, regístralas como «Con ITBIS» y la ganancia real sube.`] : null,
+          devTot ? ['info', `Devoluciones del período: ${m2(devTot)}. No están restadas artículo por artículo; ver Estado de Resultados.`] : null,
+          ['info', 'El ITBIS a pagar es un estimado sobre lo vendido. La declaración (IT-1) usa todas las compras del mes con comprobante: ver Contabilidad → Resumen de ITBIS.']
+        ];
+        return { cols, grupos, sinToggle: 1, resumen: resumenGanancia(T, alertas), filtro: { l: 'Agrupar por', def: 'estado', o: [['estado', 'Estado (pérdida / margen)'], ['categoria', 'Categoría'], ['todos', 'Sin agrupar']] },
+          nota: 'Ganancia = vendido − costo (lo que cobraste menos lo que pagaste). Ganancia real = ganancia − ITBIS a pagar = venta sin ITBIS − costo sin el ITBIS recuperable. En compras informales el ITBIS no se recupera y ya está dentro del costo.' };
+      }
       case 'inv_gandia': {
-        const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Vendido'), $('Costo'), $('Ganancia'), T('Margen', { r: 1 })];
-        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += (v.pos_venta_items || []).reduce((a, it) => a + (it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad)) * fx(it.itbis), 0); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += cReal(it.costo_unitario != null ? it.costo_unitario : (p && p.costo), it.costo_itbis_unit != null ? it.costo_itbis_unit : (p && p.costo_itbis)) * n(it.cantidad); }); });
-        const l = Object.keys(d).sort().map(k => { const o = d[k]; return [dmy(k), o.n, o.vta, o.c, o.vta - o.c, pct(o.vta - o.c, o.vta) + '%']; });
-        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia por día: lo vendido menos el costo que tenía cada artículo al venderse (' + (conItbis ? 'ambos con ITBIS' : 'venta sin ITBIS; costo sin el ITBIS recuperable de compras con ITBIS; en las informales el ITBIS es parte del costo') + '). No descuenta devoluciones ni gastos.' };
+        const L = analisisGanancia(C); const d = {}; L.forEach(l => { (d[l.dia] = d[l.dia] || []).push(l); });
+        const fac = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); fac[k] = (fac[k] || 0) + 1; });
+        const cols = [T0('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Vendido'), $('Costo'), $('Ganancia'), $('ITBIS a pagar'), $('Ganancia real'), T0('Margen real', { r: 1 })];
+        const l = Object.keys(d).sort().map(k => { const o = sumarGan(d[k]); return [dmy(k), fac[k] || 0, o.imp, o.costo, o.gan, o.itbPagar, o.real, o.neto ? pct(o.real, o.neto) + '%' : '']; });
+        const T = sumarGan(L);
+        return { cols, grupos: [grupo('', l, cols)], sinToggle: 1, resumen: resumenGanancia(T, [['info', 'No descuenta devoluciones ni gastos. El ITBIS a pagar es un estimado sobre lo vendido.']]), nota: 'Ganancia = vendido − costo. Ganancia real = después de pagar el ITBIS de la venta menos el crédito fiscal de la mercancía.' };
       }
       case 'inv_vemp': {
         const cols = [T('Vendedor'), $('Facturas', { fmt: v => String(v) }), $('Unidades', { fmt: fmtN }), $('Vendido'), $('Ticket promedio', { sum: 0 })].concat(vc ? [$('Ganancia')] : []);
@@ -693,8 +768,8 @@
     const fTxt = R.filtro && fsel[rep] ? ((R.filtro.o.find(o => o[0] === fsel[rep]) || [])[1] || '') : '';
     return `<article class="nxRpSheet" id="${todo ? 'nxRpSheetPrint' : 'nxRpSheet'}">
       <header class="nxRpSH"><div class="emp"><b>${esc(emp.nom)}</b>${emp.rnc ? `<span>RNC ${esc(emp.rnc)}</span>` : ''}${emp.dir || emp.tel ? `<span>${esc([emp.dir, emp.tel].filter(Boolean).join(' · '))}</span>` : ''}</div>
-        <div class="tit"><h3>${esc(REP[id].t)}</h3><span>${rango}</span>${fTxt ? `<span>${esc(R.filtro.l)}: ${esc(fTxt)}</span>` : ''}<span>Valores en RD$ · ${conItbis ? 'con ITBIS' : 'sin ITBIS'}</span></div></header>
-      ${pagMini}<div class="nxRpTw"><table class="nxRpT nxRpST"><thead><tr>${cols.map(c => `<th class="${c.r ? 'r' : ''}">${esc(c.l)}</th>`).join('')}</tr></thead><tbody>${body}</tbody>${pie ? `<tfoot>${pie}</tfoot>` : ''}</table></div>${paginador}
+        <div class="tit"><h3>${esc(REP[id].t)}</h3><span>${rango}</span>${fTxt ? `<span>${esc(R.filtro.l)}: ${esc(fTxt)}</span>` : ''}<span>Valores en RD$${R.sinToggle ? '' : ' · ' + (conItbis ? 'con ITBIS' : 'sin ITBIS')}</span></div></header>
+      ${R.resumen || ''}${pagMini}<div class="nxRpTw"><table class="nxRpT nxRpST"><thead><tr>${cols.map(c => `<th class="${c.r ? 'r' : ''}">${esc(c.l)}</th>`).join('')}</tr></thead><tbody>${body}</tbody>${pie ? `<tfoot>${pie}</tfoot>` : ''}</table></div>${paginador}
       ${R.nota ? `<p class="nxRpNote">${esc(R.nota)}</p>` : ''}
       <footer class="nxRpSF"><span>Generado por ${esc(s.nom || s.nombre || 'usuario')} · ${esc(ahora)}</span><span>STUDIO · Reportes</span></footer>
     </article>`;
@@ -703,14 +778,14 @@
   // ── Render ─────────────────────────────────────────────────────────
   function barraRango(R) {
     const rangos = [['hoy', 'Hoy'], ['sem', '7 días'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['anio', 'Este año']];
-    const f = R && R.filtro ? `<label class="nxRpFil">${esc(R.filtro.l)}<select onchange="window.nxReportes.filtro(this.value)"><option value="">Todos</option>${R.filtro.o.map(o => `<option value="${esc(o[0])}"${fsel[rep] === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>` : '';
+    const f = R && R.filtro ? `<label class="nxRpFil">${esc(R.filtro.l)}<select onchange="window.nxReportes.filtro(this.value)">${R.filtro.def ? '' : '<option value="">Todos</option>'}${R.filtro.o.map(o => `<option value="${esc(o[0])}"${(fsel[rep] || R.filtro.def) === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>` : '';
     const alCorte = R && R.alCorte;
     const bus = R && R.buscar ? `<label class="nxRpFil nxRpBus">Buscar<input type="search" value="${esc(fbus[rep] || '')}" placeholder="${esc(R.buscar)}" onchange="window.nxReportes.buscar(this.value)" onkeydown="if(event.key==='Enter')this.blur()"></label>` : '';
     return `<div class="nxRpTop">
       <button type="button" class="nxRpBack" onclick="window.nxReportes.menu()"><i class="ti ti-list-details"></i> Menú de reportes</button>
       <div class="nxRpRange">${alCorte ? '' : `<label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label>`}<label>${alCorte ? 'Al' : 'Hasta'}<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label>${f}${bus}</div>
       ${alCorte ? '' : `<div class="nxRpPres">${rangos.map(r => `<button type="button" class="nxRpChip" onclick="window.nxReportes.preset('${r[0]}')">${r[1]}</button>`).join('')}</div>`}
-      <label class="nxRpItb"><input type="checkbox" ${conItbis ? 'checked' : ''} onchange="window.nxReportes.itbis(this.checked)"><span>Con ITBIS</span></label>
+      ${R && R.sinToggle ? '' : `<label class="nxRpItb"><input type="checkbox" ${conItbis ? 'checked' : ''} onchange="window.nxReportes.itbis(this.checked)"><span>Con ITBIS</span></label>`}
       <div class="nxRpTools">${rep ? `<button type="button" class="btn bsm bghost" onclick="window.nxReportes.csv()"><i class="ti ti-file-spreadsheet"></i> Excel</button><button type="button" class="btn bsm" onclick="window.nxReportes.imprimir()"><i class="ti ti-printer"></i> Imprimir</button>` : `<button type="button" class="btn bsm bghost" onclick="window.nxRepImei && window.nxRepImei()"><i class="ti ti-device-mobile-search"></i> Buscar IMEI</button>`}</div>
     </div>`;
   }
@@ -842,6 +917,15 @@ html #v-pos .nxTNav.nxTRepTop i.chev{background:none!important;box-shadow:none!i
 .nxTRepI.on{background:var(--studio-gold,#c9a227);color:#0a0a0a!important;font-weight:700}.nxTRepI.on i{color:#0a0a0a!important}
 @media(max-width:900px){.nxTRepH{min-height:42px;font-size:14px}.nxTRepI{min-height:40px;font-size:14px}}
 @media(prefers-reduced-motion:reduce){.nxTRepTop .chev,.nxTRepH .chev{transition:none}}
+.nxRpGan{margin:0 0 14px}.nxRpGan .nxRpKpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.nxRpGan .nxRpK b{font-size:18px}
+.nxRpCien{margin:4px 0 10px;padding:12px 14px;border:1px solid var(--rp-line);border-radius:12px;background:#fcfbf7}.nxRpCien .t{font-size:13.5px;line-height:1.45;margin-bottom:8px}.nxRpCien b.ok{color:#15803d}.nxRpCien b.bad{color:#b91c1c}
+.nxRpCien .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(10,10,10,.06)}.nxRpCien .bar i{display:block;height:100%}
+.nxRpCien i.cos{background:#262626}.nxRpCien i.itb{background:#c9a227}.nxRpCien i.gan{background:#16a34a}
+.nxRpCien .ley{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;font-size:11.5px;color:var(--rp-mute)}.nxRpCien .ley span{display:inline-flex;align-items:center;gap:5px}.nxRpCien .ley i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.nxRpAl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}.nxRpAl li{display:flex;gap:9px;align-items:flex-start;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.45;border:1px solid var(--rp-line);background:#fff}
+.nxRpAl li i{font-size:17px;flex:none;margin-top:1px}.nxRpAl li.bad{background:#fef2f2;border-color:#fecaca}.nxRpAl li.bad i{color:#b91c1c}.nxRpAl li.warn{background:#fffbeb;border-color:#fde68a}.nxRpAl li.warn i{color:#b45309}.nxRpAl li.info i{color:var(--rp-gold-d)}
+@media(max-width:760px){.nxRpGan .nxRpKpis{grid-template-columns:1fr 1fr}.nxRpGan .nxRpK.main{grid-column:1/-1}.nxRpGan .nxRpK b{font-size:16px}.nxRpGan .nxRpK small{font-size:11px}}
+@media print{.nxRpCien{break-inside:avoid}.nxRpAl li{break-inside:avoid}}
 .nxRpItb{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 10px;border:1px solid rgba(0,0,0,.14);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--rp-ink);cursor:pointer;user-select:none}
 .nxRpItb input{width:18px;height:18px;margin:0;accent-color:#0a0a0a;cursor:pointer}
 .nxRpPag{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:8px 0;font-size:12.5px;color:var(--rp-mute)}

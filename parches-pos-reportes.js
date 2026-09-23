@@ -60,7 +60,7 @@
         pr(getAll('pos_abonos', 'select=venta_id,monto'), []),
         pr(getAll('pos_compras', 'select=id,numero,fecha,proveedor_nombre,ncf,subtotal,itbis,total,a_credito,estado,moneda,tasa,es_importacion,total_desembarcado&' + rngD('fecha')), []),
         pr(getAll('pos_cxp_v', 'select=*&saldo=gt.0'), []),
-        pr(getAll('pos_cajas', 'select=id,apertura,cierre,estado,usuario_nombre,created_by_name,monto_inicial,ventas_efectivo,ventas_tarjeta,ventas_transferencia,efectivo_esperado,efectivo_contado,descuadre&' + rng('apertura') + '&order=apertura.desc'), []),
+        pr(getAll('pos_cajas', 'select=id,apertura,cierre,estado,usuario_nombre,created_by_name,monto_inicial,ventas_efectivo,ventas_tarjeta,ventas_transferencia,abonos_efectivo,entradas,salidas,efectivo_esperado,efectivo_contado,descuadre&' + rng('apertura') + '&order=apertura.desc'), []),
         pr(getAll('pos_caja_movimientos', 'select=tipo,monto,concepto,fecha,created_by_name&' + rng('fecha')), []),
         pr(getAll('pos_asientos', 'select=fecha,tipo,concepto,numero,pos_asiento_lineas(cuenta_codigo,cuenta_nombre,debito,credito)&' + rngD('fecha')), []),
         pr(getAll('pos_reparaciones', 'select=numero,equipo,cliente_nombre,cobrado,cobrado_monto,costo_piezas,presupuesto,estado,entregado_at,created_at&' + rng('created_at')), []),
@@ -180,32 +180,42 @@
   // ── Catálogo estilo Infoplus: Reportes → módulo → reporte ─────────────────
   // Cada reporte devuelve { cols, grupos:[{t, filas, sub}], total, nota, alCorte, filtro } y se pinta como
   // una hoja formal (empresa, título, rango, grupos con subtotal, total general, pie con usuario y hora).
+  // [id, nombre como en Infoplus, (opcional) id del reporte que lo construye cuando es el mismo cálculo]
   const CAT = [
     ['bancos', 'Bancos', 'ti-building-bank', [
       ['ban_saldos', 'Saldos de cuentas bancarias'], ['ban_mov', 'Movimientos bancarios'], ['ban_conc', 'Movimientos sin conciliar']]],
     ['clientes', 'Clientes', 'ti-users', [
-      ['cli_fact', 'Ventas por fecha (facturas)'], ['cli_vend', 'Ventas por vendedor'], ['cli_cli', 'Ventas por cliente'],
-      ['cli_prod', 'Ventas por artículo'], ['cli_cat', 'Ventas por categoría'], ['cli_cxc', 'Cuentas por cobrar'],
-      ['cli_ant', 'Antigüedad de saldos'], ['cli_cob', 'Cobros recibidos'], ['cli_dev', 'Devoluciones y notas de crédito'],
-      ['cli_anul', 'Facturas anuladas'], ['cli_taller', 'Reparaciones (taller)']]],
+      ['cli_fact', 'Reporte Factura'], ['cli_dev', 'Reporte Devoluciones S/V'], ['cli_notas', 'Reporte Notas de Clientes'],
+      ['cli_cxc', 'Reporte Cuentas por Cobrar'], ['cli_ant', 'Antigüedad de Saldos'], ['cli_dep', 'Reporte Depósito Facturas'],
+      ['cli_cob', 'Reporte Cobros Recibidos'], ['cli_nov', 'Reporte No Ventas'], ['cli_cot', 'Reporte Cotizaciones'],
+      ['cli_cotfalt', 'Materiales Faltantes Cotizaciones'], ['cli_taller', 'Reporte Órdenes de Servicio'], ['cli_datacr', 'Datacrédito (morosos)'],
+      ['cli_pref', 'Reporte Prefactura'], ['cli_prefpend', 'Reporte Prefacturas Pendientes'], ['cli_vend', 'Reporte Ventas por Vendedor'],
+      ['cli_cli', 'Reporte Ventas por Clientes'], ['cli_anul', 'Facturas Anuladas']]],
     ['conta', 'Contabilidad', 'ti-notebook', [
-      ['con_er', 'Estado de resultados'], ['con_diario', 'Libro diario'], ['con_bal', 'Balanza de comprobación'],
-      ['con_gastos', 'Gastos por cuenta'], ['con_607', 'Formato 607 · ventas'], ['con_606', 'Formato 606 · compras'], ['con_itbis', 'Resumen de ITBIS']]],
+      ['con_er', 'Estado de Resultados'], ['con_diario', 'Libro Diario'], ['con_bal', 'Balanza de Comprobación'],
+      ['con_gastos', 'Gastos por Cuenta'], ['con_607', 'Formato 607 · Ventas'], ['con_606', 'Formato 606 · Compras'], ['con_itbis', 'Resumen de ITBIS']]],
     ['inv', 'Inventario', 'ti-list-details', [
-      ['inv_val', 'Existencia valorizada'], ['inv_alm', 'Existencia por almacén'], ['inv_bajo', 'Agotados y bajo mínimo'],
-      ['inv_kardex', 'Movimientos de inventario (kárdex)'], ['inv_sin', 'Artículos sin ventas en el período']]],
+      ['inv_ajustes', 'Reporte Ajustes'], ['inv_altabaja', 'Reporte Alta y Baja Existencia'], ['inv_compras', 'Reporte Compras', 'prov_comp'],
+      ['inv_gan', 'Reporte Ganancias', 'cli_prod'], ['inv_resumen', 'Resumen Inventario'], ['inv_ventas', 'Reporte Ventas', 'cli_prod'],
+      ['inv_fichero', 'Reporte Fichero Artículos'], ['inv_desp', 'Reporte Despachos'], ['inv_recep', 'Reporte Recepciones'],
+      ['inv_seriales', 'Historial Seriales'], ['inv_fisico', 'Reporte Inventario Físico'], ['inv_nomov', 'Reporte No Movimiento Inventario'],
+      ['inv_precios', 'Precios'], ['inv_gandia', 'Reporte Ganancias por Día'], ['inv_serdisp', 'Reporte Series No Vendidas'],
+      ['inv_vemp', 'Reporte Ventas por Empleado'], ['inv_vcli', 'Reporte Ventas por Clientes', 'cli_cli'], ['inv_cat', 'Ventas por Categoría', 'cli_cat'],
+      ['inv_val', 'Existencia Valorizada'], ['inv_alm', 'Existencia por Almacén'], ['inv_bajo', 'Agotados y Bajo Mínimo'], ['inv_kardex', 'Kárdex de Movimientos']]],
     ['prov', 'Proveedores', 'ti-truck', [
-      ['prov_comp', 'Compras por fecha'], ['prov_porprov', 'Compras por proveedor'], ['prov_cxp', 'Cuentas por pagar'],
-      ['prov_pagos', 'Pagos a proveedores'], ['prov_lista', 'Listado de proveedores']]],
+      ['prov_comp', 'Compras por Fecha'], ['prov_porprov', 'Compras por Proveedor'], ['prov_cxp', 'Cuentas por Pagar'],
+      ['prov_pagos', 'Pagos a Proveedores'], ['prov_lista', 'Listado de Proveedores']]],
     ['rrhh', 'Recursos Humanos', 'ti-user-circle', [
-      ['rh_emp', 'Listado de empleados'], ['rh_nom', 'Nóminas del período'], ['rh_det', 'Detalle de nómina por empleado']]],
+      ['rh_emp', 'Listado de Empleados'], ['rh_nom', 'Nóminas del Período'], ['rh_det', 'Detalle de Nómina por Empleado']]],
     ['caja', 'Caja', 'ti-currency-dollar', [
-      ['caja_cie', 'Cuadres de caja'], ['caja_mov', 'Entradas y salidas de caja'], ['caja_met', 'Ventas por forma de pago'], ['caja_dia', 'Ventas diarias']]]
+      ['caja_des', 'Reporte Desembolso de Caja'], ['caja_ing', 'Reporte Ingreso'], ['caja_cie', 'Reporte Arqueo'], ['caja_conc', 'Conciliación Arqueo'],
+      ['caja_rec', 'Reporte Imprimir Ingresos', 'cli_cob'], ['caja_mov', 'Entradas y Salidas de Caja'], ['caja_met', 'Ventas por Forma de Pago'], ['caja_dia', 'Ventas Diarias']]]
   ];
-  const REP = {}; CAT.forEach(c => c[3].forEach(r => { REP[r[0]] = { t: r[1], cat: c[0] }; }));
+  const REP = {}; CAT.forEach(c => c[3].forEach(r => { REP[r[0]] = { t: r[1], cat: c[0], b: r[2] || r[0] }; }));
   // Reportes con datos sensibles (costos, sueldos, bancos, contabilidad): solo administrador y gerente.
-  const SENSIBLE = /^(ban_|con_|rh_|inv_val|inv_alm)/;
-  let rep = '', abierto = {}, fsel = {};
+  const SENSIBLE = /^(ban_|con_|rh_|inv_val|inv_alm|inv_gandia)/;
+  const sens = id => SENSIBLE.test((REP[id] || {}).b || id);
+  let rep = '', abierto = {}, fsel = {}, fbus = {};
   try { const r = localStorage.getItem('studio_rep_sel'); if (r && REP[r]) rep = r; } catch (e) {}
   try { abierto = JSON.parse(localStorage.getItem('studio_rep_cat') || '{}') || {}; } catch (e) { abierto = {}; }
   if (rep) abierto[REP[rep].cat] = true;
@@ -213,7 +223,7 @@
   // Datos extra que solo cargan al abrir un reporte que los usa (cache por rango).
   const X = {}; let xCargando = '';
   function xKey(k) { return k + '|' + desde + '|' + hasta; }
-  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh' };
+  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', inv_ajustes: 'kardex', inv_altabaja: 'kardex', inv_resumen: 'kardex', inv_nomov: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh', cli_nov: 'hist', cli_datacr: 'hist', cli_cot: 'cot', cli_cotfalt: 'cot', cli_pref: 'pref', cli_prefpend: 'pref', inv_desp: 'transf', inv_recep: 'transf', inv_seriales: 'seriales', inv_serdisp: 'seriales' };
   function xDe(id) { for (const k in XNEED) if (id === k || (k.endsWith('_') && id.startsWith(k))) return XNEED[k]; return ''; }
   async function cargarX(k) {
     const key = xKey(k); if (X[key]) return X[key];
@@ -250,6 +260,25 @@
       ]);
       r = { emps, noms };
     }
+    else if (k === 'hist') {
+      const [clientes, vtas] = await Promise.all([
+        pr(getAll('pos_clientes', 'select=id,codigo,nombre,cedula,telefono,direccion,tipo_persona,activo,es_cliente&order=nombre.asc'), []),
+        pr(getAll('pos_ventas', 'select=cliente_id,fecha,total&estado=eq.completada&cliente_id=not.is.null&order=fecha.asc'), [])
+      ]);
+      r = { clientes, vtas };
+    } else if (k === 'cot') {
+      r.cots = await pr(getAll('pos_cotizaciones', 'select=numero,fecha,cliente_nombre,validez_dias,total,estado,created_by_name,pos_cotizacion_items(producto_id,nombre,cantidad,precio,importe)&' + rngD('fecha') + '&order=fecha.asc'), []);
+    } else if (k === 'pref') {
+      r.prefs = await pr(getAll('pos_prefacturas', 'select=numero,cliente_nombre,total,estado,created_by_name,created_at,items&order=created_at.asc'), []);
+    } else if (k === 'transf') {
+      r.trs = await pr(getAll('pos_transferencias', 'select=numero,fecha,origen_nombre,destino_nombre,notas,created_by_name,pos_transferencia_items(nombre,cantidad)&' + rngD('fecha') + '&order=fecha.asc'), []);
+    } else if (k === 'seriales') {
+      const [sers, vtas] = await Promise.all([
+        pr(getAll('pos_seriales', 'select=serial,estado,producto_id,almacen_id,venta_id,color,created_at&order=created_at.asc'), []),
+        pr(getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_nombre'), [])
+      ]);
+      r = { sers, vtas };
+    }
     X[key] = r; return r;
   }
 
@@ -267,8 +296,8 @@
   const porTotalDesc = col => (ks, g) => ks.sort((a, b) => g[b].reduce((s, f) => s + n(f[col]), 0) - g[a].reduce((s, f) => s + n(f[col]), 0));
 
   // ── Definición de cada reporte ─────────────────────────────────────
-  function construir(id, C, x) {
-    const vc = puedeCosto(); const fv = fsel[id] || '';
+  function construir(id, C, x, rid) {
+    const vc = puedeCosto(); const fv = fsel[rid || id] || ''; const fq = String(fbus[rid || id] || '').trim().toLowerCase();
     const almBy = {}; D.almacenes.forEach(a => { almBy[a.id] = a.nombre; });
     const catBy = {}; D.cats.forEach(c => { catBy[c.id] = c.nombre; });
     const tasa = c => n(c.tasa) || 1;
@@ -466,6 +495,145 @@
         const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); d[k] = d[k] || [dmy(k), 0, 0, 0, 0, 0, 0]; const r = d[k]; r[1]++; r[2] += n(v.pagado_efectivo); r[3] += n(v.pagado_tarjeta); r[4] += n(v.pagado_transferencia); r[5] += n(v.credito_monto); r[6] += n(v.total); });
         return { cols, grupos: [grupo('', Object.keys(d).sort().map(k => d[k]), cols)] };
       }
+      // ── Clientes (nombres de Infoplus) ──
+      case 'cli_notas': {
+        const cols = [T('Fecha'), T('Recibo', { m: 1 }), T('Cliente'), T('Factura', { m: 1 }), $('Monto')];
+        const vb = {}; D.creditos.forEach(v => { vb[v.id] = v; });
+        const l = D.abonos.filter(a => /nota de cr|ajuste/i.test(a.metodo || ''));
+        return { cols, grupos: agrupar(l, a => /ajuste/i.test(a.metodo || '') ? 'Ajustes a cuentas' : 'Notas de crédito aplicadas', a => { const v = vb[a.venta_id]; return [dmy(a.fecha), a.numero || '', v ? v.cliente_nombre || '' : '', v ? v.numero_factura || v.numero || '' : '', n(a.monto)]; }, cols) };
+      }
+      case 'cli_dep': {
+        const cols = [T('Fecha'), T('Documento', { m: 1 }), T('Cliente'), T('Origen'), $('Monto')];
+        const vb = {}; D.creditos.forEach(v => { vb[v.id] = v; });
+        const l = C.ven.filter(v => n(v.pagado_transferencia) > 0).map(v => ({ f: v.fecha, doc: v.numero_factura || v.numero || '', cli: v.cliente_nombre || 'Consumidor final', o: 'Factura de contado', m: n(v.pagado_transferencia) }))
+          .concat(D.abonos.filter(a => /transfer|dep[oó]s/i.test(a.metodo || '')).map(a => { const v = vb[a.venta_id]; return { f: a.fecha, doc: a.numero || '', cli: v ? v.cliente_nombre || '' : '', o: 'Abono a ' + (v ? v.numero_factura || v.numero || 'factura' : 'factura'), m: n(a.monto) }; }));
+        return { cols, grupos: agrupar(l, o => dmy(o.f), o => [dmy(o.f), o.doc, o.cli, o.o, o.m], cols, ks => ks.sort((a, b) => a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')))), nota: 'Dinero recibido por transferencia o depósito: facturas de contado y abonos a crédito.' };
+      }
+      case 'cli_nov': {
+        const ult = {}; x.vtas.forEach(v => { const d = diaRD(v.fecha); const o = ult[v.cliente_id] = ult[v.cliente_id] || { u: '', n: 0, t: 0 }; if (d > o.u) o.u = d; o.n++; o.t += n(v.total); });
+        const compraron = new Set(C.ven.map(v => v.cliente_id).filter(Boolean));
+        const cols = [T('Código', { m: 1 }), T('Cliente'), T('Teléfono'), T('Última compra'), T('Días sin comprar', { r: 1 }), $('Compras', { fmt: v => String(v) }), $('Total histórico')];
+        const l = x.clientes.filter(c => c.activo !== false && ult[c.id] && !compraron.has(c.id)).map(c => ({ c, o: ult[c.id] })).sort((a, b) => b.o.t - a.o.t);
+        return { cols, grupos: [grupo('', l.map(({ c, o }) => [c.codigo || '', c.nombre || '', c.telefono || '', dmy(o.u), diasEntre(o.u, hoyISO()), o.n, o.t]), cols)], nota: 'Clientes que ya habían comprado antes y no compraron entre las fechas elegidas. Ordenados por lo que han comprado en total: buenos candidatos para llamar o escribir.' };
+      }
+      case 'cli_cot': {
+        const cols = [T('Número', { m: 1 }), T('Fecha'), T('Cliente'), T('Vendedor'), T('Vence'), $('Total')];
+        const est = c => { const v = addDays(c.fecha, n(c.validez_dias) || 15); return c.estado === 'convertida' || c.estado === 'facturada' ? 'Facturadas' : v < hoyISO() ? 'Vencidas' : 'Vigentes'; };
+        return { cols, grupos: agrupar(x.cots, est, c => [c.numero || '', dmy(c.fecha), c.cliente_nombre || '', c.created_by_name || '', dmy(addDays(c.fecha, n(c.validez_dias) || 15)), n(c.total)], cols) };
+      }
+      case 'cli_cotfalt': {
+        const cols = [T('Cotización', { m: 1 }), T('Cliente'), T('Artículo'), $('Pedido', { fmt: fmtN, sum: 0 }), $('Existencia', { fmt: fmtN, sum: 0 }), $('Falta', { fmt: fmtN })];
+        const vig = x.cots.filter(c => addDays(c.fecha, n(c.validez_dias) || 15) >= hoyISO() && !/convert|factur|anul/i.test(c.estado || ''));
+        const l = []; vig.forEach(c => (c.pos_cotizacion_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (!p || p.tipo === 'servicio') return; const falta = n(it.cantidad) - Math.max(0, n(p.stock)); if (falta > 0) l.push([c.numero || '', c.cliente_nombre || '', it.nombre || p.nombre, n(it.cantidad), n(p.stock), falta]); }));
+        return { cols, grupos: agrupar(l, f => f[2], f => f, cols), nota: 'Cotizaciones vigentes del rango con artículos que no alcanzan en existencia. Sirve para saber qué comprar antes de cerrar la venta.' };
+      }
+      case 'cli_datacr': {
+        const cb = {}; x.clientes.forEach(c => { cb[c.id] = c; });
+        const cols = [T('Cédula / RNC', { m: 1 }), T('Cliente'), T('Teléfono'), T('Facturas', { r: 1 }), T('Atraso máx.', { r: 1 }), $('Saldo vencido')];
+        const pc = {}; C.cxc.filter(c => c.dias > 30).forEach(c => { const k = c.v.cliente_id || c.v.cliente_nombre; const o = pc[k] = pc[k] || { c: cb[c.v.cliente_id] || {}, nom: c.v.cliente_nombre, n: 0, d: 0, s: 0 }; o.n++; o.d = Math.max(o.d, c.dias); o.s += c.saldo; });
+        const l = Object.values(pc).sort((a, b) => b.s - a.s);
+        return { cols, grupos: agrupar(l, o => o.d > 90 ? 'Más de 90 días' : o.d > 60 ? '61 a 90 días' : '31 a 60 días', o => [o.c.cedula || '—', o.nom || o.c.nombre || '', o.c.telefono || '', o.n, o.d + ' días', o.s], cols, ks => ks.sort((a, b) => ['Más de 90 días', '61 a 90 días', '31 a 60 días'].indexOf(a) - ['Más de 90 días', '61 a 90 días', '31 a 60 días'].indexOf(b))), alCorte: 1, nota: 'Clientes con facturas vencidas hace más de 30 días, con cédula para reportar a Datacrédito. Revisa los que salen con «—»: les falta la cédula en su ficha.' };
+      }
+      case 'cli_pref': case 'cli_prefpend': {
+        const cols = [T('Número', { m: 1 }), T('Fecha'), T('Cliente'), T('Hecha por'), T('Artículos', { r: 1 }), $('Total')];
+        let l = x.prefs;
+        if (id === 'cli_pref') l = l.filter(p => diaRD(p.created_at) >= desde && diaRD(p.created_at) <= hasta);
+        else l = l.filter(p => !/factur|convert|anul|cancel/i.test(p.estado || ''));
+        return { cols, grupos: agrupar(l, p => p.estado ? p.estado.charAt(0).toUpperCase() + p.estado.slice(1) : 'Pendiente', p => [p.numero || '', dmy(p.created_at), p.cliente_nombre || '', p.created_by_name || '', Array.isArray(p.items) ? p.items.length : 0, n(p.total)], cols), alCorte: id === 'cli_prefpend' ? 1 : 0 };
+      }
+      // ── Inventario (nombres de Infoplus) ──
+      case 'inv_ajustes': {
+        const cols = [T('Fecha'), T('Motivo'), T('Usuario'), $('Entrada', { fmt: fmtN }), $('Salida', { fmt: fmtN })];
+        const d = m => m.stock_nuevo != null && m.stock_anterior != null ? n(m.stock_nuevo) - n(m.stock_anterior) : n(m.cantidad);
+        return { cols, grupos: agrupar(x.movs.filter(m => m.tipo === 'ajuste'), m => m.producto_nombre || '—', m => [dmy(m.fecha), m.motivo || m.referencia || '', m.created_by_name || '', d(m) > 0 ? d(m) : 0, d(m) < 0 ? -d(m) : 0], cols) };
+      }
+      case 'inv_altabaja': case 'inv_resumen': {
+        const d = m => m.stock_nuevo != null && m.stock_anterior != null ? n(m.stock_nuevo) - n(m.stock_anterior) : n(m.cantidad);
+        const pp = {}; x.movs.forEach(m => { const k = m.producto_id || m.producto_nombre; const o = pp[k] = pp[k] || { nom: m.producto_nombre, ini: m.stock_anterior != null ? n(m.stock_anterior) : null, fin: 0, t: {} }; o.fin = m.stock_nuevo != null ? n(m.stock_nuevo) : o.fin; const q = d(m), t = m.tipo || 'otro'; o.t[t] = o.t[t] || [0, 0]; if (q > 0) o.t[t][0] += q; else o.t[t][1] -= q; });
+        if (id === 'inv_altabaja') {
+          const cols = [T('Artículo'), $('Altas (entradas)', { fmt: fmtN }), $('Bajas (salidas)', { fmt: fmtN }), $('Neto', { fmt: fmtN })];
+          const l = []; Object.values(pp).forEach(o => Object.entries(o.t).forEach(([t, v]) => l.push({ t, f: [o.nom || '—', v[0], v[1], v[0] - v[1]] })));
+          const nomT = { compra: 'Compras', venta: 'Ventas', ajuste: 'Ajustes', transferencia: 'Transferencias entre almacenes', devolucion: 'Devoluciones' };
+          return { cols, grupos: agrupar(l, o => nomT[o.t] || o.t, o => o.f, cols), nota: 'Transferencias entre almacenes salen de uno y entran a otro: en el total de la empresa se compensan.' };
+        }
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia inicial', { fmt: fmtN }), $('Entradas', { fmt: fmtN }), $('Salidas', { fmt: fmtN }), $('Existencia final', { fmt: fmtN })].concat(vc ? [$('Valor final (costo)')] : []);
+        const l = D.prods.filter(p => p.tipo !== 'servicio' && p.activo !== false).map(p => { const o = pp[p.id]; let e = 0, s2 = 0; if (o) Object.values(o.t).forEach(v => { e += v[0]; s2 += v[1]; }); const fin = o ? o.fin : Math.max(0, n(p.stock)); const ini = o && o.ini != null ? o.ini : fin - e + s2; return { p, f: [p.codigo || '', p.nombre, ini, e, s2, fin].concat(vc ? [fin * n(p.costo)] : []) }; }).filter(o => o.f[2] || o.f[3] || o.f[4] || o.f[5]);
+        return { cols, grupos: agrupar(l, o => o.p.categoria_id ? (catBy[o.p.categoria_id] || 'Sin categoría') : 'Sin categoría', o => o.f, cols), nota: 'Inicial y final según el kárdex del rango; los artículos sin movimientos muestran su existencia actual.' };
+      }
+      case 'inv_fichero': {
+        const cols = [T('Código', { m: 1 }), T('Artículo'), T('Marca'), T('Tipo'), T('ITBIS'), T('Serial'), $('Existencia', { fmt: fmtN, sum: 0 }), $('Precio', { sum: 0 })].concat(vc ? [$('Costo', { sum: 0 })] : []);
+        const l = D.prods.filter(p => p.activo !== false && (!fv || p.categoria_id === fv));
+        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre || '', p.marca || '', p.tipo === 'servicio' ? 'Servicio' : 'Producto', p.itbis === false ? 'Exento' : '18%', p.serial ? 'Sí' : '', n(p.stock), n(p.precio)].concat(vc ? [n(p.costo)] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+      }
+      case 'inv_desp': case 'inv_recep': {
+        const cols = [T('Fecha'), T('Transferencia', { m: 1 }), T(id === 'inv_desp' ? 'Hacia' : 'Desde'), T('Artículo'), $('Cantidad', { fmt: fmtN }), T('Usuario')];
+        const l = []; x.trs.forEach(t => (t.pos_transferencia_items || []).forEach(it => l.push({ t, it })));
+        return { cols, grupos: agrupar(l, o => id === 'inv_desp' ? 'Sale de ' + (o.t.origen_nombre || '—') : 'Entra a ' + (o.t.destino_nombre || '—'), o => [dmy(o.t.fecha), o.t.numero || '', id === 'inv_desp' ? o.t.destino_nombre || '' : o.t.origen_nombre || '', o.it.nombre || '', n(o.it.cantidad), o.t.created_by_name || ''], cols) };
+      }
+      case 'inv_seriales': case 'inv_serdisp': {
+        const vb = {}; x.vtas.forEach(v => { vb[v.id] = v; });
+        const prodBy = C.prodBy;
+        if (id === 'inv_serdisp') {
+          const cols = [T('Serial / IMEI', { m: 1 }), T('Color'), T('Almacén'), T('Entrada'), T('Días en inventario', { r: 1 })].concat(vc ? [$('Costo')] : []);
+          const l = x.sers.filter(z => z.estado === 'disponible' && (!fv || z.almacen_id === fv));
+          return { cols, grupos: agrupar(l, z => (prodBy[z.producto_id] || {}).nombre || 'Artículo no encontrado', z => [z.serial || '', z.color || '', almBy[z.almacen_id] || '', dmy(z.created_at), diasEntre(diaRD(z.created_at), hoyISO())].concat(vc ? [n((prodBy[z.producto_id] || {}).costo)] : []), cols), alCorte: 1, filtro: { l: 'Almacén', o: D.almacenes.map(a => [a.id, a.nombre]) }, nota: 'Equipos con serial todavía sin vender. Los de más días en inventario son los que conviene mover primero.' };
+        }
+        const cols = [T('Serial / IMEI', { m: 1 }), T('Artículo'), T('Estado'), T('Almacén'), T('Entrada'), T('Factura', { m: 1 }), T('Fecha venta'), T('Cliente')];
+        let l = x.sers;
+        if (fq) l = l.filter(z => String(z.serial || '').toLowerCase().includes(fq) || String((prodBy[z.producto_id] || {}).nombre || '').toLowerCase().includes(fq));
+        else l = l.filter(z => { const v = vb[z.venta_id]; const d = v ? diaRD(v.fecha) : diaRD(z.created_at); return d >= desde && d <= hasta; });
+        return { cols, grupos: [grupo('', l.slice(0, 2000).map(z => { const v = vb[z.venta_id]; return [z.serial || '', (prodBy[z.producto_id] || {}).nombre || '', z.estado || '', almBy[z.almacen_id] || '', dmy(z.created_at), v ? v.numero_factura || v.numero || '' : '', v ? dmy(v.fecha) : '', v ? v.cliente_nombre || '' : '']; }), cols)], buscar: 'Serial, IMEI o artículo', nota: fq ? 'Resultado de la búsqueda en todos los seriales (sin límite de fechas).' : 'Seriales que entraron o se vendieron en el rango. Escribe un serial o IMEI para ver su historial completo.' };
+      }
+      case 'inv_fisico': {
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia sistema', { fmt: fmtN, sum: 0 }), T('Conteo físico', { r: 1 }), T('Diferencia', { r: 1 })];
+        let l;
+        if (fv) { const pb = C.prodBy; l = D.stockAlm.filter(s2 => s2.almacen_id === fv && pb[s2.producto_id] && pb[s2.producto_id].tipo !== 'servicio').map(s2 => ({ p: pb[s2.producto_id], q: n(s2.stock) })); }
+        else l = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio').map(p => ({ p, q: n(p.stock) }));
+        l.sort((a, b) => String(a.p.nombre).localeCompare(String(b.p.nombre), 'es'));
+        return { cols, grupos: agrupar(l, o => o.p.categoria_id ? (catBy[o.p.categoria_id] || 'Sin categoría') : 'Sin categoría', o => [o.p.codigo || '', o.p.nombre, o.q, '________', '________'], cols), alCorte: 1, filtro: { l: 'Almacén', o: D.almacenes.map(a => [a.id, a.nombre]) }, nota: 'Hoja para imprimir y contar: anota el conteo y la diferencia, y luego haz el ajuste en Kardex.' };
+      }
+      case 'inv_nomov': {
+        const mov = new Set(x.movs.map(m => m.producto_id));
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Existencia', { fmt: fmtN })].concat(vc ? [$('Dinero detenido (costo)')] : []);
+        const l = D.prods.filter(p => p.activo !== false && p.tipo !== 'servicio' && n(p.stock) > 0 && !mov.has(p.id));
+        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre, n(p.stock)].concat(vc ? [n(p.stock) * n(p.costo)] : []), cols, vc ? porTotalDesc(3) : null), nota: 'Artículos con existencia que no tuvieron ninguna entrada, venta, ajuste ni transferencia en el rango.' };
+      }
+      case 'inv_precios': {
+        const cols = [T('Código', { m: 1 }), T('Artículo')].concat(vc ? [$('Costo', { sum: 0 })] : []).concat([$('Contado', { sum: 0 }), $('Crédito', { sum: 0 }), $('Por mayor', { sum: 0 }), $('Mínimo', { sum: 0 })]).concat(vc ? [T('Margen', { r: 1 })] : []);
+        const l = D.prods.filter(p => p.activo !== false && (!fv || p.categoria_id === fv));
+        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre].concat(vc ? [n(p.costo)] : []).concat([n(p.precio), n(p.precio_credito) || '', n(p.precio_mayor) || '', n(p.precio_minimo) || '']).concat(vc ? [n(p.precio) ? pct(n(p.precio) / (p.itbis === false ? 1 : 1.18) - n(p.costo), n(p.precio) / (p.itbis === false ? 1 : 1.18)) + '%' : ''] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+      }
+      case 'inv_gandia': {
+        const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Ventas sin ITBIS'), $('Costo'), $('Ganancia'), T('Margen', { r: 1 })];
+        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += n(v.total) - n(v.itbis); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += (it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo)) * n(it.cantidad); }); });
+        const l = Object.keys(d).sort().map(k => { const o = d[k]; return [dmy(k), o.n, o.vta, o.c, o.vta - o.c, pct(o.vta - o.c, o.vta) + '%']; });
+        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia bruta por día: venta sin ITBIS menos el costo que tenía cada artículo al venderse. No descuenta devoluciones ni gastos.' };
+      }
+      case 'inv_vemp': {
+        const cols = [T('Vendedor'), $('Facturas', { fmt: v => String(v) }), $('Unidades', { fmt: fmtN }), $('Vendido'), $('Ticket promedio', { sum: 0 })].concat(vc ? [$('Ganancia')] : []);
+        const u = {}; C.ven.forEach(v => { const k = v.vendedor_nombre || v.created_by_name || 'Sin vendedor'; u[k] = (u[k] || 0) + (v.pos_venta_items || []).reduce((s2, it) => s2 + n(it.cantidad), 0); });
+        const l = Object.entries(C.porVend).sort((a, b) => b[1].t - a[1].t).map(([k, o]) => [k, o.n, u[k] || 0, o.t, o.n ? o.t / o.n : 0].concat(vc ? [o.g] : []));
+        return { cols, grupos: [grupo('', l, cols)] };
+      }
+      // ── Caja (nombres de Infoplus) ──
+      case 'caja_des': {
+        const cols = [T('Fecha'), T('Concepto'), T('Usuario'), $('Monto')];
+        return { cols, grupos: agrupar(D.cajaMov.filter(m => m.tipo !== 'entrada'), m => dmy(m.fecha), m => [dmy(m.fecha), m.concepto || '', m.created_by_name || '', n(m.monto)], cols, ks => ks.sort((a, b) => a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join('')))) };
+      }
+      case 'caja_ing': {
+        const cols = [T('Fecha'), T('Documento', { m: 1 }), T('Cliente / concepto'), T('Tipo'), $('Monto')];
+        const vb = {}; D.creditos.forEach(v => { vb[v.id] = v; });
+        const l = [];
+        C.ven.forEach(v => [['Efectivo', v.pagado_efectivo], ['Tarjeta', v.pagado_tarjeta], ['Transferencia', v.pagado_transferencia], ['Otro', v.pagado_otro]].forEach(([mt, m]) => { if (n(m) > 0) l.push({ mt, f: [dmy(v.fecha), v.numero_factura || v.numero || '', v.cliente_nombre || 'Consumidor final', 'Venta', n(m)] }); }));
+        D.abonos.filter(a => n(a.monto) > 0 && !/ajuste|nota de cr/i.test(a.metodo || '')).forEach(a => { const v = vb[a.venta_id]; l.push({ mt: a.metodo || 'Otro', f: [dmy(a.fecha), a.numero || '', v ? v.cliente_nombre || '' : '', 'Cobro a crédito', n(a.monto)] }); });
+        D.cajaMov.filter(m => m.tipo === 'entrada').forEach(m => l.push({ mt: 'Efectivo', f: [dmy(m.fecha), '', m.concepto || '', 'Entrada de caja', n(m.monto)] }));
+        return { cols, grupos: agrupar(l, o => o.mt, o => o.f, cols, porTotalDesc(4)), nota: 'Todo el dinero que entró: ventas de contado, cobros de cuentas y entradas de caja. No incluye lo vendido a crédito.' };
+      }
+      case 'caja_conc': {
+        const cols = [T('Apertura'), T('Usuario'), $('Fondo'), $('+ Ventas efectivo'), $('+ Cobros efectivo'), $('+ Entradas'), $('− Salidas'), $('= Esperado'), $('Contado'), $('Diferencia'), T('Estado')];
+        const l = D.cajas.filter(c => c.estado === 'cerrada').map(c => { const esp = n(c.monto_inicial) + n(c.ventas_efectivo) + n(c.abonos_efectivo) + n(c.entradas) - n(c.salidas); const dif = n(c.efectivo_contado) - (n(c.efectivo_esperado) || esp); return [dmy(c.apertura), c.usuario_nombre || c.created_by_name || '', n(c.monto_inicial), n(c.ventas_efectivo), n(c.abonos_efectivo), n(c.entradas), n(c.salidas), n(c.efectivo_esperado) || esp, n(c.efectivo_contado), dif, Math.abs(dif) < 1 ? 'Cuadrada' : dif < 0 ? 'Faltante' : 'Sobrante']; });
+        return { cols, grupos: [grupo('', l, cols)], nota: 'Esperado = fondo + ventas en efectivo + cobros en efectivo + entradas − salidas. Diferencia = contado − esperado.' };
+      }
     }
     return null;
   }
@@ -494,7 +662,7 @@
     else if (nFilas && firstSum > 0) pie = filaSum('Total general (' + nFilas + ' registro' + (nFilas === 1 ? '' : 's') + ')', tot, 'tt');
     ultimo = { titulo: REP[id].t, cols, grupos: R.grupos, total: R.total, tot };
     const rango = R.alCorte ? 'Al ' + dmy(hasta) : 'Desde ' + dmy(desde) + ' hasta ' + dmy(hasta);
-    const fTxt = R.filtro && fsel[id] ? ((R.filtro.o.find(o => o[0] === fsel[id]) || [])[1] || '') : '';
+    const fTxt = R.filtro && fsel[rep] ? ((R.filtro.o.find(o => o[0] === fsel[rep]) || [])[1] || '') : '';
     return `<article class="nxRpSheet" id="nxRpSheet">
       <header class="nxRpSH"><div class="emp"><b>${esc(emp.nom)}</b>${emp.rnc ? `<span>RNC ${esc(emp.rnc)}</span>` : ''}${emp.dir || emp.tel ? `<span>${esc([emp.dir, emp.tel].filter(Boolean).join(' · '))}</span>` : ''}</div>
         <div class="tit"><h3>${esc(REP[id].t)}</h3><span>${rango}</span>${fTxt ? `<span>${esc(R.filtro.l)}: ${esc(fTxt)}</span>` : ''}<span>Valores en RD$</span></div></header>
@@ -509,7 +677,7 @@
     const vc = puedeCosto();
     return `<nav class="nxRpCat" aria-label="Reportes">
       <button type="button" class="nxRpCatRes${!rep ? ' on' : ''}" onclick="window.nxReportes.abrir('')"><i class="ti ti-layout-dashboard"></i><span>Resumen general</span></button>
-      ${CAT.map(c => { const reps = c[3].filter(r => vc || !SENSIBLE.test(r[0])); if (!reps.length) return ''; const ab = !!abierto[c[0]]; return `<div class="nxRpCatG${ab ? ' ab' : ''}">
+      ${CAT.map(c => { const reps = c[3].filter(r => vc || !sens(r[0])); if (!reps.length) return ''; const ab = !!abierto[c[0]]; return `<div class="nxRpCatG${ab ? ' ab' : ''}">
         <button type="button" class="nxRpCatH" aria-expanded="${ab}" onclick="window.nxReportes.cat('${c[0]}')"><i class="ti ${c[2]}"></i><span>${esc(c[1])}</span><i class="ti ti-chevron-${ab ? 'down' : 'left'} chev"></i></button>
         ${ab ? `<div class="nxRpCatL">${reps.map(r => `<button type="button" class="nxRpCatI${rep === r[0] ? ' on' : ''}" onclick="window.nxReportes.abrir('${r[0]}')">${esc(r[1])}</button>`).join('')}</div>` : ''}
       </div>`; }).join('')}
@@ -519,16 +687,17 @@
     const rangos = [['hoy', 'Hoy'], ['sem', '7 días'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['anio', 'Este año']];
     const f = R && R.filtro ? `<label class="nxRpFil">${esc(R.filtro.l)}<select onchange="window.nxReportes.filtro(this.value)"><option value="">Todos</option>${R.filtro.o.map(o => `<option value="${esc(o[0])}"${fsel[rep] === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>` : '';
     const alCorte = R && R.alCorte;
+    const bus = R && R.buscar ? `<label class="nxRpFil nxRpBus">Buscar<input type="search" value="${esc(fbus[rep] || '')}" placeholder="${esc(R.buscar)}" onchange="window.nxReportes.buscar(this.value)" onkeydown="if(event.key==='Enter')this.blur()"></label>` : '';
     return `<div class="nxRpTop">
       ${rep ? `<button type="button" class="nxRpBack" onclick="window.nxReportes.abrir('')"><i class="ti ti-chevron-left"></i> Reportes</button>` : ''}
-      <div class="nxRpRange">${alCorte ? '' : `<label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label>`}<label>${alCorte ? 'Al' : 'Hasta'}<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label>${f}</div>
+      <div class="nxRpRange">${alCorte ? '' : `<label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label>`}<label>${alCorte ? 'Al' : 'Hasta'}<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label>${f}${bus}</div>
       ${alCorte ? '' : `<div class="nxRpPres">${rangos.map(r => `<button type="button" class="nxRpChip" onclick="window.nxReportes.preset('${r[0]}')">${r[1]}</button>`).join('')}</div>`}
       <div class="nxRpTools">${rep ? `<button type="button" class="btn bsm bghost" onclick="window.nxReportes.csv()"><i class="ti ti-file-spreadsheet"></i> Excel</button><button type="button" class="btn bsm" onclick="window.nxReportes.imprimir()"><i class="ti ti-printer"></i> Imprimir</button>` : `<button type="button" class="btn bsm bghost" onclick="window.nxRepImei && window.nxRepImei()"><i class="ti ti-device-mobile-search"></i> Buscar IMEI</button>`}</div>
     </div>`;
   }
   function render() {
     ensureCSS();
-    if (rep && SENSIBLE.test(rep) && !puedeCosto()) rep = '';
+    if (rep && sens(rep) && !puedeCosto()) rep = '';
     let body, R = null;
     if (cargando && !D) body = '<div class="nxRpLoad"><div class="spin"></div> Cargando reportes…</div>';
     else if (error) body = `<div class="nxRpErr">No se pudieron cargar los datos: ${esc(error)} <button class="btn bsm" type="button" onclick="window.nxReportes.recargar()">Reintentar</button></div>`;
@@ -537,9 +706,9 @@
       const C = calc();
       if (!rep) body = secResumen(C);
       else {
-        const xk = xDe(rep); const x = xk ? X[xKey(xk)] : {};
+        const xk = xDe(REP[rep].b); const x = xk ? X[xKey(xk)] : {};
         if (xk && !x) { body = '<div class="nxRpLoad"><div class="spin"></div> Preparando reporte…</div>'; if (xCargando !== xKey(xk)) { xCargando = xKey(xk); cargarX(xk).then(() => { xCargando = ''; repintar(); }).catch(err => { xCargando = ''; error = String(err && err.message || err); repintar(); }); } }
-        else { R = construir(rep, C, x || {}); body = R ? hoja(rep, R) : '<div class="nxRpLoad">Reporte no disponible.</div>'; }
+        else { R = construir(REP[rep].b, C, x || {}, rep); body = R ? hoja(rep, R) : '<div class="nxRpLoad">Reporte no disponible.</div>'; }
       }
     }
     const sub = rep ? (CAT.find(c => c[0] === REP[rep].cat) || [])[1] + ' · ' + REP[rep].t : 'Resumen general · del ' + dmy(desde) + ' al ' + dmy(hasta);
@@ -632,7 +801,7 @@
 .nxRpCatI{display:block;width:100%;min-height:36px;padding:6px 10px;border:0;border-radius:9px;background:transparent;color:rgba(255,254,250,.66);font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;line-height:1.3}
 .nxRpCatI:hover{background:rgba(255,255,255,.06);color:#fffefa}.nxRpCatI.on{background:var(--studio-gold,#c9a227);color:#0a0a0a;font-weight:700}
 .nxRpBack{display:none;align-items:center;gap:4px;height:36px;padding:0 12px 0 8px;border:1px solid rgba(0,0,0,.14);border-radius:999px;background:#fff;color:var(--rp-ink);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
-.nxRpFil{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--rp-mute)}.nxRpFil select{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;color:var(--rp-ink);max-width:240px;text-transform:none}
+.nxRpFil{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--rp-mute)}.nxRpBus input{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;min-width:220px;text-transform:none}.nxRpFil select{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;color:var(--rp-ink);max-width:240px;text-transform:none}
 .nxRpSheet{background:#fff;border:1px solid var(--rp-line);border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px -12px rgba(0,0,0,.18);padding:26px 28px 18px;max-width:1100px}
 .nxRpSH{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:12px;margin-bottom:12px;border-bottom:2px solid #0a0a0a}
 .nxRpSH .emp{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--rp-mute)}.nxRpSH .emp b{font-size:17px;font-weight:800;color:var(--rp-ink);letter-spacing:.02em;text-transform:uppercase}
@@ -644,7 +813,7 @@
 .nxRpST tbody tr:hover td{background:#fbf8ee}.nxRpST tbody tr.g:hover td{background:var(--studio-canvas,#f3f0e8)}
 .nxRpSF{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:8px;border-top:1px solid var(--rp-line);font-size:11px;color:var(--rp-mute)}
 @media(max-width:900px){.nxRpLay{grid-template-columns:minmax(0,1fr)}.nxRpMain{min-width:0}.nxRpRange{flex-wrap:wrap}.nxRpRange label{flex:1 1 40%}.nxRpST{min-width:600px}.nxRpST td{white-space:nowrap}.nxRpCat{position:static;max-height:none}.nxRp.conRep .nxRpCat{display:none}.nxRpBack{display:inline-flex}
-.nxRpSheet{padding:16px 14px 12px;border-radius:12px}.nxRpSH{flex-direction:column;gap:8px}.nxRpSH .tit{text-align:left}.nxRpFil{flex:1 1 100%}.nxRpFil select{max-width:none;height:40px;font-size:16px}.nxRpCatI{min-height:42px;font-size:14.5px}}`;
+.nxRpSheet{padding:16px 14px 12px;border-radius:12px}.nxRpSH{flex-direction:column;gap:8px}.nxRpSH .tit{text-align:left}.nxRpFil{flex:1 1 100%}.nxRpBus input{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;min-width:220px;text-transform:none}.nxRpFil select{max-width:none;height:40px;font-size:16px}.nxRpCatI{min-height:42px;font-size:14.5px}}`;
     document.head.appendChild(st);
   }
 
@@ -653,6 +822,7 @@
     abrir: function (id) { rep = REP[id] ? id : ''; if (rep) abierto[REP[rep].cat] = true; try { localStorage.setItem('studio_rep_sel', rep); localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); try { const m = document.querySelector('#nxRpRoot .nxRpMain'); if (m && window.innerWidth < 900 && rep) m.scrollIntoView({ block: 'start' }); } catch (e) {} },
     cat: function (k) { abierto[k] = !abierto[k]; try { localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); },
     filtro: function (v) { if (rep) fsel[rep] = v; repintar(); },
+    buscar: function (v) { if (rep) fbus[rep] = v; repintar(); },
     rango: function (k, v) { if (!v) return; if (k === 'd') desde = v; else { hasta = v; if (desde > hasta) desde = hasta; } if (desde > hasta) { const x = desde; desde = hasta; hasta = x; } recargar(); }
   };
 })();

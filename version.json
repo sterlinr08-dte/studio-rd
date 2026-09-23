@@ -1,7 +1,16 @@
 {
-  "version": "59.23",
+  "version": "59.24",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.24",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento → Nueva solicitud: buscar cliente y agregar artículo funcionan igual que en Factura (misma ventana de clientes y misma lista de artículos con código, existencia y precio).",
+        "Los teléfonos con IMEI se eligen de la lista de disponibles; la cantidad se ajusta sola.",
+        "Al aprobar un financiamiento, los IMEI quedan vendidos y el inventario se descuenta."
+      ]
+    },
     {
       "version": "59.23",
       "fecha": "2026-09-24",

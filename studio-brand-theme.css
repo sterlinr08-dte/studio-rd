@@ -291,7 +291,7 @@ html.nx-studio #v-pos .nx-invoice-pro .dnum, html.nx-studio #v-pos .nx-invoice-p
 html.nx-studio #v-pos .nx-invoice-pro .dsel { display: flex; gap: 8px; margin: 0; }
 html.nx-studio #v-pos .nx-invoice-pro .dsel select, html.nx-studio #v-pos .nx-invoice-pro .dsel input { height: 36px; border: 1px solid var(--studio-hair); border-radius: 9px; padding: 0 10px; font-size: 13px; font-weight: 600; background: #fff; color: var(--studio-ink); }
 html.nx-studio #v-pos .nx-invoice-pro .rule { display: none; }
-html.nx-studio #v-pos .nx-invoice-pro .partes { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 16px; margin: 12px 0 10px; padding: 10px 12px; border: 1px solid var(--studio-line); border-radius: 10px; background: var(--studio-canvas); }
+html.nx-studio #v-pos .nx-invoice-pro .partes { grid-template-columns: minmax(0, 1fr) fit-content(45%); align-items: center; gap: 10px 16px; margin: 12px 0 10px; padding: 10px 12px; border: 1px solid var(--studio-line); border-radius: 10px; background: var(--studio-canvas); }
 html.nx-studio #v-pos .nx-invoice-pro .plab { font-size: 10.5px; color: var(--studio-steel); margin-bottom: 4px; }
 html.nx-studio #v-pos .nx-invoice-pro .pcli .pav { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--studio-hair); background: #fff; color: var(--studio-steel); }
 html.nx-studio #v-pos .nx-invoice-pro .pnom { font-size: 13.5px; font-weight: 600; }
@@ -336,7 +336,7 @@ html.nx-studio #v-pos .nx-invoice-pro .opt { height: 34px; padding: 0 11px; bord
 html.nx-studio #v-pos .nx-invoice-pro .opt:hover { border-color: var(--studio-gold); background: #fff9e8; }
 /* Otras acciones (25-sep): cuadrícula de accesos con propósito + últimas facturas, para que el panel
    junto al total no quede vacío. Dos columnas cuando el panel es angosto (iPad vertical, celular). */
-html.nx-studio #v-pos .nx-invoice-pro .facOtras { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; container-type: inline-size; }
+html.nx-studio #v-pos .nx-invoice-pro .facOtras { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; container-type: inline-size; align-self: start; }
 html.nx-studio #v-pos .nx-invoice-pro #facOtrasSlot { display: flex; flex-direction: column; gap: 8px; }
 /* Acciones: una sola fila de píldoras; si no caben, se desliza de lado (sin crecer hacia abajo). */
 html.nx-studio #v-pos .nx-invoice-pro .facQs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 2px; }

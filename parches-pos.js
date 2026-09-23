@@ -1299,7 +1299,6 @@
           <div class="facPie">
             <div class="facOtras">
               <div id="facOtrasSlot">${facOtrasHTML()}</div>
-              ${pre ? '' : `<div class="facUlt"><div class="plab">Últimas facturas <button type="button" class="facUltMas" onclick="window.nxFacHist()">Ver todas</button></div><div id="facUltList">${facUltHTML()}</div></div>`}
               ${pre ? `<details class="nx-inv-notedet" style="margin:11px 0 0"${_facNota ? ' open' : ''}>
                 <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones al documento'}</summary>
                 <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>

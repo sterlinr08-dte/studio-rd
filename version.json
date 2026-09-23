@@ -1,7 +1,15 @@
 {
-  "version": "59.19",
+  "version": "59.20",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.20",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento → Reportes (botón de gráfica en la cartera): capital colocado y recuperado con tendencia contra el mes anterior, balance pendiente, intereses y mora, índice de mora.",
+        "Gráfica de colocaciones contra cobros de 12 meses, estado de la cartera, antigüedad (al día, 1-30, 31-60, 61-90, más de 90 días), cobros por método y alertas. Filtro Este mes / Este año / Todo y acceso a los reportes detallados."
+      ]
+    },
     {
       "version": "59.19",
       "fecha": "2026-09-24",

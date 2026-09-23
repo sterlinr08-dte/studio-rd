@@ -12097,6 +12097,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     else if (_finV2Vista === 'aprobacion') body = finV2AprobacionHTML();
     else if (_finV2Vista === 'detalle') body = finV2DetalleHTML();
     else if (_finV2Vista === 'cobranza') body = finV2CobranzaHTML();
+    else if (_finV2Vista === 'reportes') body = finV2ReportesHTML();
     else body = finV2CarteraHTML();
     return `<div class="nxF2">${body}</div>`;
   }
@@ -12353,11 +12354,97 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </aside>
       </div>`;
   }
+  // ══ Fase 6 (réplica NEXUS PRO): TABLERO DE REPORTES del financiamiento ═════════════════════
+  // NEXUS prReportesMainHTML: período (mes / año / todo), 6 KPI con tendencia vs mes anterior, barras de 12 meses
+  // colocaciones vs cobros, dona del estado de la cartera, antigüedad, cobros por método y alertas. Aquí con las
+  // cuotas y pagos reales: «recuperado» = capital cobrado (sin interés ni mora, que van aparte), neto de reversas.
+  let _frepPer = 'mes';
+  const FREP_MET_COL = ['#0a0a0a', '#c9a227', '#16a34a', '#1d4ed8', '#9a3412', '#6b675e'];
+  function frepRango(k) {
+    const h = hoyISOPos();
+    if (k === 'mes') return [h.slice(0, 7) + '-01', h];
+    if (k === 'anio') return [h.slice(0, 4) + '-01-01', h];
+    return [null, null];
+  }
+  function frepEn(f, r) { const x = String(f || '').slice(0, 10); return x && (!r[0] || x >= r[0]) && (!r[1] || x <= r[1]); }
+  function frepMes(ym) { return { col: _fins.filter(f => String(f.created_at || '').slice(0, 7) === ym).reduce((s, f) => s + Number(f.monto_financiado || 0), 0), cob: (_finPagos || []).filter(p => finPagoFecha(p).slice(0, 7) === ym).reduce((s, p) => s + (p.tipo === 'reversa' ? -1 : 1) * Number(p.monto || 0), 0) }; }
+  function frepAging() {
+    const B = [['Al día', 0, 0, '#16a34a'], ['1 – 30 días', 1, 30, '#c9a227'], ['31 – 60 días', 31, 60, '#ea580c'], ['61 – 90 días', 61, 90, '#dc2626'], ['Más de 90', 91, 1e9, '#7f1d1d']].map(b => ({ label: b[0], a: b[1], z: b[2], color: b[3], n: 0, cap: 0 }));
+    _fins.filter(f => f.estado === 'activo').forEach(f => {
+      const imp = cuotasDe(f.id).filter(c => !c.pagado); if (!imp.length) return;
+      const dv = Math.max.apply(null, imp.map(finV2Atraso)); const cap = imp.reduce((s, c) => s + finV2Pend(c).capital, 0);
+      const b = B.find(x => dv >= x.a && dv <= x.z) || B[0]; b.n++; b.cap += cap;
+    });
+    return B;
+  }
+  function frepBarsSVG(meses) {
+    const W = 640, H = 200, P = 26, max = Math.max(1, ...meses.map(m => Math.max(m.col, m.cob)));
+    const bw = (W - P * 2) / meses.length, MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const grid = [0.25, 0.5, 0.75, 1].map(g => `<line x1="${P}" x2="${W - P}" y1="${H - P - (H - P * 2) * g}" y2="${H - P - (H - P * 2) * g}" stroke="currentColor" stroke-opacity=".08"/>`).join('');
+    const bars = meses.map((m, i) => { const x = P + i * bw; const h1 = (H - P * 2) * m.col / max, h2 = (H - P * 2) * m.cob / max; return `<g><title>${m.ym}: colocado ${fmt(m.col)} · cobrado ${fmt(m.cob)}</title><rect x="${x + bw * .14}" y="${H - P - h1}" width="${bw * .34}" height="${h1}" rx="3" fill="#0a0a0a"/><rect x="${x + bw * .52}" y="${H - P - h2}" width="${bw * .34}" height="${h2}" rx="3" fill="#c9a227"/><text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".55">${MES[Number(m.ym.slice(5, 7)) - 1]}</text></g>`; }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="frepSvg" role="img" aria-label="Colocaciones y cobros de los últimos 12 meses">${grid}${bars}</svg>`;
+  }
+  function frepDonutSVG(segs, centro, sub) {
+    const tot = segs.reduce((s, x) => s + x.val, 0), R = 52, C = 2 * Math.PI * R; let off = 0;
+    const arcs = tot > 0 ? segs.filter(x => x.val > 0).map(x => { const l = C * x.val / tot; const a = `<circle r="${R}" cx="70" cy="70" fill="none" stroke="${x.color}" stroke-width="18" stroke-dasharray="${l} ${C - l}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`; off += l; return a; }).join('') : `<circle r="${R}" cx="70" cy="70" fill="none" stroke="#e6e1d3" stroke-width="18"/>`;
+    return `<svg viewBox="0 0 140 140" class="frepDonut" role="img" aria-label="${esc(sub)}">${arcs}<text x="70" y="68" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">${esc(centro)}</text><text x="70" y="86" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".55">${esc(sub)}</text></svg>`;
+  }
+  function finV2ReportesHTML() {
+    const r = frepRango(_frepPer); const sg = p => p.tipo === 'reversa' ? -1 : 1;
+    const pagR = (_finPagos || []).filter(p => frepEn(finPagoFecha(p), r));
+    const colocado = _fins.filter(f => frepEn(f.created_at, r)).reduce((s, f) => s + Number(f.monto_financiado || 0), 0);
+    const recuperado = pagR.reduce((s, p) => s + sg(p) * Number(p.monto_principal || 0), 0);
+    const intereses = pagR.reduce((s, p) => s + sg(p) * Number(p.monto_interes || 0), 0);
+    const moraCob = pagR.reduce((s, p) => s + sg(p) * Number(p.monto_mora || 0), 0);
+    let balance = 0, moraPend = 0; _fins.filter(f => f.estado === 'activo').forEach(f => cuotasDe(f.id).forEach(c => { if (c.pagado) return; const pp = finV2Pend(c); balance += pp.capital + pp.interes; moraPend += pp.mora; }));
+    const aging = frepAging(); const activos = aging.reduce((s, b) => s + b.n, 0); const capAg = aging.reduce((s, b) => s + b.cap, 0);
+    const enMora = aging.slice(1).reduce((s, b) => s + b.n, 0), capVenc = aging.slice(1).reduce((s, b) => s + b.cap, 0);
+    const indice = capAg > 0 ? capVenc / capAg * 100 : 0;
+    const h = hoyISOPos(); const meses = []; for (let i = 11; i >= 0; i--) { const d = new Date(h.slice(0, 7) + '-01T12:00:00'); d.setMonth(d.getMonth() - i); const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); meses.push(Object.assign({ ym }, frepMes(ym))); }
+    const act = meses[11], ant = meses[10];
+    const trend = (a, b) => b > 0 ? `<span class="frepT ${a >= b ? 'up' : 'dn'}">${a >= b ? '▲' : '▼'} ${Math.abs(Math.round((a - b) / b * 100))}%</span> vs mes anterior` : 'Sin dato del mes anterior';
+    const met = {}; pagR.forEach(p => { const k = p.metodo || 'Otro'; met[k] = (met[k] || 0) + sg(p) * Number(p.monto || 0); });
+    const mets = Object.keys(met).map(k => ({ label: k, val: met[k] })).filter(x => x.val > 0).sort((a, b) => b.val - a.val); const totMet = mets.reduce((s, x) => s + x.val, 0);
+    const hoyK = hoyISOPos(); const a30 = aging.slice(2).reduce((s, b) => s + b.n, 0);
+    const prox = _fins.filter(f => f.estado === 'activo').filter(f => { const c = cuotasDe(f.id).find(x => !x.pagado); if (!c || finV2Atraso(c) > 0) return false; const d = Math.floor((new Date(String(c.fecha_venc).slice(0, 10) + 'T12:00:00') - new Date(hoyK + 'T12:00:00')) / 86400000); return d >= 0 && d <= 7; }).length;
+    const alert = [];
+    if (a30) alert.push(['bad', 'ti-alert-triangle', a30 + ' financiamiento' + (a30 === 1 ? '' : 's') + ' con más de 30 días de atraso']);
+    if (enMora) alert.push(['warn', 'ti-clock-exclamation', enMora + ' en mora · ' + fmt2(capVenc) + ' de capital']);
+    if (prox) alert.push(['info', 'ti-calendar-due', prox + ' con pago en los próximos 7 días']);
+    if (!alert.length) alert.push(['ok', 'ti-circle-check', 'Sin alertas: la cartera está al día.']);
+    const kpi = (ic, lbl, v, sub, cls) => `<div class="frepK ${cls || ''}"><span class="i"><i class="ti ${ic}"></i></span><span class="l">${lbl}</span><b class="nxF2Mono">${v}</b><small>${sub}</small></div>`;
+    const PER = { mes: 'Este mes', anio: 'Este año', todo: 'Todo' };
+    const rep = (id, lbl) => `<button type="button" class="nxF2Btn" onclick="window.nxReportes && window.nxReportes.abrir ? (window.nxPosTab('reportes'), setTimeout(function(){window.nxReportes.abrir('${id}')},150)) : null"><i class="ti ti-report"></i> ${lbl}</button>`;
+    return finV2HeaderHTML('Reportes de financiamiento', 'Colocación, cobros y salud de la cartera', 'cartera') + `
+      <div class="nxF2Chips">${Object.keys(PER).map(k => `<button type="button" class="nxF2Chip ${_frepPer === k ? 'on' : ''}" onclick="window.nxFinRepPer('${k}')">${PER[k]}</button>`).join('')}<span class="frepNota"><i class="ti ti-calendar"></i> Flujo: ${PER[_frepPer].toLowerCase()} · Cartera y mora: al día de hoy</span></div>
+      <div class="frepKpis">
+        ${kpi('ti-cash-banknote', 'Capital colocado', fmt2(colocado), trend(act.col, ant.col))}
+        ${kpi('ti-cash', 'Capital recuperado', fmt2(recuperado), trend(act.cob, ant.cob), 'ok')}
+        ${kpi('ti-wallet', 'Balance pendiente', fmt2(balance), activos + ' activo' + (activos === 1 ? '' : 's'))}
+        ${kpi('ti-percentage', 'Intereses cobrados', fmt2(intereses), 'Mora cobrada ' + fmt2(moraCob))}
+        ${kpi('ti-alert-triangle', 'Mora pendiente', fmt2(moraPend), 'Recargo por atraso', 'warn')}
+        ${kpi('ti-gauge', 'Índice de mora', indice.toFixed(1) + '%', enMora + ' en mora', indice > 10 ? 'bad' : '')}
+      </div>
+      <div class="frepGrid">
+        <div class="nxF2Card"><div class="h">Colocaciones vs cobros <span class="frepLeg"><i style="background:#0a0a0a"></i>Colocado <i style="background:#c9a227"></i>Cobrado</span></div>${frepBarsSVG(meses)}</div>
+        <div class="nxF2Card"><div class="h">Estado de la cartera</div><div class="frepDw">${frepDonutSVG(aging.map(b => ({ val: b.n, color: b.color })), String(activos), 'Activos')}<div class="frepLegL">${aging.map(b => `<div><i style="background:${b.color}"></i><span>${b.label}</span><b>${b.n}</b></div>`).join('')}</div></div></div>
+      </div>
+      <div class="frepGrid">
+        <div class="nxF2Card"><div class="h">Antigüedad de la cartera</div>
+          <div class="frepTbl"><div class="hd"><span>Rango</span><span>Financ.</span><span>Capital</span><span>%</span></div>${aging.map(b => `<div><span><i style="background:${b.color}"></i>${b.label}</span><span>${b.n}</span><span class="nxF2Mono">${fmt2(b.cap)}</span><span>${capAg > 0 ? (b.cap / capAg * 100).toFixed(1) : '0.0'}%</span></div>`).join('')}<div class="tt"><span>Total</span><span>${activos}</span><span class="nxF2Mono">${fmt2(capAg)}</span><span>100%</span></div></div></div>
+        <div class="nxF2Card"><div class="h">Cobros por método <span style="font-weight:600;color:var(--f2-steel)">${PER[_frepPer].toLowerCase()}</span></div><div class="frepDw">${frepDonutSVG(mets.map((m, i) => ({ val: m.val, color: FREP_MET_COL[i % FREP_MET_COL.length] })), totMet >= 1000 ? Math.round(totMet / 1000) + 'k' : String(Math.round(totMet)), 'Cobrado')}<div class="frepLegL">${mets.length ? mets.map((m, i) => `<div><i style="background:${FREP_MET_COL[i % FREP_MET_COL.length]}"></i><span>${esc(m.label)}</span><b>${fmt2(m.val)}</b></div>`).join('') : '<div><span>Sin cobros en el período</span></div>'}</div></div></div>
+      </div>
+      <div class="frepGrid">
+        <div class="nxF2Card"><div class="h">Alertas</div>${alert.map(a => `<div class="fhcAl ${a[0]}"><i class="ti ${a[1]}"></i> ${esc(a[2])}</div>`).join('')}</div>
+        <div class="nxF2Card"><div class="h">Reportes detallados</div><div class="nxF2G2">${rep('fin_cartera', 'Cartera')}${rep('fin_venc', 'Cuotas vencidas')}${rep('fin_cobros', 'Cobros')}${rep('fin_otorgados', 'Otorgados')}</div></div>
+      </div>`;
+  }
+  window.nxFinRepPer = function (k) { _frepPer = k || 'mes'; finV2Repintar(); };
   function finV2CarteraHTML() {
     const k = finV2Kpis();
     const chips = [['todos', 'Todos', _fins.length], ['vencidos', 'Vencidos', _fins.filter(f => finV2EstadoFin(f).key === 'vencido').length], ['hoy', 'Vence hoy', _fins.filter(f => finV2EstadoFin(f).key === 'hoy').length], ['sinfirma', 'Sin firma', _fins.filter(f => f.estado === 'activo' && f.contrato_texto && !f.firma_cliente).length], ['activos', 'Activos', _fins.filter(f => f.estado === 'activo').length], ['saldados', 'Saldados', _fins.filter(f => f.estado === 'saldado').length]];
     return finV2HeaderHTML('Financiamiento', 'Cartera activa · ' + (_fins.filter(f => f.estado === 'activo').length) + ' planes', null,
-      `<button type="button" class="nxF2Back" aria-label="Planes de financiamiento" onclick="window.nxFinV2Go('planes')"><i class="ti ti-adjustments-horizontal"></i></button>`) + `
+      `<button type="button" class="nxF2Back" aria-label="Reportes de financiamiento" title="Reportes" onclick="window.nxFinV2Go('reportes')"><i class="ti ti-chart-bar"></i></button><button type="button" class="nxF2Back" aria-label="Planes de financiamiento" title="Planes y datos legales" onclick="window.nxFinV2Go('planes')"><i class="ti ti-adjustments-horizontal"></i></button>`) + `
       <div class="nxF2Card"><div class="nxF2Lbl">Capital por cobrar</div><div class="nxF2Big">${fmt2(k.capital)}</div>
         <div class="nxF2G3"><div class="nxF2K"><span>Interés por devengar</span><span>${r2(k.interes).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Vencido</span><span style="color:#b91c1c">${r2(k.vencido).toLocaleString('en-US')}</span></div><div class="nxF2K"><span>Cobrado este mes</span><span style="color:#15803d">${r2(k.cobradoMes).toLocaleString('en-US')}</span></div></div></div>
       <div class="nxF2G2" style="margin-bottom:10px">

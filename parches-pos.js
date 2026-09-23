@@ -1135,18 +1135,106 @@
   let _facRecientes = null, _facRecCargando = false;
   function facOtrasHTML() {
     const hay = _cart.length > 0, pre = esPreTab(), anul = facPuedeAnular();
-    const t = (ic, lbl, sub, fn, on, cls) => `<button type="button" class="facQ${cls ? ' ' + cls : ''}"${on ? '' : ' disabled'} onclick="${fn}"><i class="ti ${ic}" aria-hidden="true"></i><span><b>${lbl}</b><small>${sub}</small></span></button>`;
-    return `<div class="plab">Otras acciones</div><div class="facQs">`
-      + t('ti-search', 'Buscar factura', 'Por número o cliente', 'window.nxFacHist()', true)
-      + (pre ? '' : t('ti-ban', 'Anular factura', anul ? 'Devuelve stock y asiento' : 'Solo admin o gerente', "window.nxFacHist('anular')", anul, 'facQDanger'))
-      + (pre ? '' : t('ti-receipt-refund', 'Devolución', 'Nota de crédito', "window.nxFacHist('nc')", true))
-      + t('ti-clipboard-text', 'Guardar cotización', hay ? 'Con lo que hay en pantalla' : 'Agrega artículos', 'window.nxCotGuardarDesdeCart()', hay)
-      + t('ti-clipboard-list', 'Cotizaciones', 'Convertir en factura', "window.nxPosTab('cotizaciones')", true)
-      + t('ti-files', 'Prefacturas', 'Abiertas y guardadas', "window.nxPosTab('prefhist')", true)
-      + t('ti-history', 'Historial', 'Ventas y cobros', "window.nxPosTab('ventas')", true)
-      + t('ti-trash', 'Limpiar carrito', hay ? _cart.length + ' artículo' + (_cart.length === 1 ? '' : 's') : 'Ya está vacío', 'window.nxPosVaciar();window.nxFacRepaint()', hay)
+    const sug = pre ? [] : facSugerencias();
+    const q = (ic, lbl, fn, on, cls, tip) => `<button type="button" class="facQ${cls ? ' ' + cls : ''}"${on ? '' : ' disabled'} title="${esc(tip || lbl)}" onclick="${fn}"><i class="ti ${ic}" aria-hidden="true"></i><b>${lbl}</b></button>`;
+    return (sug.length ? `<div class="plab">${hay || clienteSel() ? 'Para esta venta' : 'Pendientes de hoy'}</div><div class="facSug">${sug.map(facSugHTML).join('')}</div>` : '')
+      + `<div class="plab">Acciones</div><div class="facQs">`
+      + q('ti-search', 'Buscar', 'window.nxFacHist()', true, '', 'Buscar una factura por número o cliente')
+      + (pre ? '' : q('ti-ban', 'Anular', "window.nxFacHist('anular')", anul, 'facQDanger', anul ? 'Anular una factura' : 'Solo el administrador o el gerente puede anular'))
+      + (pre ? '' : q('ti-receipt-refund', 'Devolución', "window.nxFacHist('nc')", true, '', 'Devolución / nota de crédito'))
+      + (pre ? '' : q('ti-player-pause', 'En espera', 'window.nxVentaSuspender()', hay, '', 'Guarda esta venta y atiende a otro cliente'))
+      + q('ti-clipboard-text', 'Cotización', 'window.nxCotGuardarDesdeCart()', hay, '', 'Guardar como cotización')
+      + q('ti-files', 'Prefacturas', "window.nxPosTab('prefhist')", true)
+      + q('ti-history', 'Historial', "window.nxPosTab('ventas')", true)
+      + q('ti-trash', 'Limpiar', 'window.nxPosVaciar();window.nxFacRepaint()', hay, '', 'Limpiar carrito')
       + `</div>`;
   }
+  // ── Asistente de la factura: avisos y atajos según lo que hay EN PANTALLA (cliente, artículos,
+  // pendientes). Todo sale de datos ya cargados o de lecturas; ninguna tarjeta cobra ni guarda sola:
+  // cada una solo llama a una función existente cuando el usuario la toca.
+  function facSugHTML(x) {
+    const acc = x.chips ? `<div class="facSugCh">${x.chips.map(c => `<button type="button" onclick="${c.fn}"><i class="ti ti-plus" aria-hidden="true"></i><span class="nm">${esc(c.lbl)}</span><small>${esc(c.sub)}</small></button>`).join('')}</div>`
+      : x.a ? `<button type="button" class="facSugA" onclick="${x.fn}">${esc(x.a)}</button>` : '';
+    return `<div class="facSugIt ${x.tone || ''}"><i class="ti ${x.ic}" aria-hidden="true"></i><div class="facSugTx"><b>${x.t}</b>${x.s ? `<small>${x.s}</small>` : ''}${x.chips ? acc : ''}</div>${x.chips ? '' : acc}</div>`;
+  }
+  let _facComp = { key: '', ids: null }, _facHoy = null, _facHoyCargando = false;
+  function facSugerencias() {
+    const out = [], c = clienteSel(), hay = _cart.length > 0, t = totales().total, adm = puedeVerMin();
+    // 1) Precios: debajo del mínimo o del costo (solo quien puede ver esos datos)
+    const bajoCosto = [];
+    if (hay && adm) _cart.forEach((it, i) => {
+      const p = _prods.find(x => String(x.id) === String(it.producto_id)); if (!p) return;
+      const neto = lineImporte(it) / Math.max(1, Number(it.cantidad || 1)) / (it.itbis ? 1.18 : 1), costo = Number(p.costo || 0), mn = minimoDe(p);
+      if (costo > 0 && neto < costo) bajoCosto.push({ it: it, costo: costo, neto: neto, pierde: (costo - neto) * Number(it.cantidad || 1) });
+      else if (mn > 0 && Number(it.precio || 0) < mn) out.push({ tone: 'warn', ic: 'ti-lock', t: esc(it.nombre) + ' está debajo del mínimo', s: 'Mínimo ' + fmt(mn) + ' · puesto ' + fmt(it.precio), a: 'Poner ' + fmt(mn), fn: `window.nxFacPrecio(${i},'${mn}')` });
+    });
+    if (bajoCosto.length === 1) { const x = bajoCosto[0]; out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: esc(x.it.nombre) + ' se vende por debajo del costo', s: 'Costo ' + fmt(x.costo) + ' · vendiendo a ' + fmt(x.neto) + ' sin ITBIS pierdes ' + fmt(x.pierde) }); }
+    else if (bajoCosto.length > 1) out.unshift({ tone: 'bad', ic: 'ti-trending-down', t: bajoCosto.length + ' artículos se venden por debajo del costo', s: 'Pierdes ' + fmt(bajoCosto.reduce((a, x) => a + x.pierde, 0)) + ': ' + bajoCosto.map(x => esc(x.it.nombre)).join(', ') });
+    // 2) El cliente: lo que debe, su límite, lo que tiene abierto
+    if (c) {
+      const quien = esc(String(c.nombre || '').split(' ')[0]), saldo = saldoCli(c), lim = Number(c.limite_credito || 0);
+      if (_facCredito && lim > 0 && saldo + t > lim) out.push({ tone: 'bad', ic: 'ti-credit-card-off', t: 'Pasa su límite de crédito por ' + fmt(saldo + t - lim), s: 'Límite ' + fmt(lim) + ' · ya debe ' + fmt(saldo) });
+      else if (saldo > 0) out.push({ tone: 'warn', ic: 'ti-cash', t: quien + ' debe ' + fmt(saldo), s: 'Aprovecha la visita para cobrarle', a: 'Ver cuenta', fn: `window.nxCliente360('${c.id}')` });
+      const pf = (_prefs || []).find(x => String(x.cliente_id) === String(c.id));
+      if (pf) out.push({ ic: 'ti-file-description', t: 'Tiene la prefactura ' + esc(pf.numero || '') + ' abierta', s: fmt(pf.total) + ' · ' + ((pf.items || []).length) + ' artículo(s)', a: 'Cargarla', fn: `window.nxPrefFacturar('${pf.id}')` });
+      const vs = (_ventasSusp || []).find(x => String(x.cliente_id) === String(c.id));
+      if (vs) out.push({ ic: 'ti-player-pause', t: 'Dejó una venta en espera', s: esc(vs.numero || '') + ' · ' + fmt(vs.total), a: 'Retomar', fn: `window.nxFacRetomar('${vs.id}')` });
+      if (hay && !waNum(c.telefono)) out.push({ ic: 'ti-brand-whatsapp', t: quien + ' no tiene WhatsApp registrado', s: 'Agrégalo para enviarle la factura y los avisos', a: 'Completar', fn: `window.nxCliente360('${c.id}')` });
+    }
+    // 3) Lo que la gente suele llevar junto con lo que hay en el carrito (ventas reales)
+    if (hay) {
+      facCompCargar();
+      const ids = (_facComp.ids || []).filter(id => !_cart.find(x => String(x.producto_id) === id));
+      const chips = ids.map(id => _prods.find(x => String(x.id) === id)).filter(Boolean).slice(0, 3)
+        .map(p => ({ lbl: p.nombre, sub: fmt(precioCli(p)), fn: `window.nxFacAdd('${p.id}')` }));
+      if (chips.length) out.push({ ic: 'ti-sparkles', tone: 'gold', t: _facComp.fuente === 'ventas' ? 'Suelen llevarlo junto' : 'Complementos con stock', s: _facComp.fuente === 'ventas' ? 'Según tus ventas con estos artículos' : '', chips });
+    }
+    // 4) Sin venta en curso: lo que quedó pendiente y cómo va el día
+    if (!hay && !c) {
+      if ((_ventasSusp || []).length) { const v0 = _ventasSusp[0]; out.push({ ic: 'ti-player-pause', t: _ventasSusp.length + (_ventasSusp.length === 1 ? ' venta en espera' : ' ventas en espera'), s: esc(v0.cliente_nombre || 'Consumidor final') + ' · ' + fmt(v0.total), a: _ventasSusp.length === 1 ? 'Retomar' : 'Ver', fn: _ventasSusp.length === 1 ? `window.nxFacRetomar('${v0.id}')` : 'window.nxVentaSuspLista()' }); }
+      if ((_prefs || []).length) out.push({ ic: 'ti-file-description', t: _prefs.length + (_prefs.length === 1 ? ' prefactura abierta' : ' prefacturas abiertas'), s: 'Por ' + fmt(_prefs.reduce((a, x) => a + Number(x.total || 0), 0)) + ' sin facturar', a: 'Ver', fn: "window.nxPosTab('prefhist')" });
+      if (_facHoy === null) facHoyCargar();
+      else if (_facHoy.n) out.push({ ic: 'ti-chart-line', t: 'Hoy: ' + _facHoy.n + (_facHoy.n === 1 ? ' factura' : ' facturas') + ' · ' + fmt(_facHoy.total), s: 'Ticket promedio ' + fmt(_facHoy.total / _facHoy.n) + (_facHoy.anul ? ' · ' + _facHoy.anul + ' anulada(s)' : '') });
+    }
+    return out.slice(0, 4);
+  }
+  function facSugRepintar() { const os = document.getElementById('facOtrasSlot'); if (os) os.innerHTML = facOtrasHTML(); }
+  function facCompCargar() {
+    const base = Array.from(new Set(_cart.map(x => String(x.producto_id)))).sort(), key = base.join(',');
+    if (_facComp.key === key) return;
+    _facComp = { key: key, ids: null, fuente: '' };
+    const disp = p => p && p.activo !== false && (p.tipo === 'servicio' || stockDisponible(p) > 0);
+    getAPI().get('pos_venta_items', 'select=venta_id&producto_id=in.(' + base.join(',') + ')&limit=300')
+      .then(r => { const vids = Array.from(new Set((r || []).map(x => x.venta_id))).slice(0, 150); return vids.length ? getAPI().get('pos_venta_items', 'select=venta_id,producto_id&venta_id=in.(' + vids.join(',') + ')') : []; })
+      .catch(() => [])
+      .then(rows => {
+        if (_facComp.key !== key) return;
+        const cnt = {}, ya = {};
+        (rows || []).forEach(x => { const id = String(x.producto_id), k = x.venta_id + '|' + id; if (base.includes(id) || ya[k]) return; ya[k] = 1; cnt[id] = (cnt[id] || 0) + 1; });
+        let ids = Object.keys(cnt).filter(id => disp(_prods.find(p => String(p.id) === id))).sort((a, b) => cnt[b] - cnt[a]);
+        _facComp.fuente = ids.length ? 'ventas' : '';
+        if (ids.length < 3) {
+          // Sin historial suficiente: accesorios con stock para celulares.
+          const cat = id => { const p = _prods.find(x => String(x.id) === id); const k = p && (_cats || []).find(c => String(c.id) === String(p.categoria_id)); return k ? String(k.nombre || '') : ''; };
+          if (base.some(id => /celular/i.test(cat(id)))) {
+            const extra = _prods.filter(p => /accesorio/i.test(cat(String(p.id))) && disp(p) && !ids.includes(String(p.id)) && !base.includes(String(p.id))).sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0)).map(p => String(p.id));
+            ids = ids.concat(extra); if (!_facComp.fuente && extra.length) _facComp.fuente = 'stock';
+          }
+        }
+        _facComp.ids = ids.slice(0, 6);
+        facSugRepintar();
+      });
+  }
+  function facHoyCargar() {
+    if (_facHoyCargando) return; _facHoyCargando = true;
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    getAPI().get('pos_ventas', 'select=total,estado&created_at=gte.' + encodeURIComponent(d.toISOString()) + '&limit=2000')
+      .then(r => { const ok = (r || []).filter(v => v.estado !== 'anulada'); _facHoy = { n: ok.length, total: ok.reduce((a, v) => a + Number(v.total || 0), 0), anul: (r || []).length - ok.length }; })
+      .catch(() => { _facHoy = { n: 0, total: 0, anul: 0 }; })
+      .then(() => { _facHoyCargando = false; facSugRepintar(); });
+  }
+  // Retomar una venta en espera DESDE Factura y quedarse en Factura.
+  window.nxFacRetomar = async function (id) { await window.nxVentaRetomar(id); if (_cart.length) window.nxPosTab('factura'); };
   function facUltHTML() {
     if (_facRecientes === null) { facUltCargar(); return '<div class="facUltV">Cargando…</div>'; }
     if (!_facRecientes.length) return '<div class="facUltV">Todavía no hay facturas.</div>';
@@ -1154,7 +1242,7 @@
       const an = v.estado === 'anulada' || v.anulada;
       const d = new Date(v.created_at || v.fecha || Date.now()), p2 = x => String(x).padStart(2, '0');
       const cuando = d.toDateString() === new Date().toDateString() ? 'Hoy ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) : p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
-      return `<button type="button" class="facUltR${an ? ' an' : ''}" onclick="window.nxFacVerVenta('${v.id}')"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b></button>`;
+      return `<div class="facUltR${an ? ' an' : ''}" role="button" tabindex="0" onclick="window.nxFacVerVenta('${v.id}')" onkeydown="if(event.key==='Enter'){this.click()}"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b><span class="facUltAc"><button type="button" title="Reimprimir ticket" aria-label="Reimprimir ticket" onclick="event.stopPropagation();window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i></button>${!an && facPuedeAnular() ? `<button type="button" class="dg" title="Anular" aria-label="Anular" onclick="event.stopPropagation();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i></button>` : ''}</span></div>`;
     }).join('');
   }
   function facUltCargar() {
@@ -1163,7 +1251,7 @@
       .then(r => { _facRecientes = r || []; }).catch(() => { _facRecientes = []; })
       .then(() => { _facRecCargando = false; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); });
   }
-  function facUltRefrescar() { _facRecientes = null; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); }
+  function facUltRefrescar() { _facHoy = null; _facRecientes = null; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); }
   function renderFactura() {
     nxPfEnsureCSS();
     if (!_prods.length) {

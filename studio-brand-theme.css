@@ -304,6 +304,8 @@ html.nx-studio #v-pos .nx-invoice-pro .scan:hover, html.nx-studio #v-pos .nxF2Ca
 html.nx-studio #v-pos .nx-invoice-pro .scan span, html.nx-studio #v-pos .nxF2Card .scan span { flex: 1 1 auto; }
 html.nx-studio #v-pos .nx-invoice-pro .scan kbd, html.nx-studio #v-pos .nxF2Card .scan kbd { font-family: var(--studio-mono); font-size: 10.5px; border: 1px solid var(--studio-hair); border-radius: 5px; padding: 1px 5px; background: transparent; color: var(--studio-steel); }
 html.nx-studio #v-pos #facTabla { padding: 0; }
+/* El relleno de 94px bajo la tabla (capa stitch, para una barra flotante antigua) solo dejaba un hueco antes de «Otras acciones». */
+html.nx-studio #v-pos .nx-invoice-pro #facTabla { padding-bottom: 0 !important; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl { width: 100%; border: 1px solid var(--studio-line); border-radius: 10px; overflow: hidden; background: #fff; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th { background: var(--studio-canvas-2); color: var(--studio-steel); font-size: 10.5px; font-weight: 600; padding: 8px 12px; border-bottom: 0; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl td { padding: 9px 12px; border-top: 1px solid var(--studio-line-2); vertical-align: middle; font-size: 13px; }
@@ -332,6 +334,34 @@ html.nx-studio #v-pos .nx-invoice-pro .facOtras { border: 1px solid var(--studio
 html.nx-studio #v-pos .nx-invoice-pro .opts { display: flex; flex-wrap: wrap; gap: 8px; }
 html.nx-studio #v-pos .nx-invoice-pro .opt { height: 34px; padding: 0 11px; border-radius: 9px; border: 1px solid rgba(0, 0, 0, .1); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--studio-ink); display: inline-flex; align-items: center; gap: 7px; }
 html.nx-studio #v-pos .nx-invoice-pro .opt:hover { border-color: var(--studio-gold); background: #fff9e8; }
+/* Otras acciones (25-sep): cuadrícula de accesos con propósito + últimas facturas, para que el panel
+   junto al total no quede vacío. Dos columnas cuando el panel es angosto (iPad vertical, celular). */
+html.nx-studio #v-pos .nx-invoice-pro .facOtras { display: flex; flex-direction: column; gap: 14px; container-type: inline-size; }
+html.nx-studio #v-pos .nx-invoice-pro .facQs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@container (max-width: 560px) { html.nx-studio #v-pos .nx-invoice-pro .facQs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+html.nx-studio #v-pos .nx-invoice-pro .facQ { display: flex; align-items: center; gap: 9px; min-height: 52px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--studio-hair); background: #ffffff; box-shadow: var(--studio-relieve); color: var(--studio-ink); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ i { font-size: 18px; flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: #f7f5ef; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .facQ span { display: flex; flex-direction: column; min-width: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ b { font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ small { font-size: 11px; color: var(--studio-mute); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ:hover:not(:disabled) { border-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .facQ:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ:disabled { opacity: .45; cursor: default; box-shadow: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facQDanger i { background: #fef3f2; color: #b42318; }
+html.nx-studio #v-pos .nx-invoice-pro .facQDanger:hover:not(:disabled) { border-color: #b42318; }
+html.nx-studio #v-pos .nx-invoice-pro .facUlt { border-top: 1px solid var(--studio-line); padding-top: 12px; }
+html.nx-studio #v-pos .nx-invoice-pro .facUlt .plab { display: flex; justify-content: space-between; align-items: center; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltMas { border: 0; background: none; padding: 0; font: 600 11.5px var(--studio-font); color: var(--studio-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--studio-line); background: none; font: inherit; text-align: left; cursor: pointer; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR:last-child { border-bottom: 0; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR:hover { background: #fbfaf6; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR .n { font: 600 12.5px var(--studio-mono); font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR .c { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR .c small { display: block; font-size: 11px; font-weight: 400; color: var(--studio-mute); }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR b { font: 600 13px var(--studio-mono); font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR.an { color: var(--studio-mute); }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR.an b { text-decoration: line-through; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltV { font-size: 12.5px; color: var(--studio-mute); padding: 6px 4px; }
 html.nx-studio #v-pos .nx-invoice-pro .nx-inv-notedet summary { font-size: 12.5px; font-weight: 600; color: var(--studio-steel); }
 html.nx-studio #v-pos .nx-invoice-pro .facTot { border: 1px solid var(--studio-line); border-radius: 12px; padding: 14px 16px; background: #fff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px; }
 html.nx-studio #v-pos .nx-invoice-pro .facTot .tr { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--studio-steel); margin: 0; padding: 0; border: 0; }
@@ -1012,7 +1042,10 @@ html.nx-studio .nxFacBar6 .fbA.fbP { min-width: 0; padding: 0 16px; border: 0; }
 /* Qué se muestra depende del ANCHO DE LA BARRA (que es el de la ventana de factura), no de la pantalla. */
 @container (max-width: 1120px) { html.nx-studio .nxFacBar6 .fbA kbd { display: none; } }
 @container (max-width: 940px) {
-  html.nx-studio .nxFacBar6 .fbA[data-k="cancelar"], html.nx-studio .nxFacBar6 .fbA[data-k="anular"] { display: none; }
+  /* Anular sigue a la vista (pedido del dueño 25-sep), solo con su icono; Cancelar queda en «…». */
+  html.nx-studio .nxFacBar6 .fbA[data-k="cancelar"] { display: none; }
+  html.nx-studio .nxFacBar6 .fbA[data-k="anular"] { width: 38px; padding: 0; justify-content: center; }
+  html.nx-studio .nxFacBar6 .fbA[data-k="anular"] .fbL { display: none; }
   html.nx-studio .nxFacBar6 .fbMas { display: inline-flex; }
 }
 @container (max-width: 720px) {

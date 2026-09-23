@@ -1129,6 +1129,41 @@
       </div>
     </div>`;
   }
+  // «Otras acciones» (pedido del dueño 25-sep): accesos a lo que se hace ALREDEDOR de una factura
+  // —buscar, anular, devolver, cotizar— más las últimas facturas a un toque. Solo reutiliza funciones
+  // existentes (nxFacHist, nxPosAnularVenta vía nxFacAnularId, nxDevNueva, nxCotGuardarDesdeCart).
+  let _facRecientes = null, _facRecCargando = false;
+  function facOtrasHTML() {
+    const hay = _cart.length > 0, pre = esPreTab(), anul = facPuedeAnular();
+    const t = (ic, lbl, sub, fn, on, cls) => `<button type="button" class="facQ${cls ? ' ' + cls : ''}"${on ? '' : ' disabled'} onclick="${fn}"><i class="ti ${ic}" aria-hidden="true"></i><span><b>${lbl}</b><small>${sub}</small></span></button>`;
+    return `<div class="plab">Otras acciones</div><div class="facQs">`
+      + t('ti-search', 'Buscar factura', 'Por número o cliente', 'window.nxFacHist()', true)
+      + (pre ? '' : t('ti-ban', 'Anular factura', anul ? 'Devuelve stock y asiento' : 'Solo admin o gerente', "window.nxFacHist('anular')", anul, 'facQDanger'))
+      + (pre ? '' : t('ti-receipt-refund', 'Devolución', 'Nota de crédito', "window.nxFacHist('nc')", true))
+      + t('ti-clipboard-text', 'Guardar cotización', hay ? 'Con lo que hay en pantalla' : 'Agrega artículos', 'window.nxCotGuardarDesdeCart()', hay)
+      + t('ti-clipboard-list', 'Cotizaciones', 'Convertir en factura', "window.nxPosTab('cotizaciones')", true)
+      + t('ti-files', 'Prefacturas', 'Abiertas y guardadas', "window.nxPosTab('prefhist')", true)
+      + t('ti-history', 'Historial', 'Ventas y cobros', "window.nxPosTab('ventas')", true)
+      + t('ti-trash', 'Limpiar carrito', hay ? _cart.length + ' artículo' + (_cart.length === 1 ? '' : 's') : 'Ya está vacío', 'window.nxPosVaciar();window.nxFacRepaint()', hay)
+      + `</div>`;
+  }
+  function facUltHTML() {
+    if (_facRecientes === null) { facUltCargar(); return '<div class="facUltV">Cargando…</div>'; }
+    if (!_facRecientes.length) return '<div class="facUltV">Todavía no hay facturas.</div>';
+    return _facRecientes.map(v => {
+      const an = v.estado === 'anulada' || v.anulada;
+      const d = new Date(v.created_at || v.fecha || Date.now()), p2 = x => String(x).padStart(2, '0');
+      const cuando = d.toDateString() === new Date().toDateString() ? 'Hoy ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) : p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
+      return `<button type="button" class="facUltR${an ? ' an' : ''}" onclick="window.nxFacVerVenta('${v.id}')"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b></button>`;
+    }).join('');
+  }
+  function facUltCargar() {
+    if (_facRecCargando) return; _facRecCargando = true;
+    getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,estado,fecha,created_at&order=created_at.desc&limit=4')
+      .then(r => { _facRecientes = r || []; }).catch(() => { _facRecientes = []; })
+      .then(() => { _facRecCargando = false; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); });
+  }
+  function facUltRefrescar() { _facRecientes = null; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); }
   function renderFactura() {
     nxPfEnsureCSS();
     if (!_prods.length) {
@@ -1171,13 +1206,8 @@
 
           <div class="facPie">
             <div class="facOtras">
-              <div class="plab">Otras acciones</div>
-              <div class="opts">
-                <button type="button" class="opt" ${_cart.length ? '' : 'disabled'} onclick="window.nxCotGuardarDesdeCart()"><i class="ti ti-clipboard-text"></i> Guardar cotización</button>
-                <button type="button" class="opt" onclick="window.nxPosTab('prefhist')"><i class="ti ti-files"></i> Prefacturas</button>
-                <button type="button" class="opt" onclick="window.nxPosTab('ventas')"><i class="ti ti-history"></i> Historial</button>
-                <button type="button" class="opt" onclick="window.nxPosVaciar();window.nxFacRepaint()"><i class="ti ti-trash"></i> Limpiar carrito</button>
-              </div>
+              <div id="facOtrasSlot">${facOtrasHTML()}</div>
+              ${pre ? '' : `<div class="facUlt"><div class="plab">Últimas facturas <button type="button" class="facUltMas" onclick="window.nxFacHist()">Ver todas</button></div><div id="facUltList">${facUltHTML()}</div></div>`}
               ${pre ? `<details class="nx-inv-notedet" style="margin:11px 0 0"${_facNota ? ' open' : ''}>
                 <summary><i class="ti ti-note"></i> ${_facNota ? 'Nota / condiciones' : 'Agregar nota o condiciones al documento'}</summary>
                 <textarea id="facNota" placeholder="Ej: precio válido por 15 días, incluye instalación…" maxlength="500" oninput="window.nxFacNotaSet(this.value)">${esc(_facNota)}</textarea>
@@ -2375,6 +2405,7 @@
       </div>
       <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>
       ${pre ? '' : `<div class="facSmart" aria-live="polite">${facSmartHTML()}</div>`}`;
+    try { const os = document.getElementById('facOtrasSlot'); if (os) os.innerHTML = facOtrasHTML(); } catch (e) {}
     try { facBarraSync(); } catch (e) {}
   }
   // ── Motor COMPARTIDO de "barra de acciones fija" (spec ChatGPT, piloteado primero en Factura
@@ -2467,8 +2498,9 @@
     return [
       { k: 'cancelar', ic: 'ti-x', t: hay ? 'Cancelar' : 'Limpiar', on: hay || !!u || !!_factCli || _facCredito, cls: 'fbS',
         why: hay ? 'Descarta los artículos y el cliente sin guardar nada' : 'Deja la pantalla lista para una factura nueva' },
-      { k: 'anular', ic: 'ti-ban', t: 'Anular', on: !!u && !u.anulada && facPuedeAnular(), cls: 'fbS fbDanger',
-        why: !u ? 'Se activa después de guardar una factura' : u.anulada ? facNumTxt(u) + ' ya está anulada' : !facPuedeAnular() ? 'Solo el administrador o el gerente puede anular' : 'Anula ' + facNumTxt(u) + ', devuelve el stock y revierte el asiento' },
+      { k: 'anular', ic: 'ti-ban', t: 'Anular', on: facPuedeAnular() && !hay, cls: 'fbS fbDanger',
+        why: !facPuedeAnular() ? 'Solo el administrador o el gerente puede anular' : hay ? 'Termina o cancela la factura en curso para anular otra'
+          : (u && !u.anulada) ? 'Anula ' + facNumTxt(u) + ', devuelve el stock y revierte el asiento' : 'Busca la factura que quieres anular' },
       { k: 'reimp', ic: 'ti-printer', t: 'Imprimir', key: 'F8', on: hay || !!u, cls: 'fbS',
         why: hay ? 'Vista previa de lo que hay en pantalla (sin guardar, no es fiscal)' : u ? 'Reimprime ' + facNumTxt(u) + ' como ' + (facFmt() === 'carta' ? 'factura carta' : 'ticket') : 'No hay nada que imprimir todavía' },
       { k: 'wa', ic: 'ti-brand-whatsapp', t: waUlt ? 'WhatsApp' : 'Guardar+WhatsApp', key: 'F7', on: ok || waUlt, cls: 'fbW',
@@ -2568,6 +2600,7 @@
     _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, waTel: _facWaTel, anulada: false, _v: v };
     _facWaTel = '';
     if (pg) pg.dataset.intent = '';
+    facUltRefrescar();
     if (intent === 'imprimir') facImprimir(_facUlt);
     else if (intent === 'wa') facWA(_facUlt);
     try { pintarFactura(); } catch (e) {}
@@ -2585,6 +2618,27 @@
       if (!_facGuardoOk && mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} }
       else if (mine && _facVentana === mine) facSoltarVentana(mine, 20000);
     }
+  };
+  // Anular UNA factura por id desde Factura (barra, «Anular factura» o la hoja de búsqueda). La
+  // anulación en sí es la de siempre (nxPosAnularVenta: confirmación, stock, asiento inverso).
+  window.nxFacAnularId = async function (id) {
+    if (!facPuedeAnular()) { toast('warn', 'Anular', 'Solo el administrador o el gerente puede anular'); return; }
+    try {
+      if (!(_ventas || []).find(x => String(x.id) === String(id))) {
+        let r = null; try { r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + id); } catch (e) {}
+        const u0 = _facUlt && String(_facUlt.id) === String(id) ? _facUlt : null;
+        const row = (r || []).find(x => String(x.id) === String(id)) || (u0 && u0._v ? Object.assign({}, u0._v, { _items: undefined, estado: 'completada' }) : null);
+        if (!row) { toast('err', 'Factura no encontrada'); return; }
+        _ventas = _ventas || []; _ventas.unshift(row);
+      }
+      await window.nxPosAnularVenta(id);
+      const r2 = await getAPI().get('pos_ventas', 'select=id,estado&id=eq.' + id);
+      const anulada = !!(r2 && r2[0] && r2[0].estado === 'anulada');
+      if (_facUlt && String(_facUlt.id) === String(id)) _facUlt.anulada = anulada;
+      else if (anulada && !_cart.length) { const v = (_ventas || []).find(x => String(x.id) === String(id)); if (v) _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, anulada: true }; }
+    } catch (e) { toast('err', 'No se pudo anular', String((e && e.message) || e).slice(0, 120)); }
+    facUltRefrescar();
+    try { pintarFactura(); } catch (e) {}
   };
   window.nxFacAccion = async function (a) {
     if (_posTab !== 'factura') return;
@@ -2604,18 +2658,9 @@
       return;
     }
     if (a === 'anular') {
-      if (!u || u.anulada || !facPuedeAnular()) return;
-      try {
-        if (!(_ventas || []).find(x => String(x.id) === String(u.id))) {
-          let r = null; try { r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + u.id); } catch (e) {}
-          const row = (r || []).find(x => String(x.id) === String(u.id)) || Object.assign({}, u._v, { _items: undefined, estado: 'completada' });
-          _ventas = _ventas || []; _ventas.unshift(row);
-        }
-        await window.nxPosAnularVenta(u.id);
-        const r2 = await getAPI().get('pos_ventas', 'select=id,estado&id=eq.' + u.id);
-        u.anulada = !!(r2 && r2[0] && r2[0].estado === 'anulada');
-      } catch (e) { toast('err', 'No se pudo anular', String((e && e.message) || e).slice(0, 120)); }
-      try { pintarFactura(); } catch (e) {}
+      if (!facPuedeAnular()) return;
+      if (!u || u.anulada) { window.nxFacHist('anular'); return; }
+      await window.nxFacAnularId(u.id);
       return;
     }
     if (a === 'wa' && !_cart.length && u) {
@@ -10794,6 +10839,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     const anulada = !!(v.anulada || v.estado === 'anulada');
     const tipoLbl = (NCF_TIPOS.find(t => t[0] === (v.tipo_comprobante || 'sin')) || [null, 'Sin comprobante'])[1];
+    // En Factura con el carrito vacío, la factura consultada pasa a ser «la de pantalla»: la barra
+    // (Imprimir / WhatsApp / Anular) actúa sobre ella. Nunca se carga al carrito ni se re-cobra.
+    if (_posTab === 'factura' && !_cart.length) { _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, anulada: anulada }; _facWaTel = ''; try { pintarFactura(); } catch (e) {} }
     const filas = items.length ? items.map(it => `<tr><td data-l="Cant.">${Number(it.cantidad || 0)}</td><td data-l="Artículo">${esc(it.nombre || '')}</td><td class="r" data-l="Precio">${fmt(it.precio || 0)}</td><td class="r" data-l="Importe">${fmt(it.importe != null ? it.importe : Number(it.precio || 0) * Number(it.cantidad || 0))}</td></tr>`).join('')
       : '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px">Sin artículos</td></tr>';
     cerrarModal('nxFacVerM');
@@ -10821,7 +10869,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <button type="button" class="nx-inv-btn" onclick="window.nxPosTicketVenta('${v.id}')"><i class="ti ti-receipt"></i> Ticket</button>
         <button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDocCadena('pos_ventas','${v.id}')"><i class="ti ti-git-branch"></i> Ver cadena</button>
         ${anulada ? '' : `<button type="button" class="nx-inv-btn" onclick="document.getElementById('nxFacVerM').remove();window.nxDevNueva('${v.id}')"><i class="ti ti-receipt-refund"></i> Nota de crédito</button>
-        <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxPosAnularVenta('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
+        <button type="button" class="nx-inv-btn danger" onclick="document.getElementById('nxFacVerM').remove();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i> Anular</button>`}
       </div>
     </div>`;
     document.body.appendChild(ov);
@@ -11430,16 +11478,20 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
 
   // ══════════════ HISTORIAL DE FACTURAS desde el contador (lupa) — 10 en 10 ══════════════
-  let _fhPage = 0, _fhQ = '';
+  let _fhPage = 0, _fhQ = '', _fhModo = '';
   // Modal arma su cáscara UNA vez; ni el buscador ni la paginación destruyen el input
   // al usarse (antes se reconstruía TODO el modal por cada letra/página y se
   // re-enfocaba a mano como parche).
-  window.nxFacHist = function () {
+  // modo '' = ver · 'anular' = tocar una factura la anula · 'nc' = abre su devolución / nota de crédito.
+  window.nxFacHist = function (modo) {
+    _fhModo = modo === 'anular' || modo === 'nc' ? modo : '';
+    if (_fhModo === 'anular' && !facPuedeAnular()) { toast('warn', 'Anular', 'Solo el administrador o el gerente puede anular'); return; }
+    const tit = _fhModo === 'anular' ? '<i class="ti ti-ban" style="color:#b42318"></i> ¿Qué factura vas a anular?' : _fhModo === 'nc' ? '<i class="ti ti-receipt-refund"></i> ¿De qué factura es la devolución?' : '<i class="ti ti-file-invoice"></i> Facturas generadas';
     cerrarModal('nxFacHistM');
     const ov = document.createElement('div'); ov.id = 'nxFacHistM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:480px;max-height:90vh;display:flex;flex-direction:column">
-      <div class="mt"><span><i class="ti ti-file-invoice"></i> Facturas generadas</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
+      <div class="mt"><span>${tit}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFacHistM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
       ${posBuscador({ id: 'fhQ', placeholder: 'Buscar por número o cliente…', value: _fhQ, oninput: 'window.nxFacHistRows(0, this.value)' })}
       <div id="nxFacHistRows" style="overflow-y:auto;flex:1"></div>
       <div id="nxFacHistNav"></div>
@@ -11458,11 +11510,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         .catch(() => { window.__fhCargando = false; if (document.getElementById('nxFacHistM')) window.nxFacHistRows(_fhPage); });
     }
     let lista = (_ventas || []).slice().sort((a, b) => String(b.created_at || b.fecha || '').localeCompare(String(a.created_at || a.fecha || '')));
+    if (_fhModo) lista = lista.filter(v => !(v.anulada || v.estado === 'anulada'));
     if (qq) lista = lista.filter(v => ((v.numero_factura || '') + ' ' + (v.numero || '') + ' ' + (v.cliente_nombre || '')).toLowerCase().includes(qq));
+    const abrir = _fhModo === 'anular' ? 'window.nxFacAnularId' : _fhModo === 'nc' ? 'window.nxDevNueva' : 'window.nxFacVerVenta';
     const pags = Math.max(1, Math.ceil(lista.length / 10));
     if (_fhPage >= pags) _fhPage = pags - 1;
     const pagina = lista.slice(_fhPage * 10, _fhPage * 10 + 10);
-    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();window.nxFacVerVenta('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
+    const rows = pagina.length ? pagina.map(v => `<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="document.getElementById('nxFacHistM').remove();${abrir}('${v.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">
         <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:12px;color:#2563eb">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}${(v.anulada || v.estado === 'anulada') ? ' <span style="color:#dc2626;font-size:9px">ANULADA</span>' : ''}</div>
         <div style="font-size:10.5px;color:#475569">${String(v.created_at || v.fecha || '').slice(0, 16).replace('T', ' ')} · ${esc(v.cliente_nombre || 'Consumidor final')}</div></div>
         <b style="font-size:12.5px">${fmt(v.total)}</b>${!(v.anulada || v.estado === 'anulada') ? `<button class="ab g3" style="height:26px;width:26px;padding:0" type="button" onclick="event.stopPropagation();window.nxDocCadena('pos_ventas','${v.id}')" title="Ver cadena" aria-label="Ver cadena del documento"><i class="ti ti-git-branch" style="font-size:13px"></i></button>` : ''}<span style="color:#cbd5e1;font-weight:800"><i class="ti ti-chevron-right"></i></span></div>`).join('')

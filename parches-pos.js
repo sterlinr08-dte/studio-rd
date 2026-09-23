@@ -477,7 +477,7 @@
     if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
-    if (t === 'reportes') { try { await cargarReportes(); } catch (e) {} }
+    if (t === 'reportes') { try { if (window.nxReportes) await window.nxReportes.cargar(); else await cargarReportes(); } catch (e) {} }
     if (t === 'ia') { try { await Promise.all([cargarReportes(), cargarIAClientes()]); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
@@ -553,7 +553,7 @@
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
-    else if (_posTab === 'reportes') body = renderReportes();
+    else if (_posTab === 'reportes') body = window.nxReportes ? window.nxReportes.render() : renderReportes();
     else if (_posTab === 'ia') body = renderIA();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();

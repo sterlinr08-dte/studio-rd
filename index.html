@@ -6865,7 +6865,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.05';
+const APP_VERSION='59.06';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -6995,7 +6995,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-reportes.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -14130,6 +14130,7 @@ function rHistorialAuto(){
     cargarConReintento('parches-pos-money.js');
     cargarConReintento('parches-pos.js');
     cargarConReintento('parches-pos-reacond.js'); // STUDIO: módulo Reacondicionado (réplica del taller BAYOL CELL), solo si pos_config.reacondicionado
+    cargarConReintento('parches-pos-reportes.js'); // STUDIO: módulo Reportes (9 secciones, solo lectura, datos por rango y paginados)
     cargarConReintento('parches-pos-stitch-visual.js');
     cargarConReintento('parches-whatsapp.js'); // Inbox de WhatsApp: solo carga sus capas si pos_config.whatsapp_inbox
     cargarConReintento('parches-pos-motion.js'); // STUDIO: movimiento fluido (DESIGN.md §10), solo presentación

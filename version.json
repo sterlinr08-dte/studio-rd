@@ -1,7 +1,16 @@
 {
-  "version": "59.05",
+  "version": "59.06",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.06",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Reportes renovados en 9 secciones: Resumen (con estado de resultados), Ventas, Productos, Inventario, Clientes y cobros, Compras, Caja, Fiscal (606 y 607) y Taller.",
+        "Cada tabla se exporta a Excel; rangos rápidos (hoy, 7 días, mes, mes anterior, año) e impresión.",
+        "Los reportes ya no se cortan en 1,000 filas y el costo de lo vendido usa el costo al momento de cada venta."
+      ]
+    },
     {
       "version": "59.05",
       "fecha": "2026-09-23",

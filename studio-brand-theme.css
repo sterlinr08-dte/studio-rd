@@ -991,16 +991,15 @@ html.nx-studio .compTipoOp:has(input:checked) { border-color: var(--studio-gold)
 /* ── §19 Factura: acciones inteligentes (59.12) ──────────────────────────────
    Guardar · Guardar+Imprimir · Guardar+WhatsApp · Imprimir · Anular · Cancelar. Cada botón lleva en
    su title/aria-label lo que va a hacer; si no se puede, se ve atenuado y al tocarlo explica por qué. */
-html.nx-studio .nxFacBar6 { gap: 8px; align-items: center; }
-html.nx-studio .nxFacBar6 .fbMas { display: none; }
+html.nx-studio .nxFacBar6 { gap: 6px; align-items: center; container-type: inline-size; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+html.nx-studio .nxFacBar6 .fbMas { display: none; width: 38px; height: 38px; padding: 0; }
 html.nx-studio .nxFacBar6 .fbT { flex: 1 0 auto; overflow: visible; }
-@media (max-width: 1599px) { html.nx-studio .nxFacBar6 .fbA kbd { display: none; } }
-@media (max-width: 420px) { html.nx-studio .nxFacBar6 .fbT small { display: none; } html.nx-studio .nxFacBar6 .fbT b { font-size: 16px; } }
-html.nx-studio .nxFacBar6 .fbA { height: 44px; padding: 0 12px; gap: 6px; border-radius: 10px; font-size: 13.5px; font-weight: 600; flex: 0 0 auto; background: #ffffff; border: 1px solid var(--studio-hair); color: var(--studio-ink); box-shadow: var(--studio-relieve); }
-html.nx-studio .nxFacBar6 .fbA i { font-size: 17px; }
+html.nx-studio .nxFacBar6 .fbT b { font-size: 18px; }
+html.nx-studio .nxFacBar6 .fbA { height: 38px; padding: 0 11px; gap: 6px; border-radius: 9px; font-size: 13px; font-weight: 600; flex: 0 0 auto; background: #ffffff; border: 1px solid var(--studio-hair); color: var(--studio-ink); box-shadow: var(--studio-relieve); }
+html.nx-studio .nxFacBar6 .fbA i { font-size: 15px; line-height: 1; }
 html.nx-studio .nxFacBar6 .fbA:hover { border-color: var(--studio-ink); }
 html.nx-studio .nxFacBar6 .fbA:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
-html.nx-studio .nxFacBar6 .fbA kbd { font: 600 10px/1 var(--studio-mono); padding: 3px 4px; border-radius: 4px; border: 1px solid currentColor; opacity: .45; }
+html.nx-studio .nxFacBar6 .fbA kbd { font: 600 9.5px/1 var(--studio-mono); padding: 2px 4px; border-radius: 4px; border: 1px solid currentColor; opacity: .45; }
 html.nx-studio .nxFacBar6 .fbA[aria-disabled="true"] { opacity: .42; box-shadow: none; }
 html.nx-studio .nxFacBar6 .fbA[aria-disabled="true"]:hover { border-color: var(--studio-hair); }
 html.nx-studio .nxFacBar6 .fbS { color: var(--studio-steel); }
@@ -1009,20 +1008,21 @@ html.nx-studio .nxFacBar6 .fbDanger:not([aria-disabled="true"]):hover { backgrou
 html.nx-studio .nxFacBar6 .fbW i { color: #16a34a; }
 html.nx-studio .nxFacBar6 .fbG2 { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); }
 html.nx-studio .nxFacBar6 .fbG2:hover { background: var(--studio-graphite); }
-html.nx-studio .nxFacBar6 .fbA.fbP { min-width: 0; padding: 0 18px; border: 0; }
-@media (max-width: 1439px) {
-  html.nx-studio .nxFacBar6 .fbA kbd { display: none; }
+html.nx-studio .nxFacBar6 .fbA.fbP { min-width: 0; padding: 0 16px; border: 0; }
+/* Qué se muestra depende del ANCHO DE LA BARRA (que es el de la ventana de factura), no de la pantalla. */
+@container (max-width: 1120px) { html.nx-studio .nxFacBar6 .fbA kbd { display: none; } }
+@container (max-width: 940px) {
   html.nx-studio .nxFacBar6 .fbA[data-k="cancelar"], html.nx-studio .nxFacBar6 .fbA[data-k="anular"] { display: none; }
   html.nx-studio .nxFacBar6 .fbMas { display: inline-flex; }
 }
-@media (max-width: 1023px) {
+@container (max-width: 720px) {
   html.nx-studio .nxFacBar6 .fbA:not(.fbP) .fbL { display: none; }
-  html.nx-studio .nxFacBar6 .fbA:not(.fbP) { width: 44px; padding: 0; }
+  html.nx-studio .nxFacBar6 .fbA:not(.fbP) { width: 38px; padding: 0; }
 }
-@media (max-width: 560px) {
+@container (max-width: 520px) {
   html.nx-studio .nxFacBar6 .fbA[data-k="reimp"], html.nx-studio .nxFacBar6 .fbA[data-k="imprimir"] { display: none; }
 }
-
+@container (max-width: 420px) { html.nx-studio .nxFacBar6 .fbT small { display: none; } html.nx-studio .nxFacBar6 .fbT b { font-size: 16px; } }
 /* Estado de la factura en el pie: qué falta, formato de impresión, última guardada. */
 html.nx-studio #v-pos .facSmart { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--studio-line); }
 html.nx-studio .facSmart .fsE, html.nx-studio .nxFacAccM .fsE { display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.35; color: var(--studio-steel); padding: 8px 10px; border-radius: 9px; background: var(--studio-canvas); }

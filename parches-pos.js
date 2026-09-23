@@ -2379,7 +2379,22 @@
     bar.innerHTML = html;
     document.body.appendChild(bar);
     if (fabEl) fabEl.classList.add('nxFabLift');
+    nxBarAlinear();
   }
+  // Pedido del dueño (24-sep): la barra de botones va AL MISMO NIVEL de la ventana del documento — mismos
+  // bordes izquierdo y derecho que la tarjeta de Factura/Prefactura (o el formulario de Compra), en vez
+  // de un ancho fijo de pantalla. En móvil (< 861 px) sigue de borde a borde.
+  function nxBarAlinear() {
+    var bar = document.querySelector('.nxFacBar'); if (!bar) return;
+    var a = document.querySelector('#v-pos .nxDocCard') || document.querySelector('#v-pos .nxPrForm');
+    if (window.innerWidth < 861 || !a) { bar.style.left = bar.style.width = bar.style.right = bar.style.transform = ''; return; }
+    var r = a.getBoundingClientRect(); if (!(r.width > 0)) return;
+    bar.style.left = Math.round(r.left) + 'px'; bar.style.width = Math.round(r.width) + 'px'; bar.style.right = 'auto'; bar.style.transform = 'none';
+    try {
+      if (window.ResizeObserver && bar.__ancla !== a) { if (bar.__ro) bar.__ro.disconnect(); bar.__ancla = a; bar.__ro = new ResizeObserver(function () { nxBarAlinear(); }); bar.__ro.observe(a); bar.__ro.observe(document.body); }
+    } catch (e) {}
+  }
+  if (!window.__nxBarAlinearRes) { window.__nxBarAlinearRes = true; window.addEventListener('resize', function () { nxBarAlinear(); }); }
   // Barra de Factura/Prefactura. Refleja EXACTAMENTE los botones del pie (.acc/.cancel) con las
   // MISMAS funciones — cero lógica de cobro nueva. Se recrea en cada pintarFactura (estado
   // habilitado/deshabilitado en vivo) y se quita en renderPOS (cambio de pestaña) y nav() (salir

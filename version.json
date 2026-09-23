@@ -1,7 +1,15 @@
 {
-  "version": "59.14",
+  "version": "59.15",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.15",
+      "fecha": "2026-09-24",
+      "notas": [
+        "La barra de botones de Factura, Prefactura y Compra ahora queda al mismo nivel de la ventana: mismo ancho y mismos bordes.",
+        "Botones e iconos más compactos. Cuántos botones se ven depende del ancho de la ventana; los que no caben pasan al menú ⋯."
+      ]
+    },
     {
       "version": "59.14",
       "fecha": "2026-09-24",

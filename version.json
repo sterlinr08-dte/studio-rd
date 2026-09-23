@@ -8,7 +8,8 @@
       "notas": [
         "Ventana de cobro renovada: cabecera negra con el total en oro, métodos de pago con icono y botón «Confirmar venta» dorado en una sola línea.",
         "En el celular el cobro sale como hoja inferior a todo el ancho, al alcance del pulgar.",
-        "Se quitó el botón «Cancelar» del pie (repetía la X de arriba) y la devuelta ya no aparece dos veces."
+        "Se quitó el botón «Cancelar» del pie (repetía la X de arriba) y la devuelta ya no aparece dos veces.",
+        "El cliente llega automático desde la factura; en la ventana de cobro solo el administrador puede cambiarlo."
       ]
     },
     {

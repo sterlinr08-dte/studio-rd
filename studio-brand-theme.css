@@ -849,6 +849,11 @@ html.nx-studio #nxPosPago .nxPgCli > .ti-user { color: var(--studio-gold); font-
 html.nx-studio #nxPosPago .nxPgCli:active { background: rgba(255, 255, 255, .14); }
 html.nx-studio #nxPosPago .nxPgCliX { width: 28px; height: 28px; min-width: 28px; min-height: 28px; background: rgba(255, 255, 255, .14); color: var(--studio-white); }
 
+/* Cliente fijo (roles que no son administrador): se ve, no se toca */
+html.nx-studio #nxPosPago .nxPgCliFijo { cursor: default; background: rgba(255, 255, 255, .05); border-style: dashed; }
+html.nx-studio #nxPosPago .nxPgCliFijo:active { background: rgba(255, 255, 255, .05); }
+html.nx-studio #nxPosPago .nxPgCliFijo > .ti-lock { color: rgba(255, 254, 250, .55); font-size: 15px; flex: none; }
+
 /* Métodos: control segmentado (icono + nombre), activo en negro, sin neumorfismo */
 html.nx-studio #nxPosPago .nxPgTabs {
   margin: 14px 16px 0; padding: 3px; gap: 2px; border-radius: 14px; background: var(--studio-canvas) !important;

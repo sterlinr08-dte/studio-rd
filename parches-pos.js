@@ -2465,6 +2465,9 @@
     cerrarModal('nxPosPago');
     _pgTab = 'efe';
     const cliTxt = (() => { const c = _factCli ? _clientes.find(x => String(x.id) === String(_factCli)) : null; return c ? esc((c.codigo ? c.codigo + ' · ' : '') + c.nombre + (c.nivel_precio === 'mayor' ? ' (por mayor)' : '')) : 'Consumidor final'; })();
+    // El cliente llega AUTOMÁTICO desde Vender/Factura («Facturar a»). En la ventana de cobro solo el
+    // administrador puede cambiarlo o quitarlo; los demás roles lo ven fijo con un candado.
+    const cliFijo = !_posCobroCliEditable();
     const campo = (id, lb) => `<div class="nxPgF"><label class="nxPgFl" for="${id}">${lb}</label><input id="${id}" data-nx-money inputmode="numeric" placeholder="0" oninput="window.nxPosCobroCalc()"></div>`;
     const ov = document.createElement('div'); ov.id = 'nxPosPago'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
@@ -2474,7 +2477,7 @@
           <button class="nxPgX" type="button" aria-label="Cerrar" onclick="document.getElementById('nxPosPago').remove()"><i class="ti ti-x"></i></button>
           <div class="nxPgLb">TOTAL A COBRAR</div>
           <div class="nxPgTot" id="posTotalLbl">${fmt(t.total)}</div>
-          <div class="nxPgCli" id="posCliBtn" tabindex="0" role="button" aria-label="Elegir cliente" onclick="window.nxPosCobroCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><button type="button" class="nxPgCliX" id="posCliXBtn" aria-label="Quitar cliente" style="display:${_factCli ? '' : 'none'}" onclick="window.nxPosCobroCliClear(event)"><i class="ti ti-x"></i></button><i class="ti ti-chevron-down" id="posCliChev" style="opacity:.6;display:${_factCli ? 'none' : ''}"></i></div>
+          ${cliFijo ? `<div class="nxPgCli nxPgCliFijo" id="posCliBtn" aria-label="Cliente de la venta (solo el administrador puede cambiarlo)" title="Solo el administrador puede cambiar el cliente"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><i class="ti ti-lock" aria-hidden="true"></i></div>` : `<div class="nxPgCli" id="posCliBtn" tabindex="0" role="button" aria-label="Elegir cliente" onclick="window.nxPosCobroCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><button type="button" class="nxPgCliX" id="posCliXBtn" aria-label="Quitar cliente" style="display:${_factCli ? '' : 'none'}" onclick="window.nxPosCobroCliClear(event)"><i class="ti ti-x"></i></button><i class="ti ti-chevron-down" id="posCliChev" style="opacity:.6;display:${_factCli ? 'none' : ''}"></i></div>`}
           <input type="hidden" id="posCliId" value="${esc(_factCli || '')}">
         </div>
         <div class="nxPgTabs" role="tablist">${PG_MET.map(m => `<button type="button" role="tab" class="nxPgTab${m[0] === 'efe' ? ' on' : ''}" id="pgt_${m[0]}" aria-selected="${m[0] === 'efe' ? 'true' : 'false'}" aria-label="${m[4].charAt(0).toUpperCase() + m[4].slice(1)}" onclick="window.nxPagoTab('${m[0]}')"><i class="ti ${m[2]}" aria-hidden="true"></i><span>${m[3]}</span></button>`).join('')}</div>
@@ -2593,12 +2596,16 @@
       toast('info', 'Precios al nivel de ' + (c ? (c.nombre || 'ese cliente') : 'consumidor final'), 'Total: ' + fmt(_antes) + ' → ' + fmt(_dsp));
     }
   }
-  window.nxPosCobroCliToggle = function () { nxPosClienteAbrir('nxPosCobroCliM', _posCobroCliAplicar); };
+  function _posCobroCliEditable() { return rolEfectivo() === 'admin'; }
+  window.nxPosCobroCliToggle = function () {
+    if (!_posCobroCliEditable()) { toast('warn', 'Cliente fijo', 'Solo el administrador puede cambiar el cliente al cobrar.'); return; }
+    nxPosClienteAbrir('nxPosCobroCliM', _posCobroCliAplicar);
+  };
   // Botón ✕ dedicado dentro del chip — antes la única forma de quitar el cliente era reabrir el
   // buscador entero y tocar "— Consumidor final —" hasta arriba. Un toque, sin abrir nada.
   window.nxPosCobroCliClear = function (ev) {
     if (ev) { ev.stopPropagation(); ev.preventDefault(); }
-    if (!val('posCliId')) return;
+    if (!val('posCliId') || !_posCobroCliEditable()) return;
     _posCobroCliAplicar(null);
   };
   window.nxPosCobroCalc = function () {
@@ -2611,7 +2618,7 @@
     const rl = document.getElementById('cobroRestoLbl'); if (rl) rl.textContent = c.credito > 0 ? 'Falta / Crédito' : 'Pendiente';
     const rEl = document.getElementById('cobroResto'); if (rEl) rEl.style.color = c.credito > 0 ? '#dc2626' : '#16a34a';
     const note = document.getElementById('cobroFiadoNote');
-    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px"><i class="ti ti-alert-triangle"></i> Quedan ' + fmt(c.credito) + ' a crédito: elige un cliente.</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
+    if (note) note.innerHTML = (c.credito > 0 && !cliId) ? '<div style="font-size:10.5px;color:#dc2626;margin-top:4px"><i class="ti ti-alert-triangle"></i> Quedan ' + fmt(c.credito) + ' a crédito: ' + (_posCobroCliEditable() ? 'elige un cliente.' : 'el cliente se elige en «Facturar a» antes de cobrar.') + '</div>' : (c.credito > 0 ? '<div style="font-size:10.5px;color:#9a3412;margin-top:4px">' + fmt(c.credito) + ' quedará a crédito en la cuenta del cliente.</div>' : '');
     try {
       const fb = document.getElementById('finBox'), cfg = document.getElementById('finCfg'), chk = document.getElementById('finChk'), pv = document.getElementById('finPrev');
       if (fb) fb.style.display = (c.credito > 0 && cliId) ? '' : 'none';

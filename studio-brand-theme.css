@@ -821,3 +821,154 @@ html.nx-studio body:has(.nxFacBar) #v-pos #facResumen .tr.big b { font-size: 15p
 /* Los avisos (toast) no tapan la barra de cobro: con .nxFacBar suben por encima de ella. */
 html.nx-studio body:has(.nxFacBar) #toastS { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 76px); }
 @media (max-width: 760px) { html.nx-studio body:has(.nxFacBar) #toastS { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 84px); } }
+
+/* 17 · Ventana de cobro (2026-09-23). Misma lógica y mismos ids (payBig, payEfe…, posCliBtn, nxPosConfirmar);
+ *      solo cambia la piel: cabecera negra con total en oro, métodos como control segmentado con icono,
+ *      atajos de billete en chips, «Confirmar venta» en oro en una sola línea y hoja inferior en el móvil.
+ *      «Cancelar» salió del pie porque repetía la X de la cabecera (misma función nxPosCobroCancelar). */
+html.nx-studio #nxPosPago .nxPago {
+  background: var(--studio-white); border: 0; border-radius: 22px; font-family: var(--studio-font);
+  box-shadow: 0 24px 60px -18px rgba(10, 10, 10, .45), 0 0 0 1px rgba(10, 10, 10, .06);
+}
+html.nx-studio #nxPosPago .nxPgHd { background: var(--studio-black); color: var(--studio-white); padding: 16px 18px 14px; }
+html.nx-studio #nxPosPago .nxPgLb { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: rgba(255, 254, 250, .6); opacity: 1; }
+html.nx-studio #nxPosPago .nxPgTot {
+  font-family: var(--studio-font); font-size: 34px; font-weight: 700; letter-spacing: -.02em; color: var(--studio-gold-light);
+  font-variant-numeric: tabular-nums; margin-top: 2px;
+}
+html.nx-studio #nxPosPago .nxPgX {
+  top: 12px; right: 12px; width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+  background: rgba(255, 255, 255, .12); color: var(--studio-white); font-size: 17px;
+}
+html.nx-studio #nxPosPago .nxPgX:active { background: rgba(255, 255, 255, .24); }
+html.nx-studio #nxPosPago .nxPgCli {
+  margin-top: 12px; min-height: 44px; border-radius: 12px; padding: 0 12px; font-size: 14px; font-weight: 600;
+  background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); color: var(--studio-white);
+}
+html.nx-studio #nxPosPago .nxPgCli > .ti-user { color: var(--studio-gold); font-size: 16px; }
+html.nx-studio #nxPosPago .nxPgCli:active { background: rgba(255, 255, 255, .14); }
+html.nx-studio #nxPosPago .nxPgCliX { width: 28px; height: 28px; min-width: 28px; min-height: 28px; background: rgba(255, 255, 255, .14); color: var(--studio-white); }
+
+/* Métodos: control segmentado (icono + nombre), activo en negro, sin neumorfismo */
+html.nx-studio #nxPosPago .nxPgTabs {
+  margin: 14px 16px 0; padding: 3px; gap: 2px; border-radius: 14px; background: var(--studio-canvas) !important;
+  box-shadow: inset 0 0 0 1px var(--studio-line-2) !important; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible;
+}
+html.nx-studio #nxPosPago .nxPgTab {
+  flex: 1 1 0; min-width: 0; flex-direction: column; gap: 3px; padding: 7px 2px 6px; min-height: 52px; border: 0 !important;
+  border-radius: 11px !important; background: transparent !important; box-shadow: none !important;
+  color: var(--studio-steel) !important; font-size: 11.5px; font-weight: 600; letter-spacing: 0; text-transform: none;
+  transition: background-color .2s var(--studio-ease), color .2s var(--studio-ease);
+}
+html.nx-studio #nxPosPago .nxPgTab i { font-size: 19px; line-height: 1; }
+html.nx-studio #nxPosPago .nxPgTab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+html.nx-studio #nxPosPago .nxPgTab.on {
+  background: var(--studio-black) !important; color: var(--studio-white) !important; font-weight: 700;
+  box-shadow: 0 1px 2px rgba(10, 10, 10, .25), 0 4px 10px -4px rgba(10, 10, 10, .35) !important;
+}
+html.nx-studio #nxPosPago .nxPgTab.on i { color: var(--studio-gold); }
+html.nx-studio #nxPosPago .nxPgTab:focus-visible { box-shadow: 0 0 0 3px var(--studio-gold-ring) !important; }
+
+html.nx-studio #nxPosPago .nxPgBody { padding: 14px 16px 16px; }
+html.nx-studio #nxPosPago .nxPgFl { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--studio-steel); }
+
+/* Monto recibido: un solo campo grande, sin la caja blanca interior del input genérico */
+html.nx-studio #nxPosPago .nxPgBig {
+  min-height: 60px; padding: 0 16px; border-radius: 14px; background: #fff; border: 1.5px solid var(--border);
+  transition: border-color .15s, box-shadow .15s;
+}
+html.nx-studio #nxPosPago .nxPgBig:focus-within { border-color: var(--studio-gold); box-shadow: 0 0 0 4px var(--studio-gold-ring); }
+html.nx-studio #nxPosPago .nxPgBig > span { font-size: 15px; font-weight: 600; color: var(--studio-mute); }
+html.nx-studio #nxPosPago .nxPgBig input {
+  height: auto !important; min-height: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important;
+  padding: 0 !important; border-radius: 0 !important; font-family: var(--studio-font) !important; font-size: 30px !important; font-weight: 700 !important;
+  letter-spacing: -.02em; color: var(--studio-ink) !important; font-variant-numeric: tabular-nums;
+}
+
+/* Atajos: billetes RD en chips */
+html.nx-studio #nxPosPago .nxPgQ { gap: 8px; margin-top: 10px; }
+html.nx-studio #nxPosPago .nxPgQ button {
+  min-height: 40px; height: 40px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--studio-line);
+  background: #fff; color: var(--studio-ink); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+html.nx-studio #nxPosPago .nxPgQ button:first-child { background: var(--studio-gold-soft); border-color: rgba(201, 162, 39, .45); color: var(--studio-gold-dark); }
+html.nx-studio #nxPosPago .nxPgQ button:active { background: var(--studio-canvas); transform: scale(.97); }
+
+/* Devuelta (dato clave para el cajero, verde semántico) + resumen Pagado / Pendiente */
+html.nx-studio #nxPosPago .nxPgDev { margin-top: 12px; min-height: 56px; border-radius: 14px; background: rgba(22, 163, 74, .07); border: 1px solid rgba(22, 163, 74, .22); }
+html.nx-studio #nxPosPago .nxPgDev > span { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: #15803d; }
+html.nx-studio #nxPosPago .nxPgDev b { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+html.nx-studio #nxPosPago .nxPgSum { margin-top: 10px; padding: 4px 14px; border-radius: 14px; background: var(--studio-canvas); border: 0; }
+html.nx-studio #nxPosPago .nxPgSum > div { min-height: 34px; font-size: 14px; padding: 0; }
+html.nx-studio #nxPosPago .nxPgSum > div + div { border-top: 1px solid var(--studio-line-2); }
+html.nx-studio #nxPosPago .nxPgSum span { color: var(--studio-steel); font-weight: 500; }
+html.nx-studio #nxPosPago .nxPgSum b { font-weight: 700; font-variant-numeric: tabular-nums; }
+html.nx-studio #nxPosPago .nxPgF input, html.nx-studio #nxPosPago .nxPgF select { min-height: 44px; border-radius: 12px !important; font-size: 16px !important; }
+html.nx-studio #nxPosPago .nxPgF input:focus, html.nx-studio #nxPosPago .nxPgF select:focus { border-color: var(--studio-gold) !important; box-shadow: 0 0 0 3px var(--studio-gold-ring); }
+/* La devuelta en efectivo ya se ve grande arriba: no repetirla en el resumen (sigue visible en «Mixto») */
+html.nx-studio #nxPosPago .nxPgBody:has(#pgSimple:not([style*="none"]) #pgDevBig:not([style*="none"])) #pgDevRow { display: none !important; }
+html.nx-studio #nxPosPago .nxPgF select { text-transform: none !important; font-weight: 600 !important; padding-right: 30px !important; text-overflow: ellipsis; }
+html.nx-studio #nxPosPago #posCli { font-weight: 500 !important; text-transform: none !important; }
+html.nx-studio #nxPosPago .nxPgOpts { border-top: 1px solid var(--studio-line-2); padding-top: 12px; }
+html.nx-studio #nxPosPago .nxPgAuto { color: var(--studio-gold-dark); background: var(--studio-gold-soft); }
+
+/* Pie: Opciones (secundario) + Confirmar venta (oro, una línea, ocupa el resto) */
+html.nx-studio #nxPosPago .nxPgFt {
+  gap: 10px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--studio-line-2);
+  background: var(--studio-white);
+}
+html.nx-studio #nxPosPago .nxPgMas {
+  height: 52px !important; min-height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--studio-line);
+  background: #fff; color: var(--studio-ink); font-size: 15px; font-weight: 600; gap: 6px;
+}
+html.nx-studio #nxPosPago .nxPgMas.on { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); }
+html.nx-studio #nxPosPago .nxPgGo {
+  flex: 1 1 auto; min-width: 0; height: 52px !important; min-height: 52px; padding: 0 16px; border-radius: 14px; white-space: nowrap;
+  background: var(--studio-gold-grad, var(--studio-gold)); color: var(--studio-black); font-size: 17px; font-weight: 700; letter-spacing: -.01em;
+  box-shadow: 0 1px 2px rgba(128, 101, 21, .35), 0 8px 18px -8px rgba(128, 101, 21, .55);
+}
+html.nx-studio #nxPosPago .nxPgGo:active { background: var(--studio-gold-grad-active, var(--studio-gold-dark)); color: var(--studio-white); transform: scale(.98); }
+html.nx-studio #nxPosPago .nxPgGo[disabled] { opacity: .55; }
+
+/* Estado «Vendido» dentro del mismo modal */
+html.nx-studio #nxPosPago .nxPgOkHd { background: var(--studio-black); padding: 26px 18px 22px; }
+html.nx-studio #nxPosPago .nxPgOkIc { color: #34c759; font-size: 46px; }
+html.nx-studio #nxPosPago .nxPgOkTit { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+html.nx-studio #nxPosPago .nxPgOkNum { color: var(--studio-gold-light); opacity: 1; font-weight: 600; }
+html.nx-studio #nxPosPago .nxPgOkBtn {
+  min-height: 52px; border-radius: 14px; border: 1px solid var(--studio-line); background: #fff; font-size: 15px; font-weight: 600; color: var(--studio-ink);
+}
+html.nx-studio #nxPosPago .nxPgOkBtn i { color: var(--studio-gold-dark); font-size: 20px; }
+html.nx-studio #nxPosPago .nxPgOkBtn .ti-brand-whatsapp { color: #16a34a !important; }
+html.nx-studio #nxPosPago .nxPgOkBtn:active { background: var(--studio-canvas); }
+
+/* Móvil: hoja inferior a todo el ancho, al alcance del pulgar */
+@media (max-width: 600px) {
+  html.nx-studio #nxPosPago.overlay { align-items: flex-end !important; justify-content: stretch !important; padding: 0 !important; }
+  html.nx-studio #nxPosPago .nxPago {
+    max-width: none !important; width: 100% !important; margin: 0 !important; left: 0 !important; transform: none !important;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top))) !important; border-radius: 22px 22px 0 0;
+  }
+  html.nx-studio #nxPosPago .nxPgTabs { margin: 12px 12px 0; }
+  html.nx-studio #nxPosPago .nxPgTab { font-size: 10.5px; min-height: 50px; }
+  html.nx-studio #nxPosPago .nxPgBody { padding: 12px 14px 14px; }
+  html.nx-studio #nxPosPago .nxPgFt { padding-left: 14px; padding-right: 14px; }
+  html.nx-studio #nxPosPago .nxPgMas { padding: 0 14px; }
+}
+@media (max-width: 360px) {
+  html.nx-studio #nxPosPago .nxPgMas span { display: none; }
+  html.nx-studio #nxPosPago .nxPgTab span { font-size: 9.5px; }
+}
+@media (min-width: 761px) {
+  html.nx-studio #nxPosPago .nxPgHd { padding: 20px 26px 18px; }
+  html.nx-studio #nxPosPago .nxPgTot { font-size: 40px; }
+  html.nx-studio #nxPosPago .nxPgTabs { margin: 16px 26px 0; }
+  html.nx-studio #nxPosPago .nxPgTab { flex: 1 1 auto; flex-direction: row; gap: 6px; min-height: 44px; padding: 0 8px; font-size: 13.5px; }
+  html.nx-studio #nxPosPago .nxPgTab i { font-size: 17px; }
+  html.nx-studio #nxPosPago .nxPgBody { padding: 18px 26px 20px; }
+  html.nx-studio #nxPosPago .nxPgQ { grid-template-columns: repeat(6, 1fr); }
+  html.nx-studio #nxPosPago .nxPgFt { padding: 14px 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio #nxPosPago :is(.nxPgTab, .nxPgQ button, .nxPgGo) { transition: none; transform: none !important; }
+}

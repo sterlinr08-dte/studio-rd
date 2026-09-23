@@ -2441,7 +2441,8 @@
   // del panel "Mixto", oculto cuando no toca) para que leerCobro()/nxPosConfirmar() los lean
   // igual que siempre. Las pestañas de un solo método usan un campo grande "espejo" (#payBig)
   // que escribe en el campo real del método activo — cero cambios en la lógica de cobro.
-  const PG_MET = [['efe', 'payEfe', 'ti-cash', 'Efectivo'], ['tar', 'payTar', 'ti-credit-card', 'Tarjeta'], ['tra', 'payTra', 'ti-building-bank', 'Transfer.'], ['che', 'payChe', 'ti-file-check', 'Cheque'], ['nc', 'payNc', 'ti-receipt-refund', 'N. Créd.'], ['mix', '', 'ti-layout-grid', 'Mixto']];
+  // [clave, campo real, icono, etiqueta corta de la pestaña, nombre completo para "Monto por …"]
+  const PG_MET = [['efe', 'payEfe', 'ti-cash', 'Efectivo', 'efectivo'], ['tar', 'payTar', 'ti-credit-card', 'Tarjeta', 'tarjeta'], ['tra', 'payTra', 'ti-building-bank', 'Transf.', 'transferencia'], ['che', 'payChe', 'ti-file-check', 'Cheque', 'cheque'], ['nc', 'payNc', 'ti-receipt-refund', 'Nota cr.', 'nota de crédito'], ['mix', '', 'ti-arrows-split-2', 'Mixto', 'varios métodos']];
   // Atajos de efectivo = BILLETES REALES de RD (50/100/200/500/1000/2000). El '+5,000' que había
   // no corresponde a ningún billete dominicano, y faltaban los dos más comunes (100 y 200).
   const PG_QUICK_EFE = [['Exacto', 'T'], ['+100', 100], ['+200', 200], ['+500', 500], ['+1,000', 1000], ['+2,000', 2000]];
@@ -2476,7 +2477,7 @@
           <div class="nxPgCli" id="posCliBtn" tabindex="0" role="button" aria-label="Elegir cliente" onclick="window.nxPosCobroCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><i class="ti ti-user"></i><span id="posCliDisp">${cliTxt}</span><button type="button" class="nxPgCliX" id="posCliXBtn" aria-label="Quitar cliente" style="display:${_factCli ? '' : 'none'}" onclick="window.nxPosCobroCliClear(event)"><i class="ti ti-x"></i></button><i class="ti ti-chevron-down" id="posCliChev" style="opacity:.6;display:${_factCli ? 'none' : ''}"></i></div>
           <input type="hidden" id="posCliId" value="${esc(_factCli || '')}">
         </div>
-        <div class="nxPgTabs" role="tablist">${PG_MET.map(m => `<button type="button" role="tab" class="nxPgTab${m[0] === 'efe' ? ' on' : ''}" id="pgt_${m[0]}" onclick="window.nxPagoTab('${m[0]}')">${m[3]}</button>`).join('')}</div>
+        <div class="nxPgTabs" role="tablist">${PG_MET.map(m => `<button type="button" role="tab" class="nxPgTab${m[0] === 'efe' ? ' on' : ''}" id="pgt_${m[0]}" aria-selected="${m[0] === 'efe' ? 'true' : 'false'}" aria-label="${m[4].charAt(0).toUpperCase() + m[4].slice(1)}" onclick="window.nxPagoTab('${m[0]}')"><i class="ti ${m[2]}" aria-hidden="true"></i><span>${m[3]}</span></button>`).join('')}</div>
         <div class="nxPgBody">
           <div id="pgSimple">
             <label class="nxPgFl" id="pgBigLb" for="payBig">Monto recibido</label>
@@ -2513,8 +2514,7 @@
           </div>
         </div>
         <div class="nxPgFt">
-          <button class="nxPgCan" type="button" onclick="window.nxPosCobroCancelar()"><i class="ti ti-x"></i> Cancelar</button>
-          <button class="nxPgMas" type="button" aria-label="Más opciones de cobro" onclick="window.nxPagoOpts()"><i class="ti ti-adjustments-horizontal"></i> Opciones</button>
+          <button class="nxPgMas" type="button" id="pgMasBtn" aria-label="Más opciones de cobro" aria-expanded="false" aria-controls="pgOpts" onclick="window.nxPagoOpts()"><i class="ti ti-adjustments-horizontal"></i> <span>Opciones</span></button>
           <button class="nxPgGo" type="button" onclick="window.nxPosConfirmar()"><i class="ti ti-check"></i> Confirmar venta</button>
         </div>
       </div>`;
@@ -2525,14 +2525,14 @@
   // Cambiar de pestaña: limpia TODOS los métodos y prellena el elegido con el total pendiente
   window.nxPagoTab = function (k) {
     _pgTab = k;
-    PG_MET.forEach(m => { const b = document.getElementById('pgt_' + m[0]); if (b) b.classList.toggle('on', m[0] === k); });
+    PG_MET.forEach(m => { const b = document.getElementById('pgt_' + m[0]); if (b) { b.classList.toggle('on', m[0] === k); b.setAttribute('aria-selected', m[0] === k ? 'true' : 'false'); } });
     ['payEfe', 'payTar', 'payTra', 'payChe', 'payNc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const sim = document.getElementById('pgSimple'), mix = document.getElementById('pgMixto');
     if (sim) sim.style.display = k === 'mix' ? 'none' : '';
     if (mix) mix.style.display = k === 'mix' ? '' : 'none';
     if (k === 'mix') { const b0 = document.getElementById('payBig'); if (b0) b0.value = ''; window.nxPosCobroCalc(); return; }
     const met = PG_MET.find(m => m[0] === k) || PG_MET[0];
-    const lb = document.getElementById('pgBigLb'); if (lb) lb.textContent = k === 'efe' ? 'Monto recibido' : 'Monto por ' + met[3].replace('.', '').toLowerCase();
+    const lb = document.getElementById('pgBigLb'); if (lb) lb.textContent = k === 'efe' ? 'Monto recibido' : 'Monto por ' + met[4];
     const dv = document.getElementById('pgDevBig'); if (dv) dv.style.display = k === 'efe' ? '' : 'none';
     const qz = document.getElementById('pgQuick');
     if (qz) qz.innerHTML = (k === 'efe' ? PG_QUICK_EFE : PG_QUICK_OTRO).map(q => `<button type="button" onclick="window.nxPagoQuick('${q[1]}')">${q[0]}</button>`).join('');
@@ -2557,7 +2557,12 @@
     big.value = Math.round(Math.max(0, n)).toLocaleString('en-US');
     window.nxPagoBigIn();
   };
-  window.nxPagoOpts = function () { const b = document.getElementById('pgOpts'); if (b) b.style.display = (b.style.display === 'block') ? 'none' : 'block'; };
+  window.nxPagoOpts = function () {
+    const b = document.getElementById('pgOpts'); if (!b) return;
+    const abrir = b.style.display !== 'block'; b.style.display = abrir ? 'block' : 'none';
+    const btn = document.getElementById('pgMasBtn'); if (btn) { btn.setAttribute('aria-expanded', abrir ? 'true' : 'false'); btn.classList.toggle('on', abrir); }
+    if (abrir) try { b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  };
   // Selector de cliente dentro de "Cobrar" — antes un <select> con TODOS los clientes en una
   // lista larga sin buscar; ahora ventana con buscador + Recientes/Favoritos, mismo motor
   // COMPARTIDO nxPosClienteAbrir() que usa Factura (ver nxFacCliToggle más arriba). #posCliId se

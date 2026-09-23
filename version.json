@@ -1,7 +1,16 @@
 {
-  "version": "59.06",
+  "version": "59.07",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.07",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Ventana de cobro renovada: cabecera negra con el total en oro, métodos de pago con icono y botón «Confirmar venta» dorado en una sola línea.",
+        "En el celular el cobro sale como hoja inferior a todo el ancho, al alcance del pulgar.",
+        "Se quitó el botón «Cancelar» del pie (repetía la X de arriba) y la devuelta ya no aparece dos veces."
+      ]
+    },
     {
       "version": "59.06",
       "fecha": "2026-09-23",

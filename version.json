@@ -1,7 +1,16 @@
 {
-  "version": "59.07",
+  "version": "59.08",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.08",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Ganancias corregidas: ahora se compara lo vendido contra el costo, ambos con ITBIS incluido (antes se le quitaba el 18% solo a la venta y salían pérdidas que no existían).",
+        "Reporte Ganancias con columna Margen y aviso de artículos vendidos sin costo registrado.",
+        "En el celular el nombre del artículo se ve en las hojas de reporte."
+      ]
+    },
     {
       "version": "59.07",
       "fecha": "2026-09-23",

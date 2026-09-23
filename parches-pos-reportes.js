@@ -94,22 +94,24 @@
       const ck = v.cliente_id || ('n:' + (v.cliente_nombre || 'Consumidor final')); porCli[ck] = porCli[ck] || { nom: v.cliente_nombre || 'Consumidor final', n: 0, t: 0 }; porCli[ck].n++; porCli[ck].t += t;
       (v.pos_venta_items || []).forEach(it => {
         const c = n(it.cantidad), imp = it.importe != null ? n(it.importe) : n(it.precio) * c;
-        const sinItb = it.itbis ? imp / 1.18 : imp;
+        // Ganancia = lo cobrado − lo que costó. Los costos de STUDIO se registran con el ITBIS pagado incluido,
+        // así que se comparan contra la venta CON ITBIS (antes se le quitaba el 18% solo a la venta y salían pérdidas falsas).
         const p = prodBy[it.producto_id];
         const cu = it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo);
         const cst = (p && p.tipo === 'servicio') ? 0 : cu * c;
         costo += cst;
         const k = it.producto_id || it.nombre;
-        porProd[k] = porProd[k] || { nom: it.nombre || (p && p.nombre) || '—', cod: p ? (p.codigo || '') : '', cant: 0, monto: 0, costo: 0, gan: 0 };
-        porProd[k].cant += c; porProd[k].monto += imp; porProd[k].costo += cst; porProd[k].gan += sinItb - cst;
+        porProd[k] = porProd[k] || { nom: String(it.nombre || (p && p.nombre) || '—').trim(), cod: p ? (p.codigo || '') : '', cant: 0, monto: 0, costo: 0, gan: 0 };
+        if (!cu && !(p && p.tipo === 'servicio')) porProd[k].sinCosto = 1;
+        porProd[k].cant += c; porProd[k].monto += imp; porProd[k].costo += cst; porProd[k].gan += imp - cst;
         const cat = p && p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría';
-        porCat[cat] = porCat[cat] || { cant: 0, monto: 0, gan: 0 }; porCat[cat].cant += c; porCat[cat].monto += imp; porCat[cat].gan += sinItb - cst;
-        porVend[vd].g += sinItb - cst;
+        porCat[cat] = porCat[cat] || { cant: 0, monto: 0, gan: 0 }; porCat[cat].cant += c; porCat[cat].monto += imp; porCat[cat].gan += imp - cst;
+        porVend[vd].g += imp - cst;
       });
     });
     const devTot = dev.reduce((s, d) => s + n(d.total), 0), devItb = dev.reduce((s, d) => s + n(d.itbis), 0);
     const netas = bruto - devTot, netasSinItb = (bruto - itbis) - (devTot - devItb);
-    const ganBruta = netasSinItb - costo;
+    const ganBruta = netas - costo;
     // Gastos del período: cuentas 6xxx de los asientos (gastos, nómina, salidas de caja, descuadres).
     let gastos = 0; const porGasto = {};
     D.asientos.forEach(a => (a.pos_asiento_lineas || []).forEach(l => {
@@ -154,7 +156,7 @@
     const vc = puedeCosto();
     return `<div class="nxRpKpis">
         ${kpi('Ventas netas', fmt(C.netas), variacion(C.bruto, C.previo) || (C.devTot ? 'Devoluciones: ' + fmt(C.devTot) : ''), 'main')}
-        ${vc ? kpi('Ganancia bruta', fmt(C.ganBruta), 'Margen ' + pct(C.ganBruta, C.netasSinItb) + '% sobre ventas sin ITBIS', C.ganBruta >= 0 ? 'ok' : 'bad') : ''}
+        ${vc ? kpi('Ganancia bruta', fmt(C.ganBruta), 'Margen ' + pct(C.ganBruta, C.netas) + '% sobre lo vendido', C.ganBruta >= 0 ? 'ok' : 'bad') : ''}
         ${vc ? kpi('Gastos del período', fmt(C.gastos), 'Resultado: ' + fmt(C.ganBruta - C.gastos), '') : ''}
         ${kpi('Cobrado', fmt(C.cobradoContado + C.cobrosAbonos), 'Contado ' + fmt(C.cobradoContado) + ' · Abonos ' + fmt(C.cobrosAbonos), '')}
         ${kpi('Por cobrar hoy', fmt(C.cxcTot), C.cxc.length + ' factura(s) con saldo', C.tramos['Más de 90'] > 0 ? 'warn' : '')}
@@ -168,8 +170,7 @@
         <table class="nxRpT nxRpER"><tbody>
           <tr><td>Ventas (con ITBIS)</td><td class="r">${fmt(C.bruto)}</td></tr>
           <tr><td>− Devoluciones</td><td class="r">${fmt(C.devTot)}</td></tr>
-          <tr><td>− ITBIS incluido</td><td class="r">${fmt(C.itbis - C.devItb)}</td></tr>
-          <tr class="s"><td>Ventas netas sin ITBIS</td><td class="r">${fmt(C.netasSinItb)}</td></tr>
+          <tr class="s"><td>Ventas netas</td><td class="r">${fmt(C.netas)}</td></tr>
           <tr><td>− Costo de lo vendido</td><td class="r">${fmt(C.costo)}</td></tr>
           <tr class="s"><td>Ganancia bruta</td><td class="r">${fmt(C.ganBruta)}</td></tr>
           <tr><td>− Gastos (cuentas 6xxx)</td><td class="r">${fmt(C.gastos)}</td></tr>
@@ -341,9 +342,9 @@
       case 'cli_prod': case 'cli_cat': {
         const arr = Object.values(C.porProd).map(o => Object.assign({}, o, { cat: 'Sin categoría' }));
         Object.keys(C.porProd).forEach((k, i) => { const p = C.prodBy[k]; arr[i].cat = p && p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría'; });
-        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Cant.', { fmt: fmtN }), $('Vendido')].concat(vc ? [$('Costo'), $('Ganancia')] : []);
-        const fila = o => [o.cod, o.nom, o.cant, o.monto].concat(vc ? [o.costo, o.gan] : []);
-        if (id === 'cli_prod') return { cols, grupos: [grupo('', arr.sort((a, b) => b.monto - a.monto).map(fila), cols)], nota: vc ? 'Ganancia = venta sin ITBIS − costo que tenía el artículo al venderse.' : '' };
+        const cols = [T('Código', { m: 1 }), T('Artículo'), $('Cant.', { fmt: fmtN }), $('Vendido')].concat(vc ? [$('Costo'), $('Ganancia'), T('Margen', { r: 1 })] : []);
+        const fila = o => [o.cod, o.nom + (vc && o.sinCosto ? ' *' : ''), o.cant, o.monto].concat(vc ? [o.costo, o.gan, o.monto ? pct(o.gan, o.monto) + '%' : ''] : []);
+        if (id === 'cli_prod') return { cols, grupos: [grupo('', arr.sort((a, b) => b.monto - a.monto).map(fila), cols)], nota: vc ? 'Ganancia = lo vendido − el costo que tenía el artículo al venderse (ambos con ITBIS incluido).' + (arr.filter(o => o.sinCosto).length ? ' Atención: ' + arr.filter(o => o.sinCosto).length + ' artículo(s) se vendieron sin costo registrado (marcados con *); su ganancia sale inflada hasta que se les ponga costo.' : '') : '' };
         return { cols, grupos: agrupar(arr.sort((a, b) => b.monto - a.monto), o => o.cat, fila, cols, porTotalDesc(3)) };
       }
       case 'cli_cxc': {
@@ -378,11 +379,11 @@
       case 'con_er': {
         const cols = [T('Concepto'), $('Monto', { sum: 0 })];
         const g = [
-          grupo('Ingresos', [['Ventas (con ITBIS)', C.bruto], ['− Devoluciones', -C.devTot], ['− ITBIS incluido', -(C.itbis - C.devItb)], ['Ventas netas sin ITBIS', C.netasSinItb]], cols),
+          grupo('Ingresos', [['Ventas', C.bruto], ['− Devoluciones', -C.devTot], ['Ventas netas', C.netas]], cols),
           grupo('Costo', [['Costo de lo vendido', C.costo], ['Ganancia bruta', C.ganBruta]], cols),
           grupo('Gastos', Object.entries(C.porGasto).sort().map(([k, v]) => [k, v]).concat([['Total gastos', C.gastos]]), cols)
         ];
-        return { cols, grupos: g, total: ['Resultado del período', C.ganBruta - C.gastos], nota: 'El costo es el que tenía cada artículo al venderse. Gastos: cuentas 6xxx de Contabilidad.' };
+        return { cols, grupos: g, total: ['Resultado del período', C.ganBruta - C.gastos], nota: 'Ventas y costo con ITBIS incluido, como se registran en STUDIO (ITBIS de las ventas del período: ' + m2(C.itbis - C.devItb) + '; ver Resumen de ITBIS). El costo es el que tenía cada artículo al venderse. Gastos: cuentas 6xxx.' };
       }
       case 'con_diario': {
         const cols = [T('Cuenta', { m: 1 }), T('Nombre'), T('Descripción'), $('Débito'), $('Crédito')];
@@ -601,13 +602,13 @@
       case 'inv_precios': {
         const cols = [T('Código', { m: 1 }), T('Artículo')].concat(vc ? [$('Costo', { sum: 0 })] : []).concat([$('Contado', { sum: 0 }), $('Crédito', { sum: 0 }), $('Por mayor', { sum: 0 }), $('Mínimo', { sum: 0 })]).concat(vc ? [T('Margen', { r: 1 })] : []);
         const l = D.prods.filter(p => p.activo !== false && (!fv || p.categoria_id === fv));
-        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre].concat(vc ? [n(p.costo)] : []).concat([n(p.precio), n(p.precio_credito) || '', n(p.precio_mayor) || '', n(p.precio_minimo) || '']).concat(vc ? [n(p.precio) ? pct(n(p.precio) / (p.itbis === false ? 1 : 1.18) - n(p.costo), n(p.precio) / (p.itbis === false ? 1 : 1.18)) + '%' : ''] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
+        return { cols, grupos: agrupar(l, p => p.categoria_id ? (catBy[p.categoria_id] || 'Sin categoría') : 'Sin categoría', p => [p.codigo || '', p.nombre].concat(vc ? [n(p.costo)] : []).concat([n(p.precio), n(p.precio_credito) || '', n(p.precio_mayor) || '', n(p.precio_minimo) || '']).concat(vc ? [n(p.precio) ? pct(n(p.precio) - n(p.costo), n(p.precio)) + '%' : ''] : []), cols), alCorte: 1, filtro: { l: 'Categoría', o: D.cats.map(c => [c.id, c.nombre]).sort((a, b) => a[1].localeCompare(b[1])) } };
       }
       case 'inv_gandia': {
-        const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Ventas sin ITBIS'), $('Costo'), $('Ganancia'), T('Margen', { r: 1 })];
-        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += n(v.total) - n(v.itbis); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += (it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo)) * n(it.cantidad); }); });
+        const cols = [T('Fecha'), $('Facturas', { fmt: v => String(v) }), $('Vendido'), $('Costo'), $('Ganancia'), T('Margen', { r: 1 })];
+        const d = {}; C.ven.forEach(v => { const k = diaRD(v.fecha); const o = d[k] = d[k] || { n: 0, vta: 0, c: 0 }; o.n++; o.vta += (v.pos_venta_items || []).reduce((a, it) => a + (it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad)), 0); (v.pos_venta_items || []).forEach(it => { const p = C.prodBy[it.producto_id]; if (p && p.tipo === 'servicio') return; o.c += (it.costo_unitario != null ? n(it.costo_unitario) : n(p && p.costo)) * n(it.cantidad); }); });
         const l = Object.keys(d).sort().map(k => { const o = d[k]; return [dmy(k), o.n, o.vta, o.c, o.vta - o.c, pct(o.vta - o.c, o.vta) + '%']; });
-        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia bruta por día: venta sin ITBIS menos el costo que tenía cada artículo al venderse. No descuenta devoluciones ni gastos.' };
+        return { cols, grupos: [grupo('', l, cols)], nota: 'Ganancia por día: lo vendido menos el costo que tenía cada artículo al venderse (ambos con ITBIS). No descuenta devoluciones ni gastos.' };
       }
       case 'inv_vemp': {
         const cols = [T('Vendedor'), $('Facturas', { fmt: v => String(v) }), $('Unidades', { fmt: fmtN }), $('Vendido'), $('Ticket promedio', { sum: 0 })].concat(vc ? [$('Ganancia')] : []);
@@ -812,7 +813,7 @@
 .nxRpST tfoot tr.tt td{font-weight:800;font-size:13px;border-top:2px solid #0a0a0a;border-bottom:3px double #0a0a0a;background:#fff}
 .nxRpST tbody tr:hover td{background:#fbf8ee}.nxRpST tbody tr.g:hover td{background:var(--studio-canvas,#f3f0e8)}
 .nxRpSF{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:8px;border-top:1px solid var(--rp-line);font-size:11px;color:var(--rp-mute)}
-@media(max-width:900px){.nxRpLay{grid-template-columns:minmax(0,1fr)}.nxRpMain{min-width:0}.nxRpRange{flex-wrap:wrap}.nxRpRange label{flex:1 1 40%}.nxRpST{min-width:600px}.nxRpST td{white-space:nowrap}.nxRpCat{position:static;max-height:none}.nxRp.conRep .nxRpCat{display:none}.nxRpBack{display:inline-flex}
+@media(max-width:900px){.nxRpLay{grid-template-columns:minmax(0,1fr)}.nxRpMain{min-width:0}.nxRpRange{flex-wrap:wrap}.nxRpRange label{flex:1 1 40%}.nxRpST{min-width:560px}.nxRpST td.r,.nxRpST td.m{white-space:nowrap}.nxRpST td:not(.r):not(.m){min-width:120px;max-width:220px;white-space:normal}.nxRpCat{position:static;max-height:none}.nxRp.conRep .nxRpCat{display:none}.nxRpBack{display:inline-flex}
 .nxRpSheet{padding:16px 14px 12px;border-radius:12px}.nxRpSH{flex-direction:column;gap:8px}.nxRpSH .tit{text-align:left}.nxRpFil{flex:1 1 100%}.nxRpBus input{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;min-width:220px;text-transform:none}.nxRpFil select{max-width:none;height:40px;font-size:16px}.nxRpCatI{min-height:42px;font-size:14.5px}}`;
     document.head.appendChild(st);
   }

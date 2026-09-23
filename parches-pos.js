@@ -3508,7 +3508,7 @@
       .top{display:flex;justify-content:space-between;gap:24px;padding:28px 32px 22px;border-bottom:3px solid var(--black);flex-wrap:wrap}
       .brand{display:flex;gap:14px;align-items:flex-start;min-width:0}
       .logo{flex:0 0 auto;width:54px;height:54px;border-radius:14px;background:var(--black);color:var(--gold);display:grid;place-items:center;font-size:24px;font-weight:800}
-      .emp{font-size:20px;font-weight:800;letter-spacing:.02em;line-height:1.15}
+      .emp{font-size:20px;font-weight:800;letter-spacing:.08em;line-height:1.15;text-transform:uppercase}
       .empsub{font-size:11.5px;color:var(--mute);margin-top:5px;line-height:1.6}
       .idoc{text-align:right;min-width:0}
       .tipo{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.16em;color:var(--gold-d);text-transform:uppercase;border:1.5px solid var(--gold);border-radius:999px;padding:4px 12px}
@@ -3632,7 +3632,7 @@
       .bar .pr{background:#c9a227;color:#0a0a0a}
       .t{width:80mm;max-width:100%;margin:12px auto;background:#fff;padding:5mm 4mm 6mm}
       .c{text-align:center} .logo{width:34px;height:34px;border-radius:9px;background:#000;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;margin:0 auto 5px}
-      .emp{font-size:15px;font-weight:800;letter-spacing:.03em} .sm{font-size:10.5px;color:#333;line-height:1.45}
+      .emp{font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase} .sm{font-size:10.5px;color:#333;line-height:1.45}
       .hr{border-top:1px dashed #000;margin:7px 0}
       .dt{background:#000;color:#fff;text-align:center;padding:5px 4px;border-radius:4px;margin:6px 0 4px}
       .dt b{display:block;font-size:12.5px;letter-spacing:.06em} .dt span{font-size:10px}

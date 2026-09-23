@@ -1180,7 +1180,7 @@
             <div class="facTot" id="facResumen"></div>
           </div>
         </div>
-        <div class="keys"><span><b>F2</b> Buscar producto</span><span><b>F10</b> Limpiar carrito</span></div>
+        <div class="keys"><span><b>F2</b> Buscar producto</span>${esPreTab() ? "" : "<span><b>F4</b> Guardar</span><span><b>F6</b> Guardar+Imprimir</span><span><b>F7</b> Guardar+WhatsApp</span><span><b>F8</b> Imprimir</span>"}<span><b>F10</b> Limpiar carrito</span></div>
       </div>
     </div>`;
   }
@@ -2355,9 +2355,10 @@
         ${pre ? `<button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar(true)" title="Guardar e imprimir" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>` : ''}
         ${pre
           ? `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} style="background:#6d28d9" onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>`
-          : `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>`}
+          : `<button type="button" class="g1" ${_cart.length ? '' : 'disabled'} onclick="window.nxFacAccion('guardar')"><i class="ti ti-device-floppy"></i> Guardar</button>`}
       </div>
-      <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>`;
+      <button type="button" class="cancel" onclick="window.nxFacCancelar()">Cancelar ${pre ? 'prefactura' : 'factura'}</button>
+      ${pre ? '' : `<div class="facSmart" aria-live="polite">${facSmartHTML()}</div>`}`;
     try { facBarraSync(); } catch (e) {}
   }
   // ── Motor COMPARTIDO de "barra de acciones fija" (spec ChatGPT, piloteado primero en Factura
@@ -2383,19 +2384,236 @@
   // MISMAS funciones — cero lógica de cobro nueva. Se recrea en cada pintarFactura (estado
   // habilitado/deshabilitado en vivo) y se quita en renderPOS (cambio de pestaña) y nav() (salir
   // del POS).
+  // ── Acciones inteligentes de Factura (59.12) — pedido del dueño: «Guardar, Guardar+Imprimir,
+  // Imprimir, Guardar+WhatsApp, Anular y Cancelar, que no sean simples botones». Cero lógica de
+  // cobro nueva: «Guardar» ES cobrar (nxPosCobrar → nxPosConfirmar, con todas sus validaciones);
+  // la intención solo decide qué pasa DESPUÉS de guardar (imprimir en el formato preferido o abrir
+  // WhatsApp). Imprimir/WhatsApp/Anular sin artículos actúan sobre la ÚLTIMA factura guardada en
+  // esta pantalla; con artículos, Imprimir es la vista previa (no fiscal).
+  let _facWaTel = '';        // número elegido para WhatsApp cuando el cliente no tiene uno registrado
+  let _facUlt = null;        // última factura guardada desde Factura
+  let _facVentana = null;    // ventana abierta EN el clic: Safari bloquea las que se abren después de esperar
+  let _facIntentOk = '';     // intención del cobro que se está confirmando
+  let _facGuardoOk = false;
+  function facTomarVentana() { const w = _facVentana; _facVentana = null; return (w && !w.closed) ? w : null; }
+  function facAbrirVentana(txt) {
+    try {
+      const w = window.open('', '_blank');
+      if (w) w.document.write('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>STUDIO</title><body style="margin:0;font:15px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;display:grid;place-items:center;height:90vh;color:#555;background:#faf9f6">' + esc(txt || 'Preparando…') + '</body>');
+      return w;
+    } catch (e) { return null; }
+  }
+  function facSoltarVentana(mine, ms) { setTimeout(() => { if (mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} } }, ms); }
+  function facFmt() { try { return localStorage.getItem('nx_fac_fmt') === 'carta' ? 'carta' : 'ticket'; } catch (e) { return 'ticket'; } }
+  window.nxFacFmtSet = function (f) { try { localStorage.setItem('nx_fac_fmt', f === 'carta' ? 'carta' : 'ticket'); } catch (e) {} try { pintarFactura(); } catch (e) {} };
+  function facPuedeAnular() { return ['admin', 'gerente'].includes(rolEfectivo()); }
+  function facTelCliente() { const c = clienteSel(); return c ? waNum(c.telefono) : ''; }
+  function facNumTxt(u) { return u ? (u.numero_factura || ('No. ' + (u.numero || ''))) : ''; }
+  // Lo que falta para poder guardar: la MISMA validación que hace nxPosConfirmar, pero antes de abrir
+  // el cobro y con el arreglo a un toque (nxFacArreglar).
+  function facChequeo() {
+    if (!_cart.length) return { ok: false, txt: 'Agrega artículos para guardar', fix: () => window.nxProdPicker('factura') };
+    for (let i = 0; i < _cart.length; i++) {
+      const it = _cart[i]; const p = _prods.find(x => String(x.id) === String(it.producto_id));
+      if (p && p.serial && (it.seriales || []).length < Number(it.cantidad)) return { ok: false, txt: 'Falta el IMEI de ' + p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')', fix: () => window.nxFacSerial(i) };
+      if (p && Number(it.precio || 0) <= 0) return { ok: false, txt: p.nombre + ' no tiene precio' };
+    }
+    if (_facCredito && !_factCli) return { ok: false, txt: 'A crédito necesita un cliente', fix: () => window.nxFacCliToggle() };
+    return { ok: true };
+  }
+  window.nxFacArreglar = function () { const c = facChequeo(); if (!c.ok && c.fix) c.fix(); };
+  // Botones con su propósito: `why` dice EXACTAMENTE qué va a pasar (o por qué no se puede).
+  function facAcciones() {
+    const hay = _cart.length > 0, u = _facUlt, chk = facChequeo(), tel = facTelCliente();
+    const c = clienteSel(); const quien = c ? String(c.nombre || '').split(' ')[0] : 'el cliente';
+    const ok = hay && chk.ok, fmtTxt = facFmt() === 'carta' ? 'la factura (carta)' : 'el ticket';
+    const cond = _facCredito ? ' a crédito' : '';
+    const waUlt = !hay && u && !u.anulada;
+    return [
+      { k: 'cancelar', ic: 'ti-x', t: hay ? 'Cancelar' : 'Limpiar', on: hay || !!u || !!_factCli || _facCredito, cls: 'fbS',
+        why: hay ? 'Descarta los artículos y el cliente sin guardar nada' : 'Deja la pantalla lista para una factura nueva' },
+      { k: 'anular', ic: 'ti-ban', t: 'Anular', on: !!u && !u.anulada && facPuedeAnular(), cls: 'fbS fbDanger',
+        why: !u ? 'Se activa después de guardar una factura' : u.anulada ? facNumTxt(u) + ' ya está anulada' : !facPuedeAnular() ? 'Solo el administrador o el gerente puede anular' : 'Anula ' + facNumTxt(u) + ', devuelve el stock y revierte el asiento' },
+      { k: 'reimp', ic: 'ti-printer', t: 'Imprimir', key: 'F8', on: hay || !!u, cls: 'fbS',
+        why: hay ? 'Vista previa de lo que hay en pantalla (sin guardar, no es fiscal)' : u ? 'Reimprime ' + facNumTxt(u) + ' como ' + (facFmt() === 'carta' ? 'factura carta' : 'ticket') : 'No hay nada que imprimir todavía' },
+      { k: 'wa', ic: 'ti-brand-whatsapp', t: waUlt ? 'WhatsApp' : 'Guardar+WhatsApp', key: 'F7', on: ok || waUlt, cls: 'fbW',
+        why: waUlt ? 'Envía ' + facNumTxt(u) + ' por WhatsApp' + (u.waTel ? ' (···' + u.waTel.slice(-4) + ')' : '')
+          : !ok ? chk.txt : tel ? 'Cobra, guarda y abre WhatsApp de ' + quien + ' (···' + tel.slice(-4) + ') con la factura' : 'Cobra, guarda y te pide el número de WhatsApp' },
+      { k: 'imprimir', ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', on: ok, cls: 'fbG2',
+        why: ok ? 'Cobra, guarda' + cond + ' e imprime ' + fmtTxt : chk.txt },
+      { k: 'guardar', ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', on: ok, cls: 'fbP',
+        why: ok ? 'Cobra y guarda la factura' + cond : chk.txt }
+    ];
+  }
+  // Panel de estado (en el pie, junto al total): qué falta, cómo se imprime, última factura.
+  function facSmartHTML() {
+    const chk = facChequeo(), u = _facUlt, f = facFmt();
+    const est = !_cart.length
+      ? (u ? `<div class="fsE ok"><i class="ti ti-circle-check"></i><span><b>${esc(facNumTxt(u))}</b> ${u.anulada ? 'anulada' : 'guardada'} · ${fmt(u.total)}</span></div>` : `<div class="fsE"><i class="ti ti-info-circle"></i><span>Agrega artículos para empezar</span></div>`)
+      : chk.ok
+        ? `<div class="fsE ok"><i class="ti ti-circle-check"></i><span>Lista para guardar · ${_facCredito ? 'Crédito' : 'Contado'} · ${esc((clienteSel() || {}).nombre || 'Consumidor final')}</span></div>`
+        : `<div class="fsE warn"><i class="ti ti-alert-triangle"></i><span>${esc(chk.txt)}</span>${chk.fix ? '<button type="button" onclick="window.nxFacArreglar()">Resolver</button>' : ''}</div>`;
+    return `${est}<div class="fsF"><span>Imprimir como</span><div class="fsSeg" role="group" aria-label="Formato de impresión"><button type="button" class="${f === 'ticket' ? 'on' : ''}" aria-pressed="${f === 'ticket'}" onclick="window.nxFacFmtSet('ticket')"><i class="ti ti-receipt"></i> Ticket</button><button type="button" class="${f === 'carta' ? 'on' : ''}" aria-pressed="${f === 'carta'}" onclick="window.nxFacFmtSet('carta')"><i class="ti ti-file-invoice"></i> Carta</button></div></div>`;
+  }
   function facBarraSync() {
     var mostrar = (_posTab === 'factura' || _posTab === 'prefactura');
     if (mostrar) { var vpos = document.getElementById('v-pos'); mostrar = !!(vpos && vpos.classList.contains('on')); }
     if (!mostrar) { nxStickyBarSet('nxFacBar', null); return; }
     var pre = esPreTab(), dis = _cart.length ? '' : 'disabled';
-    var html = pre
-      ? '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar prefactura"><i class="ti ti-x"></i></button>'
+    var html;
+    if (pre) {
+      html = '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar prefactura"><i class="ti ti-x"></i></button>'
         + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar(true)" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>'
-        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>'
-      : '<button type="button" class="fbC" onclick="window.nxFacCancelar()" aria-label="Cancelar factura"><i class="ti ti-x"></i></button>'
-        + '<button type="button" class="fbG" ' + dis + ' onclick="window.nxPrefGuardar()" aria-label="Guardar borrador (prefactura)"><i class="ti ti-device-floppy"></i></button>'
-        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxFacFacturar()"><i class="ti ti-cash"></i> Cobrar</button>';
+        + '<button type="button" class="fbP" ' + dis + ' onclick="window.nxPrefGuardar()"><i class="ti ti-device-floppy"></i> Guardar</button>';
+    } else {
+      var t = totales();
+      html = '<button type="button" class="fbC fbMas" onclick="window.nxFacAccHoja()" aria-label="Todas las acciones" aria-haspopup="dialog"><i class="ti ti-dots"></i></button>'
+        + '<span class="fbT"><small>Total</small><b>' + fmt(t.total) + '</b></span>'
+        + facAcciones().map(function (a) {
+          return '<button type="button" class="fbA ' + a.cls + '" data-k="' + a.k + '"' + (a.on ? '' : ' aria-disabled="true"') + ' title="' + esc(a.why) + (a.key ? ' (' + a.key + ')' : '') + '" aria-label="' + esc(a.t + ': ' + a.why) + '" onclick="window.nxFacAccion(\'' + a.k + '\')"><i class="ti ' + a.ic + '" aria-hidden="true"></i><span class="fbL">' + esc(a.t) + '</span>' + (a.key ? '<kbd>' + a.key + '</kbd>' : '') + '</button>';
+        }).join('');
+    }
     nxStickyBarSet('nxFacBar', html);
+    var bar = document.getElementById('nxFacBar'); if (bar) bar.classList.toggle('nxFacBar6', !pre);
+  }
+  // Hoja con TODAS las acciones y su propósito (en el móvil la barra solo muestra Guardar).
+  window.nxFacAccHoja = function () {
+    cerrarModal('nxFacAccSheet');
+    const ov = document.createElement('div'); ov.id = 'nxFacAccSheet'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    const acc = facAcciones().slice().reverse();
+    ov.innerHTML = `<div class="modal nxFacAccM" role="dialog" aria-label="Acciones de la factura">
+      <div class="fahd"><b>Acciones de la factura</b><span>${esc(fmt(totales().total))}</span></div>
+      ${acc.map(a => `<button type="button" class="faIt ${a.cls}"${a.on ? '' : ' aria-disabled="true"'} onclick="document.getElementById('nxFacAccSheet').remove();window.nxFacAccion('${a.k}')"><i class="ti ${a.ic}" aria-hidden="true"></i><span><b>${esc(a.t)}</b><small>${esc(a.why)}</small></span>${a.key ? `<kbd>${a.key}</kbd>` : ''}</button>`).join('')}
+      <div class="faFmt">${facSmartHTML().replace(/^[\s\S]*?(<div class="fsF">)/, '$1')}</div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  function facImprimir(u) {
+    if (facFmt() === 'carta' || u.anulada || !u._v) {
+      if (!_facVentana) _facVentana = facAbrirVentana('Preparando la factura…');
+      facSoltarVentana(_facVentana, 20000);
+      window.nxFacDocVenta(u.id);
+    } else ticketHTML(u._v);
+  }
+  function facWAUrl(u) {
+    const v = u._v || {};
+    const c = u.cliente_id ? _clientes.find(x => String(x.id) === String(u.cliente_id)) : null;
+    const num = u.waTel || (c ? waNum(c.telefono) : '');
+    if (!num) return '';
+    const items = (v._items || []).map(it => Number(it.cantidad || 0) + ' x ' + it.nombre + (it.serial ? ' (IMEI ' + it.serial + ')' : '')).join('\n');
+    const cred = Number(v.credito_monto || 0);
+    const msg = 'Hola' + (u.cliente_nombre ? ' ' + String(u.cliente_nombre).split(' ')[0] : '') + ', gracias por tu compra en ' + (empNom() || 'STUDIO') + '.\n'
+      + 'Factura ' + facNumTxt(u) + (v.ncf ? ' · NCF ' + v.ncf : '') + ' · ' + fechaDMY(v.fecha || hoy()) + '\n\n'
+      + (items ? items + '\n\n' : '')
+      + 'TOTAL: ' + fmt(u.total)
+      + (cred > 0 ? '\nPagado: ' + fmt(Number(u.total || 0) - cred) + '\nPendiente a crédito: ' + fmt(cred) : '')
+      + '\n\nConserva este mensaje como constancia de tu compra.';
+    return 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  }
+  function facWA(u) {
+    const url = facWAUrl(u);
+    const w = facTomarVentana();
+    if (!url) { if (w) try { w.close(); } catch (e) {} toast('err', 'Sin número de WhatsApp', 'Toca WhatsApp y escribe el número'); return; }
+    if (w) { try { w.location.href = url; return; } catch (e) {} }
+    const o = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!o) toast('warn', 'Permite las ventanas emergentes', 'O usa «Enviar por WhatsApp» en la ventana de venta');
+  }
+  function facPedirTel(nombre) {
+    const t = prompt('¿A qué WhatsApp se envía la factura?\n' + (nombre ? nombre + ' no tiene teléfono registrado.' : 'Consumidor final: escribe el número.'), '');
+    if (t === null) return null;
+    const n = waNum(t);
+    if (!n) { toast('err', 'Número no válido', 'Escribe 10 dígitos, ej. 809 555 1234'); return null; }
+    return n;
+  }
+  // Se llama desde nxPosConfirmar justo después de guardar la venta.
+  function facTrasGuardar(v) {
+    const pg = document.getElementById('nxPosPago');
+    const intent = _facIntentOk || (pg && pg.dataset.intent) || '';
+    if (_posTab !== 'factura' || !intent) return;
+    _facGuardoOk = true;
+    _facUlt = { id: v.id, numero: v.numero, numero_factura: v.numero_factura, total: v.total, cliente_id: v.cliente_id, cliente_nombre: v.cliente_nombre, waTel: _facWaTel, anulada: false, _v: v };
+    _facWaTel = '';
+    if (pg) pg.dataset.intent = '';
+    if (intent === 'imprimir') facImprimir(_facUlt);
+    else if (intent === 'wa') facWA(_facUlt);
+    try { pintarFactura(); } catch (e) {}
+  }
+  // Botón «Confirmar» del cobro cuando se llegó por una acción de Factura: abre la ventana de
+  // impresión/WhatsApp en el mismo toque y, si el cobro no se completa, la cierra.
+  window.nxFacConfirmar = async function () {
+    const pg = document.getElementById('nxPosPago'); const intent = (pg && pg.dataset.intent) || 'guardar';
+    _facIntentOk = intent; _facGuardoOk = false;
+    if ((intent === 'wa' || (intent === 'imprimir')) && !_facVentana) _facVentana = facAbrirVentana(intent === 'wa' ? 'Abriendo WhatsApp…' : 'Preparando la impresión…');
+    const mine = _facVentana;
+    try { await window.nxPosConfirmar(); }
+    finally {
+      _facIntentOk = '';
+      if (!_facGuardoOk && mine && _facVentana === mine) { _facVentana = null; try { mine.close(); } catch (e) {} }
+      else if (mine && _facVentana === mine) facSoltarVentana(mine, 20000);
+    }
+  };
+  window.nxFacAccion = async function (a) {
+    if (_posTab !== 'factura') return;
+    const lista = facAcciones(); const def = lista.find(x => x.k === a);
+    if (def && !def.on) { toast('warn', def.t, def.why); if (a !== 'anular') window.nxFacArreglar(); return; }
+    const u = _facUlt;
+    if (a === 'cancelar') {
+      const tenia = _cart.length;
+      if (tenia || _factCli || _facCredito) window.nxFacCancelar();
+      if (!_cart.length) { _facUlt = null; _facWaTel = ''; }
+      if (!tenia) try { pintarFactura(); } catch (e) {}
+      return;
+    }
+    if (a === 'reimp') {
+      if (_cart.length) { window.nxFacVistaPrevia(); return; }
+      if (u) facImprimir(u);
+      return;
+    }
+    if (a === 'anular') {
+      if (!u || u.anulada || !facPuedeAnular()) return;
+      try {
+        if (!(_ventas || []).find(x => String(x.id) === String(u.id))) {
+          let r = null; try { r = await getAPI().get('pos_ventas', 'select=*&id=eq.' + u.id); } catch (e) {}
+          const row = (r || []).find(x => String(x.id) === String(u.id)) || Object.assign({}, u._v, { _items: undefined, estado: 'completada' });
+          _ventas = _ventas || []; _ventas.unshift(row);
+        }
+        await window.nxPosAnularVenta(u.id);
+        const r2 = await getAPI().get('pos_ventas', 'select=id,estado&id=eq.' + u.id);
+        u.anulada = !!(r2 && r2[0] && r2[0].estado === 'anulada');
+      } catch (e) { toast('err', 'No se pudo anular', String((e && e.message) || e).slice(0, 120)); }
+      try { pintarFactura(); } catch (e) {}
+      return;
+    }
+    if (a === 'wa' && !_cart.length && u) {
+      if (!facWAUrl(u)) { const n = facPedirTel(u.cliente_nombre); if (!n) return; u.waTel = n; }
+      facWA(u);
+      return;
+    }
+    // Guardar / Guardar+Imprimir / Guardar+WhatsApp → mismo cobro de siempre
+    if (a === 'wa') {
+      if (!facTelCliente()) { const n = facPedirTel((clienteSel() || {}).nombre); if (!n) return; _facWaTel = n; }
+      else _facWaTel = '';
+    }
+    window.nxFacFacturar();
+    const pg = document.getElementById('nxPosPago'); if (!pg) return;
+    pg.dataset.intent = a;
+    const go = pg.querySelector('.nxPgGo');
+    if (go) {
+      go.setAttribute('onclick', 'window.nxFacConfirmar()');
+      go.innerHTML = a === 'imprimir' ? '<i class="ti ti-printer"></i> Guardar e imprimir'
+        : a === 'wa' ? '<i class="ti ti-brand-whatsapp"></i> Guardar y enviar'
+        : '<i class="ti ti-check"></i> Guardar venta';
+    }
+  };
+  // Atajos: F4 Guardar · F6 Guardar+Imprimir · F7 Guardar+WhatsApp · F8 Imprimir (solo en Factura)
+  if (!window.__nxFacAccKeys) {
+    window.__nxFacAccKeys = true;
+    document.addEventListener('keydown', function (e) {
+      if (_posTab !== 'factura' || document.querySelector('.overlay.open, .overlay.on')) return;
+      const m = { F4: 'guardar', F6: 'imprimir', F7: 'wa', F8: 'reimp' }[e.key];
+      if (m) { e.preventDefault(); window.nxFacAccion(m); }
+    });
   }
   // Stepper de cantidad del rediseño (respeta stock al subir; ajusta combos)
   window.nxFacQtyStep = function (i, d) { const it = _cart[i]; if (!it) return; if (d > 0 && !puedeAgregar(it.producto_id, 1)) return; const _old = Number(it.cantidad || 0); const n = Math.max(0, _old + d); if (n === 0) { _cart.splice(i, 1); } else { it.cantidad = n; ajustarCombos(it.producto_id, n - _old); } pintarFactura(); };
@@ -3040,6 +3258,7 @@
       _facNCF = 'sin'; _facCredito = false; _facFecha = ''; _facSubTab = 'datos';
       const view = document.getElementById('v-pos'); if (view && (_posTab === 'vender' || _posTab === 'factura')) renderPOS(view);
       _posVentaExito(ventaTicket);
+      try { facTrasGuardar(ventaTicket); } catch (e) {}
     } catch (e) {
       // Solo se libera la reserva IMEI si la venta NUNCA llegó a existir. Una venta ya
       // creada no se revierte por este catch — REGLAMENTOS §2 regla 10.
@@ -3082,7 +3301,7 @@
         <div class="c muted">¡Gracias por su compra!</div>
         <button class="noprint" onclick="window.print()" style="width:100%;padding:12px;margin-top:14px;background:#1e3a6e;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:Segoe UI,system-ui,-apple-system,sans-serif"><i class="ti ti-printer"></i> Imprimir</button>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el ticket'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   window.nxPosTicket = async function (ventaId) {
     let v = _ventas.find(x => String(x.id) === String(ventaId));
@@ -3230,7 +3449,7 @@
         document.getElementById('bW').addEventListener('click',function(){window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(WA),'_blank')});
       <\/script>
       </body></html>`;
-    try { const w = window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el documento'); return; } w.document.write(html); w.document.close(); } catch (er) {}
+    try { const w = facTomarVentana() || window.open('', '_blank'); if (!w) { toast('warn', 'Permite las ventanas emergentes para ver el documento'); return; } w.document.write(html); w.document.close(); } catch (er) {}
   }
   // Arma el documento con lo que hay AHORA en pantalla (no guarda nada)
   function facDocDesdeCarrito() {

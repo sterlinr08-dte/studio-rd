@@ -987,3 +987,74 @@ html.nx-studio .compTipoOp b { font-size: 14px; font-weight: 700; color: var(--s
 html.nx-studio .compTipoOp small { font-size: 12px; line-height: 1.35; color: var(--studio-steel); }
 html.nx-studio .compTipoOp:has(input:checked) { border-color: var(--studio-gold); background: var(--studio-gold-soft); box-shadow: 0 0 0 3px var(--studio-gold-ring); }
 @media (max-width: 520px) { html.nx-studio .compTipo { grid-template-columns: 1fr; } }
+
+/* ── §19 Factura: acciones inteligentes (59.12) ──────────────────────────────
+   Guardar · Guardar+Imprimir · Guardar+WhatsApp · Imprimir · Anular · Cancelar. Cada botón lleva en
+   su title/aria-label lo que va a hacer; si no se puede, se ve atenuado y al tocarlo explica por qué. */
+html.nx-studio .nxFacBar6 { gap: 8px; align-items: center; }
+html.nx-studio .nxFacBar6 .fbMas { display: none; }
+html.nx-studio .nxFacBar6 .fbT { flex: 1 0 auto; overflow: visible; }
+@media (max-width: 1599px) { html.nx-studio .nxFacBar6 .fbA kbd { display: none; } }
+@media (max-width: 420px) { html.nx-studio .nxFacBar6 .fbT small { display: none; } html.nx-studio .nxFacBar6 .fbT b { font-size: 16px; } }
+html.nx-studio .nxFacBar6 .fbA { height: 44px; padding: 0 12px; gap: 6px; border-radius: 10px; font-size: 13.5px; font-weight: 600; flex: 0 0 auto; background: #ffffff; border: 1px solid var(--studio-hair); color: var(--studio-ink); box-shadow: var(--studio-relieve); }
+html.nx-studio .nxFacBar6 .fbA i { font-size: 17px; }
+html.nx-studio .nxFacBar6 .fbA:hover { border-color: var(--studio-ink); }
+html.nx-studio .nxFacBar6 .fbA:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
+html.nx-studio .nxFacBar6 .fbA kbd { font: 600 10px/1 var(--studio-mono); padding: 3px 4px; border-radius: 4px; border: 1px solid currentColor; opacity: .45; }
+html.nx-studio .nxFacBar6 .fbA[aria-disabled="true"] { opacity: .42; box-shadow: none; }
+html.nx-studio .nxFacBar6 .fbA[aria-disabled="true"]:hover { border-color: var(--studio-hair); }
+html.nx-studio .nxFacBar6 .fbS { color: var(--studio-steel); }
+html.nx-studio .nxFacBar6 .fbDanger i { color: #b42318; }
+html.nx-studio .nxFacBar6 .fbDanger:not([aria-disabled="true"]):hover { background: #fef3f2; border-color: #b42318; color: #b42318; }
+html.nx-studio .nxFacBar6 .fbW i { color: #16a34a; }
+html.nx-studio .nxFacBar6 .fbG2 { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); }
+html.nx-studio .nxFacBar6 .fbG2:hover { background: var(--studio-graphite); }
+html.nx-studio .nxFacBar6 .fbA.fbP { min-width: 0; padding: 0 18px; border: 0; }
+@media (max-width: 1439px) {
+  html.nx-studio .nxFacBar6 .fbA kbd { display: none; }
+  html.nx-studio .nxFacBar6 .fbA[data-k="cancelar"], html.nx-studio .nxFacBar6 .fbA[data-k="anular"] { display: none; }
+  html.nx-studio .nxFacBar6 .fbMas { display: inline-flex; }
+}
+@media (max-width: 1023px) {
+  html.nx-studio .nxFacBar6 .fbA:not(.fbP) .fbL { display: none; }
+  html.nx-studio .nxFacBar6 .fbA:not(.fbP) { width: 44px; padding: 0; }
+}
+@media (max-width: 560px) {
+  html.nx-studio .nxFacBar6 .fbA[data-k="reimp"], html.nx-studio .nxFacBar6 .fbA[data-k="imprimir"] { display: none; }
+}
+
+/* Estado de la factura en el pie: qué falta, formato de impresión, última guardada. */
+html.nx-studio #v-pos .facSmart { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--studio-line); }
+html.nx-studio .facSmart .fsE, html.nx-studio .nxFacAccM .fsE { display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.35; color: var(--studio-steel); padding: 8px 10px; border-radius: 9px; background: var(--studio-canvas); }
+html.nx-studio .facSmart .fsE i { font-size: 16px; flex: 0 0 auto; }
+html.nx-studio .facSmart .fsE span { flex: 1 1 auto; min-width: 0; }
+html.nx-studio .facSmart .fsE.ok { background: #f0fdf4; color: #166534; }
+html.nx-studio .facSmart .fsE.warn { background: #fffaeb; color: #93370d; }
+html.nx-studio .facSmart .fsE button { flex: 0 0 auto; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; }
+html.nx-studio .facSmart .fsF, html.nx-studio .nxFacAccM .fsF { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--studio-mute); }
+html.nx-studio .fsSeg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 9px; background: var(--studio-canvas-2, #ebe7dc); }
+html.nx-studio .fsSeg button { border: 0; background: transparent; color: var(--studio-steel); font: 600 12px var(--studio-font); padding: 5px 10px; border-radius: 7px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+html.nx-studio .fsSeg button.on { background: var(--studio-black); color: var(--studio-white); }
+
+/* Hoja de acciones (⋯) */
+html.nx-studio .nxFacAccM { max-width: 440px; width: 100%; padding: 8px 8px 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 2px; }
+html.nx-studio .nxFacAccM .fahd { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px 8px; }
+html.nx-studio .nxFacAccM .fahd b { font-size: 15px; color: var(--studio-ink); }
+html.nx-studio .nxFacAccM .fahd span { font: 600 15px var(--studio-mono); font-variant-numeric: tabular-nums; color: var(--studio-ink); }
+html.nx-studio .nxFacAccM .faIt { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; text-align: left; width: 100%; min-height: 58px; padding: 8px 12px; border: 0; border-radius: 12px; background: transparent; color: var(--studio-ink); font-family: var(--studio-font); cursor: pointer; }
+html.nx-studio .nxFacAccM .faIt:hover, html.nx-studio .nxFacAccM .faIt:focus-visible { background: var(--studio-canvas); outline: none; }
+html.nx-studio .nxFacAccM .faIt > i { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: var(--studio-canvas); color: var(--studio-ink); }
+html.nx-studio .nxFacAccM .faIt.fbP > i { background: var(--studio-gold-grad); color: var(--studio-black); }
+html.nx-studio .nxFacAccM .faIt.fbG2 > i { background: var(--studio-black); color: var(--studio-white); }
+html.nx-studio .nxFacAccM .faIt.fbW > i { color: #16a34a; }
+html.nx-studio .nxFacAccM .faIt.fbDanger > i { color: #b42318; background: #fef3f2; }
+html.nx-studio .nxFacAccM .faIt span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html.nx-studio .nxFacAccM .faIt b { font-size: 14px; font-weight: 600; }
+html.nx-studio .nxFacAccM .faIt small { font-size: 12px; line-height: 1.35; color: var(--studio-steel); }
+html.nx-studio .nxFacAccM .faIt kbd { font: 600 10px/1 var(--studio-mono); padding: 3px 5px; border: 1px solid var(--studio-hair); border-radius: 4px; color: var(--studio-mute); }
+html.nx-studio .nxFacAccM .faIt[aria-disabled="true"] { opacity: .45; }
+html.nx-studio .nxFacAccM .faFmt { padding: 10px 12px 0; margin-top: 6px; border-top: 1px solid var(--studio-line); }
+@media (max-width: 760px) {
+  html.nx-studio #nxFacAccSheet { align-items: flex-end; }
+  html.nx-studio .nxFacAccM { border-radius: 18px 18px 0 0; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+}

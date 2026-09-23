@@ -1,7 +1,16 @@
 {
-  "version": "59.16",
+  "version": "59.17",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.17",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Impresión renovada: factura carta, ticket de 80 mm, prefactura y cotización con diseño moderno de la marca (logo, franja de datos, tabla limpia, total destacado).",
+        "Código QR en cada documento guardado: al escanearlo, el cliente confirma en studiord.net que el documento es auténtico y si está vigente o anulado (sin mostrar datos personales).",
+        "La prefactura ya no deja guardar artículos en RD$ 0 (igual que la factura)."
+      ]
+    },
     {
       "version": "59.16",
       "fecha": "2026-09-24",

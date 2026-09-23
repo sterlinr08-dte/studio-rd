@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a0a0a">
+<title>Verificar documento · Studio</title>
+<link rel="icon" href="icon-32.png">
+<!-- Verificación pública de documentos por QR (STUDIO, 2026-09-24). Solo llama a pos_doc_verificar
+     (security definer, solo lectura) con la llave anon pública. Muestra número, fecha, total, estado y el
+     cliente enmascarado; nunca artículos, teléfonos ni cédulas. -->
+<style>
+:root{--ink:#111;--mute:#5b5951;--line:rgba(90,72,20,.18);--gold:#c9a227;--gold-d:#806515;--bg:#f3f0e8;--card:#fffefa;--black:#0a0a0a;--ok:#15803d;--okbg:#f0fdf4;--bad:#b42318;--badbg:#fef3f2}
+*{box-sizing:border-box;margin:0}
+body{font-family:-apple-system,"SF Pro Text",system-ui,"Helvetica Neue",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px calc(28px + env(safe-area-inset-bottom))}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.mono{width:40px;height:40px;border-radius:11px;background:var(--black);color:var(--gold);display:grid;place-items:center;font-weight:800;font-size:18px}
+.brand b{font-size:15px;letter-spacing:.14em}
+.card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;box-shadow:0 10px 30px -12px rgba(10,10,10,.18)}
+.st{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;font-weight:700;font-size:15px;margin-bottom:16px}
+.st.ok{background:var(--okbg);color:var(--ok)}.st.bad{background:var(--badbg);color:var(--bad)}.st.nf{background:#f1efe8;color:var(--mute)}
+.st svg{flex:0 0 auto}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}
+.row span{color:var(--mute)}.row b{text-align:right;font-variant-numeric:tabular-nums}
+.tot b{font-size:20px}
+.nota{margin-top:16px;font-size:12px;line-height:1.5;color:var(--mute);text-align:center;max-width:420px}
+.load{color:var(--mute);font-size:14px;text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="brand"><div class="mono" id="ini">S</div><b id="emp">STUDIO</b></div>
+<main class="card" id="card"><div class="load">Verificando documento…</div></main>
+<p class="nota">Esta página confirma que el documento fue emitido por el sistema de la tienda y muestra su estado actual. Para ver el detalle completo, solicítalo en la tienda.</p>
+<script>
+(function () {
+  var SB = 'https://edbknlkjnlfmkkiizdbe.supabase.co';
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec';
+  var q = new URLSearchParams(location.search), tipo = q.get('t') || 'factura', id = q.get('d') || '';
+  var card = document.getElementById('card');
+  var TIT = { factura: 'Factura', prefactura: 'Prefactura', cotizacion: 'Cotización' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c]; }); }
+  function money(n) { return 'RD$ ' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fecha(s) { try { return new Date(s).toLocaleString('es-DO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  var ICO = { ok: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="m8 12 3 3 5-6"/></svg>',
+    bad: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>' };
+  function noEnc() { card.innerHTML = '<div class="st nf">' + ICO.bad + ' Documento no encontrado</div><p style="font-size:14px;line-height:1.5;color:#5b5951">El código no corresponde a ningún documento emitido. Si lo recibiste de la tienda, contáctalos para confirmarlo.</p>'; }
+  if (!/^[0-9a-f-]{36}$/i.test(id)) { noEnc(); return; }
+  fetch(SB + '/rest/v1/rpc/pos_doc_verificar', { method: 'POST', headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_tipo: tipo, p_id: id }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || d.ok !== true) { noEnc(); return; }
+      document.getElementById('emp').textContent = String(d.empresa || 'STUDIO').toUpperCase();
+      document.getElementById('ini').textContent = String(d.empresa || 'S').trim().charAt(0).toUpperCase();
+      var anul = d.estado === 'anulada';
+      card.innerHTML = '<div class="st ' + (anul ? 'bad' : 'ok') + '">' + (anul ? ICO.bad + ' ' + (TIT[d.tipo] || 'Documento') + ' ANULADA' : ICO.ok + ' ' + (TIT[d.tipo] || 'Documento') + ' auténtica') + '</div>'
+        + '<div class="row"><span>Número</span><b>' + esc(d.numero) + '</b></div>'
+        + (d.ncf ? '<div class="row"><span>NCF</span><b>' + esc(d.ncf) + '</b></div>' : '')
+        + '<div class="row"><span>Fecha</span><b>' + esc(fecha(d.fecha)) + '</b></div>'
+        + '<div class="row"><span>Cliente</span><b>' + esc(d.cliente) + '</b></div>'
+        + (d.itbis != null ? '<div class="row"><span>ITBIS</span><b>' + money(d.itbis) + '</b></div>' : '')
+        + '<div class="row tot"><span>Total</span><b>' + money(d.total) + '</b></div>'
+        + (d.tipo !== 'factura' ? '<p style="font-size:12px;color:#5b5951;margin-top:12px">Documento no fiscal: no es una factura.</p>' : '');
+    })
+    .catch(function () { card.innerHTML = '<div class="st nf">No se pudo verificar ahora</div><p style="font-size:14px;color:#5b5951">Revisa tu conexión e intenta de nuevo.</p>'; });
+})();
+</script>
+</body>
+</html>

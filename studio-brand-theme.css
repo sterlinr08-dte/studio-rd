@@ -807,3 +807,17 @@ html.nx-studio .nxPpkLista .nxPpkWrap, html.nx-studio .nxPpkLista .nxPpkWrap.on 
 html.nx-studio .nxPpkLista .nxPpkLHead + .nxPpkWrap { border-top: 0 !important; }
 html.nx-studio .nxPpkLista .nxPpkWrap .nxPpkIt { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 html.nx-studio .nxPpkLista .pk-pre b { color: var(--studio-ink) !important; }
+
+/* 16 · Factura / Prefactura sin repetidos (2026-09-23): con la barra inferior fija (.nxFacBar) el cobro y el
+ *      total viven SOLO ahí. La tarjeta de totales queda como desglose: sin «Cobrar»/«Guardar»/«Cancelar» y con el
+ *      Total al mismo tamaño que las demás líneas. Los atajos F2/F10 solo se muestran con teclado y ratón. */
+html.nx-studio body:has(.nxFacBar) #v-pos #facResumen :is(.acc, .cancel) { display: none !important; }
+html.nx-studio body:has(.nxFacBar) #v-pos #facResumen .tr.big { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--studio-line-2); }
+html.nx-studio body:has(.nxFacBar) #v-pos #facResumen .tr.big span { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--studio-ink); }
+html.nx-studio body:has(.nxFacBar) #v-pos #facResumen .tr.big b { font-size: 15px; font-weight: 700; }
+@media (hover: none), (pointer: coarse), (max-width: 860px) {
+  html.nx-studio #v-pos .nx-invoice-pro .keys { display: none !important; }
+}
+/* Los avisos (toast) no tapan la barra de cobro: con .nxFacBar suben por encima de ella. */
+html.nx-studio body:has(.nxFacBar) #toastS { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 76px); }
+@media (max-width: 760px) { html.nx-studio body:has(.nxFacBar) #toastS { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 84px); } }

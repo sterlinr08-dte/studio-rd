@@ -1351,6 +1351,10 @@ body:not(.tema-premium) .kpi{
 /* Policy status */
 .pol-vigente{color:var(--c1)}.pol-vencida{color:var(--c3)}.pol-gracia{color:var(--c4)}.pol-sin{color:var(--tx3)}
 /* Toasts premium — apilado, progreso y movimiento físico sin alterar las llamadas existentes. */
+/* Las piezas del toast se llaman .ti-ic/.ti-b/.ti-t/.ti-m/.ti-x y chocan con clases de Tabler Icons
+   (p. ej. .ti-x::before = glifo de la X). Sin la fuente de iconos ese ::before salía como un bloque rayado encima
+   de la X real del botón de cerrar. Se anula el ::before de las PIEZAS (no el del <i class="ti ..."> interior). */
+#toastS .toast>.ti-ic::before,#toastS .toast>.ti-b::before,#toastS .toast .ti-t::before,#toastS .toast .ti-m::before,#toastS .toast>.ti-x::before{content:none!important;display:none!important}
 #toastS{
   position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
   width:min(360px,calc(100vw - 28px));display:flex;flex-direction:column-reverse;gap:10px;
@@ -6861,7 +6865,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.04';
+const APP_VERSION='59.05';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

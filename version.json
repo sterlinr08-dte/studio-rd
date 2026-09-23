@@ -1,7 +1,15 @@
 {
-  "version": "59.04",
+  "version": "59.05",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.05",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Factura y Prefactura sin repetidos: «Cobrar»/«Guardar» y el total grande quedan solo en la barra inferior; la tarjeta muestra el desglose. Los atajos F2/F10 se ocultan en celular y tablet.",
+        "Avisos: la X de cerrar ya no se superpone con un icono rayado, y los avisos ya no tapan la barra de cobro."
+      ]
+    },
     {
       "version": "59.04",
       "fecha": "2026-09-23",

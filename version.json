@@ -1,7 +1,16 @@
 {
-  "version": "59.21",
+  "version": "59.22",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.22",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Reportes → Recursos Humanos → Reporte Comisiones (como Infoplus): % de ventas, % de cobros y % por antigüedad de la factura (1–30, 31–60, 61–90, 91–120, 120+), por empleado.",
+        "Tipos: ventas contado + cobros (sin pagar dos veces la misma venta), comisiones ventas, ventas contado y cobros. Las devoluciones descuentan comisión.",
+        "Los cobros de cuotas de financiamiento ahora guardan quién cobró."
+      ]
+    },
     {
       "version": "59.21",
       "fecha": "2026-09-24",

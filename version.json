@@ -1,7 +1,14 @@
 {
-  "version": "59.22",
+  "version": "59.23",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.23",
+      "fecha": "2026-09-24",
+      "notas": [
+        "El módulo «Cuotas» ahora se llama «Financiamiento» en el menú y en Inicio (Finanzas → Financiamiento)."
+      ]
+    },
     {
       "version": "59.22",
       "fecha": "2026-09-24",

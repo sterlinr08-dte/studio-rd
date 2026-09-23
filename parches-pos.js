@@ -6110,7 +6110,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosDelAbono = async function (abId, cliId) {
     if (!confirm('¿Eliminar este abono? Se revierte su contabilidad.')) return;
-    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); await delAsientoOrigen('cobro', abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); await delAsientoOrigen('cobro', abId); await delAsientoOrigen('rebaja_cliente', abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
   window.nxPosDelCli = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;

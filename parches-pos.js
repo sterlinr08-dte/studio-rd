@@ -3936,7 +3936,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px"><input type="checkbox" id="nxPfNivMActivo" checked style="width:16px;height:16px;accent-color:var(--pf-blue)"><span style="font-size:12.5px;font-weight:700;color:var(--pf-txt)">Nivel activo</span></label>
       </div>
       <div class="actions" style="grid-template-columns:1fr 1fr">
-        <button class="ab g4" type="button" onclick="document.getElementById('nxPfNivelM').remove()">Cancelar</button>
+        <button class="ab g3" type="button" onclick="document.getElementById('nxPfNivelM').remove()">Cancelar</button>
         <button class="ab g1" type="button" onclick="window.nxPfNivelModalGuardar('${prodId}')"><i class="ti ti-check"></i> Guardar nivel</button>
       </div>
     </div>`;
@@ -5344,7 +5344,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           </div>
         </div>
         <div class="actions" style="margin-top:0">
-          <button class="ab g4" type="button" onclick="document.getElementById('nxEntForm').remove()"><i class="ti ti-x"></i> Cancelar</button>
+          <button class="ab g3" type="button" onclick="document.getElementById('nxEntForm').remove()"><i class="ti ti-x"></i> Cancelar</button>
           <button class="ab g1" type="button" onclick="window.nxEntGuardar('${c ? c.id : ''}')"><i class="ti ti-device-floppy"></i> Guardar</button>
         </div>
       </div>`;

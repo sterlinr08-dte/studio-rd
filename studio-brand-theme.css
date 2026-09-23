@@ -496,3 +496,129 @@ html.nx-studio .nxFacBar { box-shadow: 0 -10px 30px rgba(10, 10, 10, .12); }
 @media (prefers-reduced-transparency: reduce) {
   html.nx-studio #v-pos .nxTTop { box-shadow: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * ESCALA DE CONTROLES — auditoría apple-design (2026-09-23, bitácora 01:30)
+ * Medido en los 25 módulos + 21 formularios (1280/1920/390 px). Una sola escala:
+ *   escritorio: 34 px normal · 30 px chip/píldora · 36 px acciones de formulario · 40 px barra inferior
+ *   móvil:      44 px normal (objetivo táctil) · 36 px chip · iconos cuadrados 44×44
+ * Texto de botón: 13 px / 600, sin MAYÚSCULAS. Radio 10 px (píldoras 999). Ancho según contenido.
+ * Módulos: columna centrada de 1440 px (datos) o 760 px (ajustes/avisos/IA). Formularios: 460/620/780 px.
+ * Menús de acción: filas de 36 px (44 en móvil), 13 px, icono 16 px, radio 12, mínimo 200 px.
+ * Solo CSS; no cambia ninguna función. Para revertir: borrar este bloque.
+ * ══════════════════════════════════════════════════════════════════════════ */
+html.nx-studio { --ctl-h: 34px; --ctl-h-sm: 30px; --ctl-h-form: 36px; --ctl-h-bar: 40px; --ctl-r: 10px; }
+@media (max-width: 768px) { html.nx-studio { --ctl-h: 44px; --ctl-h-sm: 36px; --ctl-h-form: 44px; --ctl-h-bar: 48px; } }
+
+/* 1 · Acción principal SIEMPRE oro (quedaban .btn.bc1 azules por un !important heredado en parches-pos.js) */
+html.nx-studio #v-pos .btn.bc1, html.nx-studio .nxPrForm .btn.bc1, html.nx-studio .modal .btn.bc1, html.nx-studio .overlay .btn.bc1 {
+  background: var(--studio-gold-grad) !important; border-color: #a8851b !important; color: var(--studio-black) !important;
+}
+html.nx-studio #v-pos .btn.bc1:active, html.nx-studio .modal .btn.bc1:active, html.nx-studio .overlay .btn.bc1:active {
+  background: var(--studio-gold-grad-active) !important; color: var(--studio-white) !important;
+}
+html.nx-studio #v-pos .nxF2Chip.on { color: var(--studio-black); border-color: var(--studio-gold); background: var(--studio-gold-soft); }
+
+/* 2 · Texto de botones y pestañas en formularios: frase normal, no MAYÚSCULAS */
+html.nx-studio .modal :is(button, .btn, .ab, .entTab, .headbtn, .nxClaveTab),
+html.nx-studio .overlay :is(button, .btn, .ab, .entTab, .headbtn, .nxClaveTab) { text-transform: none; letter-spacing: -.005em; }
+
+/* 3 · Botones de formularios: 36 px (44 móvil), 13 px / 600. Sin tocar display (hay botones que se ocultan por clase). */
+html.nx-studio :is(.modal, .overlay) :is(.btn, .ab):not([style*="height"]) {
+  min-height: var(--ctl-h-form); font-size: 13px; font-weight: 600; border-radius: var(--ctl-r); padding-block: 0;
+}
+@media (min-width: 769px) {
+  html.nx-studio :is(.modal, .overlay) .ab:not([style*="height"]) { height: var(--ctl-h-form); }
+}
+
+/* 4 · Botón «Volver» de los formularios (salía sin estilo, 18 px de alto) */
+html.nx-studio .nxBack {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--ctl-h-sm); min-width: var(--ctl-h-sm);
+  padding: 0 12px; border: 1px solid var(--studio-hair); border-radius: var(--ctl-r); background: #fff; color: var(--studio-ink);
+  font: 600 13px/1 var(--studio-font); text-transform: none; cursor: pointer; box-shadow: 0 1px 2px rgba(10, 10, 10, .08);
+}
+html.nx-studio .nxBack:active { transform: scale(.97); transition: transform 100ms ease-out; }
+html.nx-studio .nxPosX, html.nx-studio .nxClaveBorrar { min-width: 32px; min-height: 30px; border-radius: 8px; }
+html.nx-studio .nxClaveTab { min-height: var(--ctl-h-sm); }
+
+/* 5 · Píldoras / filtros: 30 px (36 móvil) */
+html.nx-studio #v-pos :is(.nxInvPill, .nxF2Chip, .vchip) { min-height: var(--ctl-h-sm); padding-inline: 12px; font-size: 12.5px; }
+
+/* 6 · Botones de solo icono: cuadrados y del mismo tamaño */
+html.nx-studio #v-pos :is(.ibtn, .pav, .vfav, .nxF2Back, .cartsuspbadge, .nxFP-menuBtn, .headbtn.sq, .savechev),
+html.nx-studio :is(.modal, .overlay) :is(.headbtn.sq, .savechev) { min-width: var(--ctl-h); min-height: var(--ctl-h); }
+html.nx-studio #v-pos .nxBusca-lupa { width: var(--ctl-h); min-width: var(--ctl-h); height: var(--ctl-h); }
+@media (max-width: 768px) {
+  /* El mínimo táctil de 44 px alargaba los iconos (44×30): se igualan ancho y alto. */
+  html.nx-studio :is(#v-pos, .modal, .overlay) :is(button, .btn, .ab):is([style*="width:30px"], [style*="width:32px"], [style*="width:34px"], [style*="width:36px"]) { min-width: 44px; }
+}
+
+/* 7 · Botones gigantes medidos */
+@media (min-width: 769px) {
+  /* Caja: «Cerrar caja / Arqueo» ocupaba 926 px */
+  html.nx-studio #v-pos .nxCajaWrap .btn.bc1[style*="width:100%"] { width: fit-content !important; margin-left: auto; display: flex; padding-inline: 18px; }
+  /* Financiamiento: bloques de 456×46 px → botones a su medida */
+  html.nx-studio #v-pos .nxF2 .nxF2G2 { display: flex; flex-wrap: wrap; gap: 8px; }
+  html.nx-studio #v-pos .nxF2 .nxF2G2 > .nxF2Btn { flex: 0 0 auto; padding-inline: 16px; }
+  html.nx-studio #v-pos .nxF2Btn { min-height: var(--ctl-h-form); font-size: 13px; font-weight: 600; }
+  /* Barra inferior (Compras / Factura): 47 px y texto de 15 px → 40 px */
+  html.nx-studio .nxFacBar { justify-content: flex-end; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  html.nx-studio .nxFacBar :is(.fbC, .fbG) { width: var(--ctl-h-bar); height: var(--ctl-h-bar); padding: 0; border-radius: var(--ctl-r); }
+  html.nx-studio .nxFacBar .fbP { flex: 0 0 auto; height: var(--ctl-h-bar); padding: 0 20px; font-size: 14px; font-weight: 600; border-radius: var(--ctl-r); }
+  html.nx-studio .nxFacBar .fbP i { font-size: 17px; }
+}
+@media (max-width: 768px) {
+  html.nx-studio .nxFacBar :is(.fbC, .fbG, .fbP) { height: var(--ctl-h-bar); padding-block: 0; border-radius: 12px; }
+  html.nx-studio .nxFacBar .fbP { font-size: 15px; font-weight: 600; }
+  html.nx-studio #v-pos .nxF2Btn { min-height: 44px; font-weight: 600; }
+}
+
+/* 8 · Tamaño de cada módulo: una columna centrada y constante */
+@media (min-width: 769px) {
+  html.nx-studio #v-pos .nxTMain > :is(.nxPf, .nxRc, .nxProdWrap) { max-width: 1440px; margin-left: auto; margin-right: auto; }
+  html.nx-studio #v-pos .nxTMain > .nxPf.nxAjWrap { max-width: 760px; }
+  html.nx-studio #v-pos .nxTMain > .nxPf[style*="max-width"] { margin-left: auto; margin-right: auto; }
+}
+
+/* 9 · Formularios (modales): tres anchos en lugar de doce */
+@media (min-width: 769px) {
+  html.nx-studio .modal:is([style*="max-width:360px"], [style*="max-width:380px"], [style*="max-width:400px"], [style*="max-width:414px"], [style*="max-width:420px"],
+    [style*="max-width:432px"], [style*="max-width:440px"], [style*="max-width:460px"], [style*="max-width:480px"]) { max-width: 460px !important; width: 94vw; }
+  html.nx-studio .modal:is([style*="max-width:520px"], [style*="max-width:526px"], [style*="max-width:560px"], [style*="max-width:600px"], [style*="max-width:640px"],
+    [style*="max-width:660px"]) { max-width: 620px !important; width: 94vw; }
+  html.nx-studio .modal:is([style*="max-width:720px"], [style*="max-width:760px"], [style*="max-width:800px"], [style*="max-width:880px"]) { max-width: 780px !important; width: 94vw; }
+}
+
+/* 10 · Menús de acción (⋮, «Más opciones», «Pasar a», guardar ▾): una sola forma */
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) {
+  min-width: 200px; padding: 6px; border-radius: 12px; border: 1px solid var(--studio-line);
+  background: var(--studio-white); box-shadow: 0 12px 32px -8px rgba(10, 10, 10, .28), 0 2px 6px rgba(10, 10, 10, .08);
+}
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) > button,
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop) button {
+  min-height: 36px; padding: 0 12px; gap: 10px; border-radius: 8px; font: 500 13px/1.2 var(--studio-font);
+  color: var(--studio-ink); text-transform: none; background: transparent;
+}
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) button i { font-size: 16px; width: 18px; color: var(--studio-gold-dark); flex: 0 0 auto; }
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) button:hover { background: var(--studio-gold-soft); }
+html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) button:active { background: rgba(201, 162, 39, .26); }
+@media (max-width: 768px) {
+  html.nx-studio :is(.nxPfMenuPop, .savemenu, .nxFP-menuPop, .nxRcMenu) button { min-height: 44px; font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio .nxBack:active { transform: none; }
+}
+
+/* 11 · Una sola acción principal en oro: «Guardar/Crear/Cobrar» (.ab.g1) venía en verde. «Cancelar» nunca en rojo
+ *      (dos casos corregidos en parches-pos.js: pasaron de .g4 a .g3). El rojo queda para lo destructivo. */
+html.nx-studio .ab.g1 { background: var(--studio-gold-grad); border: 1px solid #a8851b; color: var(--studio-black); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 1px 2px rgba(128, 101, 21, .3); }
+html.nx-studio .ab.g1:hover { background: var(--studio-gold-grad-hover); }
+html.nx-studio .ab.g1:active { background: var(--studio-gold-grad-active); color: var(--studio-white); }
+html.nx-studio .ab.g1 i { color: inherit; }
+
+/* 12 · Formularios por encima de la barra lateral en escritorio: la barra (z 120) tapaba el lado izquierdo de los
+ *      formularios grandes (Artículo, 1100 px) y quedaba sin atenuar. Las capas de formulario usan z 100+ (Artículo = 100);
+ *      la barra inferior de Factura/Compras (z 60) sigue por debajo de la barra lateral. */
+@media (min-width: 861px) {
+  html.nx-studio #v-pos .nxTSide { z-index: 90; }
+}

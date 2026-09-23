@@ -1,7 +1,18 @@
 {
-  "version": "59.13",
+  "version": "59.14",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.14",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento: la solicitud ahora pide el perfil completo del cliente como en NEXUS PRO — tipo de ingreso, otros ingresos, gastos, antigüedad, datos personales, dirección y fiador.",
+        "Evaluación financiera con score de 0 a 1000: capacidad de pago, relación ingresos/gastos, endeudamiento, liquidez y estabilidad laboral, con recomendación (Aprobable, Revisar o No recomendado).",
+        "Si la cuota pesa más del 35 % del ingreso, el sistema dice cuánto financiar y qué inicial pedir.",
+        "La lista de solicitudes muestra el score y, al aprobar sin evaluación o con riesgo alto, el sistema pide confirmación.",
+        "El contrato incluye al fiador como fiador solidario con su línea de firma."
+      ]
+    },
     {
       "version": "59.13",
       "fecha": "2026-09-23",

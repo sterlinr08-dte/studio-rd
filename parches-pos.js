@@ -12215,9 +12215,26 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         : `<div class="nxF2F nxF2Pick"><label for="solCliQ">Buscar cliente</label><input id="solCliQ" placeholder="Nombre, cédula o teléfono" autocomplete="off" oninput="window.nxFinSolCliBuscar(this.value)"><div class="nxF2PickList" id="solCliList" style="display:none"></div></div><div class="nxF2Note">¿Cliente nuevo? Créalo primero en <a href="#" onclick="event.preventDefault();window.nxPosTab('clientes')">Clientes</a> y vuelve aquí; el borrador se conserva.</div>`}
       </div>
       <div class="nxF2Card"><div class="h">Perfil crediticio</div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">Lugar de trabajo</label><input id="pfTrab" value="${esc(perfil.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">Ocupación</label><input id="pfOcu" value="${esc(perfil.ocupacion || '')}"></div>
-        <div class="nxF2F"><label for="pfIng">Ingreso mensual</label><input id="pfIng" class="mono" inputmode="decimal" value="${perfil.ingreso_mensual ? r2(perfil.ingreso_mensual).toLocaleString('en-US') : ''}" oninput="window.nxFinSolCalc()"></div><div class="nxF2F"><label for="pfTie">Tiempo laborando</label><input id="pfTie" value="${esc(perfil.tiempo_laborando || '')}"></div></div>
-        <div class="nxF2F"><label for="pfDir">Dirección</label><input id="pfDir" value="${esc(perfil.direccion || (cli && cli.direccion) || '')}"></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">Lugar de trabajo</label><input id="pfTrab" value="${esc(perfil.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">Ocupación</label><input id="pfOcu" value="${esc(perfil.ocupacion || '')}"></div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfTipoIng">Tipo de ingreso</label><select id="pfTipoIng" onchange="window.nxFinSolCalc()"><option value="">—</option>${FIN_TIPO_ING.map(o => `<option${perfil.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="nxF2F"><label for="pfAntig">Antigüedad laboral (años)</label><input id="pfAntig" class="mono" inputmode="decimal" value="${perfil.antiguedad_anios != null ? perfil.antiguedad_anios : ''}" placeholder="${esc(perfil.tiempo_laborando || '')}" oninput="window.nxFinSolCalc()"></div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfIng">Ingreso mensual</label><input id="pfIng" class="mono" inputmode="decimal" value="${perfil.ingreso_mensual ? r2(perfil.ingreso_mensual).toLocaleString('en-US') : ''}" oninput="window.nxFinSolCalc()"></div><div class="nxF2F"><label for="pfOtros">Otros ingresos</label><input id="pfOtros" class="mono" inputmode="decimal" value="${perfil.otros_ingresos ? r2(perfil.otros_ingresos).toLocaleString('en-US') : ''}" placeholder="Opcional" oninput="window.nxFinSolCalc()"></div></div>
+        <div class="nxF2F"><label for="pfGastos">Gastos mensuales</label><input id="pfGastos" class="mono" inputmode="decimal" value="${perfil.gastos_mensuales ? r2(perfil.gastos_mensuales).toLocaleString('en-US') : ''}" placeholder="Alquiler, comida, otras deudas…" oninput="window.nxFinSolCalc()"></div>
+        <details class="fevDet"${perfil.fecha_nacimiento || perfil.estado_civil || perfil.sector ? ' open' : ''}><summary>Datos personales y dirección</summary>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfNac">Fecha de nacimiento</label><input id="pfNac" type="date" value="${esc(perfil.fecha_nacimiento || '')}"></div><div class="nxF2F"><label for="pfCivil">Estado civil</label><select id="pfCivil"><option value="">—</option>${FIN_CIVIL.map(o => `<option${perfil.estado_civil === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfNacion">Nacionalidad</label><input id="pfNacion" value="${esc(perfil.nacionalidad || 'Dominicana')}"></div><div class="nxF2F"><label for="pfDeps">Dependientes</label><input id="pfDeps" class="mono" inputmode="numeric" value="${perfil.dependientes != null ? perfil.dependientes : ''}"></div></div>
+          <div class="nxF2F"><label for="pfTelAlt">Teléfono alterno</label><input id="pfTelAlt" inputmode="tel" value="${esc(perfil.telefono_alterno || '')}" placeholder="Opcional"></div>
+          <div class="nxF2F"><label for="pfDir">Dirección</label><input id="pfDir" value="${esc(perfil.direccion || (cli && cli.direccion) || '')}"></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfSector">Sector</label><input id="pfSector" value="${esc(perfil.sector || '')}"></div><div class="nxF2F"><label for="pfCiudad">Ciudad / municipio</label><input id="pfCiudad" value="${esc(perfil.ciudad || '')}"></div></div>
+          <div class="nxF2F"><label for="pfProv">Provincia</label><input id="pfProv" value="${esc(perfil.provincia || '')}"></div>
+        </details>
+      </div>
+      <div class="nxF2Card"><div class="h">Fiador / garante</div>
+        <label class="fevFiaChk"><input type="checkbox" id="pfFia"${perfil.tiene_fiador ? ' checked' : ''} onchange="document.getElementById('pfFiaBox').style.display=this.checked?'':'none';window.nxFinSolCalc()"> El cliente tiene fiador</label>
+        <div id="pfFiaBox" style="display:${perfil.tiene_fiador ? '' : 'none'}">
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfFN">Nombre del fiador</label><input id="pfFN" value="${esc(perfil.fiador_nombre || '')}"></div><div class="nxF2F"><label for="pfFC">Cédula</label><input id="pfFC" inputmode="numeric" value="${esc(perfil.fiador_cedula || '')}"></div></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfFT">Teléfono</label><input id="pfFT" inputmode="tel" value="${esc(perfil.fiador_telefono || '')}"></div><div class="nxF2F"><label for="pfFR">Relación con el cliente</label><input id="pfFR" value="${esc(perfil.fiador_relacion || '')}" placeholder="Hermano, jefe…"></div></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfFO">Ocupación</label><input id="pfFO" value="${esc(perfil.fiador_ocupacion || '')}"></div><div class="nxF2F"><label for="pfFD">Dirección</label><input id="pfFD" value="${esc(perfil.fiador_direccion || '')}"></div></div>
+        </div>
       </div>
       <div class="nxF2Card"><div class="h">Referencias <button type="button" class="nxF2Btn" style="min-height:30px;font-size:11px;color:#1d4ed8" onclick="window.nxFinSolRefAdd()">+ Agregar</button></div>
         <div id="solRefs">${refs.length ? refs.map(refHTML).join('') : '<div class="nxF2Note">Sin referencias. Se recomiendan al menos dos.</div>'}</div>
@@ -12233,9 +12250,17 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div class="nxF2Foot"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinSolDescartar()">Descartar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinSolEnviar()"><i class="ti ti-send"></i> Enviar a aprobación</button></div>`;
   }
+  const FIN_TIPO_ING = ['Empleado', 'Negocio propio', 'Independiente', 'Remesas', 'Pensión', 'Otro'];
+  const FIN_CIVIL = ['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'];
   function finSolLeerForm() {
     const s = _finSolForm; if (!s) return;
-    s.perfil = { lugar_trabajo: (val('pfTrab') || '').trim() || null, ocupacion: (val('pfOcu') || '').trim() || null, ingreso_mensual: finNum(val('pfIng')) || null, tiempo_laborando: (val('pfTie') || '').trim() || null, direccion: (val('pfDir') || '').trim() || null };
+    const t = id => (val(id) || '').trim() || null; const fia = !!(document.getElementById('pfFia') || {}).checked;
+    const antig = val('pfAntig') === '' ? null : (Number(String(val('pfAntig')).replace(',', '.')) || 0);
+    s.perfil = { lugar_trabajo: t('pfTrab'), ocupacion: t('pfOcu'), ingreso_mensual: finNum(val('pfIng')) || null, tipo_ingreso: t('pfTipoIng'),
+      otros_ingresos: finNum(val('pfOtros')) || null, gastos_mensuales: finNum(val('pfGastos')) || null, antiguedad_anios: antig, tiempo_laborando: antig != null ? antig + (antig === 1 ? ' año' : ' años') : null,
+      fecha_nacimiento: t('pfNac'), estado_civil: t('pfCivil'), nacionalidad: t('pfNacion'), dependientes: val('pfDeps') === '' ? null : (parseInt(val('pfDeps'), 10) || 0),
+      telefono_alterno: t('pfTelAlt'), direccion: t('pfDir'), sector: t('pfSector'), ciudad: t('pfCiudad'), provincia: t('pfProv'),
+      tiene_fiador: fia, fiador_nombre: fia ? t('pfFN') : null, fiador_cedula: fia ? t('pfFC') : null, fiador_telefono: fia ? t('pfFT') : null, fiador_relacion: fia ? t('pfFR') : null, fiador_ocupacion: fia ? t('pfFO') : null, fiador_direccion: fia ? t('pfFD') : null };
     s.inicial = finNum(val('solIni')); s.inicial_metodo = val('solIniMet') || 'efectivo'; s.plan_id = val('solPlan') || s.plan_id; s.primera_fecha = val('solFecha') || s.primera_fecha; s.notas = (val('solNotas') || '').trim();
   }
   function finSolPintarEstimado() {
@@ -12247,7 +12272,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const minIni = r2(total * Number(pl.inicial_min_pct || 0) / 100);
     const rows = finV2Amortizar(cap, pl, fecha); const it = rows.reduce((x, r) => x + r.interes, 0); const cuotaMax = Math.max.apply(null, rows.map(r => r.cuota));
     const ing = finNum(val('pfIng')); const carga = ing > 0 ? Math.round(cuotaMax / ing * 100) : null;
-    el.innerHTML = `<div class="nxF2Line"><span>Capital financiado</span><span class="nxF2Mono">${r2(cap).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Interés estimado (${rows.length} cuotas)</span><span class="nxF2Mono">${r2(it).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Primera cuota · última</span><span class="nxF2Mono">${r2(rows[0].cuota).toLocaleString('en-US')} · ${r2(rows[rows.length - 1].cuota).toLocaleString('en-US')}</span></div>${ini < minIni - 0.01 ? `<div class="nxF2Line" style="color:#b91c1c"><span style="color:#b91c1c">Inicial mínima del plan</span><span class="nxF2Mono">${r2(minIni).toLocaleString('en-US')} (${Number(pl.inicial_min_pct)} %)</span></div>` : ''}${carga !== null ? `<div class="nxF2Line tot"><span>Cuota máx. vs ingreso</span><span class="nxF2Badge ${carga > 40 ? 'bad' : carga > 30 ? 'warn' : 'ok'}" style="font-family:var(--f2-mono)">${carga} %</span></div>` : ''}`;
+    const evPrev = finEvCalcular({ precio_total: total, inicial: ini }, pl, rows, { ingreso: ing, otros: finNum(val('pfOtros')), gastos: finNum(val('pfGastos')), antig: Number(String(val('pfAntig') || '0').replace(',', '.')) || 0 }, { tiene_fiador: !!(document.getElementById('pfFia') || {}).checked, tipo_ingreso: val('pfTipoIng') });
+    el.innerHTML = `<div class="nxF2Line"><span>Capital financiado</span><span class="nxF2Mono">${r2(cap).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Interés estimado (${rows.length} cuotas)</span><span class="nxF2Mono">${r2(it).toLocaleString('en-US')}</span></div><div class="nxF2Line"><span>Primera cuota · última</span><span class="nxF2Mono">${r2(rows[0].cuota).toLocaleString('en-US')} · ${r2(rows[rows.length - 1].cuota).toLocaleString('en-US')}</span></div>${ini < minIni - 0.01 ? `<div class="nxF2Line" style="color:#b91c1c"><span style="color:#b91c1c">Inicial mínima del plan</span><span class="nxF2Mono">${r2(minIni).toLocaleString('en-US')} (${Number(pl.inicial_min_pct)} %)</span></div>` : ''}${carga !== null ? `<div class="nxF2Line tot"><span>Cuota máx. vs ingreso</span><span class="nxF2Badge ${carga > 40 ? 'bad' : carga > 30 ? 'warn' : 'ok'}" style="font-family:var(--f2-mono)">${carga} %</span></div>` : ''}${evPrev.score != null ? `<div class="nxF2Line tot"><span>Score estimado (fórmula NEXUS)</span><span class="nxF2Badge ${evPrev.rec.cls}">${evPrev.score}/100 · ${esc(evPrev.rec.txt)}</span></div>${evPrev.recomendado < evPrev.capital ? `<div class="nxF2Line" style="color:#b45309"><span style="color:#b45309">Monto recomendado</span><span class="nxF2Mono">${fmt(evPrev.recomendado)} · inicial sugerida ${fmt(evPrev.inicialSugerida)}</span></div>` : ''}` : ''}`;
   }
   window.nxFinSolCalc = function () { finSolPintarEstimado(); };
   window.nxFinSolCliBuscar = function (q) {
@@ -12379,6 +12405,137 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ── Expediente por link (réplica de «Préstamos» de NEXUS PRO: firma-prestamo.html) ──
   // La tienda prepara el link revisando la declaración y el guion del video; el cliente sube cédula, foto con cédula,
   // graba el video de compromiso y firma; la tienda revisa y aprueba, pide corrección (mismo link) o rechaza.
+  // ── Evaluación financiera (réplica de NEXUS PRO «Nueva evaluación financiera») ─────────────────
+  // Misma fórmula de NEXUS (parches-financiamiento.js evCalcularScore/evRecInfo/evRating): score 0-100
+  // por la carga (cuota mensual + gastos) sobre el ingreso, + fiador, tipo de ingreso y antigüedad.
+  // Diferencia con NEXUS: aquí la cuota sale del PLAN real de la solicitud (no de un simulador aparte)
+  // y la evaluación se guarda en la solicitud (pos_fin_solicitudes.evaluacion) en vez de una nota.
+  const FIN_FREC_MES = { semanal: 4.33, quincenal: 2, mensual: 1 };
+  function finEvScore(ingTot, compromiso, gastos, antig, perfil) {
+    if (!(ingTot > 0) || !(compromiso > 0)) return null;
+    const ratioTot = (compromiso + gastos) / ingTot;
+    let base = ratioTot <= 0.30 ? 90 : ratioTot <= 0.40 ? 72 : ratioTot <= 0.50 ? 55 : ratioTot <= 0.65 ? 38 : 18;
+    if (perfil && perfil.tiene_fiador) base += 5;
+    if (perfil && perfil.tipo_ingreso === 'Empleado') base += 5; else if (perfil && perfil.tipo_ingreso === 'Pensión') base += 3;
+    if (antig >= 4) base += 5; else if (antig >= 2) base += 3; else if (antig >= 1) base += 1;
+    return Math.max(0, Math.min(100, Math.round(base)));
+  }
+  function finEvRec(score) {
+    if (score == null) return { txt: 'Sin evaluar', cls: 'gris', riesgo: '—', desc: 'Completa el ingreso del cliente para calcular el score.' };
+    if (score >= 70) return { txt: 'Aprobable', cls: 'ok', riesgo: 'Bajo', desc: 'El cliente presenta un buen perfil de pago.' };
+    if (score >= 50) return { txt: 'Revisar', cls: 'warn', riesgo: 'Medio', desc: 'Perfil aceptable — conviene revisar referencias y fiador.' };
+    return { txt: 'No recomendado', cls: 'bad', riesgo: 'Alto', desc: 'Perfil de riesgo — la cuota pesa demasiado sobre el ingreso.' };
+  }
+  function finEvRating(v, thr, inv) {
+    const g = inv ? [v <= thr[0], v <= thr[1], v <= thr[2]] : [v >= thr[0], v >= thr[1], v >= thr[2]];
+    return g[0] ? { t: 'Excelente', cls: 'ok' } : g[1] ? { t: 'Bueno', cls: 'ok' } : g[2] ? { t: 'Aceptable', cls: 'warn' } : { t: 'Bajo', cls: 'bad' };
+  }
+  // Calcula todo con los números dados (d) — no guarda nada.
+  function finEvCalcular(s, pl, rows, d, perfil) {
+    const ingreso = Number(d.ingreso || 0), otros = Number(d.otros || 0), gastos = Number(d.gastos || 0), antig = Number(d.antig || 0);
+    const ingTot = ingreso + otros;
+    const cuotaMax = rows.length ? Math.max.apply(null, rows.map(r => r.cuota)) : 0;
+    const compromiso = r2(cuotaMax * (FIN_FREC_MES[pl && pl.frecuencia] || 1));
+    const capacidad = ingTot - gastos;
+    const relIngGas = ingTot > 0 ? capacidad / ingTot : 0;
+    const endeud = ingTot > 0 ? compromiso / ingTot : 0;
+    const liquidez = (gastos + compromiso) > 0 ? ingTot / (gastos + compromiso) : (ingTot > 0 ? 9 : 0);
+    const score = finEvScore(ingTot, compromiso, gastos, antig, perfil);
+    const capital = r2(Number(s.precio_total || 0) - Number(s.inicial || 0));
+    let recomendado = capital;
+    if (compromiso > 0 && ingTot > 0 && endeud > 0.35) recomendado = Math.max(0, Math.round(capital * (0.35 * ingTot / compromiso) / 1000) * 1000);
+    const pct = v => Math.round(v * 100) + '%';
+    const ind = ingTot > 0 ? [
+      { ic: 'ti-cash', t: 'Capacidad de pago', v: fmt(capacidad), bar: capacidad / ingTot * 100, r: finEvRating(capacidad / ingTot, [0.5, 0.35, 0.2], false) },
+      { ic: 'ti-scale', t: 'Relación ingresos/gastos', v: pct(relIngGas), bar: relIngGas * 100, r: finEvRating(relIngGas, [0.5, 0.35, 0.2], false) },
+      { ic: 'ti-percentage', t: 'Nivel de endeudamiento', v: pct(endeud), bar: endeud * 100, r: finEvRating(endeud, [0.2, 0.35, 0.5], true) },
+      { ic: 'ti-droplet', t: 'Liquidez estimada', v: (Math.round(liquidez * 10) / 10).toFixed(1), bar: liquidez / 3 * 100, r: finEvRating(liquidez, [2, 1.5, 1], false) },
+      { ic: 'ti-briefcase', t: 'Estabilidad laboral', v: antig > 0 ? antig + (antig === 1 ? ' año' : ' años') : 'sin dato', bar: antig / 5 * 100, r: finEvRating(antig, [3, 1, 0.5], false) }
+    ] : [];
+    return { ingreso, otros, gastos, antig, ingTot, cuotaMax, compromiso, capacidad, relIngGas, endeud, liquidez, score, rec: finEvRec(score), capital, recomendado, inicialSugerida: r2(Number(s.precio_total || 0) - recomendado), ind };
+  }
+  function finEvDatos(s, perfil) {
+    const e = s.evaluacion || {};
+    return {
+      ingreso: e.ingreso != null ? e.ingreso : Number((perfil && perfil.ingreso_mensual) || 0),
+      otros: e.otros != null ? e.otros : Number((perfil && perfil.otros_ingresos) || 0),
+      gastos: e.gastos != null ? e.gastos : Number((perfil && perfil.gastos_mensuales) || 0),
+      antig: e.antig != null ? e.antig : Number((perfil && perfil.antiguedad_anios) || 0),
+      notas: e.notas || ''
+    };
+  }
+  function finEvResultadoHTML(ev, s, perfil, refsN) {
+    const rec = ev.rec;
+    if (ev.score == null) return `<div class="nxF2Note">${esc(rec.desc)}</div>`;
+    const stars = Array.from({ length: 5 }, (_, i) => `<span class="${i < Math.round(ev.score / 20) ? 'on' : ''}" aria-hidden="true">★</span>`).join('');
+    const chk = (ok, t) => `<div class="fevChk ${ok ? 'ok' : 'no'}"><i class="ti ${ok ? 'ti-circle-check' : 'ti-circle-dashed'}" aria-hidden="true"></i> ${t}</div>`;
+    return `<div class="fevTop">
+        <div class="fevGauge ${rec.cls}" style="--p:${ev.score}" role="img" aria-label="Score ${ev.score * 10} de 1000"><div><b>${ev.score * 10}</b><span>de 1000</span></div></div>
+        <div class="fevRec"><div class="fevStars ${rec.cls}">${stars}</div><div class="fevRecT"><span class="nxF2Badge ${rec.cls}">${esc(rec.txt.toUpperCase())}</span> Riesgo ${esc(rec.riesgo.toLowerCase())}</div><div class="fevDesc">${esc(rec.desc)}</div></div>
+      </div>
+      <div class="fevInd">${ev.ind.map(x => `<div class="fevI"><i class="ti ${x.ic}" aria-hidden="true"></i><span class="t">${esc(x.t)}</span><span class="v nxF2Mono">${esc(x.v)}</span><span class="nxF2Badge ${x.r.cls}">${x.r.t}</span><div class="fevBar"><div class="${x.r.cls}" style="width:${Math.max(2, Math.min(100, x.bar))}%"></div></div></div>`).join('')}</div>
+      <div class="fevMonto">
+        <div class="nxF2Line"><span>Cuota mensual equivalente</span><span class="nxF2Mono">${fmt(ev.compromiso)}</span></div>
+        <div class="nxF2Line"><span>Capital solicitado</span><span class="nxF2Mono">${fmt(ev.capital)}</span></div>
+        <div class="nxF2Line ${ev.recomendado < ev.capital ? 'warn' : ''}"><span>Monto recomendado a financiar</span><span class="nxF2Mono">${fmt(ev.recomendado)}</span></div>
+        ${ev.recomendado < ev.capital ? `<div class="fevSug"><i class="ti ti-bulb" aria-hidden="true"></i><span>Para que la cuota no pase del 35 % del ingreso, sube la inicial a <b>${fmt(ev.inicialSugerida)}</b> o elige un plan más largo.</span></div>` : ''}
+      </div>
+      <div class="fevChks">${chk(!!(perfil && perfil.tiene_fiador), 'Fiador' + (perfil && perfil.fiador_nombre ? ': ' + esc(perfil.fiador_nombre) : ''))}${chk(refsN >= 2, refsN + ' referencia' + (refsN === 1 ? '' : 's'))}${chk(!!(perfil && perfil.tipo_ingreso), 'Tipo de ingreso' + (perfil && perfil.tipo_ingreso ? ': ' + esc(perfil.tipo_ingreso) : ''))}${chk(s.exp_estado === 'enviado', 'Expediente por link')}</div>`;
+  }
+  function finV2EvalCard(s, pl, rows) {
+    if (!pl) return '';
+    const perfil = finPerfilDe(s.cliente_id) || {}; const refsN = finRefsDe(s.cliente_id).length;
+    const d = finEvDatos(s, perfil); const ev = finEvCalcular(s, pl, rows, d, perfil);
+    const edit = s.estado === 'pendiente';
+    const inp = (id, lbl, v, extra) => `<div class="nxF2F"><label for="${id}">${lbl}</label><input id="${id}" class="mono" inputmode="decimal" value="${v ? (extra === 'n' ? v : r2(v).toLocaleString('en-US')) : ''}" ${edit ? `oninput="window.nxFinEvRecalc('${s.id}')"` : 'disabled'}></div>`;
+    const guardada = s.evaluacion ? `<div class="fevMeta">Evaluada ${s.evaluado_en ? 'el ' + finFechaCorta(s.evaluado_en) : ''}${s.evaluado_por ? ' por ' + esc(s.evaluado_por) : ''} · score ${s.evaluacion_score != null ? s.evaluacion_score : '—'}/100</div>` : '';
+    return `<div class="nxF2Card fevCard" id="fevCard"><div class="h">Evaluación financiera <span class="nxF2Badge ${s.evaluacion ? ev.rec.cls : 'gris'}">${s.evaluacion ? esc(ev.rec.txt.toUpperCase()) : 'SIN GUARDAR'}</span></div>
+      ${guardada}
+      <div class="nxF2G2">${inp('evIng', 'Ingreso mensual', d.ingreso)}${inp('evOtros', 'Otros ingresos', d.otros)}</div>
+      <div class="nxF2G2">${inp('evGastos', 'Gastos mensuales', d.gastos)}${inp('evAntig', 'Antigüedad laboral (años)', d.antig, 'n')}</div>
+      <div id="fevRes">${finEvResultadoHTML(ev, s, perfil, refsN)}</div>
+      ${edit ? `<div class="nxF2F"><label for="evNotas">Notas del evaluador</label><input id="evNotas" maxlength="500" value="${esc(d.notas)}" placeholder="Ej. Verificado ingreso con carta de trabajo"></div>
+      <div class="fevAcc"><button type="button" class="nxF2Btn p" style="flex:1" onclick="window.nxFinEvGuardar('${s.id}')"><i class="ti ti-clipboard-check"></i> ${s.evaluacion ? 'Actualizar evaluación' : 'Guardar evaluación'}</button></div>` : (d.notas ? `<div class="nxF2Note">${esc(d.notas)}</div>` : '')}
+    </div>`;
+  }
+  function finEvLeer() { return { ingreso: finNum(val('evIng')), otros: finNum(val('evOtros')), gastos: finNum(val('evGastos')), antig: Number(String(val('evAntig') || '0').replace(',', '.')) || 0, notas: (val('evNotas') || '').trim() }; }
+  function finEvCtx(id) {
+    const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return null;
+    const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); if (!pl) return null;
+    const rows = finV2Amortizar(r2(s.precio_total - s.inicial), pl, s.primera_fecha);
+    return { s, pl, rows, perfil: finPerfilDe(s.cliente_id) || {}, refsN: finRefsDe(s.cliente_id).length };
+  }
+  window.nxFinEvRecalc = function (id) {
+    const c = finEvCtx(id); if (!c) return;
+    const ev = finEvCalcular(c.s, c.pl, c.rows, finEvLeer(), c.perfil);
+    const box = document.getElementById('fevRes'); if (box) box.innerHTML = finEvResultadoHTML(ev, c.s, c.perfil, c.refsN);
+  };
+  window.nxFinEvGuardar = async function (id) {
+    const c = finEvCtx(id); if (!c) return;
+    const d = finEvLeer();
+    if (!(d.ingreso > 0)) { toast('err', 'Falta el ingreso mensual', 'Sin ingreso no se puede evaluar'); const e = document.getElementById('evIng'); if (e) e.focus(); return; }
+    const ev = finEvCalcular(c.s, c.pl, c.rows, d, c.perfil);
+    const quien = ((curSesPOS() || {}).nom) || null;
+    const evaluacion = { ingreso: d.ingreso, otros: d.otros, gastos: d.gastos, antig: d.antig, notas: d.notas || null,
+      cuota_mensual: ev.compromiso, endeudamiento: Math.round(ev.endeud * 1000) / 1000, capacidad: ev.capacidad, liquidez: Math.round(ev.liquidez * 100) / 100,
+      score: ev.score, recomendacion: ev.rec.txt, riesgo: ev.rec.riesgo, capital: ev.capital, recomendado: ev.recomendado,
+      fiador: !!c.perfil.tiene_fiador, tipo_ingreso: c.perfil.tipo_ingreso || null, referencias: c.refsN, plan: c.pl.nombre, formula: 'nexus-v1' };
+    try {
+      await getAPI().patch('pos_fin_solicitudes', 'id=eq.' + id, { evaluacion: evaluacion, evaluacion_score: ev.score, evaluado_por: quien, evaluado_en: new Date().toISOString() });
+      // Los números del cliente quedan en su perfil para la próxima vez (fuente única: pos_fin_perfil).
+      const pf = { ingreso_mensual: d.ingreso, otros_ingresos: d.otros || null, gastos_mensuales: d.gastos || null, antiguedad_anios: d.antig || null, updated_at: new Date().toISOString() };
+      if (c.perfil.id) await getAPI().patch('pos_fin_perfil', 'id=eq.' + c.perfil.id, pf); else await getAPI().post('pos_fin_perfil', Object.assign({ cliente_id: c.s.cliente_id }, pf));
+      try { window.logAudit && window.logAudit('POS_FIN_EVALUACION', (c.s.codigo || '') + ' · score ' + ev.score + '/100 · ' + ev.rec.txt, 'Financiamiento'); } catch (e) {}
+      await finV2Cargar();
+      toast('ok', 'Evaluación guardada', 'Score ' + ev.score + '/100 · ' + ev.rec.txt);
+      window.nxFinV2Go('aprobacion', id);
+    } catch (e) { toast('err', 'No se pudo guardar la evaluación', String(e && e.message || e)); }
+  };
+  function finEvBadge(s) {
+    if (s.evaluacion_score == null) return '<span class="nxF2Badge gris">SIN EVALUAR</span>';
+    const r = finEvRec(s.evaluacion_score);
+    return `<span class="nxF2Badge ${r.cls}">SCORE ${s.evaluacion_score}</span>`;
+  }
   function finExpBadge(s) {
     const e = s.exp_estado;
     if (e === 'enviado') return '<span class="nxF2Badge ok">POR REVISAR</span>';
@@ -12501,7 +12658,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const sel = _finV2SolSel ? _finSols.find(s => String(s.id) === String(_finV2SolSel)) : null;
     if (sel) return finV2SolDetalleHTML(sel);
     const otras = _finSols.filter(s => s.estado !== 'pendiente').slice(0, 20);
-    const row = s => { const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${s.estado === 'pendiente' ? finExpBadge(s) : ''}<span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></span></div><div class="bot"><span>${pl ? esc(pl.nombre) : ''} · inicial ${r2(s.inicial).toLocaleString('en-US')} · ${finFechaCorta(s.created_at)}</span><span class="amt">${r2(s.precio_total - s.inicial).toLocaleString('en-US')}</span></div></div>`; };
+    const row = s => { const pl = _finPlanes.find(p => String(p.id) === String(s.plan_id)); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${s.estado === 'pendiente' ? finEvBadge(s) + finExpBadge(s) : ''}<span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></span></div><div class="bot"><span>${pl ? esc(pl.nombre) : ''} · inicial ${r2(s.inicial).toLocaleString('en-US')} · ${finFechaCorta(s.created_at)}</span><span class="amt">${r2(s.precio_total - s.inicial).toLocaleString('en-US')}</span></div></div>`; };
     return finV2HeaderHTML('Solicitudes', pend.length + ' pendiente(s) de aprobación', 'cartera') + (pend.length ? pend.map(row).join('') : '<div class="nxF2Note" style="margin-bottom:10px">No hay solicitudes pendientes.</div>') + (otras.length ? '<div class="nxF2Lbl" style="margin:12px 0 8px">Decididas recientes</div>' + otras.map(row).join('') : '');
   }
   function finV2SolDetalleHTML(s) {
@@ -12524,6 +12681,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="nxF2Line tot"><span>Capital ${r2(cap).toLocaleString('en-US')} · interés ${r2(it).toLocaleString('en-US')}</span><span class="nxF2Mono">Total ${r2(cap + it).toLocaleString('en-US')}</span></div>
         <div style="font-size:10px;color:var(--f2-steel);line-height:1.5">Los intereses se reconocen al cobrar cada cuota. La cuenta por cobrar solo lleva el capital. Mora: ${esc(finMoraTxt(pl))}.</div>
       </div>` : ''}
+      ${finV2EvalCard(s, pl, rows)}
       ${finV2ExpCard(s, pl, rows)}
       ${finV2DocsCard(s.cliente_id, s.id, s.financiamiento_id)}
       ${pendiente ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura en el POS: inicial ${r2(s.inicial).toLocaleString('en-US')} cobrada ${s.inicial_metodo === 'efectivo' ? 'en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y crédito ${r2(cap).toLocaleString('en-US')} al cliente.</span></div><div><i>2</i><span>El servidor genera el plan y las ${pl ? pl.num_cuotas : ''} cuotas con capital e interés.</span></div><div><i>3</i><span>Se congela el contrato y queda listo el link de firma (se envía solo cuando tú lo decides).</span></div></div>
@@ -12539,6 +12697,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxFinSolAprobar = async function (id) {
     const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return;
     if (!puedeVerMin()) { toast('err', 'Solo admin o gerente pueden aprobar'); return; }
+    if (s.evaluacion_score == null && !confirm('Esta solicitud NO tiene evaluación financiera guardada (score).\n\n¿Aprobar y facturar de todos modos?')) return;
+    if (s.evaluacion_score != null && s.evaluacion_score < 50 && !confirm('La evaluación da "' + finEvRec(s.evaluacion_score).txt + '" (score ' + s.evaluacion_score + '/100, riesgo alto).\n\n¿Aprobar y facturar de todos modos?')) return;
     if (s.exp_estado !== 'enviado' && !confirm('Esta solicitud NO tiene el expediente completo por link (cédula, foto con cédula, video de compromiso y firma).\n\n¿Aprobar y facturar de todos modos?')) return;
     if (s.inicial > 0 && s.inicial_metodo === 'efectivo' && !(_caja && _caja.id)) {
       try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
@@ -12620,8 +12780,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         anexo = `<div style="page-break-before:always"><h1>ANEXO — Expediente de identidad</h1><h2>${esc(f.codigo || '')} · ${esc(f.cliente_nombre || '')}</h2><div class="axg">${it(cf, 'Cédula (frente)')}${it(cd, 'Cédula (dorso)')}${it(sf, 'Foto con la cédula')}</div>${sol.exp_video ? `<div class="ax" style="margin-top:14px"><div class="axl">Video de compromiso</div><p style="font-size:12px">Grabación archivada en el expediente digital de esta operación. Texto declarado: «${esc(sol.video_guion || '')}»</p></div>` : ''}</div>`;
       }
     }
+    // Fiador (fase 2 NEXUS): si el perfil del cliente tiene fiador, se agrega como fiador solidario y firma aparte.
+    const pfF = finPerfilDe(f.cliente_id);
+    let firmasFin = firmas;
+    if (pfF && pfF.tiene_fiador && pfF.fiador_nombre) {
+      clausula = `<p><b>Fiador solidario:</b> ${esc(pfF.fiador_nombre)}${pfF.fiador_cedula ? ', cédula ' + esc(pfF.fiador_cedula) : ''}${pfF.fiador_direccion ? ', domiciliado en ' + esc(pfF.fiador_direccion) : ''}${pfF.fiador_telefono ? ', teléfono ' + esc(pfF.fiador_telefono) : ''}, se constituye en fiador solidario de EL COMPRADOR y responde junto a él por el pago total de las cuotas, la mora y los gastos de cobro previstos en este contrato, renunciando a los beneficios de excusión y división.</p>` + clausula;
+      firmasFin = firmas + `<div class="fir"><div>${esc(pfF.fiador_nombre)}<br>Fiador solidario${pfF.fiador_cedula ? ' · ' + esc(pfF.fiador_cedula) : ''}</div><div style="border-top:0"></div></div>`;
+    }
     w.document.open();
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}.axg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ax img{width:100%;border:1px solid #cbd5e1;border-radius:6px}.axl{font-size:10px;font-weight:bold;letter-spacing:.05em;text-transform:uppercase;color:#475569;margin-bottom:4px}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${clausula}${firmas}${anexo}<script>window.onload=function(){setTimeout(function(){window.print();},400)};</` + `script></body></html>`);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(f.contrato_titulo || 'Contrato')} ${esc(f.codigo || '')}</title><style>body{font-family:Georgia,serif;max-width:720px;margin:24px auto;padding:0 20px;color:#0f172a;font-size:13px;line-height:1.7}h1{font-size:18px;text-align:center;margin:0 0 4px}h2{font-size:12px;text-align:center;color:#475569;font-weight:normal;margin:0 0 20px}pre{white-space:pre-wrap;font-family:inherit}.fir{display:flex;gap:40px;margin-top:60px}.fir div{flex:1;border-top:1px solid #0f172a;padding-top:6px;font-size:11px;text-align:center}.axg{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ax img{width:100%;border:1px solid #cbd5e1;border-radius:6px}.axl{font-size:10px;font-weight:bold;letter-spacing:.05em;text-transform:uppercase;color:#475569;margin-bottom:4px}@media print{body{margin:0}}</style></head><body><h1>${esc(empNom())}</h1><h2>${esc(f.contrato_titulo || 'Contrato de venta a crédito')} · ${esc(f.codigo || '')}</h2><pre>${esc(f.contrato_texto || '')}</pre>${clausula}${firmasFin}${anexo}<script>window.onload=function(){setTimeout(function(){window.print();},400)};</` + `script></body></html>`);
     w.document.close();
   };
   window.nxFinV2LinkFirma = async function (id) {

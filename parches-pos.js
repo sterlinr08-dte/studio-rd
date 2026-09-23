@@ -93,7 +93,13 @@
   window.nxPosCtx = {
     renderPOS: function () { const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
     rolEfectivo: rolEfectivo, puedeVer: puedeVer,
-    sesion: function () { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return window.sesion; } }
+    sesion: function () { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return window.sesion; } },
+    // CRM (parches-pos-crm.js): clientes cargados, selector de cliente de Factura y atajos a Factura / Cotización.
+    clientes: function () { return _clientes || []; },
+    nextSeq: function (t) { return nextSeq(t); },
+    elegirCliente: function (cb) { nxPosClienteAbrir('nxCrmCliM', cb); },
+    facturar: function (cliId) { _cart = []; _factCli = cliId || ''; _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
+    cotizar: function (c) { _cotEdit = { id: null, cliente_id: (c && c.id) || '', cliente_nombre: (c && c.nombre) || '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); }
   };
   let _secuencias = [];
   const SEC_DEFS = [
@@ -482,7 +488,7 @@
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
     if (t === 'reacond') { try { if (window.nxReacond) await window.nxReacond.cargar(); } catch (e) {} }
-    if (t === 'crm') { try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarCRM(); } catch (e) {} }
+    if (t === 'crm') { try { if (!_clientes.length) _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; if (window.nxCRM) await window.nxCRM.cargar(); else await cargarCRM(); } catch (e) {} }
     renderPOS(view);
   };
 
@@ -549,7 +555,7 @@
     else if (_posTab === 'inventario') body = renderInventario();
     else if (_posTab === 'compras') body = renderCompras();
     else if (_posTab === 'entidades') body = renderEntidades();
-    else if (_posTab === 'crm') body = renderCRM();
+    else if (_posTab === 'crm') body = window.nxCRM ? window.nxCRM.render() : renderCRM();
     else if (_posTab === 'clientes') body = renderClientes();
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
@@ -2649,7 +2655,7 @@
   // tiene). Guardar sigue siendo la función de siempre de cada módulo; cuando termina, el módulo avisa
   // con docGuardado() y el motor hace lo que se pidió (imprimir o abrir WhatsApp).
   const _docUlt = {};
-  function docGuardado(tipo, d) { _docUlt[tipo] = Object.assign({ tipo: tipo, en: Date.now() }, d); }
+  function docGuardado(tipo, d) { _docUlt[tipo] = Object.assign({ tipo: tipo, en: Date.now() }, d); try { if (window.nxCRM && window.nxCRM.docGuardado) window.nxCRM.docGuardado(tipo, _docUlt[tipo]); } catch (e) {} }
   function docItemsTxt(arr) { return (arr || []).map(it => Number(it.cantidad || it.cant || 1) + ' x ' + (it.nombre || '')).join('\n'); }
   function docTelCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? (c.telefono || '') : ''; }
   function docNomCli(id) { const c = id ? _clientes.find(x => String(x.id) === String(id)) : null; return c ? c.nombre : ''; }
@@ -3393,6 +3399,7 @@
       const itemsInsertados = (core && core.items) || [];
       if (!core || core.ok !== true || !venta || itemsInsertados.length !== items.length) throw new Error('VENTA_ATOMICA_SIN_CONFIRMACION');
       _imeiVentaCreada = true;
+      try { if (window.nxCRM && window.nxCRM.ventaCreada) window.nxCRM.ventaCreada(venta); } catch (e) {}
       _imeiReserva = null;
       _ventaOperacionId = null;
       // VENTA EN CUOTAS: si se marcó financiar, crear el plan (best-effort, no rompe la venta)
@@ -11269,6 +11276,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Bajo stock', bajos.length, bajos.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
       </div>
       ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:var(--pf-green);font-weight:800;font-size:14px">✅ Todo al día — nada pendiente de avisar</div>' : ''}
+      ${window.nxCRM && window.nxCRM.avisosHTML ? bloque('Tareas del CRM — vencidas y de hoy', 'ti-checklist', 'var(--pf-red)', window.nxCRM.avisosHTML(fila), 'Ninguna tarea pendiente para hoy') : ''}
       ${bloque('Cuotas vencidas — cobrar HOY', 'ti-calendar-dollar', 'var(--pf-red)', sec1, 'Ninguna cuota vencida')}
       ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', 'var(--pf-orange)', sec2, 'Ningún apartado en riesgo')}
       ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', 'var(--pf-blue)', sec3, 'Ninguna pendiente de entrega')}

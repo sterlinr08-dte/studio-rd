@@ -299,10 +299,10 @@ html.nx-studio #v-pos .nx-invoice-pro .pdet { font-size: 12px; color: var(--stud
 html.nx-studio #v-pos .nx-invoice-pro .seg button { height: 32px; border-radius: 8px; font-size: 12.5px; font-weight: 600; }
 html.nx-studio #v-pos .nx-invoice-pro .seg button.on { background: var(--studio-black); color: var(--studio-white); border-color: var(--studio-black); }
 html.nx-studio #v-pos .nx-invoice-pro .credrow { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--studio-steel); margin: 0; padding-top: 8px; border-top: 1px solid var(--studio-line-2); }
-html.nx-studio #v-pos .nx-invoice-pro .scan { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; height: 44px; margin: 0 0 12px; padding: 0 14px; border: 1px solid var(--studio-hair); border-radius: 10px; background: #fff; color: var(--studio-steel); font-size: 13.5px; text-align: left; }
-html.nx-studio #v-pos .nx-invoice-pro .scan:hover { border-color: var(--studio-gold); }
-html.nx-studio #v-pos .nx-invoice-pro .scan span { flex: 1 1 auto; }
-html.nx-studio #v-pos .nx-invoice-pro .scan kbd { font-family: var(--studio-mono); font-size: 10.5px; border: 1px solid var(--studio-hair); border-radius: 5px; padding: 1px 5px; background: transparent; color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .scan, html.nx-studio #v-pos .nxF2Card .scan { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; height: 44px; margin: 0 0 12px; padding: 0 14px; border: 1px solid var(--studio-hair); border-radius: 10px; background: #fff; color: var(--studio-steel); font-size: 13.5px; text-align: left; }
+html.nx-studio #v-pos .nx-invoice-pro .scan:hover, html.nx-studio #v-pos .nxF2Card .scan:hover { border-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .scan span, html.nx-studio #v-pos .nxF2Card .scan span { flex: 1 1 auto; }
+html.nx-studio #v-pos .nx-invoice-pro .scan kbd, html.nx-studio #v-pos .nxF2Card .scan kbd { font-family: var(--studio-mono); font-size: 10.5px; border: 1px solid var(--studio-hair); border-radius: 5px; padding: 1px 5px; background: transparent; color: var(--studio-steel); }
 html.nx-studio #v-pos #facTabla { padding: 0; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl { width: 100%; border: 1px solid var(--studio-line); border-radius: 10px; overflow: hidden; background: #fff; }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl thead th { background: var(--studio-canvas-2); color: var(--studio-steel); font-size: 10.5px; font-weight: 600; padding: 8px 12px; border-bottom: 0; }
@@ -368,8 +368,8 @@ html.nx-studio #v-pos .vimeib { background: var(--studio-gold-soft); color: var(
 html.nx-studio #v-pos .vchip { background: #ffffff; border: 1px solid var(--studio-hair); box-shadow: none; color: var(--studio-ink); font-size: 12.5px; font-weight: 600; }
 html.nx-studio #v-pos .vchip.on { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); box-shadow: none; font-weight: 600; }
 html.nx-studio #v-pos .vprecio { font-family: var(--studio-mono); font-variant-numeric: tabular-nums; color: var(--studio-ink); }
-html.nx-studio #v-pos .nx-invoice-pro .scan, html.nx-studio #v-pos .nx-invoice-pro .scan span { color: var(--studio-steel); font-weight: 500; }
-html.nx-studio #v-pos .nx-invoice-pro .scan i { color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .scan, html.nx-studio #v-pos .nx-invoice-pro .scan span, html.nx-studio #v-pos .nxF2Card .scan, html.nx-studio #v-pos .nxF2Card .scan span { color: var(--studio-steel); font-weight: 500; }
+html.nx-studio #v-pos .nx-invoice-pro .scan i, html.nx-studio #v-pos .nxF2Card .scan i { color: var(--studio-ink); }
 html.nx-studio #v-pos .nx-invoice-pro .docTbl td.cN, html.nx-studio #v-pos .nx-invoice-pro .docTbl .cN { color: var(--studio-mute) !important; }
 html.nx-studio #v-pos .nx-invoice-pro .dsel { flex-wrap: wrap; }
 html.nx-studio #v-pos .nx-invoice-pro .seg { background: var(--studio-canvas-2); border-radius: 9px; padding: 3px; box-shadow: none; }

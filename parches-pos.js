@@ -11909,23 +11909,34 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finAddDias(iso, n) { const d = new Date(String(iso).slice(0, 10) + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
   function finAddMeses(iso, n) { const d = new Date(String(iso).slice(0, 10) + 'T12:00:00'); const dia = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); const ult = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(dia, ult)); return d.toISOString().slice(0, 10); }
   function finFrecTxt(fr) { return fr === 'semanal' ? 'semanal' : fr === 'quincenal' ? 'quincenal' : 'mensual'; }
-  function finMetodoTxt(pl) { return pl.metodo === 'plano' ? 'interés plano' : 'interés sobre saldo'; }
+  function finMetodoTxt(pl) { return pl.metodo === 'plano' ? 'interés plano' : 'cuota fija · interés sobre saldo'; }
   function finMoraTxt(pl) { if (!pl || pl.mora_tipo === 'ninguna' || !Number(pl.mora_valor)) return 'sin mora'; return (pl.mora_tipo === 'fija' ? fmt2(pl.mora_valor) : (Number(pl.mora_valor) + ' % de la cuota')) + ' · ' + Number(pl.mora_dias_gracia || 0) + ' d gracia'; }
   function finTasasTxt(pl) { const f1 = Number(pl.cuotas_fase1 || 0); return f1 > 0 && f1 < Number(pl.num_cuotas) ? (f1 + ' × ' + Number(pl.tasa1) + ' % + ' + (pl.num_cuotas - f1) + ' × ' + Number(pl.tasa2) + ' %') : (pl.num_cuotas + ' × ' + Number(pl.tasa1) + ' %'); }
   // Misma fórmula que public.pos_fin_amortizacion (solo para previsualizar; la verdad la escribe el servidor)
+  // Espejo EXACTO de pos_fin_amortizacion (migración 30). «saldo» = cuota fija (sistema francés, como NEXUS):
+  // cuota = S·i/(1−(1+i)^−n) con la tasa POR CUOTA del plan, recalculada al empezar la fase 2; la última cuota
+  // ajusta los centavos. «plano» = capital igual + interés sobre el capital original (sin cambios).
   function finV2Amortizar(capital, pl, primera) {
     const n = Math.max(1, parseInt(pl.num_cuotas, 10) || 1); const f1 = Number(pl.cuotas_fase1 || 0);
-    const base = r2(capital / n); let saldo = r2(capital); const rows = [];
+    const base = r2(capital / n); let saldo = r2(capital); const rows = []; let cuotaFija = 0;
     for (let i = 1; i <= n; i++) {
-      const cap = i === n ? r2(capital - base * (n - 1)) : base;
       const tasa = (f1 > 0 && i > f1) ? Number(pl.tasa2 || 0) : Number(pl.tasa1 || 0);
-      const inte = pl.metodo === 'plano' ? r2(capital * tasa / 100) : r2(saldo * tasa / 100);
+      let cap, inte;
+      if (pl.metodo === 'plano') {
+        cap = i === n ? r2(capital - base * (n - 1)) : base;
+        inte = r2(capital * tasa / 100);
+      } else {
+        if (i === 1 || (f1 > 0 && i === f1 + 1)) { const rest = n - i + 1, r = tasa / 100; cuotaFija = r === 0 ? r2(saldo / rest) : r2(saldo * r / (1 - Math.pow(1 + r, -rest))); }
+        inte = r2(saldo * tasa / 100);
+        cap = i === n ? r2(saldo) : Math.min(r2(cuotaFija - inte), r2(saldo));
+      }
       saldo = r2(saldo - cap);
       const fecha = pl.frecuencia === 'semanal' ? finAddDias(primera, (i - 1) * 7) : pl.frecuencia === 'quincenal' ? finAddDias(primera, (i - 1) * 15) : finAddMeses(primera, i - 1);
       rows.push({ numero: i, fecha_venc: fecha, capital: cap, interes: inte, cuota: r2(cap + inte), saldo: Math.max(saldo, 0) });
     }
     return rows;
   }
+
   // Pagos netos (pago − reversa) por cuota, separados en capital / interés / mora
   function finPagosCuota(cid) {
     const o = { principal: 0, interes: 0, mora: 0, total: 0 };
@@ -12489,7 +12500,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       (_finPlanes.length ? _finPlanes.map(cardPlan).join('') : '<div class="nxF2Note" style="margin-bottom:10px">Aún no hay planes. Crea el primero abajo.</div>') + `
       <div class="nxF2Card"><div class="h">${_finPlanEdit ? 'Editar plan' : 'Nuevo plan'}${_finPlanEdit ? `<button type="button" class="nxF2Btn" style="min-height:32px;font-size:11px" onclick="window.nxFinPlanEditar(null)">Cancelar edición</button>` : ''}</div>
         <div class="nxF2F"><label for="plNom">Nombre</label><input id="plNom" value="${esc(e.nombre)}" placeholder="Ej. Motores 12 meses"></div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="plMet">Método de interés</label>${sel('plMet', [['saldo', 'Sobre saldo'], ['plano', 'Plano']], e.metodo)}</div><div class="nxF2F"><label for="plFrec">Frecuencia</label>${sel('plFrec', [['mensual', 'Mensual'], ['quincenal', 'Quincenal'], ['semanal', 'Semanal']], e.frecuencia)}</div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="plMet">Método de interés</label>${sel('plMet', [['saldo', 'Cuota fija (sobre saldo)'], ['plano', 'Plano']], e.metodo)}</div><div class="nxF2F"><label for="plFrec">Frecuencia</label>${sel('plFrec', [['mensual', 'Mensual'], ['quincenal', 'Quincenal'], ['semanal', 'Semanal']], e.frecuencia)}</div></div>
         <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2F"><label for="plN">Cuotas</label>${inp('plN', e.num_cuotas)}</div><div class="nxF2F"><label for="plF1">Fase 1 · cuotas</label>${inp('plF1', e.cuotas_fase1)}</div><div class="nxF2F"><label for="plT1">Tasa 1 %</label>${inp('plT1', e.tasa1)}</div></div>
         <div class="nxF2G3" style="border:0;padding-top:0"><div class="nxF2F"><label for="plT2">Tasa 2 %</label>${inp('plT2', e.tasa2)}</div><div class="nxF2F"><label for="plMora">Mora</label>${sel('plMora', [['pct', '% de cuota'], ['fija', 'Monto fijo'], ['ninguna', 'Ninguna']], e.mora_tipo)}</div><div class="nxF2F"><label for="plMoraV">Valor mora</label>${inp('plMoraV', e.mora_valor)}</div></div>
         <div class="nxF2G2"><div class="nxF2F"><label for="plGracia">Días de gracia</label>${inp('plGracia', e.mora_dias_gracia)}</div><div class="nxF2F"><label for="plIni">Inicial mínima (%)</label>${inp('plIni', e.inicial_min_pct)}</div></div>

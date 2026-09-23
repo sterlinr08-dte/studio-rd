@@ -1,7 +1,15 @@
 {
-  "version": "59.20",
+  "version": "59.21",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.21",
+      "fecha": "2026-09-24",
+      "notas": [
+        "Financiamiento: el método «sobre saldo» ahora es de cuota fija (sistema francés, como NEXUS PRO): todas las cuotas iguales, el interés baja y el capital sube cada mes. Si el plan tiene dos tasas, la cuota se recalcula al empezar la segunda.",
+        "El método «plano» no cambia."
+      ]
+    },
     {
       "version": "59.20",
       "fecha": "2026-09-24",

@@ -287,3 +287,9 @@ and explicitly requested implementation and publication. This replaces the 58.96
 - Existing priority declarations are revised in place; no additional priority overrides are introduced.
 
 - Follow-up owner request: emphasize the logo. Center it at 290px (maximum 94% of the form), retaining the original mark and soft halo.
+
+## 17. STUDIO loading identity — 2026-09-23
+
+First load and refresh use the original STUDIO wordmark on black, with a small gold moving line.
+Remove the inherited Nexus shield and blue rings from both overlays. Respect reduced motion.
+The existing readiness checks, minimum display times and timeout safeguards remain unchanged.

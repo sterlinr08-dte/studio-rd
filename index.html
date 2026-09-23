@@ -300,6 +300,14 @@ html.nx-studio #pwChangeBtn{background:#0c0c0c!important}
 #nxLoader{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:#08101c}
 #nxLoader.nxl-out{opacity:0;pointer-events:none;transition:opacity .2s ease}
 
+/* STUDIO: identidad propia desde el primer fotograma, también al recargar. */
+#nxSplash .studio-loading-brand,#nxLoader .studio-loading-brand{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(220px,80vw)}
+.studio-loading-brand img{display:block;width:100%;height:80px;object-fit:cover;mix-blend-mode:screen}
+.studio-loading-line{display:block;position:relative;width:56px;height:2px;overflow:hidden;border-radius:2px;background:rgba(201,162,39,.18)}
+.studio-loading-line::after{content:'';position:absolute;inset:0;background:#C9A227;transform:translateX(-100%);animation:studioLoadingSweep 1.4s ease-in-out infinite}
+@keyframes studioLoadingSweep{to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.studio-loading-line::after{animation:none;transform:none}}
+
 /* ── APP ── */
 #app{display:none;height:100vh;height:100dvh;flex-direction:column}
 /* iOS Safe Area */
@@ -3065,23 +3073,13 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
 <!-- ═══════════════ SPLASH · CARGA ═══════════════ -->
 <div id="nxSplash" aria-hidden="true">
   <div class="nxs-inner">
-    <div class="nxs-badge">
-      <span class="nxs-wave" style="animation-delay:0s"></span>
-      <span class="nxs-wave" style="animation-delay:.467s"></span>
-      <span class="nxs-wave" style="animation-delay:.933s"></span>
-      <i class="ti ti-shield"></i>
-    </div>
+    <div class="studio-loading-brand"><img src="logo-studio.png" alt="STUDIO" width="220" height="80" fetchpriority="high" decoding="async"/><span class="studio-loading-line" aria-hidden="true"></span></div>
     <div class="nxs-brand">Cargando Studio</div>
     <div class="nxs-tag">Preparando tu espacio de trabajo...</div>
   </div>
 </div>
 <div id="nxLoader" style="display:none" aria-hidden="true">
-  <div class="nxs-badge">
-    <span class="nxs-wave" style="animation-delay:0s"></span>
-    <span class="nxs-wave" style="animation-delay:.467s"></span>
-    <span class="nxs-wave" style="animation-delay:.933s"></span>
-    <i class="ti ti-shield"></i>
-  </div>
+  <div class="studio-loading-brand"><img src="logo-studio.png" alt="STUDIO" width="220" height="80" fetchpriority="high" decoding="async"/><span class="studio-loading-line" aria-hidden="true"></span></div>
 </div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
@@ -6853,7 +6851,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='58.98';
+const APP_VERSION='58.99';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

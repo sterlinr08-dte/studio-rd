@@ -336,57 +336,59 @@ html.nx-studio #v-pos .nx-invoice-pro .opt { height: 34px; padding: 0 11px; bord
 html.nx-studio #v-pos .nx-invoice-pro .opt:hover { border-color: var(--studio-gold); background: #fff9e8; }
 /* Otras acciones (25-sep): cuadrícula de accesos con propósito + últimas facturas, para que el panel
    junto al total no quede vacío. Dos columnas cuando el panel es angosto (iPad vertical, celular). */
-html.nx-studio #v-pos .nx-invoice-pro .facOtras { display: flex; flex-direction: column; gap: 14px; container-type: inline-size; }
-html.nx-studio #v-pos .nx-invoice-pro .facQs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-@container (max-width: 250px) { html.nx-studio #v-pos .nx-invoice-pro .facQs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-html.nx-studio #v-pos .nx-invoice-pro #facOtrasSlot { display: flex; flex-direction: column; }
-html.nx-studio #v-pos .nx-invoice-pro #facOtrasSlot .facSug { margin-bottom: 14px; }
-html.nx-studio #v-pos .nx-invoice-pro .facQ { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 58px; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--studio-hair); background: #ffffff; box-shadow: var(--studio-relieve); color: var(--studio-ink); font: inherit; cursor: pointer; min-width: 0; }
-html.nx-studio #v-pos .nx-invoice-pro .facQ i { font-size: 19px; line-height: 1; }
-html.nx-studio #v-pos .nx-invoice-pro .facQ b { font-size: 11.5px; font-weight: 600; line-height: 1.2; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+html.nx-studio #v-pos .nx-invoice-pro .facOtras { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; container-type: inline-size; }
+html.nx-studio #v-pos .nx-invoice-pro #facOtrasSlot { display: flex; flex-direction: column; gap: 8px; }
+/* Acciones: una sola fila de píldoras; si no caben, se desliza de lado (sin crecer hacia abajo). */
+html.nx-studio #v-pos .nx-invoice-pro .facQs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -2px; padding: 2px; }
+html.nx-studio #v-pos .nx-invoice-pro .facQs::-webkit-scrollbar { display: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facQs { -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 28px; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--studio-hair); background: #ffffff; color: var(--studio-ink); font: inherit; cursor: pointer; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ i { font-size: 15px; line-height: 1; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ b { font-size: 12px; font-weight: 600; white-space: nowrap; }
 html.nx-studio #v-pos .nx-invoice-pro .facQ:hover:not(:disabled) { border-color: var(--studio-gold); }
-html.nx-studio #v-pos .nx-invoice-pro .facQ:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 2px; }
-html.nx-studio #v-pos .nx-invoice-pro .facQ:disabled { opacity: .4; cursor: default; box-shadow: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ:focus-visible { outline: 2px solid var(--studio-gold); outline-offset: 1px; }
+html.nx-studio #v-pos .nx-invoice-pro .facQ:disabled { opacity: .4; cursor: default; }
 html.nx-studio #v-pos .nx-invoice-pro .facQDanger i { color: #b42318; }
 html.nx-studio #v-pos .nx-invoice-pro .facQDanger:hover:not(:disabled) { border-color: #b42318; }
-@container (max-width: 340px) { html.nx-studio #v-pos .nx-invoice-pro .facQs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-/* Asistente: una tarjeta por aviso, con franja de color según su gravedad. */
-html.nx-studio #v-pos .nx-invoice-pro .facSug { display: flex; flex-direction: column; gap: 6px; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugIt { --tono: var(--studio-steel); --fondo: #f7f5ef; display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--fondo); border: 1px solid rgba(0, 0, 0, .05); }
+/* Asistente: cada aviso en UNA línea; lo completo va en el título (al pasar el dedo/ratón). */
+html.nx-studio #v-pos .nx-invoice-pro .facSug { display: flex; flex-direction: column; gap: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugIt { --tono: var(--studio-steel); --fondo: #f7f5ef; display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 3px 4px 3px 10px; border-radius: 9px; background: var(--fondo); }
 html.nx-studio #v-pos .nx-invoice-pro .facSugIt.warn { --tono: #b54708; --fondo: #fffaeb; }
 html.nx-studio #v-pos .nx-invoice-pro .facSugIt.bad { --tono: #b42318; --fondo: #fef3f2; }
 html.nx-studio #v-pos .nx-invoice-pro .facSugIt.gold { --tono: #8a6d12; --fondo: #fdf8e7; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugIt > i { font-size: 18px; color: var(--tono); margin-top: 1px; flex: none; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugTx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugTx b { font-size: 13px; font-weight: 600; color: var(--studio-ink); line-height: 1.3; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugTx small { font-size: 11.5px; color: var(--studio-steel); line-height: 1.35; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugA { flex: none; align-self: center; height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--tono); background: #ffffff; color: var(--tono); font: 600 12px var(--studio-font); cursor: pointer; white-space: nowrap; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugIt > i { font-size: 16px; color: var(--tono); flex: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugTx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugIt.ch .facSugTx { flex: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugTx b { font-weight: 600; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .facSugTx small { font-size: 11.5px; color: var(--studio-steel); margin-left: 6px; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugA { flex: none; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--tono); background: #ffffff; color: var(--tono); font: 600 12px var(--studio-font); cursor: pointer; white-space: nowrap; }
 html.nx-studio #v-pos .nx-invoice-pro .facSugA:hover { background: var(--tono); color: #ffffff; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh button { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid rgba(138, 109, 18, .35); background: #ffffff; color: var(--studio-ink); font: 600 12px var(--studio-font); cursor: pointer; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh button:hover { border-color: var(--studio-gold); background: #fffdf5; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh button i { color: #8a6d12; font-size: 14px; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh small { font: 500 11px var(--studio-mono); color: var(--studio-steel); margin-left: 2px; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh button { white-space: nowrap; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh { flex: 1; min-width: 0; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh::-webkit-scrollbar { display: none; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh button { flex: none; display: inline-flex; align-items: center; gap: 4px; max-width: 230px; height: 28px; padding: 0 9px; border-radius: 999px; border: 1px solid rgba(138, 109, 18, .35); background: #ffffff; color: var(--studio-ink); font: 600 12px var(--studio-font); cursor: pointer; white-space: nowrap; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh button:hover { border-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh button i { color: #8a6d12; font-size: 13px; }
 html.nx-studio #v-pos .nx-invoice-pro .facSugCh .nm { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-html.nx-studio #v-pos .nx-invoice-pro .facSugCh small { flex: none; }
-html.nx-studio #v-pos .nx-invoice-pro .facUlt { border-top: 1px solid var(--studio-line); padding-top: 12px; }
-html.nx-studio #v-pos .nx-invoice-pro .facUlt .plab { display: flex; justify-content: space-between; align-items: center; }
+html.nx-studio #v-pos .nx-invoice-pro .facSugCh small { flex: none; font: 500 11px var(--studio-mono); color: var(--studio-steel); }
+html.nx-studio #v-pos .nx-invoice-pro .facSugMas { align-self: flex-start; border: 0; background: none; padding: 2px 4px; font: 600 11.5px var(--studio-font); color: var(--studio-steel); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* Últimas facturas: una línea por factura. */
+html.nx-studio #v-pos .nx-invoice-pro .facUlt { border-top: 1px solid var(--studio-line); padding-top: 8px; }
+html.nx-studio #v-pos .nx-invoice-pro .facUlt .plab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
 html.nx-studio #v-pos .nx-invoice-pro .facUltMas { border: 0; background: none; padding: 0; font: 600 11.5px var(--studio-font); color: var(--studio-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-transform: none; letter-spacing: 0; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltR { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 12px; width: 100%; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--studio-line); background: none; font: inherit; text-align: left; cursor: pointer; color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; min-height: 34px; padding: 2px 2px; border-bottom: 1px solid var(--studio-line); cursor: pointer; color: var(--studio-ink); }
 html.nx-studio #v-pos .nx-invoice-pro .facUltR:last-child { border-bottom: 0; }
 html.nx-studio #v-pos .nx-invoice-pro .facUltR:hover { background: #fbfaf6; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltR .n { font: 600 12.5px var(--studio-mono); font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR .n { font: 600 12px var(--studio-mono); font-variant-numeric: tabular-nums; }
 html.nx-studio #v-pos .nx-invoice-pro .facUltR .c { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltR .c small { display: block; font-size: 11px; font-weight: 400; color: var(--studio-mute); }
-html.nx-studio #v-pos .nx-invoice-pro .facUltR b { font: 600 13px var(--studio-mono); font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR .c small { font-size: 11px; font-weight: 400; color: var(--studio-mute); margin-left: 6px; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltR b { font: 600 12.5px var(--studio-mono); font-variant-numeric: tabular-nums; }
 html.nx-studio #v-pos .nx-invoice-pro .facUltR.an { color: var(--studio-mute); }
 html.nx-studio #v-pos .nx-invoice-pro .facUltR.an b { text-decoration: line-through; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltAc { display: flex; gap: 4px; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltAc button { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--studio-hair); background: #ffffff; color: var(--studio-steel); display: grid; place-items: center; cursor: pointer; }
-html.nx-studio #v-pos .nx-invoice-pro .facUltAc button:hover { color: var(--studio-ink); border-color: var(--studio-ink); }
+html.nx-studio #v-pos .nx-invoice-pro .facUltAc { display: flex; gap: 3px; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltAc button { width: 28px; height: 28px; border-radius: 7px; border: 1px solid transparent; background: none; color: var(--studio-steel); display: grid; place-items: center; cursor: pointer; }
+html.nx-studio #v-pos .nx-invoice-pro .facUltAc button:hover { color: var(--studio-ink); border-color: var(--studio-hair); background: #ffffff; }
 html.nx-studio #v-pos .nx-invoice-pro .facUltAc button.dg:hover { color: #b42318; border-color: #b42318; }
-@container (max-width: 380px) { html.nx-studio #v-pos .nx-invoice-pro .facUltR { grid-template-columns: minmax(0, 1fr) auto auto; } html.nx-studio #v-pos .nx-invoice-pro .facUltR .n { display: none; } }
+@container (max-width: 380px) { html.nx-studio #v-pos .nx-invoice-pro .facUltR { grid-template-columns: minmax(0, 1fr) auto auto; } html.nx-studio #v-pos .nx-invoice-pro .facUltR .n, html.nx-studio #v-pos .nx-invoice-pro .facUltR .c small, html.nx-studio #v-pos .nx-invoice-pro .facSugTx small { display: none; } }
 html.nx-studio #v-pos .nx-invoice-pro .facUltV { font-size: 12.5px; color: var(--studio-mute); padding: 6px 4px; }
 html.nx-studio #v-pos .nx-invoice-pro .nx-inv-notedet summary { font-size: 12.5px; font-weight: 600; color: var(--studio-steel); }
 html.nx-studio #v-pos .nx-invoice-pro .facTot { border: 1px solid var(--studio-line); border-radius: 12px; padding: 14px 16px; background: #fff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px; }

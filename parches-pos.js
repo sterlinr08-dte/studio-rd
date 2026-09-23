@@ -1137,8 +1137,9 @@
     const hay = _cart.length > 0, pre = esPreTab(), anul = facPuedeAnular();
     const sug = pre ? [] : facSugerencias();
     const q = (ic, lbl, fn, on, cls, tip) => `<button type="button" class="facQ${cls ? ' ' + cls : ''}"${on ? '' : ' disabled'} title="${esc(tip || lbl)}" onclick="${fn}"><i class="ti ${ic}" aria-hidden="true"></i><b>${lbl}</b></button>`;
-    return (sug.length ? `<div class="plab">${hay || clienteSel() ? 'Para esta venta' : 'Pendientes de hoy'}</div><div class="facSug">${sug.map(facSugHTML).join('')}</div>` : '')
-      + `<div class="plab">Acciones</div><div class="facQs">`
+    const vis = _facSugTodas ? sug : sug.slice(0, 2), mas = sug.length - vis.length;
+    return (sug.length ? `<div class="facSug">${vis.map(facSugHTML).join('')}${mas > 0 ? `<button type="button" class="facSugMas" onclick="window.nxFacSugTodas(true)">+${mas} aviso${mas === 1 ? '' : 's'} más</button>` : _facSugTodas && sug.length > 2 ? `<button type="button" class="facSugMas" onclick="window.nxFacSugTodas(false)">Ver menos</button>` : ''}</div>` : '')
+      + `<div class="facQs" role="toolbar" aria-label="Acciones">`
       + q('ti-search', 'Buscar', 'window.nxFacHist()', true, '', 'Buscar una factura por número o cliente')
       + (pre ? '' : q('ti-ban', 'Anular', "window.nxFacHist('anular')", anul, 'facQDanger', anul ? 'Anular una factura' : 'Solo el administrador o el gerente puede anular'))
       + (pre ? '' : q('ti-receipt-refund', 'Devolución', "window.nxFacHist('nc')", true, '', 'Devolución / nota de crédito'))
@@ -1152,10 +1153,13 @@
   // ── Asistente de la factura: avisos y atajos según lo que hay EN PANTALLA (cliente, artículos,
   // pendientes). Todo sale de datos ya cargados o de lecturas; ninguna tarjeta cobra ni guarda sola:
   // cada una solo llama a una función existente cuando el usuario la toca.
+  let _facSugTodas = false;
+  window.nxFacSugTodas = function (v) { _facSugTodas = !!v; facSugRepintar(); };
   function facSugHTML(x) {
     const acc = x.chips ? `<div class="facSugCh">${x.chips.map(c => `<button type="button" onclick="${c.fn}"><i class="ti ti-plus" aria-hidden="true"></i><span class="nm">${esc(c.lbl)}</span><small>${esc(c.sub)}</small></button>`).join('')}</div>`
       : x.a ? `<button type="button" class="facSugA" onclick="${x.fn}">${esc(x.a)}</button>` : '';
-    return `<div class="facSugIt ${x.tone || ''}"><i class="ti ${x.ic}" aria-hidden="true"></i><div class="facSugTx"><b>${x.t}</b>${x.s ? `<small>${x.s}</small>` : ''}${x.chips ? acc : ''}</div>${x.chips ? '' : acc}</div>`;
+    const tip = String(x.t + (x.s ? ' · ' + x.s : '')).replace(/<[^>]*>/g, '');
+    return `<div class="facSugIt ${x.tone || ''}${x.chips ? ' ch' : ''}" title="${tip}"><i class="ti ${x.ic}" aria-hidden="true"></i><span class="facSugTx"><b>${x.t}</b>${x.s && !x.chips ? `<small>${x.s}</small>` : ''}</span>${acc}</div>`;
   }
   let _facComp = { key: '', ids: null }, _facHoy = null, _facHoyCargando = false;
   function facSugerencias() {
@@ -1185,9 +1189,9 @@
     if (hay) {
       facCompCargar();
       const ids = (_facComp.ids || []).filter(id => !_cart.find(x => String(x.producto_id) === id));
-      const chips = ids.map(id => _prods.find(x => String(x.id) === id)).filter(Boolean).slice(0, 3)
+      const chips = ids.map(id => _prods.find(x => String(x.id) === id)).filter(Boolean).slice(0, 2)
         .map(p => ({ lbl: p.nombre, sub: fmt(precioCli(p)), fn: `window.nxFacAdd('${p.id}')` }));
-      if (chips.length) out.push({ ic: 'ti-sparkles', tone: 'gold', t: _facComp.fuente === 'ventas' ? 'Suelen llevarlo junto' : 'Complementos con stock', s: _facComp.fuente === 'ventas' ? 'Según tus ventas con estos artículos' : '', chips });
+      if (chips.length) out.push({ ic: 'ti-sparkles', tone: 'gold', t: _facComp.fuente === 'ventas' ? 'Suelen llevar' : 'Agrega', s: '', chips });
     }
     // 4) Sin venta en curso: lo que quedó pendiente y cómo va el día
     if (!hay && !c) {
@@ -1242,12 +1246,12 @@
       const an = v.estado === 'anulada' || v.anulada;
       const d = new Date(v.created_at || v.fecha || Date.now()), p2 = x => String(x).padStart(2, '0');
       const cuando = d.toDateString() === new Date().toDateString() ? 'Hoy ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) : p2(d.getDate()) + '/' + p2(d.getMonth() + 1);
-      return `<div class="facUltR${an ? ' an' : ''}" role="button" tabindex="0" onclick="window.nxFacVerVenta('${v.id}')" onkeydown="if(event.key==='Enter'){this.click()}"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b><span class="facUltAc"><button type="button" title="Reimprimir ticket" aria-label="Reimprimir ticket" onclick="event.stopPropagation();window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i></button>${!an && facPuedeAnular() ? `<button type="button" class="dg" title="Anular" aria-label="Anular" onclick="event.stopPropagation();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i></button>` : ''}</span></div>`;
+      return `<div class="facUltR${an ? ' an' : ''}" role="button" tabindex="0" onclick="window.nxFacVerVenta('${v.id}')" onkeydown="if(event.key==='Enter'){this.click()}"><span class="n">${esc(v.numero_factura || ('No. ' + (v.numero || '')))}</span><span class="c" title="${esc(cuando)}${an ? ' · Anulada' : ''}">${esc(v.cliente_nombre || 'Consumidor final')}<small>${esc(cuando)}${an ? ' · Anulada' : ''}</small></span><b>${fmt(v.total)}</b><span class="facUltAc"><button type="button" title="Reimprimir ticket" aria-label="Reimprimir ticket" onclick="event.stopPropagation();window.nxPosTicketVenta('${v.id}')"><i class="ti ti-printer"></i></button>${!an && facPuedeAnular() ? `<button type="button" class="dg" title="Anular" aria-label="Anular" onclick="event.stopPropagation();window.nxFacAnularId('${v.id}')"><i class="ti ti-ban"></i></button>` : ''}</span></div>`;
     }).join('');
   }
   function facUltCargar() {
     if (_facRecCargando) return; _facRecCargando = true;
-    getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,estado,fecha,created_at&order=created_at.desc&limit=4')
+    getAPI().get('pos_ventas', 'select=id,numero,numero_factura,cliente_nombre,total,estado,fecha,created_at&order=created_at.desc&limit=3')
       .then(r => { _facRecientes = r || []; }).catch(() => { _facRecientes = []; })
       .then(() => { _facRecCargando = false; const el = document.getElementById('facUltList'); if (el) el.innerHTML = facUltHTML(); });
   }

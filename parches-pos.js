@@ -10678,7 +10678,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       resyncCuotasPagos();
       const completa = !!prox.pagado;
       await getAPI().patch('pos_fin_cuotas', 'id=eq.' + prox.id, { monto_pagado: prox.monto_pagado, pagado: prox.pagado, metodo: metodo, fecha_pago: completa ? hoyISOPos() : null });
-      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + (moraPagada > 0 ? ' · incl. ' + fmt(moraPagada) + ' mora' : '') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
+      if (f.cliente_id) { try { await getAPI().post('pos_abonos', { cliente_id: f.cliente_id, monto: monto, metodo: metodo, caja_id: (_caja && /efectivo/i.test(metodo)) ? _caja.id : null, created_by_name: nomAdmin(), nota: 'Cuota ' + prox.numero + '/' + f.cuotas_total + (completa ? '' : ' (abono parcial)') + (moraPagada > 0 ? ' · incl. ' + fmt(moraPagada) + ' mora' : '') + ' · ' + (f.descripcion || '') }); } catch (e) {} }
       try { await postAsientoAbono(f.cliente_nombre, monto, /efectivo/i.test(metodo) ? 'Efectivo' : 'Banco', hoyISOPos(), prox.id, moraPagada); } catch (e) {}
       if (!cuotasDe(id).some(c => !c.pagado)) { try { await getAPI().patch('pos_financiamientos', 'id=eq.' + id, { estado: 'saldado' }); f.estado = 'saldado'; } catch (e) {} }
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · cuota ' + prox.numero + '/' + f.cuotas_total + ' · ' + fmt(monto) + (completa ? '' : ' (parcial)'), 'Cuotas'); } catch (e) {}

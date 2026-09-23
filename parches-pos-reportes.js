@@ -62,7 +62,7 @@
       const [ventas, previas, prods, cats, devol, abonos, creditos, abonosTodos, compras, cxp, cajas, cajaMov, asientos, reps, stockAlm, almacenes] = await Promise.all([
         getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,subtotal,itbis,total,descuento,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,a_credito,estado,vendedor_id,vendedor_nombre,created_by_name,ncf,tipo_comprobante,pos_venta_items(producto_id,nombre,cantidad,precio,importe,itbis,costo_unitario,costo_itbis_unit)&' + rng('fecha') + '&order=fecha.asc'),
         pr(getAll('pos_ventas', 'select=total,estado&estado=eq.completada&fecha=gte.' + tsDesde(pDesde) + '&fecha=lt.' + tsHasta(pHasta)), []),
-        getAll('pos_productos', 'select=id,nombre,codigo,categoria_id,marca,costo,costo_itbis,precio,stock,stock_min,tipo,activo,serial&order=nombre.asc'),
+        getAll('pos_productos', 'select=id,nombre,codigo,categoria_id,marca,costo,costo_itbis,precio,stock,stock_min,tipo,activo,serial,comision_pct&order=nombre.asc'),
         pr(getAll('pos_categorias', 'select=id,nombre'), []),
         pr(getAll('pos_devoluciones', 'select=id,numero,ncf,fecha,cliente_nombre,subtotal,itbis,total,metodo,estado,venta_id&' + rngD('fecha')), []),
         pr(getAll('pos_abonos', 'select=id,numero,fecha,monto,metodo,cliente_id,venta_id&' + rngD('fecha')), []),
@@ -221,7 +221,7 @@
       ['prov_comp', 'Compras por Fecha'], ['prov_porprov', 'Compras por Proveedor'], ['prov_cxp', 'Cuentas por Pagar'],
       ['prov_pagos', 'Pagos a Proveedores'], ['prov_lista', 'Listado de Proveedores']]],
     ['rrhh', 'Recursos Humanos', 'ti-user-circle', [
-      ['rh_emp', 'Listado de Empleados'], ['rh_nom', 'Nóminas del Período'], ['rh_det', 'Detalle de Nómina por Empleado']]],
+      ['rh_emp', 'Listado de Empleados'], ['rh_nom', 'Nóminas del Período'], ['rh_det', 'Detalle de Nómina por Empleado'], ['rh_com', 'Reporte Comisiones']]],
     ['caja', 'Caja', 'ti-currency-dollar', [
       ['caja_des', 'Reporte Desembolso de Caja'], ['caja_ing', 'Reporte Ingreso'], ['caja_cie', 'Reporte Arqueo'], ['caja_conc', 'Conciliación Arqueo'],
       ['caja_rec', 'Reporte Imprimir Ingresos', 'cli_cob'], ['caja_mov', 'Entradas y Salidas de Caja'], ['caja_met', 'Ventas por Forma de Pago'], ['caja_dia', 'Ventas Diarias']]]
@@ -238,7 +238,7 @@
   // Datos extra que solo cargan al abrir un reporte que los usa (cache por rango).
   const X = {}; let xCargando = '';
   function xKey(k) { return k + '|' + desde + '|' + hasta; }
-  const XNEED = { ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', inv_ajustes: 'kardex', inv_altabaja: 'kardex', inv_resumen: 'kardex', inv_nomov: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh', fin_: 'fin', cli_nov: 'hist', cli_datacr: 'hist', cli_cot: 'cot', cli_cotfalt: 'cot', cli_pref: 'pref', cli_prefpend: 'pref', inv_desp: 'transf', inv_recep: 'transf', inv_seriales: 'seriales', inv_serdisp: 'seriales' };
+  const XNEED = { rh_com: 'com', ban_: 'bancos', con_diario: 'diario', con_bal: 'balanza', inv_kardex: 'kardex', inv_ajustes: 'kardex', inv_altabaja: 'kardex', inv_resumen: 'kardex', inv_nomov: 'kardex', prov_pagos: 'prov', prov_lista: 'prov', rh_: 'rrhh', fin_: 'fin', cli_nov: 'hist', cli_datacr: 'hist', cli_cot: 'cot', cli_cotfalt: 'cot', cli_pref: 'pref', cli_prefpend: 'pref', inv_desp: 'transf', inv_recep: 'transf', inv_seriales: 'seriales', inv_serdisp: 'seriales' };
   function xDe(id) { for (const k in XNEED) if (id === k || (k.endsWith('_') && id.startsWith(k))) return XNEED[k]; return ''; }
   async function cargarX(k) {
     const key = xKey(k); if (X[key]) return X[key];
@@ -275,6 +275,14 @@
       ]);
       r = { emps, noms };
     }
+    else if (k === 'com') {
+      // Comisiones: todos los abonos y facturas a crédito (para aplicar cada cobro a su factura y medir su antigüedad).
+      const [abonos, vtas] = await Promise.all([
+        pr(getAll('pos_abonos', 'select=id,numero,cliente_id,venta_id,monto,fecha,metodo,created_by_name,created_at&order=fecha.asc,created_at.asc'), []),
+        pr(getAll('pos_ventas', 'select=id,numero,numero_factura,fecha,cliente_id,cliente_nombre,total,itbis,credito_monto,vendedor_nombre,created_by_name&estado=eq.completada&order=fecha.asc'), [])
+      ]);
+      r = { abonos, vtas };
+    }
     else if (k === 'hist') {
       const [clientes, vtas] = await Promise.all([
         pr(getAll('pos_clientes', 'select=id,codigo,nombre,cedula,telefono,direccion,tipo_persona,activo,es_cliente&order=nombre.asc'), []),
@@ -307,6 +315,89 @@
       r = { fins, cuotas, pagos, planes, sols, clientes, cfg: cfg[0] || {} };
     }
     X[key] = r; return r;
+  }
+
+  // ── Reporte Comisiones (como RepRH_Comi de Infoplus): los % se escriben en el propio reporte y se recuerdan
+  // en este equipo. Tramos de cobro vacíos usan el % de cobros general.
+  const COM_TR = [['t1', '1–30', 30], ['t2', '31–60', 60], ['t3', '61–90', 90], ['t4', '91–120', 120], ['t5', '120+', Infinity]];
+  const COM_TIPOS = [['mixto', 'Ventas contado + cobros'], ['ventas', 'Comisiones ventas'], ['contado', 'Comisiones ventas contado'], ['cobros', 'Comisiones cobros']];
+  let com = { v: '', c: '', t1: '', t2: '', t3: '', t4: '', t5: '', tipo: 'mixto' };
+  try { Object.assign(com, JSON.parse(localStorage.getItem('studio_rep_com') || '{}') || {}); } catch (e) {}
+  function comPanel() {
+    const inp = (k, l) => `<label>${l}<input inputmode="decimal" value="${esc(com[k])}" placeholder="${k[0] === 't' ? '= cobros' : '0'}" onchange="window.nxReportes.com('${k}',this.value)"></label>`;
+    return `<section class="nxRpCom" aria-label="Parámetros de comisión">
+      <div class="nxRpComTipos" role="group">${COM_TIPOS.map(t => `<button type="button" class="nxRpChip${com.tipo === t[0] ? ' on' : ''}" aria-pressed="${com.tipo === t[0]}" onclick="window.nxReportes.com('tipo','${t[0]}')">${t[1]}</button>`).join('')}</div>
+      <div class="nxRpComG">${inp('v', '% Ventas')}${inp('c', '% Cobros')}${COM_TR.map(t => inp(t[0], '% Cobros ' + t[1])).join('')}</div>
+    </section>`;
+  }
+  function comHoja(C, x, fv) {
+    const tipo = com.tipo, pv = n(com.v), pc = n(com.c);
+    const conV = tipo !== 'cobros', conC = tipo === 'mixto' || tipo === 'cobros', soloContado = tipo === 'mixto' || tipo === 'contado';
+    const pctTxt = (b, c) => b ? (Math.round(c / b * 10000) / 100) + '%' : '';
+    const vBy = {}; (x.vtas || []).forEach(v => { vBy[v.id] = v; });
+    const empV = v => v.vendedor_nombre || v.created_by_name || 'Sin vendedor';
+    const L = []; let especial = false, devSin = 0, sinCobrador = 0;
+    if (conV) {
+      C.ven.forEach(v => {
+        const tot = n(v.total); if (tot <= 0) return;
+        // En «contado» la parte a crédito comisiona cuando se cobra (no dos veces).
+        const parte = soloContado ? Math.max(0, tot - n(v.credito_monto)) / tot : 1; if (parte <= 0) return;
+        const base = tv(v) * parte;
+        // % propio del artículo (Inventario → Ventas) manda sobre el % general.
+        let sumI = 0, comI = 0;
+        (v.pos_venta_items || []).forEach(it => {
+          const imp = (it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad)) * fx(it.itbis), p = C.prodBy[it.producto_id];
+          const esp = p && p.comision_pct != null && p.comision_pct !== ''; if (esp) especial = true;
+          sumI += imp; comI += imp * (esp ? n(p.comision_pct) : pv) / 100;
+        });
+        const c = sumI > 0 ? comI * base / sumI : base * pv / 100;
+        L.push({ e: empV(v), f: v.fecha, r: [dmy(v.fecha), parte < 1 ? 'Venta (parte contado)' : 'Venta', v.numero_factura || v.numero || '', v.cliente_nombre || 'Consumidor final', base, pctTxt(base, c), c] });
+      });
+      // Devoluciones del período: descuentan la comisión al vendedor de la factura original.
+      C.dev.forEach(d => {
+        const o = vBy[d.venta_id]; if (!o) { devSin++; return; }
+        const parte = soloContado && n(o.total) > 0 ? Math.max(0, n(o.total) - n(o.credito_monto)) / n(o.total) : 1; if (parte <= 0) return;
+        const base = -(n(d.total) - (conItbis ? 0 : n(d.itbis))) * parte, c = base * pv / 100;
+        L.push({ e: empV(o), f: d.fecha, r: [dmy(d.fecha), 'Devolución', 'NC ' + (d.numero || ''), 'Fact. ' + (o.numero_factura || o.numero || '') + ' · ' + (d.cliente_nombre || ''), base, pctTxt(base, c), c] });
+      });
+    }
+    if (conC) {
+      // Cada abono se aplica a su factura; si no trae factura, a la factura a crédito más vieja con saldo del cliente.
+      // Ajustes y notas de crédito rebajan el saldo pero no comisionan.
+      const pend = {}; (x.vtas || []).forEach(v => { if (n(v.credito_monto) > 0 && v.cliente_id) (pend[v.cliente_id] = pend[v.cliente_id] || []).push({ v, s: n(v.credito_monto) }); });
+      (x.abonos || []).forEach(a => {
+        let m = n(a.monto); if (m <= 0) return;
+        const lista = pend[a.cliente_id] || [], partes = [];
+        const dir = a.venta_id ? lista.find(o => o.v.id === a.venta_id) : null;
+        if (dir) { partes.push([dir.v, m]); dir.s -= m; m = 0; }
+        else if (a.venta_id && vBy[a.venta_id]) { partes.push([vBy[a.venta_id], m]); m = 0; }
+        for (const o of lista) { if (m <= 0.005) break; if (o.s <= 0.005 || diaRD(o.v.fecha) > a.fecha) continue; const q = Math.min(m, o.s); partes.push([o.v, q]); o.s -= q; m -= q; }
+        if (m > 0.005) partes.push([null, m]);
+        if (a.fecha < desde || a.fecha > hasta || /ajuste|nota de cr/i.test(a.metodo || '')) return;
+        const quien = a.created_by_name || 'Sin registrar (sistema anterior)'; if (!a.created_by_name) sinCobrador++;
+        partes.forEach(([v, q]) => {
+          const dias = v ? Math.max(0, diasEntre(diaRD(v.fecha), a.fecha)) : null;
+          const tr = dias == null ? null : COM_TR.find(t => dias <= t[2]);
+          const pt = tr && String(com[tr[0]]).trim() !== '' ? n(com[tr[0]]) : pc;
+          const base = conItbis || !v || !n(v.total) ? q : q * (n(v.total) - n(v.itbis)) / n(v.total), c = base * pt / 100;
+          L.push({ e: quien, f: a.fecha, r: [dmy(a.fecha), 'Cobro ' + (tr ? tr[1] + ' días' : 'sin factura'), 'Rec. ' + (a.numero || ''), v ? 'Fact. ' + (v.numero_factura || v.numero || '') + ' · ' + (v.cliente_nombre || '') + ' · ' + dias + ' días' : 'Abono sin factura pendiente', base, pctTxt(base, c), c] });
+        });
+      });
+    }
+    const emps = [...new Set(L.map(o => o.e))].sort((a, b) => a.localeCompare(b, 'es'));
+    const cols = [T('Fecha'), T('Tipo'), T('Documento', { m: 1 }), T('Detalle'), $('Base'), T('%', { r: 1 }), $('Comisión')];
+    const lista = L.filter(o => !fv || o.e === fv).sort((a, b) => String(a.f).localeCompare(String(b.f)));
+    const avisos = [];
+    if (!pv && !pc && !COM_TR.some(t => String(com[t[0]]).trim() !== '')) avisos.push('Escribe el % de comisión arriba para calcular.');
+    if (especial) avisos.push('Los artículos con % de comisión propio (Inventario → Ventas) usan ese % en lugar del % de ventas.');
+    if (sinCobrador) avisos.push(sinCobrador + ' cobro(s) del sistema anterior no traen quién cobró: salen como «Sin registrar».');
+    if (devSin) avisos.push(devSin + ' devolución(es) sin factura original no descuentan comisión.');
+    const tiTxt = (COM_TIPOS.find(t => t[0] === tipo) || [])[1] || '';
+    const tr = COM_TR.map(t => t[1] + ': ' + (String(com[t[0]]).trim() !== '' ? n(com[t[0]]) : pc) + '%').join(' · ');
+    const resumen = `<div class="nxRpComCfg"><b>${esc(tiTxt)}</b>${conV ? ` · Ventas ${pv}%` : ''}${conC ? ` · Cobros ${pc}% (${esc(tr)})` : ''}</div>`;
+    return { cols, grupos: agrupar(lista, o => o.e, o => o.r, cols, porTotalDesc(6)), panel: comPanel(), resumen,
+      filtro: { l: 'Empleado', o: emps.map(k => [k, k]) },
+      nota: 'Ventas: por fecha de la factura, a nombre del vendedor asignado o de quien facturó. Cobros: por fecha del cobro, a nombre de quien lo registró; la antigüedad son los días entre la factura y el cobro. ' + avisos.join(' ') };
   }
 
   // ── Formatos de hoja ───────────────────────────────────────────────
@@ -572,6 +663,7 @@
         const cols = [T('Nómina', { m: 1 }), T('Fecha'), T('Período'), T('Estado'), $('Bruto'), $('Deducciones'), $('Neto')];
         return { cols, grupos: [grupo('', x.noms.map(m => [m.numero || '', dmy(m.fecha), m.periodo || m.descripcion || '', m.estado || '', n(m.total_bruto), n(m.total_deducciones), n(m.total_neto)]), cols)] };
       }
+      case 'rh_com': return comHoja(C, x, fv);
       case 'rh_det': {
         const cols = [T('Empleado'), $('Salario'), $('Bonos'), $('SFS'), $('AFP'), $('ISR'), $('Otras'), $('Neto')];
         return { cols, grupos: x.noms.map(m => grupo((m.numero || '') + ' · ' + (m.periodo || m.descripcion || '') + ' · ' + dmy(m.fecha), (m.rrhh_nomina_lineas || []).map(l => [l.empleado_nombre || '', n(l.salario_bruto), n(l.bonos), n(l.sfs), n(l.afp), n(l.isr), n(l.otras_deducciones), n(l.neto)]), cols)) };
@@ -908,7 +1000,7 @@
       else {
         const xk = xDe(REP[rep].b); const x = xk ? X[xKey(xk)] : {};
         if (xk && !x) { body = '<div class="nxRpLoad"><div class="spin"></div> Preparando reporte…</div>'; if (xCargando !== xKey(xk)) { xCargando = xKey(xk); cargarX(xk).then(() => { xCargando = ''; repintar(); }).catch(err => { xCargando = ''; error = String(err && err.message || err); repintar(); }); } }
-        else { R = construir(REP[rep].b, C, x || {}, rep); body = R ? hoja(rep, R) : '<div class="nxRpLoad">Reporte no disponible.</div>'; }
+        else { R = construir(REP[rep].b, C, x || {}, rep); body = R ? (R.panel || '') + hoja(rep, R) : '<div class="nxRpLoad">Reporte no disponible.</div>'; }
       }
     }
     const sub = rep ? (CAT.find(c => c[0] === REP[rep].cat) || [])[1] + ' · ' + REP[rep].t : 'Resumen general · del ' + dmy(desde) + ' al ' + dmy(hasta);
@@ -1002,6 +1094,7 @@
 .nxRpCatI{display:block;width:100%;min-height:36px;padding:6px 10px;border:0;border-radius:9px;background:transparent;color:rgba(255,254,250,.66);font-size:13.5px;font-weight:500;text-align:left;cursor:pointer;line-height:1.3}
 .nxRpCatI:hover{background:rgba(255,255,255,.06);color:#fffefa}.nxRpCatI.on{background:var(--studio-gold,#c9a227);color:#0a0a0a;font-weight:700}
 .nxRpBack{display:none;align-items:center;gap:4px;height:36px;padding:0 12px 0 8px;border:1px solid rgba(0,0,0,.14);border-radius:999px;background:#fff;color:var(--rp-ink);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.nxRpCom{display:grid;gap:10px;margin:0 0 12px;padding:12px;border:1px solid var(--rp-line);border-radius:14px;background:var(--studio-paper,#fff)}.nxRpComTipos{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.nxRpComTipos .nxRpChip{white-space:nowrap}.nxRpComTipos .nxRpChip.on{background:var(--rp-ink);color:#fff;border-color:var(--rp-ink)}.nxRpComG{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.nxRpComG label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--rp-mute)}.nxRpComG input{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:14px;background:#fff;font-variant-numeric:tabular-nums;min-width:0}.nxRpComCfg{font-size:12px;color:var(--rp-mute);margin:0 0 8px}.nxRpComCfg b{color:var(--rp-ink)}
 .nxRpFil{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--rp-mute)}.nxRpBus input{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;min-width:220px;text-transform:none}.nxRpFil select{height:36px;border:1px solid rgba(0,0,0,.16);border-radius:10px;padding:0 10px;font-size:13px;background:#fff;color:var(--rp-ink);max-width:240px;text-transform:none}
 .nxRpSheet{background:#fff;border:1px solid var(--rp-line);border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 10px 30px -12px rgba(0,0,0,.18);padding:26px 28px 18px;max-width:1100px}
 .nxRpSH{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:12px;margin-bottom:12px;border-bottom:2px solid #0a0a0a}
@@ -1085,6 +1178,7 @@ html #v-pos .nxTNav.nxTRepTop i.chev{background:none!important;box-shadow:none!i
     cargar, render, postRender, recargar, preset, csv, imprimir,
     abrir: function (id) { rep = REP[id] ? id : ''; if (rep) abierto[REP[rep].cat] = true; try { localStorage.setItem('studio_rep_sel', rep); localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); try { const m = document.querySelector('#nxRpRoot .nxRpMain'); if (m && window.innerWidth < 900 && rep) m.scrollIntoView({ block: 'start' }); } catch (e) {} },
     cat: function (k) { abierto[k] = !abierto[k]; try { localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); },
+    com: function (k, v) { com[k] = k === 'tipo' ? v : String(v || '').replace(',', '.').replace(/[^\d.]/g, ''); try { localStorage.setItem('studio_rep_com', JSON.stringify(com)); } catch (e) {} if (rep) pag[rep] = 0; repintar(); },
     filtro: function (v) { if (rep) { fsel[rep] = v; pag[rep] = 0; } repintar(); },
     buscar: function (v) { if (rep) { fbus[rep] = v; pag[rep] = 0; } repintar(); },
     pagina: function (p) { if (rep) pag[rep] = Math.max(0, p | 0); repintar(); try { const t = document.getElementById('nxRpSheet'); if (t && t.getBoundingClientRect().top < 0) t.scrollIntoView({ block: 'start' }); } catch (e) {} },

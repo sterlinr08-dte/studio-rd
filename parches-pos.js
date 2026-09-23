@@ -1086,7 +1086,7 @@
     const det = c
       ? [c.codigo ? esc(c.codigo) : '', c.cedula ? (c.tipo_persona === 'juridica' ? 'RNC ' : 'Céd. ') + esc(c.cedula) : ''].filter(Boolean).join(' · ')
         + ((c.telefono || c.direccion) ? '<br>' + [c.telefono ? esc(c.telefono) : '', c.direccion ? esc(c.direccion) : ''].filter(Boolean).join(' · ') : '')
-      : 'Sin cliente asignado — la venta se registra a consumidor final.<br>Toca la 🔍 para elegir un cliente.';
+      : 'Sin cliente asignado';
     const saldo = c ? saldoCli(c) : 0;
     const lim = c ? Number(c.limite_credito || 0) : 0;
     const credDisp = lim > 0 ? Math.max(0, lim - saldo) : null;
@@ -1098,15 +1098,16 @@
     return `<div class="partes">
       <div>
         <div class="plab">Facturar a</div>
-        <div class="pcli">
-          <button type="button" class="pav" id="facCliAv" onclick="window.nxFacCliToggle()" title="${c ? 'Cambiar el cliente' : 'Buscar y elegir el cliente'}" aria-label="${c ? 'Cambiar el cliente' : 'Buscar y elegir el cliente'}"><i class="ti ti-search"></i></button>
+        <div class="pcli pcliRow" role="button" tabindex="0" onclick="window.nxFacCliToggle()" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" aria-label="${c ? 'Cambiar el cliente' : 'Elegir el cliente'}">
+          <span class="pav" id="facCliAv" aria-hidden="true">${c ? esc(nxCliIniciales(c.nombre)) : '<i class="ti ti-user"></i>'}</span>
           <div style="min-width:0;flex:1">
             <div class="pnom" id="facCliTxt">${c ? esc(c.nombre) : 'Consumidor final'}${c && c.nivel_precio === 'mayor' ? ' <span class="chipMay">por mayor</span>' : ''}</div>
             <div class="pdet">${det}</div>
             ${c ? `<div class="plinks">
-              <button type="button" class="plink" onclick="window.nxCliente360('${c.id}')"><i class="ti ti-id-badge-2"></i> Ver perfil</button>
+              <button type="button" class="plink" onclick="event.stopPropagation();window.nxCliente360('${c.id}')"><i class="ti ti-id-badge-2"></i> Ver perfil</button>
             </div>` : ''}
           </div>
+          <span class="pchev" aria-hidden="true">${c ? 'Cambiar' : 'Elegir'}<i class="ti ti-chevron-right"></i></span>
         </div>
       </div>
       <div>
@@ -1240,13 +1241,16 @@
   // Favoritos vía localStorage, mismo mecanismo que ModalBusquedaBase en index.html — NPGS §5) —
   // reusado también por "Cobrar" (nxPosCobroCliToggle, más abajo) para no duplicar la misma
   // ventana dos veces (antes eran 2 copias casi idénticas — NPGS §6, "no duplicar funciones").
-  function nxPosCliSubtxt(c) { return (c.codigo || '') + (c.nivel_precio === 'mayor' ? ' · por mayor' : ''); }
+  function nxPosCliSubtxt(c) { return [c.codigo || '', c.telefono ? String(c.telefono) : '', c.nivel_precio === 'mayor' ? 'por mayor' : ''].filter(Boolean).join(' · '); }
+  // Iniciales para el avatar del cliente (ignora signos: hay nombres migrados que empiezan con "/").
+  function nxCliIniciales(n) { const w = String(n || '').replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü0-9 ]+/g, ' ').trim().split(/\s+/).filter(Boolean); return ((w[0] || '?').charAt(0) + (w[1] ? w[1].charAt(0) : '')).toUpperCase(); }
   function nxPosCliSnap(c) { return { __id: c.id, __t: c.nombre, __sub: nxPosCliSubtxt(c) }; }
   window.__nxPosCliReg = window.__nxPosCliReg || {};
   function nxPosCliFilaHTML(modalId, snap, kind, i, isFav) {
     const onclick = kind === 'res' ? `window.nxPosCliElegir('${modalId}',${i})` : `window.nxPosCliElegirGuardado('${modalId}','${kind}',${i})`;
     return `<div class="pf2clirow" data-k="${kind}" data-i="${i}">
       <button type="button" class="pf2cliFav${isFav ? ' on' : ''}" aria-label="${isFav ? 'Quitar de favoritos' : 'Marcar como favorito'}" onclick="event.stopPropagation();window.nxPosCliToggleFav('${modalId}','${kind}',${i})"><i class="ti ti-star${isFav ? '-filled' : ''}"></i></button>
+      <span class="pf2cliAv" aria-hidden="true">${esc(nxCliIniciales(snap.__t))}</span>
       <div onclick="${onclick}" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>${esc(snap.__t)}</b><span>${esc(snap.__sub)}</span></div>
     </div>`;
   }
@@ -1264,15 +1268,15 @@
     let secciones = ''; const navOrder = []; const sinTexto = !ql;
     if (sinTexto) {
       reg.favShown = favs;
-      if (favs.length) secciones += `<div class="pf2cliSec">⭐ Favoritos</div>` + favs.map((s, i) => { navOrder.push({ kind: 'fav', i }); return nxPosCliFilaHTML(modalId, s, 'fav', i, true); }).join('');
+      if (favs.length) secciones += `<div class="pf2cliSec"><i class="ti ti-star"></i> Favoritos</div>` + favs.map((s, i) => { navOrder.push({ kind: 'fav', i }); return nxPosCliFilaHTML(modalId, s, 'fav', i, true); }).join('');
       const recs = mbbLSGet('Rec', modalId).filter(r => favIds.indexOf(r.__id) < 0);
       reg.recShown = recs;
-      if (recs.length) secciones += `<div class="pf2cliSec">🕒 Recientes</div>` + recs.map((s, i) => { navOrder.push({ kind: 'rec', i }); return nxPosCliFilaHTML(modalId, s, 'rec', i, false); }).join('');
-      if (secciones) secciones += `<div class="pf2cliSec">Resultados</div>`;
+      if (recs.length) secciones += `<div class="pf2cliSec"><i class="ti ti-clock"></i> Recientes</div>` + recs.map((s, i) => { navOrder.push({ kind: 'rec', i }); return nxPosCliFilaHTML(modalId, s, 'rec', i, false); }).join('');
+      if (secciones) secciones += `<div class="pf2cliSec">Todos los clientes</div>`;
     } else { reg.favShown = []; reg.recShown = []; }
     const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
     reg.filas = filas; reg.navOrder = navOrder;
-    drop.innerHTML = `<div class="pf2clirow" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><b>— Consumidor final —</b></div>` + secciones + resultsHtml;
+    drop.innerHTML = `<div class="pf2clirow pf2cliCF" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="pf2cliAv" aria-hidden="true"><i class="ti ti-user"></i></span><div><b>Consumidor final</b><span>Venta sin cliente asignado</span></div></div>` + secciones + resultsHtml;
   }
   function nxPosCliRegistrarReciente(modalId, c) {
     const snap = nxPosCliSnap(c);
@@ -1341,9 +1345,9 @@
     window.__nxPosCliReg[modalId] = { onPick, filas: [], favShown: [], recShown: [], navOrder: [], sel: -1 };
     const ov = document.createElement('div'); ov.id = modalId; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPf" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
+    ov.innerHTML = `<div class="modal nxPf nxCliPick" style="max-width:420px;max-height:85vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> Elegir cliente</span><button class="nxBack" type="button" onclick="document.getElementById('${modalId}').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div>
-        ${posBuscador({ id: modalId + 'Q', placeholder: 'Buscar por nombre, teléfono, código o cédula…', oninput: `window.nxPosClienteFiltrar('${modalId}',this.value)`, onenter: `window.nxPosCliEnter('${modalId}')` })}
+        ${posBuscador({ id: modalId + 'Q', placeholder: 'Nombre, teléfono, código o cédula', oninput: `window.nxPosClienteFiltrar('${modalId}',this.value)`, onenter: `window.nxPosCliEnter('${modalId}')` })}
         <div id="${modalId}List" style="overflow-y:auto;flex:1;margin-top:10px"></div>
       </div>`;
     document.body.appendChild(ov);

@@ -1,7 +1,15 @@
 {
-  "version": "58.98",
+  "version": "58.99",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.99",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Factura: «Facturar a» es ahora una sola fila tocable con avatar, nombre y «Elegir ›»; condición de pago como control segmentado.",
+        "Ventana «Elegir cliente» estilo iPhone: buscador con anillo dorado y sin zoom de Safari, avatar con iniciales, código y teléfono en cada fila, estrella de favorito a la derecha y «Consumidor final» destacado."
+      ]
+    },
     {
       "version": "58.98",
       "fecha": "2026-09-23",

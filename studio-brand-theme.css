@@ -622,3 +622,93 @@ html.nx-studio .ab.g1 i { color: inherit; }
 @media (min-width: 861px) {
   html.nx-studio #v-pos .nxTSide { z-index: 90; }
 }
+
+/* 13 · «Facturar a» y ventana «Elegir cliente» (pedido del dueño con captura de iPhone, 2026-09-23)
+ *      Toda la fila del cliente es el botón (avatar + nombre + «Elegir ›»); lista tipo iOS con avatar de
+ *      iniciales, filas de 56 px, estrella a la derecha y buscador con un solo anillo dorado. */
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow {
+  display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 10px; margin: 0 -2px;
+  border: 1px solid var(--studio-hair); border-radius: 12px; background: #fff; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(10, 10, 10, .06); transition: transform 100ms ease-out, background-color 150ms ease;
+}
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow:hover { background: #fffdf6; border-color: var(--studio-gold); }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow:active { transform: scale(.985); background: #fbf6e6; }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--studio-gold-ring); }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow .pav {
+  flex: 0 0 auto; width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 50%; border: 0;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--studio-gold-soft);
+  color: var(--studio-gold-dark); font: 700 14px/1 var(--studio-font); letter-spacing: .02em;
+}
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow .pav i { font-size: 20px; }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow .pnom { font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow .pdet { font-size: 12.5px; line-height: 1.45; margin-top: 1px; }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow .plinks { margin-top: 4px; }
+html.nx-studio #v-pos .nx-invoice-pro .pchev {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 2px; font: 600 13px/1 var(--studio-font); color: var(--studio-gold-dark);
+}
+html.nx-studio #v-pos .nx-invoice-pro .pchev i { font-size: 18px; }
+/* Condición de pago: control segmentado real (misma altura, el inactivo en tinta, no en azul) */
+html.nx-studio #v-pos .nx-invoice-pro .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 11px; background: rgba(10, 10, 10, .06); }
+html.nx-studio #v-pos .nx-invoice-pro .seg button { min-height: 32px; padding: 0 16px; border: 0; border-radius: 8px; background: transparent; color: var(--studio-ink); font-weight: 600; }
+html.nx-studio #v-pos .nx-invoice-pro .seg button.on { background: var(--studio-black); color: var(--studio-white); box-shadow: 0 1px 3px rgba(10, 10, 10, .25); }
+@media (max-width: 768px) {
+  html.nx-studio #v-pos .nx-invoice-pro .seg { display: flex; }
+  html.nx-studio #v-pos .nx-invoice-pro .seg button { flex: 1 1 0; min-height: 40px; font-size: 15px; }
+}
+
+/* Ventana «Elegir cliente» */
+html.nx-studio .nxCliPick .mt > span { font-size: 17px; font-weight: 700; text-transform: none; letter-spacing: -.01em; }
+html.nx-studio :is(.modal, .overlay) .nxBusca, html.nx-studio :is(.modal, .overlay) .nxLupaBox {
+  height: 44px; border: 1px solid var(--studio-hair); border-radius: 12px; background: #fff; box-shadow: inset 0 1px 2px rgba(10, 10, 10, .06);
+}
+html.nx-studio .nxBusca:focus-within, html.nx-studio .nxLupaBox:focus-within {
+  border-color: var(--studio-gold) !important; box-shadow: 0 0 0 3px var(--studio-gold-ring) !important;
+}
+html.nx-studio :is(.nxBusca, .nxLupaBox) input, html.nx-studio :is(.nxBusca, .nxLupaBox) input:focus {
+  outline: none !important; border: 0 !important; box-shadow: none !important; background: transparent !important;
+  text-transform: none; font-size: 16px; /* 16 px evita el zoom automático de Safari al enfocar */
+}
+html.nx-studio :is(.nxBusca, .nxLupaBox) input::placeholder { text-transform: none; color: var(--studio-mute); }
+html.nx-studio :is(.nxBusca, .nxLupaBox) > i, html.nx-studio .nxBusca .nxBusca-lupa { color: var(--studio-gold-dark); }
+html.nx-studio .nxPf .pf2cliSec {
+  display: flex; align-items: center; gap: 6px; padding: 14px 4px 6px; font-size: 12px; font-weight: 600;
+  letter-spacing: .02em; text-transform: none; color: var(--studio-steel); border: 0;
+}
+html.nx-studio .nxPf .pf2cliSec i { font-size: 14px; color: var(--studio-gold-dark); }
+html.nx-studio .nxPf .pf2clirow {
+  flex-direction: row; align-items: center; gap: 12px; min-height: 56px; padding: 6px 48px 6px 4px;
+  border-bottom: 1px solid var(--studio-line-2); border-radius: 10px;
+}
+html.nx-studio .nxPf .pf2clirow > div { gap: 2px; }
+html.nx-studio .nxPf .pf2clirow b { font-size: 15px; font-weight: 600; color: var(--studio-ink); text-transform: none; line-height: 1.25; overflow-wrap: anywhere; }
+html.nx-studio .nxPf .pf2clirow span:not(.pf2cliAv) { font-size: 12.5px; color: var(--studio-steel); text-transform: none; font-variant-numeric: tabular-nums; }
+html.nx-studio .nxPf .pf2clirow:hover, html.nx-studio .nxPf .pf2clirow.sel { background: #fbf8ee; }
+html.nx-studio .nxPf .pf2clirow:active { background: #f6efd9; }
+html.nx-studio .nxPf .pf2cliAv {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--studio-gold-soft); color: var(--studio-gold-dark); font: 700 13px/1 var(--studio-font); letter-spacing: .02em;
+}
+html.nx-studio .nxPf .pf2cliCF { border-bottom: 1px solid var(--studio-line); margin-bottom: 2px; padding-right: 4px; }
+html.nx-studio .nxPf .pf2cliCF .pf2cliAv { background: var(--studio-black); color: var(--studio-gold-light); }
+html.nx-studio .nxPf .pf2cliCF .pf2cliAv i { font-size: 18px; }
+html.nx-studio .nxPf .pf2cliFav {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; border-radius: 22px;
+  color: rgba(10, 10, 10, .28); font-size: 18px;
+}
+html.nx-studio .nxPf .pf2cliFav.on { color: var(--studio-gold); }
+html.nx-studio .nxPf .pf2cliFav:active { background: var(--studio-gold-soft); }
+@media (max-width: 768px) {
+  /* En el iPhone la ventana es una hoja casi a pantalla completa */
+  html.nx-studio .modal.nxCliPick { max-height: 92vh !important; border-radius: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio #v-pos .nx-invoice-pro .pcliRow:active { transform: none; }
+}
+/* 13b · Con cliente elegido: avatar y «Cambiar» arriba; saldo en líneas limpias; «Ver perfil» en oro */
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow:has(.plinks) { align-items: flex-start; padding-top: 10px; padding-bottom: 10px; }
+html.nx-studio #v-pos .nx-invoice-pro .pcliRow:has(.plinks) .pchev { padding-top: 10px; }
+html.nx-studio #v-pos .nx-invoice-pro .credrow { display: block; line-height: 1.7; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+html.nx-studio #v-pos .nx-invoice-pro .credrow b { color: var(--studio-ink); font-weight: 600; }
+html.nx-studio #v-pos .nx-invoice-pro .plink { min-height: 28px; font-size: 12.5px; font-weight: 600; color: var(--studio-gold-dark); }
+html.nx-studio .nxBusca .nxBusca-x, html.nx-studio .nxBusca [class*="clear"] { background: rgba(10, 10, 10, .06); color: var(--studio-steel); }

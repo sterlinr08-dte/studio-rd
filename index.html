@@ -271,6 +271,17 @@ html.nx-studio #loginScreen.lx-revelando .lbox{animation:lxCardOut .42s cubic-be
 @media (prefers-reduced-motion:reduce){html.nx-studio .lx-st-mark img,html.nx-studio .lx-st-glow,html.nx-studio .lx-st-shine::after,html.nx-studio .lx-st-tag,html.nx-studio .lx-st-panel,html.nx-studio .lx-st-h,html.nx-studio .lx-st-p{animation:none}}
 /* Splash y pantalla de contraseña con la misma piel */
 html.nx-studio #nxSplash,html.nx-studio #nxLoader{background:#0c0c0c}
+/* Carga de STUDIO: logo propio (sin el escudo azul de NEXUS PRO) + línea dorada indeterminada */
+.nxs-badge.nxs-st{width:auto;height:auto;flex-direction:column;gap:18px}
+.nxs-logo{display:block;width:220px;height:62px;object-fit:cover;object-position:center;animation:nxsLogo 2.4s ease-in-out infinite}
+.nxs-bar{position:relative;display:block;width:132px;height:2px;border-radius:2px;background:rgba(201,162,39,.18);overflow:hidden}
+.nxs-bar::after{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:2px;background:linear-gradient(90deg,transparent,#e3c45c,#c9a227,transparent);animation:nxsBar 1.25s cubic-bezier(.45,0,.2,1) infinite}
+@keyframes nxsBar{from{transform:translateX(-110%)}to{transform:translateX(260%)}}
+@keyframes nxsLogo{0%,100%{opacity:.92}50%{opacity:1}}
+html.nx-studio #nxSplash .nxs-brand{color:#f7f5ef;font-family:-apple-system,"SF Pro Display",system-ui,Inter,sans-serif;font-weight:600;font-size:15px;letter-spacing:.02em}
+html.nx-studio #nxSplash :is(.nxs-brand,.nxs-tag){text-transform:none!important}
+html.nx-studio #nxSplash .nxs-tag{color:#8f8a80;font-family:-apple-system,"SF Pro Text",system-ui,Inter,sans-serif}
+@media (prefers-reduced-motion:reduce){.nxs-logo,.nxs-bar::after{animation:none}.nxs-bar::after{left:30%}}
 html.nx-studio #pwChangeBtn{background:#0c0c0c!important}
 #loginScreen .lchk input[type=checkbox]:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)!important}
 #loginScreen .lbtn{background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,0) 55%),linear-gradient(135deg,#1e40af,#2563eb)!important;border:none!important;border-radius:12px!important;box-shadow:0 8px 22px rgba(37,99,235,.28)!important}
@@ -3065,23 +3076,13 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
 <!-- ═══════════════ SPLASH · CARGA ═══════════════ -->
 <div id="nxSplash" aria-hidden="true">
   <div class="nxs-inner">
-    <div class="nxs-badge">
-      <span class="nxs-wave" style="animation-delay:0s"></span>
-      <span class="nxs-wave" style="animation-delay:.467s"></span>
-      <span class="nxs-wave" style="animation-delay:.933s"></span>
-      <i class="ti ti-shield"></i>
-    </div>
+    <div class="nxs-badge nxs-st"><img class="nxs-logo" src="logo-studio.png" alt="Studio" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
     <div class="nxs-brand">Cargando Studio</div>
     <div class="nxs-tag">Preparando tu espacio de trabajo...</div>
   </div>
 </div>
 <div id="nxLoader" style="display:none" aria-hidden="true">
-  <div class="nxs-badge">
-    <span class="nxs-wave" style="animation-delay:0s"></span>
-    <span class="nxs-wave" style="animation-delay:.467s"></span>
-    <span class="nxs-wave" style="animation-delay:.933s"></span>
-    <i class="ti ti-shield"></i>
-  </div>
+  <div class="nxs-badge nxs-st"><img class="nxs-logo" src="logo-studio.png" alt="" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
 </div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
@@ -6853,7 +6854,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.00';
+const APP_VERSION='59.01';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

@@ -1,7 +1,15 @@
 {
-  "version": "58.96",
+  "version": "58.97",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "58.97",
+      "fecha": "2026-09-23",
+      "notas": [
+        "Login dorado aprobado: logo protagonista, halo suave y formulario de una columna.",
+        "Botón animado con brillo y respuesta táctil; carga vinculada a la autenticación real."
+      ]
+    },
     {
       "version": "58.96",
       "fecha": "2026-09-22",

@@ -696,23 +696,13 @@
   }
 
   // ── Render ─────────────────────────────────────────────────────────
-  function catalogo() {
-    const vc = puedeCosto();
-    return `<nav class="nxRpCat" aria-label="Reportes">
-      <button type="button" class="nxRpCatRes${!rep ? ' on' : ''}" onclick="window.nxReportes.abrir('')"><i class="ti ti-layout-dashboard"></i><span>Resumen general</span></button>
-      ${CAT.map(c => { const reps = c[3].filter(r => vc || !sens(r[0])); if (!reps.length) return ''; const ab = !!abierto[c[0]]; return `<div class="nxRpCatG${ab ? ' ab' : ''}">
-        <button type="button" class="nxRpCatH" aria-expanded="${ab}" onclick="window.nxReportes.cat('${c[0]}')"><i class="ti ${c[2]}"></i><span>${esc(c[1])}</span><i class="ti ti-chevron-${ab ? 'down' : 'left'} chev"></i></button>
-        ${ab ? `<div class="nxRpCatL">${reps.map(r => `<button type="button" class="nxRpCatI${rep === r[0] ? ' on' : ''}" onclick="window.nxReportes.abrir('${r[0]}')">${esc(r[1])}</button>`).join('')}</div>` : ''}
-      </div>`; }).join('')}
-    </nav>`;
-  }
   function barraRango(R) {
     const rangos = [['hoy', 'Hoy'], ['sem', '7 días'], ['mes', 'Este mes'], ['mesant', 'Mes anterior'], ['anio', 'Este año']];
     const f = R && R.filtro ? `<label class="nxRpFil">${esc(R.filtro.l)}<select onchange="window.nxReportes.filtro(this.value)"><option value="">Todos</option>${R.filtro.o.map(o => `<option value="${esc(o[0])}"${fsel[rep] === o[0] ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>` : '';
     const alCorte = R && R.alCorte;
     const bus = R && R.buscar ? `<label class="nxRpFil nxRpBus">Buscar<input type="search" value="${esc(fbus[rep] || '')}" placeholder="${esc(R.buscar)}" onchange="window.nxReportes.buscar(this.value)" onkeydown="if(event.key==='Enter')this.blur()"></label>` : '';
     return `<div class="nxRpTop">
-      ${rep ? `<button type="button" class="nxRpBack" onclick="window.nxReportes.abrir('')"><i class="ti ti-chevron-left"></i> Reportes</button>` : ''}
+      <button type="button" class="nxRpBack" onclick="window.nxReportes.menu()"><i class="ti ti-list-details"></i> Menú de reportes</button>
       <div class="nxRpRange">${alCorte ? '' : `<label>Desde<input type="date" value="${esc(desde)}" onchange="window.nxReportes.rango('d',this.value)"></label>`}<label>${alCorte ? 'Al' : 'Hasta'}<input type="date" value="${esc(hasta)}" onchange="window.nxReportes.rango('h',this.value)"></label>${f}${bus}</div>
       ${alCorte ? '' : `<div class="nxRpPres">${rangos.map(r => `<button type="button" class="nxRpChip" onclick="window.nxReportes.preset('${r[0]}')">${r[1]}</button>`).join('')}</div>`}
       <label class="nxRpItb"><input type="checkbox" ${conItbis ? 'checked' : ''} onchange="window.nxReportes.itbis(this.checked)"><span>Con ITBIS</span></label>
@@ -737,7 +727,7 @@
     }
     const sub = rep ? (CAT.find(c => c[0] === REP[rep].cat) || [])[1] + ' · ' + REP[rep].t : 'Resumen general · del ' + dmy(desde) + ' al ' + dmy(hasta);
     return `<div class="nxRp${rep ? ' conRep' : ''}" id="nxRpRoot"><div class="nxRpHead"><h2>Reportes</h2><p>${esc(sub)}${cargando ? ' · actualizando…' : ''}</p></div>
-      <div class="nxRpLay">${catalogo()}<div class="nxRpMain">${barraRango(R)}<div class="nxRpBody">${body}</div></div></div></div>`;
+      <div class="nxRpLay solo"><div class="nxRpMain">${barraRango(R)}<div class="nxRpBody">${body}</div></div></div></div>`;
   }
   function postRender() {}
 
@@ -815,7 +805,7 @@
 .nxRpLoad,.nxRpErr{padding:30px;text-align:center;color:var(--rp-mute);display:flex;gap:10px;align-items:center;justify-content:center}.nxRpErr{color:#b91c1c}
 @media(max-width:760px){.nxRpKpis{grid-template-columns:1fr 1fr;gap:8px}.nxRpK{padding:10px 12px}.nxRpK.main{grid-column:1/-1}.nxRpTools{margin-left:0}.nxRpRange{width:100%}.nxRpRange label{flex:1}.nxRpRange input{width:100%;height:40px;font-size:16px}.nxRpK b{font-size:18px}.nxRpChip{height:36px}.nxRpTab{height:38px}}
 @media(prefers-reduced-motion:reduce){.nxRpChip:active{transform:none}}
-.nxRpLay{display:grid;grid-template-columns:270px minmax(0,1fr);min-width:0;gap:16px;align-items:start}
+.nxRpLay.solo{grid-template-columns:minmax(0,1fr)}.nxRpLay{display:grid;grid-template-columns:270px minmax(0,1fr);min-width:0;gap:16px;align-items:start}
 .nxRpCat{position:sticky;top:12px;background:#0a0a0a;border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:2px;color:#fffefa;max-height:calc(100vh - 120px);overflow-y:auto}
 .nxRpCat button{font-family:inherit;text-transform:none;letter-spacing:0}
 .nxRpCatRes,.nxRpCatH{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:rgba(255,254,250,.86);font-size:14.5px;font-weight:600;cursor:pointer;text-align:left}
@@ -837,6 +827,16 @@
 .nxRpST tfoot tr.tt td{font-weight:800;font-size:13px;border-top:2px solid #0a0a0a;border-bottom:3px double #0a0a0a;background:#fff}
 .nxRpST tbody tr:hover td{background:#fbf8ee}.nxRpST tbody tr.g:hover td{background:var(--studio-canvas,#f3f0e8)}
 .nxRpSF{display:flex;justify-content:space-between;gap:10px;margin-top:14px;padding-top:8px;border-top:1px solid var(--rp-line);font-size:11px;color:var(--rp-mute)}
+html #v-pos .nxTNav.nxTRepTop i.chev{background:none!important;box-shadow:none!important;border:0!important;width:auto!important;height:auto!important;min-width:0!important;padding:0!important;color:inherit!important}.nxTRepTop .chev{margin-left:auto;font-size:14px;opacity:.5;transition:transform .2s}.nxTRep:not(.ab) .nxTRepTop .chev{transform:rotate(90deg)}
+.nxTRepL{display:none;padding:2px 0 6px 8px}.nxTRep.ab .nxTRepL{display:block}
+.nxTRepH,.nxTRepI{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;cursor:pointer;font-family:inherit;text-align:left;text-transform:none;letter-spacing:0}
+.nxTRepH{min-height:34px;padding:4px 10px;border-radius:8px;color:rgba(255,254,250,.78);font-size:13px;font-weight:600}.nxTRepH>i:first-child{font-size:15px;width:18px;color:var(--studio-gold,#c9a227)}.nxTRepH span{flex:1}
+.nxTRepH .chev{font-size:13px;opacity:.45;transition:transform .2s}.nxTRepG:not(.ab) .nxTRepH .chev{transform:rotate(90deg)}.nxTRepH:hover,.nxTRepI:hover{background:rgba(255,255,255,.06);color:#fffefa}
+.nxTRepS{display:none;margin:0 0 4px 18px;padding-left:8px;border-left:1px solid rgba(255,255,255,.1)}.nxTRepG.ab .nxTRepS{display:block}
+.nxTRepI{min-height:30px;padding:5px 10px;border-radius:7px;color:rgba(255,254,250,.6);font-size:12.5px;font-weight:500;line-height:1.3}.nxTRepI.res{color:rgba(255,254,250,.78);font-weight:600;font-size:13px}.nxTRepI.res i{font-size:15px;width:18px;color:var(--studio-gold,#c9a227)}
+.nxTRepI.on{background:var(--studio-gold,#c9a227);color:#0a0a0a!important;font-weight:700}.nxTRepI.on i{color:#0a0a0a!important}
+@media(max-width:900px){.nxTRepH{min-height:42px;font-size:14px}.nxTRepI{min-height:40px;font-size:14px}}
+@media(prefers-reduced-motion:reduce){.nxTRepTop .chev,.nxTRepH .chev{transition:none}}
 .nxRpItb{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 10px;border:1px solid rgba(0,0,0,.14);border-radius:999px;background:#fff;font-size:13px;font-weight:600;color:var(--rp-ink);cursor:pointer;user-select:none}
 .nxRpItb input{width:18px;height:18px;margin:0;accent-color:#0a0a0a;cursor:pointer}
 .nxRpPag{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:8px 0;font-size:12.5px;color:var(--rp-mute)}
@@ -854,7 +854,39 @@
     document.head.appendChild(st);
   }
 
+  // ── Reportes en la barra lateral del POS (pedido del dueño: «que los reportes se vean desde la barra lateral», como Infoplus) ──
+  // parches-pos.js (shellTienda) llama navHTML() en lugar del botón plano «Reportes». Abrir/cerrar grupos se hace directo en el
+  // DOM (sin volver a dibujar la barra, así no salta el scroll); elegir un reporte navega y conserva la posición de la barra.
+  let sideAb = null;
+  function navHTML(activo) {
+    ensureCSS();
+    const vc = puedeCosto();
+    const ab = sideAb == null ? !!activo : sideAb;
+    return `<div class="nxTRep${ab ? ' ab' : ''}">
+      <button type="button" class="nxTNav nxTRepTop${activo ? ' on' : ''}" aria-expanded="${ab}" onclick="window.nxReportes.sideToggle(this)"><i class="ti ti-chart-pie"></i> Reportes<i class="ti ti-chevron-down chev"></i></button>
+      <div class="nxTRepL">
+        <button type="button" class="nxTRepI res${activo && !rep ? ' on' : ''}" onclick="window.nxReportes.ir('')"><i class="ti ti-layout-dashboard"></i> Resumen general</button>
+        ${CAT.map(c => { const reps = c[3].filter(r => vc || !sens(r[0])); if (!reps.length) return ''; const g = !!abierto[c[0]]; return `<div class="nxTRepG${g ? ' ab' : ''}"><button type="button" class="nxTRepH" aria-expanded="${g}" onclick="window.nxReportes.sideCat(this,'${c[0]}')"><i class="ti ${c[2]}"></i><span>${esc(c[1])}</span><i class="ti ti-chevron-down chev"></i></button><div class="nxTRepS">${reps.map(r => `<button type="button" class="nxTRepI${activo && rep === r[0] ? ' on' : ''}" onclick="window.nxReportes.ir('${r[0]}')">${esc(r[1])}</button>`).join('')}</div></div>`; }).join('')}
+      </div>
+    </div>`;
+  }
+  function scrollSide() { const e = document.querySelector('#nxTSide .nxTScroll'); return e ? e.scrollTop : 0; }
+  function restaurarSide(y) { const e = document.querySelector('#nxTSide .nxTScroll'); if (e) e.scrollTop = y; }
+  async function ir(id) {
+    rep = REP[id] ? id : ''; if (rep) abierto[REP[rep].cat] = true; sideAb = true;
+    try { localStorage.setItem('studio_rep_sel', rep); localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {}
+    const y = scrollSide();
+    try { document.body.classList.remove('nxTDrawer'); } catch (e) {}
+    if (!document.getElementById('nxRpRoot') && window.nxPosTab) await window.nxPosTab('reportes'); else repintar();
+    restaurarSide(y);
+    try { const m = document.querySelector('#nxRpRoot'); if (m && m.getBoundingClientRect().top < 0) m.scrollIntoView({ block: 'start' }); } catch (e) {}
+  }
+
   window.nxReportes = {
+    navHTML, ir,
+    menu: function () { if (window.nxPosToggleSide) window.nxPosToggleSide(); setTimeout(() => { const w = document.querySelector('#nxTSide .nxTRep'), sc = document.querySelector('#nxTSide .nxTScroll'); if (w && sc) sc.scrollTop = Math.max(0, w.offsetTop - sc.offsetTop - 8); }, 60); },
+    sideToggle: function (b) { const w = b.closest('.nxTRep'); if (!w) return; sideAb = w.classList.toggle('ab'); b.setAttribute('aria-expanded', String(sideAb)); },
+    sideCat: function (b, k) { const g = b.closest('.nxTRepG'); if (!g) return; abierto[k] = g.classList.toggle('ab'); b.setAttribute('aria-expanded', String(abierto[k])); try { localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} },
     cargar, render, postRender, recargar, preset, csv, imprimir,
     abrir: function (id) { rep = REP[id] ? id : ''; if (rep) abierto[REP[rep].cat] = true; try { localStorage.setItem('studio_rep_sel', rep); localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); try { const m = document.querySelector('#nxRpRoot .nxRpMain'); if (m && window.innerWidth < 900 && rep) m.scrollIntoView({ block: 'start' }); } catch (e) {} },
     cat: function (k) { abierto[k] = !abierto[k]; try { localStorage.setItem('studio_rep_cat', JSON.stringify(abierto)); } catch (e) {} repintar(); },

@@ -1,7 +1,12 @@
 {
-  "version": "59.34",
+  "version": "59.35",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.35",
+      "fecha": "2026-09-24",
+      "notas": ["Acceso discreto del personal en el pie: icono de usuario y texto Personal, disponible desde cualquier dispositivo."]
+    },
     {
       "version": "59.34",
       "fecha": "2026-09-24",

@@ -290,6 +290,10 @@ footer{border-top:1px solid var(--linea);padding:28px 0 96px;color:var(--tenue);
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--suave);text-decoration:none}
 footer a:hover{color:var(--texto)}
+footer .enlaces-pie{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+footer .acceso-equipo{display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:44px;padding:0 8px;font-size:12px;color:var(--suave)}
+footer .acceso-equipo i{font-size:17px}
+footer .acceso-equipo:hover{color:var(--texto)}
 .aviso{font-size:12.5px;color:var(--tenue);margin-top:18px}
 .aviso a{color:var(--oro-luz)}
 .wa-flot{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:50;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#25D366;color:#fff;font-size:30px;text-decoration:none;box-shadow:0 10px 30px -6px rgba(37,211,102,.6)}
@@ -462,7 +466,7 @@ footer a:hover{color:var(--texto)}
 <footer>
   <div class="wrap">
     <span>© <span id="anio">2026</span> STUDIO · Hogar, movilidad &amp; tecnología · Santiago, República Dominicana</span>
-    <span><a href="#movilidad">Catálogo</a> · <a href="#financiamiento">Financiamiento</a></span>
+    <span class="enlaces-pie"><a href="#movilidad">Catálogo</a><a href="#financiamiento">Financiamiento</a><a class="acceso-equipo" href="/app" aria-label="Acceso del personal" title="Acceso del personal"><i class="ti ti-user-circle" aria-hidden="true"></i><span>Personal</span></a></span>
   </div>
   <div class="wrap"><p class="aviso">Tel. <a href="tel:+18095706254">809-570-6254</a> · WhatsApp <a class="js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623">829-624-7623</a> · Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago · Lunes a sábado, 8:30 a.m. – 6:30 p.m.</p></div>
   <div class="wrap"><p class="aviso">Disponibilidad sujeta a existencia. Consulta precios y facilidades de pago por WhatsApp.</p></div>

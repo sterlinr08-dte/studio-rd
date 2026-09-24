@@ -188,6 +188,10 @@ nav a:hover{color:var(--texto)}
 .escenario .giro360{position:absolute;left:-4%;top:2%;width:108%;height:94%;touch-action:pan-y;cursor:grab;display:none}
 .escenario .giro360:active{cursor:grabbing}
 .pres.modo-360 .giro360{display:block}
+/* Artículos con 360°: la foto es la mejor vista de la vuelta (fondo y plato incluidos), en el mismo cuadro que el visor. */
+.pres.con-giro .escenario .pieza{position:absolute;left:-4%;top:2%;width:108%;height:94%}
+.pres.con-giro .aro,.pres.con-giro .halo,.pres.con-giro .sombra,.pres.con-giro .brillo{display:none}
+.js .pres.con-giro.en-vista.presentada .pieza img,.js .pres.con-giro.activa:not(.presentada) .pieza img{animation:none}
 .pres.modo-360 .pieza,.pres.modo-360 .aro,.pres.modo-360 .halo,.pres.modo-360 .sombra{visibility:hidden}
 .btn-360{position:absolute;left:50%;bottom:-2%;translate:-50% 0;z-index:3;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(242,210,106,.45);background:rgba(7,8,10,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);font:600 13px var(--sans);cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s}
 .btn-360:hover{border-color:var(--oro-luz);background:rgba(7,8,10,.85)}
@@ -605,9 +609,9 @@ const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
 const CATALOGO = {
   gMovilidad: [
-    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), giro: 'lq-n9', precio: null, estado: 'camino',
+    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-n9/foto.webp', recorte: img('lq-n9'), giro: 'lq-n9', inicio: 19, precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: img('lq-h8'), giro: 'lq-h8', precio: null, estado: 'camino',
+    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8', inicio: 7, precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
@@ -679,6 +683,7 @@ const badge = est => { const e = ESTADO[est]; return e ? `<span class="estado ${
 let N = 0;
 const TODOS = [];
 // Vista 360°: `giro` (uno para todo el artículo) o `giros` (uno por variante, mismo orden).
+const esVista360 = f => /\/360\//.test(f);
 const giroDe = (p, k) => p.giros ? p.giros[k] || '' : p.giro || '';
 function presentacion(p, i, g, total) {
   const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[4] !== 'agotado')) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
@@ -688,14 +693,14 @@ function presentacion(p, i, g, total) {
   const precio = p.precios && MOSTRAR_PRECIOS ? `<div class="dos-precios">${p.precios.map(([t, n]) => `<div class="precio"><small>${t}</small>${fmt(n)}</div>`).join('')}</div>`
     : `<div class="precio${x.sinPrecio ? ' consulta' : ''}" data-precio>${x.precio}</div>`;
   const lado = N % 2 ? 'izq' : 'der', fx = (g === 'gMovilidad' || g === 'gCarga') ? 'fx-gira' : 'fx-arma';
-  return `<section class="pres ${lado} ${fx}${x.est === 'agotado' ? ' agotado' : ''}" id="${id}" aria-label="${esc(p.nombre)}">
+  return `<section class="pres ${lado} ${fx}${x.est === 'agotado' ? ' agotado' : ''}${esVista360(x.foto) ? ' con-giro' : ''}" id="${id}" aria-label="${esc(p.nombre)}">
     <div class="nombre-fondo" aria-hidden="true">${esc(p.nombre.split(' ')[0])}</div>
     <div class="wrap rejilla">
       <div class="escenario">
         <div class="halo"></div><div class="aro a2"></div><div class="aro"></div><div class="aro a3"></div><div class="sombra"></div>
         <span class="num">${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
         <div class="pieza"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"><span class="brillo" aria-hidden="true" style="--m:url('${x.foto}')"></span></div>
-        ${giroDe(p, k0) ? `<canvas class="giro360" data-giro="${giroDe(p, k0)}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
+        ${giroDe(p, k0) ? `<canvas class="giro360" data-giro="${giroDe(p, k0)}" data-inicio="${p.inicio || 0}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
       </div>
       <div class="ficha">
         <div class="cat"><span class="eyebrow">${CAT_NOMBRE[g]}</span><span data-badge>${badge(x.est)}</span></div>
@@ -735,6 +740,7 @@ document.addEventListener('click', e => {
   if (im.getAttribute('src') !== x.foto) { im.loading = 'eager'; im.classList.remove('cambio'); void im.offsetWidth; im.src = x.foto; im.classList.add('cambio'); const br = sec.querySelector('.brillo'); if (br) br.style.setProperty('--m', "url('" + x.foto + "')"); }
   im.alt = p.nombre + ' ' + v[0];
   sec.classList.toggle('agotado', x.est === 'agotado');
+  sec.classList.toggle('con-giro', esVista360(x.foto));
   sec.querySelector('[data-badge]').innerHTML = badge(x.est);
   sec.querySelector('[data-sub]').textContent = x.sub;
   const pr = sec.querySelector('[data-precio]'); pr.innerHTML = x.precio; pr.classList.toggle('consulta', x.sinPrecio);
@@ -882,7 +888,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       e.preventDefault(); girando = false; vel = 0; sec.classList.add('girado'); pos += e.key === 'ArrowLeft' ? 1 : -1; pintar();
     });
-    return { usar: f => { if (f !== fotos) { fotos = f; pos = 0; vel = 0; girando = !quieto; sec.classList.remove('girado'); } }, iniciar: () => { if (!raf) { ultimo = 0; raf = requestAnimationFrame(avanzar); } } };
+    return { usar: f => { if (f !== fotos) { fotos = f; pos = +cv.dataset.inicio || 0; vel = 0; girando = !quieto; sec.classList.remove('girado'); } }, iniciar: () => { if (!raf) { ultimo = 0; raf = requestAnimationFrame(avanzar); } } };
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.btn-360'); if (!b) return;
@@ -943,7 +949,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     if (destino === actual) { feedback.textContent = ''; return; }
     feedback.classList.remove('hero-error');
     feedback.textContent = 'Cargando ' + p.nombre + '…';
-    const nueva = new Image(); nueva.src = p.foto;
+    const nueva = new Image(); nueva.src = p.recorte || p.foto;
     try {
       if (nueva.decode) await nueva.decode();
       else await new Promise((resolve, reject) => { if (nueva.complete) return nueva.naturalWidth ? resolve() : reject(); nueva.onload = resolve; nueva.onerror = reject; });
@@ -951,7 +957,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     if (turno !== revision) return;
     const direccion = destino === (actual + 1) % modelos.length ? 1 : -1;
     actual = destino;
-    fotos.src = p.foto; fotos.alt = 'Pasola eléctrica ' + p.nombre;
+    fotos.src = p.recorte || p.foto; fotos.alt = 'Pasola eléctrica ' + p.nombre;
     document.getElementById('hero-modelo').textContent = p.nombre;
     document.getElementById('hero-sub').textContent = p.sub;
     document.getElementById('hero-estado').innerHTML = badge(p.estado || '');

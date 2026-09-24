@@ -1,7 +1,12 @@
 {
-  "version": "59.42",
+  "version": "59.43",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.43",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: 16 fotos de producto nuevas en calidad de estudio (pasolas, motocargas, TV, aire y neveras)."]
+    },
     {
       "version": "59.42",
       "fecha": "2026-09-24",

@@ -1,7 +1,16 @@
 {
-  "version": "59.28",
+  "version": "59.29",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.29",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Página pública: fotos de mejor calidad sin fondo, TV con sus 5 tamaños, cerraduras, monta carga y neveras nuevas.",
+        "Nueva galería «Lo nuevo en STUDIO» con 14 pósters que llevan a cada artículo.",
+        "Letra de títulos corregida y botón «Acceso personal» en la parte de arriba."
+      ]
+    },
     {
       "version": "59.28",
       "fecha": "2026-09-25",

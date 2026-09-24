@@ -607,7 +607,7 @@ const CATALOGO = {
   gMovilidad: [
     { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), giro: 'lq-n9', precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: img('lq-h8'), precio: null, estado: 'camino',
+    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: img('lq-h8'), giro: 'lq-h8', precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
@@ -678,6 +678,8 @@ const badge = est => { const e = ESTADO[est]; return e ? `<span class="estado ${
 // Una presentación a pantalla completa por artículo.
 let N = 0;
 const TODOS = [];
+// Vista 360°: `giro` (uno para todo el artículo) o `giros` (uno por variante, mismo orden).
+const giroDe = (p, k) => p.giros ? p.giros[k] || '' : p.giro || '';
 function presentacion(p, i, g, total) {
   const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[4] !== 'agotado')) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
   const id = 'p-' + slug(p.nombre); N++; TODOS.push({ id: id, p: p, g: g, foto: x.foto });
@@ -693,7 +695,7 @@ function presentacion(p, i, g, total) {
         <div class="halo"></div><div class="aro a2"></div><div class="aro"></div><div class="aro a3"></div><div class="sombra"></div>
         <span class="num">${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
         <div class="pieza"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"><span class="brillo" aria-hidden="true" style="--m:url('${x.foto}')"></span></div>
-        ${p.giro ? `<canvas class="giro360" data-giro="${p.giro}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
+        ${giroDe(p, k0) ? `<canvas class="giro360" data-giro="${giroDe(p, k0)}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
       </div>
       <div class="ficha">
         <div class="cat"><span class="eyebrow">${CAT_NOMBRE[g]}</span><span data-badge>${badge(x.est)}</span></div>
@@ -738,6 +740,11 @@ document.addEventListener('click', e => {
   const pr = sec.querySelector('[data-precio]'); pr.innerHTML = x.precio; pr.classList.toggle('consulta', x.sinPrecio);
   const q = sec.querySelector('.quiero'); q.innerHTML = x.boton; q.href = waLink(x.msg);
   const f = sec.querySelector('.financiar'); f.hidden = !x.fin; if (x.fin) f.href = waLink(x.fin);
+  const cv = sec.querySelector('.giro360'), g = giroDe(p, +b.dataset.k);
+  if (cv && g !== cv.dataset.giro) {
+    cv.dataset.giro = g; cv.parentNode.querySelector('.btn-360').hidden = !g;
+    if (sec.classList.contains('modo-360')) cv.parentNode.querySelector('.btn-360').click();
+  }
 });
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();
@@ -836,7 +843,8 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
       .then(() => fotos, e => { delete cargas[nombre]; throw e; });
     return cargas[nombre];
   }
-  function visor(sec, cv, fotos) {
+  function visor(sec, cv) {
+    let fotos = [];
     const ctx = cv.getContext('2d');
     let pos = 0, vel = 0, arrastre = null, girando = !quieto, ultimo = 0, raf = 0;
     function pintar() {
@@ -844,6 +852,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
       const w = Math.round(r.width * d), h = Math.round(r.height * d);
       if (!w || !h) return;
       if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      if (!fotos.length) return;
       const im = fotos[((Math.round(pos) % TOTAL) + TOTAL) % TOTAL];
       const e = Math.min(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * e, ih = im.naturalHeight * e;
       ctx.clearRect(0, 0, w, h); ctx.drawImage(im, (w - iw) / 2, (h - ih) * .78, iw, ih);
@@ -873,7 +882,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       e.preventDefault(); girando = false; vel = 0; sec.classList.add('girado'); pos += e.key === 'ArrowLeft' ? 1 : -1; pintar();
     });
-    return { iniciar: () => { if (!raf) { ultimo = 0; raf = requestAnimationFrame(avanzar); } } };
+    return { usar: f => { if (f !== fotos) { fotos = f; pos = 0; vel = 0; girando = !quieto; sec.classList.remove('girado'); } }, iniciar: () => { if (!raf) { ultimo = 0; raf = requestAnimationFrame(avanzar); } } };
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.btn-360'); if (!b) return;
@@ -883,9 +892,13 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     }
     if (b.getAttribute('aria-busy') === 'true') return;
     b.setAttribute('aria-busy', 'true'); txt.textContent = 'Cargando…';
-    cargar(cv.dataset.giro, n => { txt.textContent = 'Cargando ' + Math.round(n / TOTAL * 100) + '%'; }).then(fotos => {
-      if (!cv._visor) cv._visor = visor(sec, cv, fotos);
-      b.removeAttribute('aria-busy'); b.setAttribute('aria-pressed', 'true'); txt.textContent = 'Ver foto';
+    const pedido = cv.dataset.giro;
+    cargar(pedido, n => { txt.textContent = 'Cargando ' + Math.round(n / TOTAL * 100) + '%'; }).then(fotos => {
+      if (!cv._visor) cv._visor = visor(sec, cv);
+      cv._visor.usar(fotos);
+      b.removeAttribute('aria-busy');
+      if (pedido !== cv.dataset.giro) { txt.textContent = 'Girar 360°'; return; }
+      b.setAttribute('aria-pressed', 'true'); txt.textContent = 'Ver foto';
       sec.classList.add('modo-360'); cv._visor.iniciar();
     }).catch(() => { b.removeAttribute('aria-busy'); txt.textContent = 'No cargó · reintentar'; });
   });

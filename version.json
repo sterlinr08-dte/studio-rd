@@ -1,7 +1,12 @@
 {
-  "version": "59.40",
+  "version": "59.41",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.41",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: vista 360° de la LQ-H8; el visor ya admite un giro por color o modelo."]
+    },
     {
       "version": "59.40",
       "fecha": "2026-09-24",

@@ -2968,6 +2968,10 @@ html.nx-studio #loginScreen.st2 #loginPwdEye:hover{color:var(--ink)!important;ba
 html.nx-studio #loginScreen.st2 #loginPwdEye:active{transform:translateY(-50%) scale(.9)!important}
 html.nx-studio #loginScreen.st2 .st2-caps{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#f5c451;margin-top:7px;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s,max-height .25s}
 html.nx-studio #loginScreen.st2 .st2-caps.on{opacity:1;max-height:24px}
+/* Enlace a la página pública (la tienda vive en /tienda; «/» abre el sistema en equipos del personal). */
+#loginScreen .lx-st-web{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;font-size:14px;font-weight:600;color:#E3C45C;text-decoration:none}
+#loginScreen .lx-st-web:hover{text-decoration:underline;text-underline-offset:3px}
+#loginScreen .lx-st-web i{font-size:16px}
 /* ── Fila recordar / olvidé ── */
 html.nx-studio #loginScreen.st2 .lrow{margin:4px 0 22px}
 html.nx-studio #loginScreen.st2 .lchk label{font-size:12.5px!important;color:#b3ad9f!important}
@@ -3142,6 +3146,7 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
   </div>
   <div class="lerr" id="loginErr" aria-live="polite"></div>
   <button class="lbtn" id="btnLogin" onclick="doLogin()"><i class="ti ti-login"></i> Entrar al sistema</button>
+  <a class="lx-st-web" href="/tienda"><i class="ti ti-world" aria-hidden="true"></i> Ver la página de la tienda</a>
   <div style="text-align:center;margin-top:10px;display:none"><a id="authToggleLink" onclick="nxToggleAuthMode()" style="cursor:pointer;font-size:11px;color:#94a3b8;text-decoration:none" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button">🔒 Probar inicio de sesión seguro (beta)</a></div>
 </div>
 </div>

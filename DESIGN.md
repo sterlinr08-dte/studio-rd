@@ -297,3 +297,8 @@ Entrada breve de portada con opacidad y desplazamiento; nombres de destacados si
 ## Cabecera pública — 2026-09-24
 
 Por solicitud del dueño se retira el botón de WhatsApp de la cabecera y los enlaces al sistema interno de la tienda pública (cabecera y pie). El personal usa directamente `/app`. Esta decisión reduce exposición visual y no sustituye autenticación ni autorización.
+
+
+## Acceso discreto del personal — 2026-09-24
+
+Aclaración del dueño: debe poder entrar desde la propia web en cualquier dispositivo. Se añade al pie un icono outline de usuario con etiqueta «Personal», gris y sin tratamiento de botón principal. Área táctil mínima de 44 px y nombre accesible. Enlaza a `/app`. Sustituye la decisión anterior de retirar todos los enlaces internos; la cabecera continúa sin ese acceso.

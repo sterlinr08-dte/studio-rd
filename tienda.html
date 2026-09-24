@@ -236,12 +236,12 @@ nav a:hover{color:var(--texto)}
 .js .pres.fx-gira .pieza{translate:0 0;scale:.9;filter:none}
 .js .pres.fx-gira.activa .pieza{scale:1}
 .js .pres.fx-gira.activa:not(.presentada) .pieza img{animation:giraEntra 1.6s var(--ease) both}
-.js .pres.fx-gira.en-vista.presentada .pieza img{animation:vitrina 12s ease-in-out infinite}
+.js .pres.fx-gira.en-vista.presentada .pieza img{animation:vitrina 9s ease-in-out infinite}
 .js .pres.fx-gira.activa:not(.presentada) .brillo{animation:barrido 1.4s ease-out 1.1s both}
 .js .pres.fx-gira.activa:not(.presentada) .aro.a3{animation:giraRapido 1.6s var(--ease) both}
 .js .pres.presentada.en-vista .aro.a3{animation:gira 14s linear infinite}
 @keyframes giraEntra{0%{transform:perspective(900px) rotateY(-75deg) translateX(-10%) scale(.85);opacity:0}35%{opacity:1}72%{transform:perspective(900px) rotateY(12deg) scale(1.02)}100%{transform:perspective(900px) rotateY(0) scale(1)}}
-@keyframes vitrina{0%,100%{transform:perspective(900px) rotateY(0) translateY(0)}25%{transform:perspective(900px) rotateY(-10deg) translateY(-4px)}50%{transform:perspective(900px) rotateY(0) translateY(0)}75%{transform:perspective(900px) rotateY(10deg) translateY(-4px)}}
+@keyframes vitrina{0%,100%{transform:perspective(900px) rotateY(0) translateY(0)}25%{transform:perspective(900px) rotateY(-20deg) translateY(-6px)}50%{transform:perspective(900px) rotateY(0) translateY(0)}75%{transform:perspective(900px) rotateY(20deg) translateY(-6px)}}
 @keyframes barrido{0%{opacity:0;background-position:130% 0}20%{opacity:1}100%{opacity:0;background-position:-30% 0}}
 @keyframes giraRapido{from{rotate:-540deg}to{rotate:0}}
 /* Hogar y tecnología: el artículo se arma pieza por pieza (ver armar() en el script). */
@@ -649,7 +649,8 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
 // barra de lectura y la pieza que se inclina hacia el cursor (solo con mouse).
 (function () {
   const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const sencillo = quieto || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  // Pedido del dueño: el armado se ve también en Android de gama media (solo se omite con movimiento reducido).
+  const sencillo = quieto;
   const pres = [...document.querySelectorAll('.pres')], divs = [...document.querySelectorAll('.divisor')], aps = [...document.querySelectorAll('.aparece')];
   const idx = [...document.querySelectorAll('#indice a')];
   // «Armado pieza por pieza» (hogar y tecnología): la foto se parte en fragmentos que llegan girando

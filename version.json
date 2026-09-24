@@ -1,11 +1,16 @@
 {
-  "version": "59.33",
+  "version": "59.34",
   "url": "https://studiord.net/index.html",
   "cambios": [
     {
-      "version": "59.33",
+      "version": "59.34",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: cabecera sin botón de WhatsApp y sin enlaces públicos al acceso del personal. El personal accede directamente por /app."]
+      "notas": ["Cabecera sin WhatsApp y sin enlaces públicos al sistema del personal. Acceso directo por /app."]
+    },
+    {
+      "version": "59.33",
+      "fecha": "2026-09-25",
+      "notas": ["Nuevo ícono de STUDIO (la «S» del logo en negro y oro) en lugar del escudo heredado, en la pestaña, la app instalada y la página pública."]
     },
     {
       "version": "59.32",

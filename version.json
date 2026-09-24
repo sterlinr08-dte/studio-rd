@@ -1,7 +1,12 @@
 {
-  "version": "59.30",
+  "version": "59.31",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.31",
+      "fecha": "2026-09-25",
+      "notas": ["Login: enlace «Ver la página de la tienda».", "Página pública: las pasolas entran girando y se mecen en 3D; hogar y tecnología se arman pieza por pieza."]
+    },
     {
       "version": "59.30",
       "fecha": "2026-09-25",

@@ -108,6 +108,7 @@ header .btn{height:40px;padding:0 16px;font-size:14px}
 .mini[hidden]{display:none}
 .ctas{display:flex;gap:8px;flex-wrap:wrap}
 .ctas .btn{height:46px;padding:0 18px;font-size:14.5px}
+.ctas .btn[hidden]{display:none}
 .barra-movil{display:none}
 @media (max-width:980px){
   .confianza .wrap{grid-template-columns:1fr 1fr}
@@ -124,6 +125,25 @@ header .btn{height:40px;padding:0 16px;font-size:14px}
   .confianza span{font-size:11.5px}
   .ctas{width:100%}.ctas .btn{flex:1;justify-content:center;padding:0 12px}
 }
+
+/* ── Destacados: pósters publicitarios de STUDIO; cada uno lleva a su artículo ── */
+.destacados{padding:64px 0 24px}
+.destacados .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.flechas{display:flex;gap:8px}
+.flechas button{width:42px;height:42px;border-radius:50%;border:1px solid var(--linea2);background:rgba(255,255,255,.03);display:grid;place-items:center;font-size:20px;transition:border-color .2s,background .2s}
+.flechas button:hover{border-color:var(--oro);background:rgba(201,162,39,.1)}
+.carrusel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:6px 16px 18px;scrollbar-width:none}
+.carrusel::-webkit-scrollbar{display:none}
+@media (min-width:1232px){.carrusel{padding-inline:calc((100vw - 1200px) / 2)}}
+.poster{position:relative;flex:none;width:clamp(230px,24vw,290px);aspect-ratio:720/897;border-radius:18px;overflow:hidden;scroll-snap-align:start;border:1px solid var(--linea);background:var(--panel);box-shadow:0 20px 40px -24px rgba(0,0,0,.8);transition:transform .45s var(--resorte),border-color .3s,box-shadow .3s;text-decoration:none}
+.poster img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease)}
+.poster span{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 14px;border-radius:999px;background:rgba(7,8,10,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--linea2);font:600 13px var(--sans);color:var(--texto);opacity:0;translate:0 8px;transition:opacity .3s,translate .3s var(--ease)}
+.poster:hover{transform:translateY(-6px);border-color:rgba(201,162,39,.55);box-shadow:0 26px 50px -20px rgba(201,162,39,.35)}
+.poster:hover img{transform:scale(1.04)}
+.poster:hover span,.poster:focus-visible span{opacity:1;translate:0 0}
+@media (hover:none){.poster span{opacity:1;translate:0 0}}
+@media (max-width:620px){.poster{width:72vw}.flechas{display:none}.destacados{padding:48px 0 16px}}
+@media (max-width:620px){.explora .wrap{flex-direction:column;align-items:flex-start}.filtros{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.filtros button{flex:none}}
 
 /* ── Explora: tira de miniaturas que lleva a cada presentación ── */
 .explora{padding:8px 0 40px}
@@ -335,6 +355,23 @@ footer a:hover{color:var(--texto)}
     </div>
   </section>
 
+  <section class="destacados" aria-labelledby="h-dest">
+    <div class="wrap"><div><span class="eyebrow">Destacados</span><h2 id="h-dest" style="margin-top:10px">Lo nuevo en STUDIO</h2></div>
+      <div class="flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button></div></div>
+    <div class="carrusel" id="carrusel">
+      <a class="poster" href="#p-lq-n9"><img src="img/tienda/destacados/serie1000-blanco-azul.webp" alt="STUDIO · Serie 1000W" width="720" height="897" loading="lazy" decoding="async"><span>Serie 1000W <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-lq-n9"><img src="img/tienda/destacados/lq-n9-potencia.webp" alt="STUDIO · LQ-N9" width="720" height="897" loading="lazy" decoding="async"><span>LQ-N9 <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-lq-h8"><img src="img/tienda/destacados/serie1000-rojo.webp" alt="STUDIO · LQ-H8" width="720" height="897" loading="lazy" decoding="async"><span>LQ-H8 <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#movilidad"><img src="img/tienda/destacados/serie1000-blanco.webp" alt="STUDIO · Serie 1000W" width="720" height="897" loading="lazy" decoding="async"><span>Serie 1000W <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-lq-hld"><img src="img/tienda/destacados/lq-hld-muevete.webp" alt="STUDIO · LQ-HLD" width="720" height="897" loading="lazy" decoding="async"><span>LQ-HLD <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-lq-xbw"><img src="img/tienda/destacados/lq-xbw.webp" alt="STUDIO · LQ-XBW" width="720" height="897" loading="lazy" decoding="async"><span>LQ-XBW <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-smart-lock-facial"><img src="img/tienda/destacados/smart-lock.webp" alt="STUDIO · Smart Lock" width="720" height="897" loading="lazy" decoding="async"><span>Smart Lock <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-nevera-cw"><img src="img/tienda/destacados/neveras.webp" alt="STUDIO · Neveras CW" width="720" height="897" loading="lazy" decoding="async"><span>Neveras CW <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-ventilador-de-techo-42"><img src="img/tienda/destacados/ventilador-cristal.webp" alt="STUDIO · Ventilador cristal" width="720" height="897" loading="lazy" decoding="async"><span>Ventilador cristal <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+      <a class="poster" href="#p-ventilador-de-techo-42"><img src="img/tienda/destacados/ventilador-madera.webp" alt="STUDIO · Ventilador madera" width="720" height="897" loading="lazy" decoding="async"><span>Ventilador madera <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
+    </div>
+  </section>
+
   <section id="explora" class="explora" aria-labelledby="h-exp">
     <div class="wrap"><span class="eyebrow" id="h-exp">Explora el catálogo · toca un artículo</span>
       <div class="filtros" role="group" aria-label="Filtrar por categoría" id="filtros"></div></div>
@@ -541,6 +578,7 @@ document.addEventListener('click', e => {
 });
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();
+document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('click', () => { const c = document.getElementById('carrusel'); c.scrollBy({ left: +b.dataset.dir * Math.max(260, c.clientWidth * .8) }); }));
 // «Abierto ahora» con el horario real (lunes a sábado 8:30–6:30, hora de Santo Domingo).
 (function () {
   try {

@@ -1,7 +1,12 @@
 {
-  "version": "59.38",
+  "version": "59.39",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.39",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: velocidad de la serie 1000W (LQ-N9, LQ-H8, LQ-ZS) corregida a 60 km/h, también en el afiche de la LQ-N9."]
+    },
     {
       "version": "59.38",
       "fecha": "2026-09-24",

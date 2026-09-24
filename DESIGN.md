@@ -302,3 +302,8 @@ Por solicitud del dueño se retira el botón de WhatsApp de la cabecera y los en
 ## Acceso discreto del personal — 2026-09-24
 
 Aclaración del dueño: debe poder entrar desde la propia web en cualquier dispositivo. Se añade al pie un icono outline de usuario con etiqueta «Personal», gris y sin tratamiento de botón principal. Área táctil mínima de 44 px y nombre accesible. Enlaza a `/app`. Sustituye la decisión anterior de retirar todos los enlaces internos; la cabecera continúa sin ese acceso.
+
+
+## Portada de tres modelos — 2026-09-24
+
+Dirección aprobada a partir de dos videos de referencia: producto grande, cambio coordinado de foto/nombre/especificaciones e iluminación neutra dentro del negro y oro. Selector manual de LQ-N9, LQ-H8 y LQ-HLD, flechas, teclado y gesto horizontal. Sin avance automático. En móvil: título, producto y controles, después datos y acción; escritorio en dos columnas. CTA al WhatsApp del modelo seleccionado. Usa fotografías existentes y datos del catálogo; no simula vistas traseras de un objeto 3D. Movimiento reducido cancela también transiciones en curso. Se conserva el acceso Personal en el pie.

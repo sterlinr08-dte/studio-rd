@@ -1,7 +1,12 @@
 {
-  "version": "59.36",
+  "version": "59.37",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.37",
+      "fecha": "2026-09-24",
+      "notas": ["Nueva portada con LQ-N9, LQ-H8 y LQ-HLD: selector, flechas y gesto para cambiar de modelo.", "Foto, características y consulta de WhatsApp sincronizadas, con transiciones y movimiento reducido."]
+    },
     {
       "version": "59.36",
       "fecha": "2026-09-24",

@@ -344,6 +344,69 @@ footer .acceso-equipo:hover{color:var(--texto)}
   .pasos{grid-template-columns:1fr}
   .divisor{padding:84px 0 40px}
 }
+
+/* Portada de modelos: controles manuales, una foto real por artículo. */
+.hero-modelos{padding:52px 0 42px}
+.hero-modelos .wrap{grid-template-columns:.92fr 1.08fr;column-gap:36px;row-gap:0}
+.hero-heading{grid-column:1;grid-row:1;align-self:end}
+.hero-info{grid-column:1;grid-row:2;align-self:start}
+.hero-vitrina{grid-column:2;grid-row:1 / span 2}
+.hero-modelos h1{font-size:clamp(42px,5.6vw,72px);margin:16px 0 28px}
+.hero-modelos h1 em{background:none;color:var(--oro-luz)}
+.hero-detalle{min-height:190px}
+.hero-detalle h2{font-size:clamp(30px,3.2vw,44px);margin:14px 0 8px;letter-spacing:-.035em}
+.hero-detalle .lead{font-size:15px;min-height:24px}
+.hero-specs{display:flex;gap:24px;margin-top:24px;padding-top:18px;border-top:1px solid var(--linea2)}
+.hero-specs>div{flex:1;min-width:0}
+.hero-specs dt{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--suave);margin-bottom:5px}
+.hero-specs dd{font:600 clamp(12px,1.25vw,16px)/1.4 var(--sans);color:var(--texto)}
+.hero-modelos .acciones{align-items:center;gap:20px;margin-top:24px}
+.hero-modelos .btn-oro{background:var(--oro);box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.hero-catalogo{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:14px;text-decoration:none;color:var(--suave)}
+.hero-catalogo:hover{color:var(--texto)}
+.hero-vitrina{min-width:0}
+.hero-escena{position:relative;isolation:isolate;aspect-ratio:1.08;display:grid;place-items:center;touch-action:pan-y;user-select:none}
+.hero-escena::before{content:"";position:absolute;inset:4% -3% 0;z-index:-1;border-radius:50%;background:radial-gradient(ellipse at center,rgba(247,245,239,.1),transparent 68%);transform:translateX(var(--luz-x,0));transition:transform .55s var(--ease),opacity .55s var(--ease)}
+.hero-escena[data-modelo="1"]{--luz-x:7%}.hero-escena[data-modelo="2"]{--luz-x:-7%}
+.hero-letra{position:absolute;top:8%;left:0;right:0;text-align:center;font:800 clamp(100px,15vw,210px)/1 var(--disp);letter-spacing:-.075em;color:transparent;-webkit-text-stroke:1px rgba(247,245,239,.12);z-index:-1;pointer-events:none}
+.hero-pedestal{position:absolute;left:8%;right:8%;bottom:10%;height:14%;border-radius:50%;border:1px solid rgba(201,162,39,.36);background:rgba(247,245,239,.025);box-shadow:0 24px 34px rgba(0,0,0,.24);z-index:-1}
+#hero-foto{width:96%;height:90%;object-fit:contain;filter:drop-shadow(0 24px 20px rgba(0,0,0,.45));cursor:grab}
+#hero-foto:active{cursor:grabbing}
+.hero-contador{position:absolute;bottom:0;right:5%;font:500 11px var(--mono);letter-spacing:.12em;color:var(--suave)}
+.hero-contador b{color:var(--oro-luz);font-weight:600}
+.hero-controles{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;padding-top:18px;border-top:1px solid var(--linea2)}
+.hero-flecha{width:44px;height:44px;flex:none;display:grid;place-items:center;background:transparent;border:1px solid var(--linea2);border-radius:50%;font-size:19px}
+.hero-flecha:hover{border-color:var(--oro);color:var(--oro-luz)}
+.hero-modelos-lista{display:flex;gap:6px;justify-content:center;flex:1}
+.hero-modelos-lista button{min-height:44px;padding:0 12px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--suave);font:600 12px var(--sans);white-space:nowrap}
+.hero-modelos-lista button[aria-pressed="true"]{color:var(--oro-luz);border-bottom-color:var(--oro)}
+.hero-ayuda{text-align:center;font-size:11px;color:var(--suave);margin-top:14px}
+.hero-feedback{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.hero-feedback.hero-error{position:static;width:auto;height:auto;clip-path:none;font-size:12px;color:var(--oro-luz);text-align:center}
+.hero-feedback:empty{display:none}
+@media(max-width:980px){
+ .hero-modelos .wrap{grid-template-columns:1fr 1fr;gap:24px}
+ .hero-modelos h1{font-size:clamp(38px,5.2vw,56px)}
+ .hero-specs{gap:10px}.hero-specs dd{font-size:13px}
+ .hero-modelos-lista button{padding:0 8px;font-size:11px}
+}
+@media(max-width:700px){
+ .hero-modelos{padding:28px 0 32px}
+ .hero-modelos .wrap{grid-template-columns:1fr;gap:20px}
+ .hero-heading{grid-column:1;grid-row:1}
+ .hero-vitrina{grid-column:1;grid-row:2}
+ .hero-info{grid-column:1;grid-row:3}
+ .hero-modelos h1{font-size:42px;margin-bottom:0}
+ .hero-detalle{min-height:0}
+ .hero-specs{margin-top:18px}
+ .hero-vitrina{width:100%;max-width:480px;margin:auto}
+ .hero-escena{aspect-ratio:1.2}
+ .hero-letra{font-size:clamp(110px,33vw,180px)}
+ .hero-modelos .acciones{gap:14px}
+ .hero-modelos .btn{padding:0 17px;font-size:14px}
+ .hero-modelos-lista button{padding:0 10px;font-size:12px}
+}
+
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -368,26 +431,43 @@ footer .acceso-equipo:hover{color:var(--texto)}
 </header>
 
 <main id="inicio">
-  <section class="hero" aria-labelledby="h1">
+  <section class="hero hero-modelos" aria-labelledby="h1" aria-roledescription="carrusel">
     <div class="wrap">
-      <div>
-        <span class="eyebrow">STUDIO · Hogar, movilidad &amp; tecnología · Santiago</span>
+      <div class="hero-heading">
+        <span class="eyebrow">STUDIO · Movilidad eléctrica</span>
         <span class="abierto" id="abierto" hidden></span>
-        <h1 id="h1">Energía que <em>te mueve.</em></h1>
-        <p class="lead">Scooters eléctricos de hasta 1200 W, monta cargas de trabajo, Smart TV, neveras, aires inverter y cerraduras inteligentes. Con financiamiento.</p>
-        <div class="acciones">
-          <a class="btn btn-oro" href="#explora"><i class="ti ti-layout-grid" aria-hidden="true"></i> Ver catálogo</a>
-          <a class="btn btn-linea js-wa" data-msg="Hola STUDIO, quiero información y facilidades de pago" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Pedir precio</a>
-        </div>
+        <h1 id="h1">Energía que<br><em>te mueve.</em></h1>
       </div>
-      <div class="escena" aria-hidden="true">
-        <div class="plataforma"></div><div class="anillo dos"></div><div class="anillo"></div>
-        <img class="moto" src="img/tienda/lq-n9.webp" alt="" width="900" height="721" fetchpriority="high">
-        <div class="hud h1p"><b>1000 W</b><small>Motor</small></div>
-        <div class="hud h2p"><b>90 km/h</b><small>Velocidad</small></div>
-        <div class="hud h3p"><b>60–70 km</b><small>Autonomía</small></div>
-        <div class="hud h4p"><b>48V 20Ah</b><small>Litio</small></div>
-        <span class="nombre">LQ-N9 · SERIE 1000W · EN CAMINO</span>
+      <div class="hero-vitrina">
+        <div class="hero-escena" id="hero-escena" data-modelo="0">
+          <span class="hero-letra" aria-hidden="true" id="hero-letra">N9</span>
+          <div class="hero-pedestal" aria-hidden="true"></div>
+          <img id="hero-foto" src="img/tienda/lq-n9.webp" alt="Pasola eléctrica LQ-N9" width="900" height="721" fetchpriority="high" draggable="false">
+          <span class="hero-contador" aria-hidden="true"><b id="hero-numero">01</b> / 03</span>
+        </div>
+        <div class="hero-controles" role="group" aria-label="Elegir modelo destacado">
+          <button class="hero-flecha" type="button" data-hero-dir="-1" aria-label="Modelo anterior"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg></button>
+          <div class="hero-modelos-lista">
+            <button type="button" data-hero-modelo="0" aria-pressed="true">LQ-N9</button>
+            <button type="button" data-hero-modelo="1" aria-pressed="false">LQ-H8</button>
+            <button type="button" data-hero-modelo="2" aria-pressed="false">LQ-HLD</button>
+          </div>
+          <button class="hero-flecha" type="button" data-hero-dir="1" aria-label="Modelo siguiente"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6M16 12H4"/></svg></button>
+        </div>
+        <p class="hero-ayuda">Elige tu modelo <span aria-hidden="true">·</span> desliza para explorar</p>
+        <p class="hero-feedback" id="hero-feedback" role="status" aria-live="polite"></p>
+      </div>
+      <div class="hero-info">
+        <div class="hero-detalle" id="hero-detalle">
+          <div id="hero-estado"><span class="estado camino">En camino</span></div>
+          <h2 id="hero-modelo">LQ-N9</h2>
+          <p class="lead" id="hero-sub">Serie 1000W · freno de disco</p>
+          <dl class="hero-specs" id="hero-specs"><div><dt>Motor</dt><dd>1000 W</dd></div><div><dt>Batería</dt><dd>48V 20Ah</dd></div><div><dt>Frenos</dt><dd>De disco</dd></div></dl>
+        </div>
+        <div class="acciones">
+          <a class="btn btn-oro" id="hero-consulta" href="https://wa.me/18296247623?text=Hola%20STUDIO%2C%20quiero%20informaci%C3%B3n%20del%20LQ-N9" target="_blank" rel="noopener">Consultar este modelo <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></a>
+          <a class="hero-catalogo" href="#explora">Ver catálogo <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6 6 6-6M12 20V4"/></svg></a>
+        </div>
       </div>
     </div>
   </section>
@@ -707,6 +787,70 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     });
   }
 })();
+// Portada: reutiliza el catálogo; cada interacción conserva foto, datos y consulta sincronizados.
+(function () {
+  const modelos = ['LQ-N9', 'LQ-H8', 'LQ-HLD'].map(n => CATALOGO.gMovilidad.find(p => p.nombre === n));
+  const fotos = document.getElementById('hero-foto'), escena = document.getElementById('hero-escena');
+  const controles = document.querySelector('.hero-controles'), botones = [...document.querySelectorAll('[data-hero-modelo]')];
+  const feedback = document.getElementById('hero-feedback');
+  const reducido = matchMedia('(prefers-reduced-motion: reduce)');
+  let actual = 0, solicitado = 0, revision = 0;
+  function datos(p) {
+    const motor = p.med.find(([m]) => m.k === 'Motor')[1] + ' W';
+    const bateria = p.rasgos.find(r => r.startsWith('Litio ')).replace('Litio ', '');
+    return [['Motor', motor], ['Batería', bateria], p.nombre === 'LQ-HLD' ? ['Equipamiento', 'Con canasta'] : ['Frenos', 'De disco']];
+  }
+  async function elegir(indice) {
+    solicitado = (indice + modelos.length) % modelos.length;
+    const destino = solicitado, turno = ++revision, p = modelos[destino];
+    if (destino === actual) { feedback.textContent = ''; return; }
+    feedback.classList.remove('hero-error');
+    feedback.textContent = 'Cargando ' + p.nombre + '…';
+    const nueva = new Image(); nueva.src = p.foto;
+    try {
+      if (nueva.decode) await nueva.decode();
+      else await new Promise((resolve, reject) => { if (nueva.complete) return nueva.naturalWidth ? resolve() : reject(); nueva.onload = resolve; nueva.onerror = reject; });
+    } catch (_) { if (turno === revision) { solicitado = actual; feedback.classList.add('hero-error'); feedback.textContent = 'No se pudo cargar la foto. Intenta de nuevo.'; } return; }
+    if (turno !== revision) return;
+    const direccion = destino === (actual + 1) % modelos.length ? 1 : -1;
+    actual = destino;
+    fotos.src = p.foto; fotos.alt = 'Pasola eléctrica ' + p.nombre;
+    document.getElementById('hero-modelo').textContent = p.nombre;
+    document.getElementById('hero-sub').textContent = p.sub;
+    document.getElementById('hero-estado').innerHTML = badge(p.estado || '');
+    document.getElementById('hero-specs').innerHTML = datos(p).map(([k,v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+    document.getElementById('hero-consulta').href = waLink('Hola STUDIO, quiero información del ' + p.nombre + '. ¿Cuál es su precio y disponibilidad?');
+    document.getElementById('hero-letra').textContent = p.nombre.replace('LQ-', '');
+    document.getElementById('hero-numero').textContent = String(actual + 1).padStart(2, '0');
+    escena.dataset.modelo = actual;
+    botones.forEach((b,i) => b.setAttribute('aria-pressed', String(i === actual)));
+    feedback.textContent = p.nombre + ' seleccionado';
+    const animados = [fotos, document.getElementById('hero-detalle'), document.getElementById('hero-letra')];
+    animados.forEach(el => { if (el.getAnimations) el.getAnimations().forEach(a => a.cancel()); });
+    if (!reducido.matches && fotos.animate) {
+      animados.forEach((el,i) => {
+        el.animate([{opacity:0,transform:`translateX(${direccion * (i === 0 ? 40 : 14)}px) rotateY(${i === 0 ? direccion * 12 : 0}deg)`},{opacity:1,transform:'translateX(0) rotateY(0)'}],{duration:i === 0 ? 550 : 400,easing:'cubic-bezier(.22,1,.36,1)'});
+      });
+    }
+  }
+  reducido.addEventListener('change', e => { if (e.matches) [fotos, document.getElementById('hero-detalle'), document.getElementById('hero-letra')].forEach(el => { if (el.getAnimations) el.getAnimations().forEach(a => a.cancel()); }); });
+  controles.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-hero-modelo')) elegir(+b.dataset.heroModelo);
+    else if (b.hasAttribute('data-hero-dir')) elegir(solicitado + +b.dataset.heroDir);
+  });
+  controles.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault(); const siguiente = (solicitado + (e.key === 'ArrowRight' ? 1 : -1) + modelos.length) % modelos.length;
+    botones[siguiente].focus(); elegir(siguiente);
+  });
+  let gesto = null;
+  escena.addEventListener('pointerdown', e => { if (!e.isPrimary || e.button !== 0) return; gesto = {id:e.pointerId,x:e.clientX,y:e.clientY}; escena.setPointerCapture(e.pointerId); });
+  escena.addEventListener('pointerup', e => { if (!gesto || gesto.id !== e.pointerId) return; const dx = e.clientX - gesto.x, dy = e.clientY - gesto.y; gesto = null; if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) elegir(solicitado + (dx < 0 ? 1 : -1)); });
+  escena.addEventListener('pointercancel', () => { gesto = null; });
+  escena.addEventListener('lostpointercapture', () => { gesto = null; });
+})();
+
 </script>
 </body>
 </html>

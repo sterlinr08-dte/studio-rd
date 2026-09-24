@@ -185,6 +185,17 @@ nav a:hover{color:var(--texto)}
 .escenario .sombra{position:absolute;left:22%;right:22%;bottom:9%;height:7%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
 .escenario .pieza{position:relative;width:88%;height:82%;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .5s var(--ease)}
 .escenario .pieza img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:50% 78%;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55)) drop-shadow(0 0 30px rgba(201,162,39,.12));transition:opacity .3s}
+.escenario .giro360{position:absolute;left:-4%;top:2%;width:108%;height:94%;touch-action:pan-y;cursor:grab;display:none}
+.escenario .giro360:active{cursor:grabbing}
+.pres.modo-360 .giro360{display:block}
+.pres.modo-360 .pieza,.pres.modo-360 .aro,.pres.modo-360 .halo,.pres.modo-360 .sombra{visibility:hidden}
+.btn-360{position:absolute;left:50%;bottom:-2%;translate:-50% 0;z-index:3;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(242,210,106,.45);background:rgba(7,8,10,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);font:600 13px var(--sans);cursor:pointer;white-space:nowrap;transition:border-color .2s,background .2s}
+.btn-360:hover{border-color:var(--oro-luz);background:rgba(7,8,10,.85)}
+.btn-360 i{font-size:19px;color:var(--oro-luz)}
+.btn-360[aria-busy="true"]{opacity:.8;cursor:progress}
+.pista-360{position:absolute;left:50%;top:4%;translate:-50% 0;z-index:3;font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--oro-luz);opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+.pres.modo-360 .pista-360{opacity:.9}
+.pres.modo-360.girado .pista-360{opacity:0}
 .escenario .num{position:absolute;top:2%;left:0;font:700 12px var(--mono);letter-spacing:.2em;color:var(--tenue)}
 .pres.der .escenario .num{left:auto;right:0}
 .estado{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font:700 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle}
@@ -594,7 +605,7 @@ const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
 const CATALOGO = {
   gMovilidad: [
-    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), precio: null, estado: 'camino',
+    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), giro: 'lq-n9', precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: img('lq-h8'), precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
@@ -682,6 +693,7 @@ function presentacion(p, i, g, total) {
         <div class="halo"></div><div class="aro a2"></div><div class="aro"></div><div class="aro a3"></div><div class="sombra"></div>
         <span class="num">${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
         <div class="pieza"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"><span class="brillo" aria-hidden="true" style="--m:url('${x.foto}')"></span></div>
+        ${p.giro ? `<canvas class="giro360" data-giro="${p.giro}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
       </div>
       <div class="ficha">
         <div class="cat"><span class="eyebrow">${CAT_NOMBRE[g]}</span><span data-badge>${badge(x.est)}</span></div>
@@ -808,6 +820,77 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     });
   }
 })();
+// Vista 360°: fotos del giro en un lienzo; se arrastra con el dedo o el ratón (izquierda/derecha).
+(function () {
+  const TOTAL = 36, cargas = {};
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function cargar(nombre, alAvanzar) {
+    if (cargas[nombre]) return cargas[nombre];
+    let listas = 0;
+    const fotos = Array.from({ length: TOTAL }, (_, k) => {
+      const im = new Image(); im.decoding = 'async';
+      im.src = 'img/tienda/360/' + nombre + '/' + String(k).padStart(2, '0') + '.webp';
+      return im;
+    });
+    cargas[nombre] = Promise.all(fotos.map(im => im.decode().then(() => alAvanzar(++listas))))
+      .then(() => fotos, e => { delete cargas[nombre]; throw e; });
+    return cargas[nombre];
+  }
+  function visor(sec, cv, fotos) {
+    const ctx = cv.getContext('2d');
+    let pos = 0, vel = 0, arrastre = null, girando = !quieto, ultimo = 0, raf = 0;
+    function pintar() {
+      const r = cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(r.width * d), h = Math.round(r.height * d);
+      if (!w || !h) return;
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      const im = fotos[((Math.round(pos) % TOTAL) + TOTAL) % TOTAL];
+      const e = Math.min(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * e, ih = im.naturalHeight * e;
+      ctx.clearRect(0, 0, w, h); ctx.drawImage(im, (w - iw) / 2, (h - ih) * .78, iw, ih);
+    }
+    function avanzar(t) {
+      raf = 0;
+      if (!sec.classList.contains('modo-360')) return;
+      const dt = ultimo ? Math.min(t - ultimo, 50) : 16; ultimo = t;
+      if (!arrastre) {
+        if (Math.abs(vel) > .002) { pos += vel * dt; vel *= Math.pow(.94, dt / 16); }
+        else if (girando) pos += dt * .006;
+      }
+      pintar(); raf = requestAnimationFrame(avanzar);
+    }
+    cv.addEventListener('pointerdown', e => { arrastre = { x: e.clientX, p: pos, t: e.timeStamp, xv: e.clientX }; vel = 0; girando = false; sec.classList.add('girado'); cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', e => {
+      if (!arrastre) return;
+      const ancho = cv.getBoundingClientRect().width / TOTAL * .9;
+      pos = arrastre.p - (e.clientX - arrastre.x) / ancho;
+      const dt = e.timeStamp - arrastre.t;
+      if (dt > 0) { vel = -(e.clientX - arrastre.xv) / ancho / dt; arrastre.t = e.timeStamp; arrastre.xv = e.clientX; }
+    });
+    const soltar = () => { arrastre = null; };
+    cv.addEventListener('pointerup', soltar); cv.addEventListener('pointercancel', soltar);
+    cv.tabIndex = 0;
+    cv.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault(); girando = false; vel = 0; sec.classList.add('girado'); pos += e.key === 'ArrowLeft' ? 1 : -1; pintar();
+    });
+    return { iniciar: () => { if (!raf) { ultimo = 0; raf = requestAnimationFrame(avanzar); } } };
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.btn-360'); if (!b) return;
+    const sec = b.closest('.pres'), cv = sec.querySelector('.giro360'), txt = b.querySelector('span');
+    if (sec.classList.contains('modo-360')) {
+      sec.classList.remove('modo-360', 'girado'); b.setAttribute('aria-pressed', 'false'); txt.textContent = 'Girar 360°'; return;
+    }
+    if (b.getAttribute('aria-busy') === 'true') return;
+    b.setAttribute('aria-busy', 'true'); txt.textContent = 'Cargando…';
+    cargar(cv.dataset.giro, n => { txt.textContent = 'Cargando ' + Math.round(n / TOTAL * 100) + '%'; }).then(fotos => {
+      if (!cv._visor) cv._visor = visor(sec, cv, fotos);
+      b.removeAttribute('aria-busy'); b.setAttribute('aria-pressed', 'true'); txt.textContent = 'Ver foto';
+      sec.classList.add('modo-360'); cv._visor.iniciar();
+    }).catch(() => { b.removeAttribute('aria-busy'); txt.textContent = 'No cargó · reintentar'; });
+  });
+})();
+
 // Comercial en video: se reproduce en silencio solo mientras está a la vista; el botón activa el sonido.
 (function () {
   const v = document.getElementById('comercial-video'), b = document.getElementById('comercial-sonido');

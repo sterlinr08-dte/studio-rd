@@ -1,7 +1,12 @@
 {
-  "version": "59.35",
+  "version": "59.36",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.36",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: las pasolas se mecen más (±20°) y el armado pieza por pieza se ve también en Android de gama media."]
+    },
     {
       "version": "59.35",
       "fecha": "2026-09-24",

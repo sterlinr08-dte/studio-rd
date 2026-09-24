@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>STUDIO · Movilidad eléctrica, hogar y tecnología</title>
-<meta name="description" content="Scooters eléctricos 1000W y 700W, motocargas 350cc, Smart TV CW, aires inverter, ventiladores de techo y cerraduras inteligentes. Financiamiento disponible. STUDIO, Av. Jacinto B. Dummit, Santiago, República Dominicana.">
+<meta name="description" content="Scooters eléctricos de 700W a 1200W, monta cargas 350cc, Smart TV CW, neveras, aires inverter, ventiladores de techo y cerraduras inteligentes. Financiamiento disponible. STUDIO, Av. Jacinto B. Dummit, Santiago, República Dominicana.">
 <meta name="theme-color" content="#07080A">
 <meta property="og:title" content="STUDIO · Energía que te mueve">
-<meta property="og:description" content="Scooters eléctricos, motocargas, Smart TV, aires inverter y cerraduras inteligentes en Santiago. Financiamiento disponible.">
+<meta property="og:description" content="Scooters eléctricos, monta cargas, Smart TV, neveras, aires inverter y cerraduras inteligentes en Santiago. Financiamiento disponible.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://studiord.net/img/tienda/lq-n9.webp">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"ElectronicsStore","name":"STUDIO","slogan":"Hogar, movilidad & tecnología","url":"https://studiord.net/","telephone":"+1-809-570-6254","address":{"@type":"PostalAddress","streetAddress":"Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago","addressLocality":"Santiago","addressCountry":"DO"},"openingHours":"Mo-Sa 08:30-18:30"}</script>
@@ -116,6 +116,13 @@ section{padding:88px 0}
 .estado.camino{background:rgba(142,164,188,.14);color:#C9D6E4;border:1px solid rgba(142,164,188,.35)}
 .estado.camino::before{content:"";width:6px;height:6px;border-radius:50%;background:#C9D6E4;animation:parpadeo 1.6s infinite}
 .estado.unico{background:rgba(201,162,39,.16);color:var(--oro-luz);border:1px solid rgba(201,162,39,.4)}
+.estado.agotado{background:rgba(255,255,255,.06);color:var(--suave);border:1px solid var(--linea2)}
+.prod.agotado .foto img{filter:grayscale(.85) brightness(.7)}
+.variantes button.agot{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.35);color:var(--tenue)}
+.variantes button.agot[aria-pressed="true"]{color:var(--suave)}
+.ancha.invertida .foto{order:2}
+[data-badge]{display:contents}
+.ancha.invertida .estado{left:auto;right:14px}
 @keyframes parpadeo{50%{opacity:.25}}
 .medidores{display:grid;gap:9px}
 .med{display:grid;grid-template-columns:86px 1fr auto;align-items:center;gap:10px;font:500 11.5px var(--mono);color:var(--suave)}
@@ -146,10 +153,6 @@ section{padding:88px 0}
 .carga .prod{background:linear-gradient(160deg,#17130A,var(--panel) 55%)}
 .dos-precios{display:flex;gap:26px;flex-wrap:wrap}
 
-/* Próximamente */
-.prod.pronto{border-style:dashed;background:transparent}
-.prod.pronto .foto{background:radial-gradient(60% 50% at 50% 60%,rgba(142,164,188,.10),transparent 70%)}
-.prod.pronto .foto i{position:relative;z-index:1;font-size:96px;color:rgba(142,164,188,.35)}
 
 /* Financiamiento */
 .pasos{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--linea2)}
@@ -230,7 +233,7 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
       <div>
         <span class="eyebrow">STUDIO · Hogar, movilidad &amp; tecnología · Santiago</span>
         <h1 id="h1">Energía que <em>te mueve.</em></h1>
-        <p class="lead">Scooters eléctricos de hasta 90 km/h, motocargas de trabajo, Smart TV, aires inverter y cerraduras inteligentes. Con financiamiento.</p>
+        <p class="lead">Scooters eléctricos de hasta 1200 W, monta cargas de trabajo, Smart TV, neveras, aires inverter y cerraduras inteligentes. Con financiamiento.</p>
         <div class="acciones">
           <a class="btn btn-oro js-wa" data-msg="Hola STUDIO, quiero información de los scooters eléctricos" href="https://wa.me/18296247623"><i class="ti ti-bolt" aria-hidden="true"></i> Quiero mi scooter</a>
           <a class="btn btn-linea" href="#movilidad">Ver catálogo <i class="ti ti-arrow-down-right" aria-hidden="true"></i></a>
@@ -249,7 +252,7 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
         <div class="hud h2p"><b>90 km/h</b><small>Velocidad</small></div>
         <div class="hud h3p"><b>60–70 km</b><small>Autonomía</small></div>
         <div class="hud h4p"><b>48V 20Ah</b><small>Litio</small></div>
-        <span class="nombre">LQ-N9 · SERIE 1000W</span>
+        <span class="nombre">LQ-N9 · SERIE 1000W · EN CAMINO</span>
       </div>
     </div>
   </section>
@@ -278,7 +281,7 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
     <div class="wrap">
       <div class="cab aparece">
         <div><span class="eyebrow">Hogar</span><h2 id="h-hog">Tu casa,<br>en otro nivel.</h2></div>
-        <p class="lead">Smart TV con Google TV, aire inverter con WiFi y ventiladores de techo con luz LED y control remoto.</p>
+        <p class="lead">Smart TV de 32" a 65", aire inverter con WiFi, neveras y ventiladores de techo con luz LED y control remoto.</p>
       </div>
       <div class="grid g3" id="gHogar"></div>
     </div>
@@ -340,84 +343,104 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
 <noscript><p style="text-align:center;padding:20px;color:#A3A6AB">Escríbenos por WhatsApp al 829-624-7623 para ver el catálogo completo.</p></noscript>
 
 <script>
-/* ════ Catálogo de STUDIO (del catálogo del dueño, 25-sep-2026). Para cambiar un precio o agregar un
+/* ════ Catálogo de STUDIO — precios de CLIENTE FINAL (catálogo del dueño, 25-sep-2026). Para cambiar un precio o agregar un
    artículo se edita solo esta lista. precio: número en RD$, o null = «Consúltalo». ════ */
 const WHATSAPP = '18296247623';
 const img = n => 'img/tienda/' + n + '.webp';
-const MOTOR = { k: 'Motor', max: 1000, u: ' W' }, VEL = { k: 'Velocidad', max: 90, u: ' km/h' }, AUT = { k: 'Autonomía', max: 70, u: ' km' };
+const MOTOR = { k: 'Motor', max: 1200, u: ' W' }, VEL = { k: 'Velocidad', max: 90, u: ' km/h' }, AUT = { k: 'Autonomía', max: 70, u: ' km' };
+/* variantes: [nombre, foto, color del punto, precio, estado]. estado 'agotado' = sin precio y botón «Avísame». */
 const CATALOGO = {
   gMovilidad: [
-    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), precio: null,
+    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: img('lq-n9'), precio: null, estado: 'camino',
       med: [[MOTOR, 1000], [VEL, 90], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: img('lq-h8'), precio: null, estado: 'camino',
-      med: [[MOTOR, 1000], [VEL, 90], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Carga 6–8 h'] },
+      med: [[MOTOR, 1000], [VEL, 90], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino',
-      med: [[MOTOR, 1000], [VEL, 90], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Carga 6–8 h'] },
-    { nombre: 'Scooter urbano 700W', sub: 'Ligero, práctico y en tres colores', ancha: true, precio: 26000,
-      variantes: [['Gris', img('s700-gris'), '#8d9095'], ['Blanco', img('s700-blanco'), '#f2f2f2'], ['Rosa', img('s700-rosa'), '#f2b8c6']],
+      med: [[MOTOR, 1000], [VEL, 90], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
+    { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000,
+      variantes: [['Rosa', img('s700-rosa'), '#f2b8c6', 29000], ['Blanco', img('s700-blanco'), '#f2f2f2', 29000], ['Gris', img('s700-gris'), '#8d9095', 29000]],
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
-    { nombre: 'ILQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 21000,
+    { nombre: 'LQ-XGW', sub: 'El más potente · con parrillas de carga', foto: img('lq-xgw'), precio: 33000, estado: 'ultima', ancha: true, invertida: true,
+      med: [[MOTOR, 1200], [VEL, 50], [AUT, 70]], rasgos: ['Motor 1200W', 'Batería de litio', 'Carga 6–8 h'] },
+    { nombre: 'LQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 23000,
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
-    { nombre: 'LQ-PP', sub: 'Con canasta · 180 kg+ de carga', foto: img('lq-pp'), precio: 22000,
+    { nombre: 'LQ-PP', sub: 'Con canasta · 180 kg+ de carga', foto: img('lq-pp'), precio: 24000,
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
-    { nombre: 'LQ-M12', sub: 'Nuevo modelo en camino', pronto: true, estado: 'camino', rasgos: ['Te avisamos por WhatsApp cuando llegue'] },
+    { nombre: 'LQ-XBW', sub: 'Con canasta · urbano', foto: img('lq-xbw'), precio: null, estado: 'agotado',
+      med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
   ],
   gCarga: [
-    { nombre: 'Motocarga hidráulica 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico',
+    { nombre: 'Monta carga hidráulico 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico',
       precios: [['Efectivo', 240000], ['Financiado', 270000]], rasgos: ['Motor 350cc', 'Volteo hidráulico', 'Alta capacidad de carga', 'Financiamiento disponible'] },
-    { nombre: 'Motocarga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico',
+    { nombre: 'Monta carga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico',
       precios: [['Efectivo', 160000]], rasgos: ['Motor 350cc', 'Alta capacidad de carga', 'Financiamiento disponible'] },
   ],
   gHogar: [
-    { nombre: 'CW Smart TV', sub: 'Google TV · calidad 8K', precio: 18000,
-      variantes: [['50"', img('tv-50'), null, 18000], ['55"', img('tv-55'), null, 20000], ['65"', img('tv-55'), null, 31000]],
-      rasgos: ['Power by Google TV', 'Smart TV', 'Resolución HD'] },
-    { nombre: 'Aire CW-STUDIO 24,000 BTU', sub: 'Inverter · eficiencia 19', foto: img('aire-24000'), precio: 38000,
+    { nombre: 'CW Smart TV', sub: 'Elige tu tamaño', ancha: true,
+      variantes: [['32"', img('tv-50'), null, null, 'agotado', 'Android TV · 4K'], ['43"', img('tv-50'), null, 14990, '', 'Android TV · 4K'], ['50"', img('tv-50'), null, 21990, '', 'Google TV · 8K'], ['55"', img('tv-55'), null, 25000, '', 'Google TV · 8K'], ['65"', img('tv-55'), null, 34000, '', 'Google TV · 8K']],
+      rasgos: ['Smart TV', 'Resolución HD', 'Apps de streaming'] },
+    { nombre: 'Aire CW-STUDIO inverter', sub: 'Eficiencia 19 · WiFi',
+      variantes: [['12,000 BTU', img('aire-24000'), null, null, 'agotado'], ['18,000 BTU', img('aire-24000'), null, null, 'agotado'], ['24,000 BTU', img('aire-24000'), null, 40000]],
       rasgos: ['Inverter', 'WiFi', 'Sistema silencioso', 'Filtros saludables', 'Normativas europeas'] },
-    { nombre: 'Ventilador de techo 42"', sub: 'Luz LED regulable · control remoto', precio: 4500,
-      variantes: [['Cristal', img('fan-cristal'), null, 4500], ['Madera', img('fan-madera'), null, 2900], ['White/Black', img('fan-whiteblack'), null, 2900], ['White', img('fan-white'), null, 2900]],
+    { nombre: 'Nevera CW', sub: '110V · enfriamiento rápido',
+      variantes: [['8 pies', img('nevera-8'), null, null, 'agotado', 'CW-218RF'], ['11 pies', img('nevera-11'), null, 24000, '', 'CW-268RF · con dispensador de agua']],
+      rasgos: ['Enfriamiento rápido', '110V · 60Hz'] },
+    { nombre: 'Ventilador de techo 42"', sub: 'Luz LED · control remoto',
+      variantes: [['Cristal', img('fan-cristal'), null, 5990], ['Madera', img('fan-madera'), null, 3900], ['White', img('fan-white'), null, 3900], ['Black/White', img('fan-whiteblack'), null, 3900]],
       rasgos: ['3 velocidades', 'Motor silencioso', 'Control remoto'] },
   ],
   gTec: [
-    { nombre: 'Smart Lock facial', sub: '5 niveles de seguridad', foto: img('lock-facial'), precio: 7000,
+    { nombre: 'Smart Lock facial', sub: '5 niveles de seguridad', foto: img('lock-facial'), precio: 8500,
       rasgos: ['Desbloqueo facial', 'Huella digital', 'Código PIN', 'Tarjeta RFID', 'Llave física', 'App móvil'] },
-    { nombre: 'Smart Lock LK014', sub: 'Cerradura electrónica de entrada', foto: img('lock-lk014'), precio: 2200,
-      rasgos: ['Huella digital', 'PIN', 'Tarjeta RFID', 'Llave física', 'App'] },
+    { nombre: 'Smart Lock LK0114', sub: 'Cerradura electrónica de entrada', foto: img('lock-lk014'), precio: 2800,
+      rasgos: ['Huella digital', 'PIN', 'Tarjeta', 'Llave física', 'App'] },
   ],
 };
 const fmt = n => 'RD$ ' + Number(n).toLocaleString('en-US');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const waLink = msg => 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
-function msgDe(p, v) { const nom = p.nombre + (v ? ' ' + v[0] : ''); const pr = v && v[3] ? v[3] : p.precio; return 'Hola STUDIO, me interesa el ' + nom + (pr ? ' (' + fmt(pr) + ')' : '') + '. ¿Está disponible?'; }
+const ESTADO = { camino: ['camino', 'En camino'], agotado: ['agotado', 'Agotado'], ultima: ['unico', 'Última unidad'], unico: ['unico', 'Único en el país'] };
+// Lo que muestra una tarjeta según el producto y la variante elegida.
+function vista(p, v) {
+  const est = (v && v[4]) || p.estado || '', pr = v ? v[3] : p.precio, nom = p.nombre + (v ? ' ' + v[0] : '');
+  const espera = est === 'agotado' || est === 'camino';
+  return {
+    foto: v ? v[1] : p.foto, est: est, sub: (v && v[5]) || p.sub,
+    precio: pr ? `<small>Precio</small>${fmt(pr)}` : est === 'agotado' ? '<small>Precio</small>Agotado' : est === 'camino' ? '<small>Llega pronto</small>Consúltalo' : '<small>Precio</small>Consúltalo',
+    sinPrecio: !pr,
+    boton: espera ? '<i class="ti ti-bell" aria-hidden="true"></i> Avísame' : '<i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Lo quiero',
+    msg: espera ? 'Hola STUDIO, avísenme cuando tengan el ' + nom + '.' : 'Hola STUDIO, me interesa el ' + nom + (pr ? ' (' + fmt(pr) + ')' : '') + '. ¿Está disponible?'
+  };
+}
+function badge(est) { const e = ESTADO[est]; return e ? `<span class="estado ${e[0]}">${e[1]}</span>` : ''; }
 function tarjeta(p, i, g) {
-  const v0 = p.variantes ? p.variantes[0] : null, foto = v0 ? v0[1] : p.foto, pr = v0 && v0[3] ? v0[3] : p.precio;
-  const est = p.estado === 'camino' ? '<span class="estado camino">En camino</span>' : p.estado === 'unico' ? '<span class="estado unico">Único en el país</span>' : '';
+  const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[3])) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
   const med = (p.med || []).map(([m, v, txt]) => `<div class="med"><span>${m.k}</span><span class="barra"><i style="--v:${Math.round(v / m.max * 100)}%"></i></span><b>${txt || v}${m.u}</b></div>`).join('');
-  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === 0}" data-g="${g}" data-i="${i}" data-k="${k}">${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}${esc(v[0])}</button>`).join('')}</div>` : '';
+  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === k0}" data-g="${g}" data-i="${i}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}>${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}${esc(v[0])}</button>`).join('')}</div>` : '';
   const precio = p.precios ? `<div class="dos-precios">${p.precios.map(([t, n]) => `<div class="precio"><small>${t}</small>${fmt(n)}</div>`).join('')}</div>`
-    : pr ? `<div class="precio" data-precio><small>Precio</small>${fmt(pr)}</div>` : `<div class="precio consulta"><small>Precio</small>Consúltalo</div>`;
-  if (p.pronto) return `<article class="prod pronto aparece" id="${g}-${i}">${est}<div class="foto"><i class="ti ti-scooter-electric" aria-hidden="true"></i></div>
-    <div class="cuerpo"><h3>${esc(p.nombre)}</h3><p class="sub">${esc(p.sub)}</p><div class="rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>
-      <div class="pie"><div class="precio consulta"><small>Próximamente</small>Muy pronto</div><a class="quiero" target="_blank" rel="noopener" href="${waLink('Hola STUDIO, avísenme cuando llegue el ' + p.nombre)}"><i class="ti ti-bell" aria-hidden="true"></i> Avísame</a></div></div></article>`;
-  return `<article class="prod aparece${p.ancha ? ' ancha' : ''}" id="${g}-${i}">
-    ${est}<div class="foto"><img src="${foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"></div>
-    <div class="cuerpo"><h3>${esc(p.nombre)}</h3><p class="sub">${esc(p.sub)}</p>${vars}
+    : `<div class="precio${x.sinPrecio ? ' consulta' : ''}" data-precio>${x.precio}</div>`;
+  return `<article class="prod aparece${p.ancha ? ' ancha' : ''}${p.invertida ? ' invertida' : ''}${x.est === 'agotado' ? ' agotado' : ''}" id="${g}-${i}">
+    <span data-badge>${badge(x.est)}</span><div class="foto"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"></div>
+    <div class="cuerpo"><h3>${esc(p.nombre)}</h3><p class="sub" data-sub>${esc(x.sub)}</p>${vars}
       ${med ? `<div class="medidores">${med}</div>` : ''}
       <div class="rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>
-      <div class="pie">${precio}<a class="quiero" target="_blank" rel="noopener" href="${waLink(msgDe(p, v0))}"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Lo quiero</a></div>
+      <div class="pie">${precio}<a class="quiero" target="_blank" rel="noopener" href="${waLink(x.msg)}">${x.boton}</a></div>
     </div></article>`;
 }
 Object.entries(CATALOGO).forEach(([g, lista]) => { const el = document.getElementById(g); if (el) el.innerHTML = lista.map((p, i) => tarjeta(p, i, g)).join(''); });
-// Colores / tamaños / modelos: cambian foto, precio y el mensaje de WhatsApp.
+// Colores / tamaños / modelos: cambian foto, estado, precio y el mensaje de WhatsApp.
 document.addEventListener('click', e => {
   const b = e.target.closest('.variantes button'); if (!b) return;
-  const p = CATALOGO[b.dataset.g][+b.dataset.i], v = p.variantes[+b.dataset.k], card = document.getElementById(b.dataset.g + '-' + b.dataset.i);
-  card.querySelectorAll('.variantes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  const im = card.querySelector('.foto img'); im.style.opacity = 0;
-  im.loading = 'eager';
-  setTimeout(() => { im.src = v[1]; im.alt = p.nombre + ' ' + v[0]; im.style.opacity = 1; }, 180);
-  const pr = card.querySelector('[data-precio]'); if (pr && v[3]) pr.innerHTML = '<small>Precio</small>' + fmt(v[3]);
-  card.querySelector('.quiero').href = waLink(msgDe(p, v));
+  const p = CATALOGO[b.dataset.g][+b.dataset.i], v = p.variantes[+b.dataset.k], card = document.getElementById(b.dataset.g + '-' + b.dataset.i), x = vista(p, v);
+  card.querySelectorAll('.variantes button').forEach(y => y.setAttribute('aria-pressed', String(y === b)));
+  const im = card.querySelector('.foto img');
+  if (im.getAttribute('src') !== x.foto) { im.loading = 'eager'; im.style.opacity = 0; setTimeout(() => { im.src = x.foto; im.style.opacity = 1; }, 180); }
+  im.alt = p.nombre + ' ' + v[0];
+  card.classList.toggle('agotado', x.est === 'agotado');
+  card.querySelector('[data-badge]').innerHTML = badge(x.est);
+  card.querySelector('[data-sub]').textContent = x.sub;
+  const pr = card.querySelector('[data-precio]'); pr.innerHTML = x.precio; pr.classList.toggle('consulta', x.sinPrecio);
+  const q = card.querySelector('.quiero'); q.innerHTML = x.boton; q.href = waLink(x.msg);
 });
 // Botones generales de WhatsApp con su mensaje.
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });

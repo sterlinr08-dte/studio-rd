@@ -465,7 +465,7 @@ footer .acceso-equipo:hover{color:var(--texto)}
         <div class="hero-escena" id="hero-escena" data-modelo="0">
           <span class="hero-letra" aria-hidden="true" id="hero-letra">N9</span>
           <div class="hero-pedestal" aria-hidden="true"></div>
-          <img id="hero-foto" src="img/tienda/lq-n9.webp" alt="Pasola eléctrica LQ-N9" width="900" height="721" fetchpriority="high" draggable="false">
+          <img id="hero-foto" src="img/tienda/hd/lq-n9.webp" alt="Pasola eléctrica LQ-N9" width="900" height="721" fetchpriority="high" draggable="false">
           <span class="hero-contador" aria-hidden="true"><b id="hero-numero">01</b> / 03</span>
         </div>
         <div class="hero-controles" role="group" aria-label="Elegir modelo destacado">
@@ -605,7 +605,7 @@ const WHATSAPP = '18296247623';
    WhatsApp pregunta por el precio. */
 const MOSTRAR_PRECIOS = false;
 // Fotos mejoradas (estudio, alta resolución): se sirven desde img/tienda/hd/ con el mismo nombre.
-const HD = new Set(["aire-24000", "ilq-hld", "lq-h8", "lq-pp", "lq-xbw", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
+const HD = new Set(["aire-24000", "ilq-hld", "lq-h8", "lq-n9", "lq-pp", "lq-xbw", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
 const img = n => 'img/tienda/' + (HD.has(n) ? 'hd/' : '') + n + '.webp';
 const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60, u: 'km/h' }, AUT = { k: 'Autonomía', max: 70, u: 'km' };
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */

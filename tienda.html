@@ -336,7 +336,7 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
     <span>© <span id="anio">2026</span> STUDIO · Hogar, movilidad &amp; tecnología · Santiago, República Dominicana</span>
     <span><a href="#movilidad">Catálogo</a> · <a href="#financiamiento">Financiamiento</a> · <a href="/app">Acceso del personal</a></span>
   </div>
-  <div class="wrap"><p class="aviso">Precios de catálogo en pesos dominicanos, sujetos a cambio y disponibilidad.</p></div>
+  <div class="wrap"><p class="aviso">Disponibilidad sujeta a existencia. Consulta precios y facilidades de pago por WhatsApp.</p></div>
 </footer>
 
 <a class="wa-flot js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623" aria-label="Escribir a STUDIO por WhatsApp"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></a>
@@ -346,6 +346,10 @@ html:not(.js) .med .barra i{transform:scaleX(1)}
 /* ════ Catálogo de STUDIO — precios de CLIENTE FINAL (catálogo del dueño, 25-sep-2026). Para cambiar un precio o agregar un
    artículo se edita solo esta lista. precio: número en RD$, o null = «Consúltalo». ════ */
 const WHATSAPP = '18296247623';
+/* Precios: el dueño pidió no mostrarlos por ahora (25-sep-2026). Quedan en la lista; para volver a
+   mostrarlos basta con poner true. Con false, cada tarjeta dice «Consulta el precio» y el mensaje de
+   WhatsApp pregunta por él. */
+const MOSTRAR_PRECIOS = false;
 const img = n => 'img/tienda/' + n + '.webp';
 const MOTOR = { k: 'Motor', max: 1200, u: ' W' }, VEL = { k: 'Velocidad', max: 90, u: ' km/h' }, AUT = { k: 'Autonomía', max: 70, u: ' km' };
 /* variantes: [nombre, foto, color del punto, precio, estado]. estado 'agotado' = sin precio y botón «Avísame». */
@@ -402,22 +406,22 @@ const waLink = msg => 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponen
 const ESTADO = { camino: ['camino', 'En camino'], agotado: ['agotado', 'Agotado'], ultima: ['unico', 'Última unidad'], unico: ['unico', 'Único en el país'] };
 // Lo que muestra una tarjeta según el producto y la variante elegida.
 function vista(p, v) {
-  const est = (v && v[4]) || p.estado || '', pr = v ? v[3] : p.precio, nom = p.nombre + (v ? ' ' + v[0] : '');
+  const est = (v && v[4]) || p.estado || '', pr = MOSTRAR_PRECIOS ? (v ? v[3] : p.precio) : null, nom = p.nombre + (v ? ' ' + v[0] : '');
   const espera = est === 'agotado' || est === 'camino';
   return {
     foto: v ? v[1] : p.foto, est: est, sub: (v && v[5]) || p.sub,
-    precio: pr ? `<small>Precio</small>${fmt(pr)}` : est === 'agotado' ? '<small>Precio</small>Agotado' : est === 'camino' ? '<small>Llega pronto</small>Consúltalo' : '<small>Precio</small>Consúltalo',
+    precio: pr ? `<small>Precio</small>${fmt(pr)}` : est === 'agotado' ? '<small>Disponibilidad</small>Agotado' : est === 'camino' ? '<small>Llega pronto</small>Resérvalo' : '<small>Precio</small>Consúltalo',
     sinPrecio: !pr,
     boton: espera ? '<i class="ti ti-bell" aria-hidden="true"></i> Avísame' : '<i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Lo quiero',
-    msg: espera ? 'Hola STUDIO, avísenme cuando tengan el ' + nom + '.' : 'Hola STUDIO, me interesa el ' + nom + (pr ? ' (' + fmt(pr) + ')' : '') + '. ¿Está disponible?'
+    msg: espera ? 'Hola STUDIO, avísenme cuando tengan el ' + nom + '.' : 'Hola STUDIO, me interesa el ' + nom + (pr ? ' (' + fmt(pr) + ')' : '') + '. ¿Está disponible?' + (pr ? '' : ' ¿Cuál es el precio?')
   };
 }
 function badge(est) { const e = ESTADO[est]; return e ? `<span class="estado ${e[0]}">${e[1]}</span>` : ''; }
 function tarjeta(p, i, g) {
-  const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[3])) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
+  const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[4] !== 'agotado')) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
   const med = (p.med || []).map(([m, v, txt]) => `<div class="med"><span>${m.k}</span><span class="barra"><i style="--v:${Math.round(v / m.max * 100)}%"></i></span><b>${txt || v}${m.u}</b></div>`).join('');
   const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === k0}" data-g="${g}" data-i="${i}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}>${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}${esc(v[0])}</button>`).join('')}</div>` : '';
-  const precio = p.precios ? `<div class="dos-precios">${p.precios.map(([t, n]) => `<div class="precio"><small>${t}</small>${fmt(n)}</div>`).join('')}</div>`
+  const precio = p.precios && MOSTRAR_PRECIOS ? `<div class="dos-precios">${p.precios.map(([t, n]) => `<div class="precio"><small>${t}</small>${fmt(n)}</div>`).join('')}</div>`
     : `<div class="precio${x.sinPrecio ? ' consulta' : ''}" data-precio>${x.precio}</div>`;
   return `<article class="prod aparece${p.ancha ? ' ancha' : ''}${p.invertida ? ' invertida' : ''}${x.est === 'agotado' ? ' agotado' : ''}" id="${g}-${i}">
     <span data-badge>${badge(x.est)}</span><div class="foto"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"></div>

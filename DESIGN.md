@@ -292,3 +292,8 @@ and explicitly requested implementation and publication. This replaces the 58.96
 ## Tienda pública — refinamiento 2026-09-23
 
 Entrada breve de portada con opacidad y desplazamiento; nombres de destacados siempre visibles. Plataformas con trazos discretos y composición móvil centrada. El movimiento continuo de productos solo se ejecuta cerca de la pantalla; las entradas se realizan una vez. Armado de hasta 20 fragmentos en escritorio y 15 en móvil, con versión estática para memoria limitada y movimiento reducido. Conserva la paleta y tipografía aprobadas.
+
+
+## Cabecera pública — 2026-09-24
+
+Por solicitud del dueño se retira el botón de WhatsApp de la cabecera y los enlaces al sistema interno de la tienda pública (cabecera y pie). El personal usa directamente `/app`. Esta decisión reduce exposición visual y no sustituye autenticación ni autorización.

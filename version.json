@@ -1,7 +1,12 @@
 {
-  "version": "59.32",
+  "version": "59.33",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.33",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: cabecera sin botón de WhatsApp y sin enlaces públicos al acceso del personal. El personal accede directamente por /app."]
+    },
     {
       "version": "59.32",
       "fecha": "2026-09-23",

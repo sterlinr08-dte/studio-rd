@@ -1,7 +1,16 @@
 {
-  "version": "59.27",
+  "version": "59.28",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.28",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Nueva página pública de STUDIO en studiord.net: catálogo futurista con presentación y movimiento para cada artículo.",
+        "Botones de WhatsApp para pedir precio, financiar o pedir aviso, más Llamar desde el celular.",
+        "El personal entra al sistema con «Acceso del personal» o en studiord.net/app; en equipos donde ya inició sesión, studiord.net sigue abriendo el sistema."
+      ]
+    },
     {
       "version": "59.27",
       "fecha": "2026-09-25",

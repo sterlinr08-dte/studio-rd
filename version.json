@@ -1,7 +1,12 @@
 {
-  "version": "59.33",
+  "version": "59.34",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.34",
+      "fecha": "2026-09-24",
+      "notas": ["Cabecera sin WhatsApp y sin enlaces públicos al sistema del personal. Acceso directo por /app."]
+    },
     {
       "version": "59.33",
       "fecha": "2026-09-25",

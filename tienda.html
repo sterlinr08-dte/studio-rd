@@ -61,10 +61,6 @@ header .wrap{display:flex;align-items:center;gap:20px;height:64px}
 nav{display:flex;gap:26px;margin-left:auto}
 nav a{font-size:14px;color:var(--suave);text-decoration:none;transition:color .2s}
 nav a:hover{color:var(--texto)}
-header .btn{height:40px;padding:0 16px;font-size:14px}
-.acceso{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;border-radius:999px;border:1px solid rgba(242,210,106,.6);background:rgba(201,162,39,.1);color:var(--oro-luz);text-decoration:none;font:600 13.5px var(--sans);white-space:nowrap;transition:border-color .2s,background .2s}
-.acceso:hover{border-color:var(--oro);background:rgba(201,162,39,.08)}
-.acceso i{font-size:19px;color:var(--oro-luz)}
 .progreso{position:absolute;left:0;bottom:-1px;height:2px;width:100%;transform-origin:left;transform:scaleX(var(--leido,0));background:linear-gradient(90deg,var(--oro-osc),var(--oro-luz));box-shadow:0 0 10px rgba(242,210,106,.6)}
 
 /* ── Portada ── */
@@ -334,10 +330,8 @@ footer a:hover{color:var(--texto)}
   .js .pres .pieza,.js .pres.der .pieza{translate:0 40px}
   .pasos{grid-template-columns:1fr 1fr;row-gap:30px}
   nav{display:none}
-  .acceso{margin-left:auto}
 }
 @media (max-width:620px){
-  .acceso{padding:0 12px;font-size:13px}.acceso span{display:inline}header .btn-oro{padding:0 12px}header .btn-oro .etq{display:none}
   section.bloque{padding:64px 0}
   .hero{padding:32px 0 40px}
   .hud b{font-size:15px}.hud{padding:7px 10px}.hud small{font-size:9.5px}
@@ -365,8 +359,6 @@ footer a:hover{color:var(--texto)}
     <nav aria-label="Secciones">
       <a href="#movilidad">Movilidad</a><a href="#carga">Monta cargas</a><a href="#hogar">Hogar</a><a href="#tecnologia">Tecnología</a><a href="#financiamiento">Financiamiento</a><a href="#contacto">Contacto</a>
     </nav>
-    <a class="acceso" href="/app" title="Entrar al sistema STUDIO"><i class="ti ti-user-circle" aria-hidden="true"></i><span>Acceso personal</span></a>
-    <a class="btn btn-oro js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i><span class="etq"> Escríbenos</span></a>
   </div>
   <span class="progreso" aria-hidden="true"></span>
 </header>
@@ -470,7 +462,7 @@ footer a:hover{color:var(--texto)}
 <footer>
   <div class="wrap">
     <span>© <span id="anio">2026</span> STUDIO · Hogar, movilidad &amp; tecnología · Santiago, República Dominicana</span>
-    <span><a href="#movilidad">Catálogo</a> · <a href="#financiamiento">Financiamiento</a> · <a href="/app">Acceso del personal</a></span>
+    <span><a href="#movilidad">Catálogo</a> · <a href="#financiamiento">Financiamiento</a></span>
   </div>
   <div class="wrap"><p class="aviso">Tel. <a href="tel:+18095706254">809-570-6254</a> · WhatsApp <a class="js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623">829-624-7623</a> · Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago · Lunes a sábado, 8:30 a.m. – 6:30 p.m.</p></div>
   <div class="wrap"><p class="aviso">Disponibilidad sujeta a existencia. Consulta precios y facilidades de pago por WhatsApp.</p></div>

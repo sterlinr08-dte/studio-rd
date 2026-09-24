@@ -7,6 +7,8 @@
 <script>/* Marca por dominio: en studiord.net el login/splash usan la piel STUDIO (solo CSS + textos; misma app). */
 (function(){try{if(true){document.documentElement.classList.add('nx-studio');document.title='Iniciar sesión · Studio';var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';document.head.appendChild(l);}}catch(e){}})();</script>
 
+<script>/* Portada pública (25-sep-2026): el Worker muestra la tienda en «/» salvo en equipos donde ya se entró al sistema. Esta marca (solo «1», sin datos) la pone el inicio de sesión. */
+window.nxMarcarPersonal=function(){try{document.cookie='studio_staff=1; Max-Age=31536000; Path=/; SameSite=Lax; Secure'}catch(e){}};try{if(sessionStorage.getItem('nx_sesion'))window.nxMarcarPersonal()}catch(e){}</script>
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
 <meta name="application-name" content="Studio"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -6207,7 +6209,7 @@ async function nxFinalizarLoginAuth(data,prof,user,recordar){
   nxStoreAuth(data);nxScheduleRefresh();
   sesion={id:prof.usuario_sistema_id||prof.id,nom:prof.nom,rol:prof.rol,cargo:''};
   const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,inicio:Date.now()});
-  sessionStorage.setItem('nx_sesion',sesData);
+  sessionStorage.setItem('nx_sesion',sesData);try{window.nxMarcarPersonal&&window.nxMarcarPersonal()}catch(e){}
   sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
   if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
   try{logAudit('LOGIN_EXITOSO',`${user} (Auth) · ${new Date().toLocaleString('es-DO')}`,'Seguridad');}catch(e){}
@@ -6403,7 +6405,7 @@ async function doLogin(){
     await nxCargarOrg(); // multi-empresa: carga la organización del usuario
     const recordar=document.getElementById('rememberMe')?.checked;
     const sesData=JSON.stringify({id:sesion.id,nom:sesion.nom,rol:sesion.rol,cargo:sesion.cargo,organizacion_id:sesion.organizacion_id||null,inicio:Date.now()});
-    sessionStorage.setItem('nx_sesion',sesData);
+    sessionStorage.setItem('nx_sesion',sesData);try{window.nxMarcarPersonal&&window.nxMarcarPersonal()}catch(e){}
     sessionStorage.setItem('nx_sesion_actividad',String(Date.now()));
     if(recordar){localStorage.setItem('nx_sesion_persist',sesData);localStorage.setItem('nx_user_persist',user);}
     logAudit('LOGIN_EXITOSO',`${user} · ${new Date().toLocaleString('es-DO')}`,'Seguridad');
@@ -13741,7 +13743,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   // Recuperar sesión persistente si existe
   const persist=localStorage.getItem('nx_sesion_persist');
   if(persist&&!sessionStorage.getItem('nx_sesion')){
-    sessionStorage.setItem('nx_sesion',persist);
+    sessionStorage.setItem('nx_sesion',persist);try{window.nxMarcarPersonal&&window.nxMarcarPersonal()}catch(e){}
   }
   const s = sessionStorage.getItem('nx_sesion');
   if(s && url && key){

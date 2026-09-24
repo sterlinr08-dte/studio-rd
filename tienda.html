@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STUDIO · Tecnología en Santiago</title>
+<meta name="description" content="Celulares, aires acondicionados CW STUDIO, movilidad eléctrica, televisores y taller de reparación. Financiamiento con firma digital. STUDIO, Av. Jacinto B. Dummit, Santiago, República Dominicana.">
+<meta name="theme-color" content="#0A0A0A">
+<meta property="og:title" content="STUDIO · Tecnología que se queda contigo">
+<meta property="og:description" content="iPhone 17, Samsung S26, aires CW STUDIO, Sur-Ron, taller y financiamiento.">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"ElectronicsStore","name":"STUDIO","url":"https://studiord.net/","telephone":"+1-809-570-6254","address":{"@type":"PostalAddress","streetAddress":"Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago","addressLocality":"Santiago","addressCountry":"DO"},"openingHours":"Mo-Sa 08:30-18:30"}</script>
+<link rel="icon" href="icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icon-apple-180.png">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=optional">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
+<style>
+/* STUDIO · página pública (25-sep-2026). Marca: DESIGN.md (negro #0A0A0A, lienzo cálido #F7F5EF, oro #C9A227, SF Pro / Inter).
+   Concepto: «la vitrina» — el hero es una vitrina de joyería con los equipos del día, precio en cifras tabulares y un
+   filo de oro. Todo lo demás es calmado y claro: la vitrina es el único gesto fuerte de la página. */
+:root{
+  --negro:#0A0A0A; --carbon:#171717; --lienzo:#F7F5EF; --papel:#FFFEFA; --tinta:#111111; --grafito:#686862;
+  --oro:#C9A227; --oro-claro:#E3C45C; --oro-osc:#806515; --linea:rgba(17,17,17,.10); --linea-osc:rgba(255,255,255,.10);
+  --sans:-apple-system,"SF Pro Text","SF Pro Display",system-ui,Inter,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,"JetBrains Mono",monospace;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--lienzo);color:var(--tinta);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em;line-height:1.08}
+p{margin:0}
+.eyebrow{font:600 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--oro-osc)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--oro);outline-offset:3px;border-radius:6px}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:0 22px;border-radius:999px;font:600 15px/1 var(--sans);text-decoration:none;cursor:pointer;border:1px solid transparent;transition:transform .16s var(--ease),background .22s var(--ease),border-color .22s var(--ease),color .22s var(--ease)}
+.btn i{font-size:19px}
+.btn-oro{background:var(--oro);color:#0A0A0A}
+.btn-oro:hover{background:var(--oro-claro)}
+.btn-linea{border-color:rgba(255,255,255,.28);color:#fff}
+.btn-linea:hover{border-color:var(--oro);color:var(--oro-claro)}
+.btn-tinta{background:var(--tinta);color:#fff}
+.btn-tinta:hover{background:#2a2a2a}
+@media(hover:hover){.btn:hover{transform:translateY(-1px)}}
+.btn:active{transform:translateY(1px)}
+
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.82);-webkit-backdrop-filter:saturate(160%) blur(14px);backdrop-filter:saturate(160%) blur(14px);border-bottom:1px solid var(--linea-osc)}
+.top .wrap{display:flex;align-items:center;gap:24px;height:64px}
+.logo{display:block;width:118px;height:30px;overflow:hidden;flex:none}
+.logo img{width:128px;max-width:none;margin:-43px 0 0 -8px}
+.nav{display:flex;gap:26px;margin-left:auto}
+.nav a{color:rgba(255,255,255,.72);text-decoration:none;font-size:14px;font-weight:500}
+.nav a:hover{color:#fff}
+.top .btn{min-height:40px;padding:0 16px;font-size:14px}
+
+/* Hero · la vitrina */
+.hero{background:radial-gradient(120% 90% at 85% 0%,#1c1a14 0%,var(--negro) 55%);color:#fff;padding:72px 0 88px;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.hero .eyebrow{color:var(--oro)}
+.hero h1{font-size:clamp(40px,6vw,76px);font-weight:700;margin:18px 0 20px}
+.hero h1 em{font-style:normal;color:var(--oro)}
+.hero .lead{font-size:clamp(17px,1.6vw,19px);color:rgba(255,255,255,.72);max-width:34ch}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+.hero .sellos{display:flex;gap:22px;flex-wrap:wrap;margin-top:36px;color:rgba(255,255,255,.62);font-size:13.5px}
+.hero .sellos span{display:inline-flex;align-items:center;gap:7px}
+.hero .sellos i{color:var(--oro);font-size:17px}
+
+.vitrina{position:relative;border-radius:22px;padding:22px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.10);box-shadow:0 40px 90px -40px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08)}
+.vitrina::before{content:"";position:absolute;inset:-1px;border-radius:23px;padding:1px;background:linear-gradient(160deg,rgba(201,162,39,.75),rgba(201,162,39,0) 38%,rgba(201,162,39,0) 70%,rgba(201,162,39,.4));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.vitrina-h{display:flex;justify-content:space-between;align-items:baseline;padding:4px 6px 14px;border-bottom:1px solid var(--linea-osc)}
+.vitrina-h b{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--oro)}
+.vitrina-h span{font-size:12px;color:rgba(255,255,255,.5)}
+.pieza{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;padding:14px 6px;border-bottom:1px solid var(--linea-osc)}
+.pieza:last-of-type{border-bottom:0}
+.pieza .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:rgba(201,162,39,.12);color:var(--oro-claro);font-size:22px}
+.pieza b{display:block;font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+.pieza small{color:rgba(255,255,255,.55);font-size:12.5px}
+.pieza .precio{font-size:15px;color:#fff;white-space:nowrap}
+.pieza .precio small{display:block;text-align:right;font-family:var(--sans);font-size:11px;color:var(--oro)}
+.vitrina-p{font-size:11.5px;color:rgba(255,255,255,.45);margin:12px 6px 0}
+
+/* Secciones claras */
+section{padding:96px 0}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:40px;flex-wrap:wrap}
+.cab h2{font-size:clamp(30px,4vw,46px);font-weight:700;margin-top:12px;max-width:18ch}
+.cab p{color:var(--grafito);max-width:44ch}
+
+.cats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.cat{grid-column:span 2;background:var(--papel);border:1px solid var(--linea);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:14px;min-height:210px;text-decoration:none;transition:transform .22s var(--ease),border-color .22s var(--ease),box-shadow .22s var(--ease)}
+.cat.ancha{grid-column:span 3}
+@media(hover:hover){.cat:hover{transform:translateY(-2px);border-color:rgba(201,162,39,.55);box-shadow:0 18px 40px -26px rgba(17,17,17,.35)}}
+.cat .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--negro);color:var(--oro);font-size:24px}
+.cat h3{font-size:21px;font-weight:700}
+.cat p{color:var(--grafito);font-size:14.5px}
+.cat .pie{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--oro-osc);font-weight:600}
+.cat .pie i{font-size:18px}
+.cat.oscura{background:var(--negro);color:#fff;border-color:transparent}
+.cat.oscura p{color:rgba(255,255,255,.62)}
+.cat.oscura .ic{background:var(--oro);color:var(--negro)}
+.cat.oscura .pie{color:var(--oro)}
+
+/* Financiamiento */
+.fin{background:var(--negro);color:#fff}
+.fin .cab p{color:rgba(255,255,255,.62)}
+.fin .eyebrow{color:var(--oro)}
+.pasos{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--linea-osc)}
+.paso{padding:28px 24px 8px 0;position:relative}
+.paso+.paso{padding-left:24px;border-left:1px solid var(--linea-osc)}
+.paso .n{font:600 13px var(--mono);color:var(--oro)}
+.paso h3{font-size:20px;margin:14px 0 8px}
+.paso p{color:rgba(255,255,255,.62);font-size:14.5px}
+.fin .cierre{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-top:48px;padding:24px 28px;border-radius:18px;background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.28)}
+.fin .cierre p{font-size:17px;max-width:52ch}
+.fin .cierre b{color:var(--oro-claro)}
+
+/* Taller + confianza */
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.panel{background:var(--papel);border:1px solid var(--linea);border-radius:20px;padding:34px}
+.panel h3{font-size:26px;margin:12px 0 12px}
+.panel p{color:var(--grafito)}
+.lista{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:12px}
+.lista li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.lista i{color:var(--oro-osc);font-size:19px;margin-top:1px}
+.qr{display:flex;gap:18px;align-items:center;margin-top:24px;padding:16px;border-radius:14px;background:var(--lienzo);border:1px dashed rgba(128,101,21,.45)}
+.qr .cuad{width:64px;height:64px;flex:none;border-radius:8px;background:
+  conic-gradient(from 90deg at 30% 30%,#111 25%,transparent 0) 0 0/16px 16px,
+  conic-gradient(from 90deg at 70% 70%,#111 25%,transparent 0) 8px 8px/16px 16px,#fff;border:4px solid #fff;box-shadow:0 0 0 1px var(--linea)}
+.qr p{font-size:14px}
+
+/* Contacto */
+.contacto{background:var(--papel);border-top:1px solid var(--linea)}
+.contacto .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:48px;align-items:center}
+.contacto h2{font-size:clamp(30px,4vw,46px)}
+.contacto p{color:var(--grafito);margin-top:14px;max-width:46ch}
+.datos{display:grid;gap:14px}
+.dato{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:14px;background:var(--lienzo);border:1px solid var(--linea)}
+.dato i{font-size:22px;color:var(--oro-osc)}
+.dato b{display:block;font-size:14px}
+.dato span{color:var(--grafito);font-size:14px}
+a.dato{color:inherit;text-decoration:none;transition:border-color .2s,transform .2s}
+a.dato:hover{border-color:var(--oro)}
+a.dato:focus-visible{outline:2px solid var(--oro);outline-offset:2px}
+.falta{color:#b45309!important;font-style:italic}
+
+footer{background:var(--negro);color:rgba(255,255,255,.55);padding:36px 0 calc(36px + env(safe-area-inset-bottom));font-size:13.5px}
+footer .wrap{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+footer a{color:rgba(255,255,255,.75);text-decoration:none}
+footer a:hover{color:var(--oro)}
+
+/* WhatsApp flotante */
+.wa-flot{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#25D366;color:#fff;font-size:28px;box-shadow:0 14px 30px -10px rgba(0,0,0,.5);text-decoration:none;transition:transform .16s var(--ease)}
+@media(hover:hover){.wa-flot:hover{transform:translateY(-2px)}}
+
+/* Entrada suave */
+.js .aparece{opacity:0;transform:translateY(12px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.js .aparece.si{opacity:1;transform:none}
+
+@media(max-width:980px){
+  .hero .wrap{grid-template-columns:1fr;gap:40px}
+  .cats{grid-template-columns:repeat(2,1fr)}.cat,.cat.ancha{grid-column:span 1}
+  .pasos{grid-template-columns:1fr 1fr}.paso:nth-child(3){padding-left:0;border-left:0}.paso:nth-child(n+3){border-top:1px solid var(--linea-osc)}
+  .dos,.contacto .wrap{grid-template-columns:1fr}
+  .nav{display:none}.top .btn{margin-left:auto}
+}
+@media(max-width:560px){
+  section{padding:64px 0}.hero{padding:44px 0 64px}
+  .cats{grid-template-columns:1fr}.cat{min-height:0}
+  .pasos{grid-template-columns:1fr}.paso,.paso+.paso{padding:22px 0 6px;border-left:0}.paso+.paso{border-top:1px solid var(--linea-osc)}
+  .panel{padding:24px}.hero .ctas .btn{flex:1;justify-content:center}
+  .pieza{grid-template-columns:38px 1fr auto;gap:10px}.pieza .ic{width:38px;height:38px;font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.aparece{opacity:1;transform:none;transition:none}.btn,.cat,.wa-flot{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#inicio" aria-label="STUDIO, inicio"><img src="logo-studio.png" alt="STUDIO" width="128" height="128"></a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#catalogo">Catálogo</a><a href="#financiamiento">Financiamiento</a><a href="#taller">Taller</a><a href="#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn-oro js-wa" href="#contacto"><i class="ti ti-brand-whatsapp"></i> Escríbenos</a>
+  </div>
+</header>
+
+<main id="inicio">
+  <section class="hero" aria-labelledby="h1">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">STUDIO · Santiago, República Dominicana</span>
+        <h1 id="h1">Tecnología que <em>se queda</em> contigo.</h1>
+        <p class="lead">Lo último en celulares, aires acondicionados y movilidad eléctrica, con garantía, taller propio y financiamiento para llevártelo hoy.</p>
+        <div class="ctas">
+          <a class="btn btn-oro js-wa" href="#contacto"><i class="ti ti-brand-whatsapp"></i> Pregunta por tu equipo</a>
+          <a class="btn btn-linea" href="#catalogo">Ver catálogo <i class="ti ti-arrow-down-right"></i></a>
+        </div>
+        <div class="sellos">
+          <span><i class="ti ti-shield-check"></i> Garantía en cada equipo</span>
+          <span><i class="ti ti-calendar-dollar"></i> Financiamiento en cuotas</span>
+          <span><i class="ti ti-tool"></i> Taller propio</span>
+        </div>
+      </div>
+
+      <aside class="vitrina" aria-label="En vitrina hoy">
+        <div class="vitrina-h"><b>En vitrina hoy</b><span>Precios de contado</span></div>
+        <div class="pieza"><span class="ic"><i class="ti ti-device-mobile"></i></span><div><b>iPhone 17 Pro Max</b><small>256 GB · también 512 GB y 1 TB</small></div><span class="precio num">RD$ 76,000<small>desde</small></span></div>
+        <div class="pieza"><span class="ic"><i class="ti ti-device-mobile"></i></span><div><b>iPhone 17 Pro</b><small>256 GB</small></div><span class="precio num">RD$ 67,000</span></div>
+        <div class="pieza"><span class="ic"><i class="ti ti-device-mobile"></i></span><div><b>Samsung Galaxy S26 Ultra</b><small>256 GB</small></div><span class="precio num">RD$ 58,000</span></div>
+        <div class="pieza"><span class="ic"><i class="ti ti-air-conditioning"></i></span><div><b>Aire CW STUDIO</b><small>12,000 BTU · también 24,000 BTU</small></div><span class="precio num">RD$ 22,000<small>desde</small></span></div>
+        <div class="pieza"><span class="ic"><i class="ti ti-motorbike"></i></span><div><b>Sur-Ron eléctrica</b><small>Movilidad eléctrica</small></div><span class="precio num">RD$ 230,000<small>desde</small></span></div>
+        <p class="vitrina-p">Precios sujetos a disponibilidad. Pregunta por el precio en cuotas.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section id="catalogo" aria-labelledby="h-cat">
+    <div class="wrap">
+      <div class="cab aparece">
+        <div><span class="eyebrow">Catálogo</span><h2 id="h-cat">Todo lo que buscas, en un solo lugar.</h2></div>
+        <p>Equipos nuevos y reacondicionados revisados en nuestro taller. Si no lo ves aquí, escríbenos: lo conseguimos.</p>
+      </div>
+      <div class="cats">
+        <a class="cat oscura ancha aparece js-wa" data-msg="Hola STUDIO, quiero información de celulares" href="#contacto">
+          <span class="ic"><i class="ti ti-device-mobile"></i></span>
+          <h3>Celulares</h3><p>iPhone del 12 al 17 Pro Max y Samsung Galaxy. Más de 100 equipos disponibles, nuevos y reacondicionados.</p>
+          <span class="pie">Pregunta por tu modelo <i class="ti ti-arrow-up-right"></i></span>
+        </a>
+        <a class="cat ancha aparece js-wa" data-msg="Hola STUDIO, quiero información de los aires CW STUDIO" href="#contacto">
+          <span class="ic"><i class="ti ti-air-conditioning"></i></span>
+          <h3>Aires CW STUDIO</h3><p>Nuestra marca propia de aires acondicionados, de 12,000 y 24,000 BTU.</p>
+          <span class="pie">Cotiza tu aire <i class="ti ti-arrow-up-right"></i></span>
+        </a>
+        <a class="cat aparece js-wa" data-msg="Hola STUDIO, quiero información de movilidad eléctrica" href="#contacto">
+          <span class="ic"><i class="ti ti-motorbike"></i></span>
+          <h3>Movilidad eléctrica</h3><p>Motos Sur-Ron y scooters eléctricos.</p>
+          <span class="pie">Ver modelos <i class="ti ti-arrow-up-right"></i></span>
+        </a>
+        <a class="cat aparece js-wa" data-msg="Hola STUDIO, quiero información de televisores y hogar" href="#contacto">
+          <span class="ic"><i class="ti ti-device-tv"></i></span>
+          <h3>TV y hogar</h3><p>Televisores y equipos para la casa.</p>
+          <span class="pie">Ver opciones <i class="ti ti-arrow-up-right"></i></span>
+        </a>
+        <a class="cat aparece js-wa" data-msg="Hola STUDIO, busco un accesorio" href="#contacto">
+          <span class="ic"><i class="ti ti-headphones"></i></span>
+          <h3>Accesorios</h3><p>Cargadores, audífonos, protectores y más.</p>
+          <span class="pie">Encuentra el tuyo <i class="ti ti-arrow-up-right"></i></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="financiamiento" class="fin" aria-labelledby="h-fin">
+    <div class="wrap">
+      <div class="cab aparece">
+        <div><span class="eyebrow">Financiamiento</span><h2 id="h-fin">Llévatelo hoy. Págalo en cuotas fijas.</h2></div>
+        <p>Un proceso claro, sin vueltas: sabes desde el primer día cuánto pagas y cuándo.</p>
+      </div>
+      <div class="pasos">
+        <div class="paso aparece"><span class="n">01</span><h3>Solicitas</h3><p>Eliges tu equipo y nos das tus datos en tienda o por WhatsApp.</p></div>
+        <div class="paso aparece"><span class="n">02</span><h3>Evaluamos</h3><p>Revisamos tu solicitud y te damos una respuesta rápida.</p></div>
+        <div class="paso aparece"><span class="n">03</span><h3>Firmas desde tu celular</h3><p>Te llega un enlace para firmar el contrato de forma digital.</p></div>
+        <div class="paso aparece"><span class="n">04</span><h3>Te lo llevas</h3><p>Cuotas iguales, con tu recibo y estado de cuenta en cada pago.</p></div>
+      </div>
+      <div class="cierre aparece">
+        <p>Pregunta por la <b>inicial</b> y la <b>cuota</b> de tu equipo: te lo calculamos al momento.</p>
+        <a class="btn btn-oro js-wa" data-msg="Hola STUDIO, quiero financiar un equipo" href="#contacto"><i class="ti ti-brand-whatsapp"></i> Calcular mi cuota</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="taller" aria-labelledby="h-taller">
+    <div class="wrap dos">
+      <div class="panel aparece">
+        <span class="eyebrow">Taller STUDIO</span>
+        <h3 id="h-taller">Reparamos tu equipo con piezas de verdad.</h3>
+        <p>Técnicos propios y más de 300 piezas en inventario para que tu celular vuelva a tus manos rápido.</p>
+        <ul class="lista">
+          <li><i class="ti ti-circle-check"></i> Pantallas, baterías, puertos de carga y cámaras</li>
+          <li><i class="ti ti-circle-check"></i> Te avisamos cuando tu equipo está listo</li>
+          <li><i class="ti ti-circle-check"></i> Garantía en la reparación</li>
+        </ul>
+        <a class="btn btn-tinta js-wa" data-msg="Hola STUDIO, quiero reparar mi equipo" href="#contacto" style="margin-top:26px"><i class="ti ti-tool"></i> Cotizar reparación</a>
+      </div>
+      <div class="panel aparece">
+        <span class="eyebrow">Compra con confianza</span>
+        <h3>Cada factura se puede verificar.</h3>
+        <p>Nuestras facturas y recibos llevan un código QR. Escanéalo y confirma en línea que el documento es auténtico y está vigente.</p>
+        <div class="qr"><span class="cuad" aria-hidden="true"></span><p><b>Escanea el QR de tu factura</b><br>y comprueba al instante que es original.</p></div>
+        <ul class="lista">
+          <li><i class="ti ti-circle-check"></i> Equipos revisados antes de la venta</li>
+          <li><i class="ti ti-circle-check"></i> Reacondicionados con su clase indicada (A o B)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="contacto" aria-labelledby="h-con">
+    <div class="wrap">
+      <div class="aparece">
+        <span class="eyebrow">Visítanos</span>
+        <h2 id="h-con">Te atendemos por WhatsApp o en la tienda.</h2>
+        <p>Escríbenos con el equipo que buscas y te respondemos con precio, disponibilidad y la cuota si lo quieres financiar.</p>
+        <a class="btn btn-tinta js-wa" href="#contacto" style="margin-top:28px"><i class="ti ti-brand-whatsapp"></i> Escribir por WhatsApp</a>
+      </div>
+      <div class="datos aparece">
+        <a class="dato js-wa" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp"></i><div><b>WhatsApp</b><span>829-624-7623</span></div></a>
+        <a class="dato" href="tel:+18095706254"><i class="ti ti-phone"></i><div><b>Teléfono</b><span>809-570-6254</span></div></a>
+        <a class="dato" href="https://www.google.com/maps/search/?api=1&amp;query=Av.+Jacinto+B.+Dummit+frente+a+Auto+Repuesto+Santiago,+Santiago,+Rep%C3%BAblica+Dominicana" target="_blank" rel="noopener"><i class="ti ti-map-pin"></i><div><b>Dirección</b><span>Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago · Santiago, Rep. Dom.</span></div></a>
+        <div class="dato"><i class="ti ti-clock"></i><div><b>Horario</b><span>Lunes a sábado, 8:30 a.m. – 6:30 p.m. · Domingo cerrado</span></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="anio">2026</span> STUDIO · Santiago, República Dominicana</span>
+    <span><a href="#catalogo">Catálogo</a> · <a href="#financiamiento">Financiamiento</a> · <a href="#taller">Taller</a> · <a href="/app">Acceso del personal</a></span>
+  </div>
+</footer>
+
+<a class="wa-flot js-wa" href="#contacto" aria-label="Escribir a STUDIO por WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>
+
+<script>
+/* WhatsApp de STUDIO (con código de país, sin espacios). Cada botón abre el chat con su mensaje. */
+const STUDIO = { whatsapp: '18296247623' };
+(function () {
+  const tel = String(STUDIO.whatsapp || '').replace(/\D/g, '');
+  document.querySelectorAll('.js-wa').forEach(a => {
+    if (!tel) return;
+    const msg = a.dataset.msg || 'Hola STUDIO, quiero información';
+    a.href = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
+    a.target = '_blank'; a.rel = 'noopener';
+  });
+  const a = document.getElementById('anio'); if (a) a.textContent = new Date().getFullYear();
+  const els = document.querySelectorAll('.aparece');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { els.forEach(e => e.classList.add('si')); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('si'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(e => io.observe(e));
+})();
+</script>
+</body>
+</html>

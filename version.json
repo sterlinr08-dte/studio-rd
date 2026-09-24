@@ -1,7 +1,12 @@
 {
-  "version": "59.29",
+  "version": "59.30",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.30",
+      "fecha": "2026-09-25",
+      "notas": ["Página pública: botón «Acceso personal» dorado y visible también en el celular."]
+    },
     {
       "version": "59.29",
       "fecha": "2026-09-25",

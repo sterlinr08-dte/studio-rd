@@ -9,7 +9,10 @@
 <meta property="og:title" content="STUDIO · Energía que te mueve">
 <meta property="og:description" content="Scooters eléctricos, monta cargas, Smart TV, neveras, aires inverter y cerraduras inteligentes en Santiago. Financiamiento disponible.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://studiord.net/img/tienda/lq-n9.webp">
+<meta property="og:image" content="https://studiord.net/img/tienda/og-studio.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"ElectronicsStore","name":"STUDIO","slogan":"Hogar, movilidad & tecnología","url":"https://studiord.net/","telephone":"+1-809-570-6254","address":{"@type":"PostalAddress","streetAddress":"Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago","addressLocality":"Santiago","addressCountry":"DO"},"openingHours":"Mo-Sa 08:30-18:30"}</script>
 <link rel="icon" href="icon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="icon-apple-180.png">
@@ -85,6 +88,40 @@ header .btn{height:40px;padding:0 16px;font-size:14px}
 .h1p{top:8%;left:2%}.h2p{top:18%;right:0}.h3p{bottom:30%;left:-2%}.h4p{bottom:26%;right:2%}
 .escena .nombre{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font:600 12px var(--mono);letter-spacing:.2em;color:var(--suave);white-space:nowrap}
 
+/* ── Comercial: horario, franja de confianza, filtros, doble botón y barra fija en el celular ── */
+.abierto{display:inline-flex;align-items:center;gap:8px;margin-top:14px;margin-left:0;font:600 12.5px var(--sans);color:#7EE2A8}
+.abierto::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;animation:parpadeo 2s infinite}
+.abierto.no{color:var(--suave)}.abierto.no::before{animation:none;box-shadow:none}
+.hero .eyebrow + .abierto{display:flex}
+.confianza{border-block:1px solid var(--linea);background:var(--noche2)}
+.confianza .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:1px}
+.confianza .wrap>div{display:flex;align-items:center;gap:12px;padding:18px 12px}
+.confianza i{font-size:24px;color:var(--oro-luz);flex:none}
+.confianza b{display:block;font-size:14px}
+.confianza span{font-size:12.5px;color:var(--suave);line-height:1.35}
+.filtros{display:flex;gap:6px;flex-wrap:wrap}
+.filtros button{height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--linea2);background:transparent;font:600 12.5px var(--sans);color:var(--suave)}
+.filtros button[aria-pressed="true"]{border-color:var(--oro);color:var(--texto);background:rgba(201,162,39,.12)}
+.mini[hidden]{display:none}
+.ctas{display:flex;gap:8px;flex-wrap:wrap}
+.ctas .btn{height:46px;padding:0 18px;font-size:14.5px}
+.barra-movil{display:none}
+@media (max-width:980px){
+  .confianza .wrap{grid-template-columns:1fr 1fr}
+  .barra-movil{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:auto 1fr;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(7,8,10,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--linea2)}
+  .barra-movil a{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 18px;border-radius:999px;font:600 15px var(--sans);text-decoration:none}
+  .barra-movil i{font-size:20px}
+  .bm-llamar{border:1px solid var(--linea2);color:var(--texto)}
+  .bm-wa{background:#25D366;color:#fff}
+  a.wa-flot{display:none}
+  footer{padding-bottom:120px}
+}
+@media (max-width:620px){
+  .confianza .wrap>div{padding:14px 4px;gap:10px}
+  .confianza span{font-size:11.5px}
+  .ctas{width:100%}.ctas .btn{flex:1;justify-content:center;padding:0 12px}
+}
+
 /* ── Explora: tira de miniaturas que lleva a cada presentación ── */
 .explora{padding:8px 0 40px}
 .explora .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
@@ -100,14 +137,14 @@ header .btn{height:40px;padding:0 16px;font-size:14px}
 .mini small{font:500 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tenue)}
 
 /* ── Separador de categoría ── */
-.divisor{position:relative;padding:120px 0 60px;overflow:hidden;border-top:1px solid var(--linea)}
+.divisor{position:relative;padding:84px 0 36px;overflow:hidden;border-top:1px solid var(--linea)}
 .divisor .gigante{font:800 clamp(64px,15vw,220px)/.9 var(--disp);letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1px rgba(242,210,106,.28);white-space:nowrap;transform:translateX(calc((.5 - var(--p,.5)) * 24vw));will-change:transform}
 .divisor .wrap{position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-top:-4vw}
 .divisor h2{max-width:14ch}
 .divisor .lead{max-width:42ch}
 
 /* ── Presentación individual de cada artículo ── */
-.pres{position:relative;min-height:min(100svh,920px);display:flex;align-items:center;padding:72px 0;overflow:hidden;isolation:isolate}
+.pres{position:relative;min-height:min(78svh,700px);display:flex;align-items:center;padding:48px 0;overflow:hidden;isolation:isolate}
 .pres + .pres{border-top:1px solid var(--linea)}
 .pres .nombre-fondo{position:absolute;z-index:-1;top:50%;left:0;right:0;font:800 clamp(90px,22vw,330px)/.8 var(--disp);letter-spacing:-.05em;white-space:nowrap;text-align:center;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.07);
   transform:translate3d(calc((.5 - var(--p,.5)) * 40vw),-50%,0);will-change:transform;pointer-events:none;user-select:none}
@@ -263,11 +300,12 @@ footer a:hover{color:var(--texto)}
     <div class="wrap">
       <div>
         <span class="eyebrow">STUDIO · Hogar, movilidad &amp; tecnología · Santiago</span>
+        <span class="abierto" id="abierto" hidden></span>
         <h1 id="h1">Energía que <em>te mueve.</em></h1>
         <p class="lead">Scooters eléctricos de hasta 1200 W, monta cargas de trabajo, Smart TV, neveras, aires inverter y cerraduras inteligentes. Con financiamiento.</p>
         <div class="acciones">
-          <a class="btn btn-oro js-wa" data-msg="Hola STUDIO, quiero información de los scooters eléctricos" href="https://wa.me/18296247623"><i class="ti ti-bolt" aria-hidden="true"></i> Quiero mi scooter</a>
-          <a class="btn btn-linea" href="#explora">Ver catálogo <i class="ti ti-arrow-down-right" aria-hidden="true"></i></a>
+          <a class="btn btn-oro" href="#explora"><i class="ti ti-layout-grid" aria-hidden="true"></i> Ver catálogo</a>
+          <a class="btn btn-linea js-wa" data-msg="Hola STUDIO, quiero información y facilidades de pago" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Pedir precio</a>
         </div>
       </div>
       <div class="escena" aria-hidden="true">
@@ -282,8 +320,18 @@ footer a:hover{color:var(--texto)}
     </div>
   </section>
 
+  <section class="confianza" aria-label="Por qué comprar en STUDIO">
+    <div class="wrap">
+      <div><i class="ti ti-calendar-dollar" aria-hidden="true"></i><span><b>Financiamiento</b>Cuotas fijas, firma desde tu celular</span></div>
+      <div><i class="ti ti-tool" aria-hidden="true"></i><span><b>Taller propio</b>Servicio y reparación</span></div>
+      <div><i class="ti ti-qrcode" aria-hidden="true"></i><span><b>Factura verificable</b>Cada factura con código QR</span></div>
+      <div><i class="ti ti-map-pin" aria-hidden="true"></i><span><b>Tienda en Santiago</b>Av. Jacinto B. Dummit</span></div>
+    </div>
+  </section>
+
   <section id="explora" class="explora" aria-labelledby="h-exp">
-    <div class="wrap"><span class="eyebrow" id="h-exp">Explora el catálogo · toca un artículo</span></div>
+    <div class="wrap"><span class="eyebrow" id="h-exp">Explora el catálogo · toca un artículo</span>
+      <div class="filtros" role="group" aria-label="Filtrar por categoría" id="filtros"></div></div>
     <div class="tira" id="tira"></div>
   </section>
 
@@ -332,6 +380,10 @@ footer a:hover{color:var(--texto)}
 
 <nav class="indice" id="indice" aria-label="Artículos"></nav>
 <a class="wa-flot js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623" aria-label="Escribir a STUDIO por WhatsApp"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></a>
+<div class="barra-movil" aria-label="Contactar a STUDIO">
+  <a class="bm-llamar" href="tel:+18095706254"><i class="ti ti-phone" aria-hidden="true"></i> Llamar</a>
+  <a class="bm-wa js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Escribir por WhatsApp</a>
+</div>
 <noscript><p style="text-align:center;padding:20px;color:#A3A6AB">Escríbenos por WhatsApp al 829-624-7623 para ver el catálogo completo.</p></noscript>
 
 <script>
@@ -411,7 +463,8 @@ function vista(p, v) {
     foto: v ? v[1] : p.foto, est: est, sub: (v && v[5]) || p.sub,
     precio: pr ? `<small>Precio</small>${fmt(pr)}` : est === 'agotado' ? '<small>Disponibilidad</small>Agotado' : est === 'camino' ? '<small>Llega pronto</small>Resérvalo' : '<small>Precio</small>Consúltalo',
     sinPrecio: !pr,
-    boton: espera ? '<i class="ti ti-bell" aria-hidden="true"></i> Avísame' : '<i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Lo quiero',
+    boton: espera ? '<i class="ti ti-bell" aria-hidden="true"></i> Avísame' : pr ? '<i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Lo quiero' : '<i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Pedir precio',
+    fin: espera ? '' : 'Hola STUDIO, quiero financiar el ' + nom + '. ¿Qué necesito y cuánto sería la cuota?',
     msg: espera ? 'Hola STUDIO, avísenme cuando tengan el ' + nom + '.' : 'Hola STUDIO, me interesa el ' + nom + (pr ? ' (' + fmt(pr) + ')' : '') + '. ¿Está disponible?' + (pr ? '' : ' ¿Cuál es el precio?')
   };
 }
@@ -442,7 +495,7 @@ function presentacion(p, i, g, total) {
         ${vars}
         ${datos ? `<div class="datos">${datos}</div>` : ''}
         <div class="rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>
-        <div class="pie">${precio}<a class="btn btn-oro quiero" target="_blank" rel="noopener" href="${waLink(x.msg)}">${x.boton}</a></div>
+        <div class="pie">${precio}<div class="ctas"><a class="btn btn-linea financiar" target="_blank" rel="noopener" href="${x.fin ? waLink(x.fin) : '#'}"${x.fin ? '' : ' hidden'}><i class="ti ti-calendar-dollar" aria-hidden="true"></i> Financiarlo</a><a class="btn btn-oro quiero" target="_blank" rel="noopener" href="${waLink(x.msg)}">${x.boton}</a></div></div>
       </div>
     </div>
   </section>`;
@@ -454,7 +507,14 @@ cat.innerHTML = SECCIONES.map(s => {
     <div class="wrap"><div><span class="eyebrow">${s.eyebrow} · ${lista.length} artículo${lista.length === 1 ? '' : 's'}</span><h2 id="h-${s.id}" style="margin-top:14px">${s.titulo}</h2></div><p class="lead">${s.lead}</p></div></section>`
     + lista.map((p, i) => presentacion(p, i, s.g, lista.length)).join('');
 }).join('');
-document.getElementById('tira').innerHTML = TODOS.map(t => `<a class="mini" href="#${t.id}"><span class="ph"><img src="${t.foto}" alt="" loading="lazy" decoding="async"></span><small>${CAT_NOMBRE[t.g]}</small><b>${esc(t.p.nombre)}</b></a>`).join('');
+document.getElementById('filtros').innerHTML = [['', 'Todo']].concat(SECCIONES.map(s => [s.g, CAT_NOMBRE[s.g]])).map(([g, n], k) => `<button type="button" data-f="${g}" aria-pressed="${k === 0}">${n}</button>`).join('');
+document.getElementById('filtros').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#filtros button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelectorAll('.mini').forEach(m => { m.hidden = !!b.dataset.f && m.dataset.g !== b.dataset.f; });
+  document.getElementById('tira').scrollTo({ left: 0, behavior: 'smooth' });
+});
+document.getElementById('tira').innerHTML = TODOS.map(t => `<a class="mini" data-g="${t.g}" href="#${t.id}"><span class="ph"><img src="${t.foto}" alt="" loading="lazy" decoding="async"></span><small>${CAT_NOMBRE[t.g]}</small><b>${esc(t.p.nombre)}</b></a>`).join('');
 document.getElementById('indice').innerHTML = TODOS.map(t => `<a href="#${t.id}" title="${esc(t.p.nombre)}" aria-label="${esc(t.p.nombre)}"></a>`).join('');
 
 // Variantes: cambian foto (con giro de entrada), estado, precio y mensaje.
@@ -470,9 +530,25 @@ document.addEventListener('click', e => {
   sec.querySelector('[data-sub]').textContent = x.sub;
   const pr = sec.querySelector('[data-precio]'); pr.innerHTML = x.precio; pr.classList.toggle('consulta', x.sinPrecio);
   const q = sec.querySelector('.quiero'); q.innerHTML = x.boton; q.href = waLink(x.msg);
+  const f = sec.querySelector('.financiar'); f.hidden = !x.fin; if (x.fin) f.href = waLink(x.fin);
 });
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();
+// «Abierto ahora» con el horario real (lunes a sábado 8:30–6:30, hora de Santo Domingo).
+(function () {
+  try {
+    const f = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Santo_Domingo', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date());
+    const g = t => (f.find(x => x.type === t) || {}).value, dia = g('weekday'), min = (+g('hour') % 24) * 60 + +g('minute');
+    const abre = dia !== 'Sun' && min >= 510 && min < 1110, el = document.getElementById('abierto');
+    el.hidden = false; el.classList.toggle('no', !abre);
+    el.textContent = abre ? 'Abierto ahora · hasta las 6:30 p.m.' : (dia === 'Sat' && min >= 1110) || dia === 'Sun' ? 'Cerrado · abrimos el lunes a las 8:30 a.m.' : min < 510 ? 'Cerrado · abrimos hoy a las 8:30 a.m.' : 'Cerrado · abrimos mañana a las 8:30 a.m.';
+  } catch (e) {}
+})();
+// Datos para buscadores: la lista de artículos (sin precios mientras estén ocultos).
+(function () {
+  const ld = { '@context': 'https://schema.org', '@type': 'ItemList', name: 'Catálogo STUDIO', itemListElement: TODOS.map((t, k) => ({ '@type': 'ListItem', position: k + 1, url: 'https://studiord.net/#' + t.id, item: { '@type': 'Product', name: t.p.nombre, description: t.p.sub, image: 'https://studiord.net/' + t.foto, brand: { '@type': 'Brand', name: 'STUDIO' } } })) };
+  const sc = document.createElement('script'); sc.type = 'application/ld+json'; sc.textContent = JSON.stringify(ld); document.head.appendChild(sc);
+})();
 
 // Movimiento: entradas al aparecer, nombre gigante que se desplaza con el scroll, índice activo,
 // barra de lectura y la pieza que se inclina hacia el cursor (solo con mouse).

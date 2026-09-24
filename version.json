@@ -1,7 +1,12 @@
 {
-  "version": "59.37",
+  "version": "59.38",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.38",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: comercial en video de la pasola LQ-N9 armándose pieza por pieza, con botón para activar el sonido."]
+    },
     {
       "version": "59.37",
       "fecha": "2026-09-24",

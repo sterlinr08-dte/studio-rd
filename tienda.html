@@ -123,6 +123,14 @@ nav a:hover{color:var(--texto)}
 }
 
 /* ── Destacados: pósters publicitarios de STUDIO; cada uno lleva a su artículo ── */
+.comercial{padding:64px 0 8px}
+.comercial .wrap{display:grid;gap:18px}
+.comercial-marco{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--linea2);background:var(--panel);aspect-ratio:16/9;box-shadow:0 30px 80px -40px rgba(201,162,39,.45)}
+.comercial-marco video{display:block;width:100%;height:100%;object-fit:cover}
+.comercial-sonido{position:absolute;left:14px;bottom:14px;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--linea2);background:rgba(7,8,10,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--texto);font:600 13px var(--sans);cursor:pointer;transition:border-color .2s,background .2s}
+.comercial-sonido:hover{border-color:var(--oro);background:rgba(7,8,10,.8)}
+.comercial-sonido i{font-size:18px;color:var(--oro-luz)}
+@media (max-width:640px){.comercial{padding:44px 0 4px}.comercial-marco{border-radius:16px}.comercial-sonido{left:10px;bottom:10px;height:36px;padding:0 13px;font-size:12px}}
 .destacados{padding:64px 0 24px}
 .destacados .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
 .flechas{display:flex;gap:8px}
@@ -481,6 +489,19 @@ footer .acceso-equipo:hover{color:var(--texto)}
     </div>
   </section>
 
+  <section class="comercial" aria-labelledby="h-com">
+    <div class="wrap">
+      <div><span class="eyebrow">En video</span><h2 id="h-com" style="margin-top:10px">LQ-N9, pieza por pieza</h2></div>
+      <div class="comercial-marco">
+        <video id="comercial-video" muted loop playsinline preload="none" poster="video/lq-n9-comercial-poster.webp" aria-label="Comercial de la pasola eléctrica LQ-N9: motor 1000W, hasta 60 km/h, batería de litio 48V 20Ah, freno de disco, luces LED y pantalla digital">
+          <source src="video/lq-n9-comercial-720.mp4" type="video/mp4" media="(max-width: 820px)">
+          <source src="video/lq-n9-comercial-1080.mp4" type="video/mp4">
+        </video>
+        <button class="comercial-sonido" type="button" id="comercial-sonido" aria-pressed="false"><i class="ti ti-volume-off" aria-hidden="true"></i><span>Activar sonido</span></button>
+      </div>
+    </div>
+  </section>
+
   <section class="destacados" aria-labelledby="h-dest">
     <div class="wrap"><div><span class="eyebrow">Destacados</span><h2 id="h-dest" style="margin-top:10px">Lo nuevo en STUDIO</h2></div>
       <div class="flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button></div></div>
@@ -787,6 +808,26 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     });
   }
 })();
+// Comercial en video: se reproduce en silencio solo mientras está a la vista; el botón activa el sonido.
+(function () {
+  const v = document.getElementById('comercial-video'), b = document.getElementById('comercial-sonido');
+  if (!v || !b) return;
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reproducir = () => { const r = v.play(); if (r && r.catch) r.catch(() => {}); };
+  b.addEventListener('click', () => {
+    v.muted = !v.muted;
+    b.setAttribute('aria-pressed', String(!v.muted));
+    b.querySelector('i').className = 'ti ' + (v.muted ? 'ti-volume-off' : 'ti-volume');
+    b.querySelector('span').textContent = v.muted ? 'Activar sonido' : 'Silenciar';
+    if (!v.muted) { v.loop = false; if (v.ended || v.currentTime > v.duration - 0.5) v.currentTime = 0; reproducir(); }
+    else v.loop = true;
+  });
+  v.addEventListener('ended', () => { if (!v.muted) { v.muted = true; v.loop = true; b.setAttribute('aria-pressed', 'false'); b.querySelector('i').className = 'ti ti-volume-off'; b.querySelector('span').textContent = 'Activar sonido'; v.currentTime = 0; reproducir(); } });
+  if (quieto) { v.controls = true; return; }
+  if (!('IntersectionObserver' in window)) { v.preload = 'auto'; reproducir(); return; }
+  new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) reproducir(); else v.pause(); }), { threshold: .35 }).observe(v);
+})();
+
 // Portada: reutiliza el catálogo; cada interacción conserva foto, datos y consulta sincronizados.
 (function () {
   const modelos = ['LQ-N9', 'LQ-H8', 'LQ-HLD'].map(n => CATALOGO.gMovilidad.find(p => p.nombre === n));

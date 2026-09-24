@@ -1,7 +1,7 @@
 // NEXUS PRO v10 — Service Worker
 // Cachea SOLO archivos estáticos. No toca datos ni peticiones dinámicas.
 
-const CACHE_NAME = 'studio-rd-v1';
+const CACHE_NAME = 'studio-rd-v2';
 const ASSETS_OPCIONALES = [
   '/manifest.json',
   '/icon-192.png',

@@ -1,7 +1,12 @@
 {
-  "version": "59.32",
+  "version": "59.33",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.33",
+      "fecha": "2026-09-25",
+      "notas": ["Nuevo ícono de STUDIO (la «S» del logo en negro y oro) en lugar del escudo heredado, en la pestaña, la app instalada y la página pública."]
+    },
     {
       "version": "59.32",
       "fecha": "2026-09-23",

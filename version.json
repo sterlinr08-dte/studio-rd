@@ -1,7 +1,12 @@
 {
-  "version": "59.39",
+  "version": "59.40",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.40",
+      "fecha": "2026-09-24",
+      "notas": ["Tienda: vista 360° de la LQ-N9 — botón «Girar 360°» y arrastre con el dedo o el ratón."]
+    },
     {
       "version": "59.39",
       "fecha": "2026-09-24",

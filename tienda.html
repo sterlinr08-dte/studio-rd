@@ -604,7 +604,9 @@ const WHATSAPP = '18296247623';
    mostrarlos basta con poner true. Con false, cada presentación dice «Consúltalo» y el mensaje de
    WhatsApp pregunta por el precio. */
 const MOSTRAR_PRECIOS = false;
-const img = n => 'img/tienda/' + n + '.webp';
+// Fotos mejoradas (estudio, alta resolución): se sirven desde img/tienda/hd/ con el mismo nombre.
+const HD = new Set(["aire-24000", "ilq-hld", "lq-h8", "lq-pp", "lq-xbw", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
+const img = n => 'img/tienda/' + (HD.has(n) ? 'hd/' : '') + n + '.webp';
 const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60, u: 'km/h' }, AUT = { k: 'Autonomía', max: 70, u: 'km' };
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
 const CATALOGO = {

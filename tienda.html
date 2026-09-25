@@ -423,6 +423,53 @@ footer .acceso-equipo:hover{color:var(--texto)}
   .dato-c{padding:12px;gap:10px}.dato-c:nth-child(3),.dato-c:nth-child(4){grid-column:1/-1}
   .dato-c b,.dato-c span{font-size:13px}
 }
+
+/* ── Tamaños para celular: que cada bloque quepa entre la cabecera y la barra de Llamar/WhatsApp
+   (iPhone con las barras de Safari deja ~530 px útiles). ── */
+@media (max-width:700px){
+  .hero-modelos{padding:18px 0 22px}
+  .hero-modelos .wrap{gap:10px}
+  .hero-modelos h1{font-size:34px;margin:10px 0 0}
+  .hero-escena{aspect-ratio:auto;height:clamp(150px,25svh,215px);grid-template:100% / 100%}
+  .hero-contador{display:none}
+  .hero-letra{font-size:clamp(90px,26vw,140px)}
+  .hero-controles{margin-top:4px;padding-top:8px}
+  .hero-flecha{width:38px;height:38px}
+  .hero-ayuda,.hero-specs{display:none}
+  .hero-detalle h2{font-size:26px;margin:8px 0 2px}
+  .hero-detalle .lead{font-size:14px;min-height:0}
+  .hero-modelos .acciones{margin-top:12px}
+  .hero-modelos .btn{height:44px}
+  .catalogo{padding-top:28px}
+  .cat-cab{gap:12px;margin-bottom:0}
+  .cat-cab h2{font-size:26px;margin-top:6px}
+  .cat-lead{font-size:13.5px;line-height:1.45;margin-top:6px}
+  .vitrina{padding:12px 0 18px}
+  .vt{padding:16px 16px 14px;gap:8px;border-radius:24px}
+  .vt-eyebrow{display:none}
+  .vt-top{position:absolute;top:18px;right:16px}
+  .vt:has([data-badge] .estado) .vt-info h3{max-width:calc(100% - 118px)}
+  .vt-info{gap:6px}
+  .vt h3{font-size:clamp(28px,8.4vw,34px)}
+  .vt .sub{font-size:13.5px}
+  .vt .vt-escena,.vt .vt-escena:has(.btn-360){aspect-ratio:auto;height:clamp(150px,calc(100svh - 490px),250px)}
+  .vt-pista{padding-top:4px}
+  .vt-escena:has(.btn-360) .pieza{bottom:42px}
+  .vt .giro360{height:calc(100% - 42px)}
+  .vt .btn-360{height:34px;padding:0 13px;font-size:12.5px;bottom:2px}
+  .vt-lado{gap:8px}
+  .vt-dato b{font-size:20px}
+  .vt-dato span{font-size:9.5px}
+  .vt .variantes .circ{width:34px;height:34px}.vt .variantes .punto{width:18px;height:18px}
+  .vt .variantes button{font-size:10.5px;gap:4px}
+  .vt .variantes button.pill{height:32px;padding:0 12px;font-size:12px}
+  .vt-rasgos span{font-size:12px;padding:6px 10px}
+  .vt-pie{padding-top:10px;gap:8px}
+  .vt .precio{display:flex;align-items:baseline;gap:8px;font-size:15px}
+  .vt .precio small{display:inline;margin:0}
+  .vt-pie .ctas .btn{height:42px;font-size:14px}
+  .vt-nav{margin-top:0}
+}
 </style>
 </head>
 <body>
@@ -747,7 +794,11 @@ function abrirDestino(hash, modo) {
   let v = VITRINAS.find(x => x.vit.id === id), k = 0;
   if (!v) { v = VITRINAS.find(x => x.tarjetas.some(t => t.id === id)); if (!v) return false; k = v.tarjetas.findIndex(t => t.id === id); }
   elegirCategoria(v.vit.id);
-  const top = cat.getBoundingClientRect().top + scrollY - (document.querySelector('header') || { offsetHeight: 0 }).offsetHeight;
+  // Se bajan las pestañas junto con la tarjeta si caben en pantalla; si no (celular), solo la tarjeta.
+  const cab = (document.querySelector('header') || { offsetHeight: 0 }).offsetHeight, pie = (document.querySelector('.barra-movil') || { offsetHeight: 0 }).offsetHeight;
+  const tabs = document.querySelector('.cat-tabs'), util = innerHeight - cab - (pie && getComputedStyle(document.querySelector('.barra-movil')).display !== 'none' ? pie : 0);
+  const ancla = v.vit.getBoundingClientRect().bottom - tabs.getBoundingClientRect().top + 12 <= util ? tabs : v.vit;
+  const top = ancla.getBoundingClientRect().top + scrollY - cab - (ancla === tabs ? 12 : 0);
   scrollTo({ top: top, behavior: modo || suave() });
   requestAnimationFrame(() => v.ir(k, modo));
   return true;

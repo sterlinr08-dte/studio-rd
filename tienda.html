@@ -439,6 +439,88 @@ footer .acceso-equipo:hover{color:var(--texto)}
   .pres .nombre-fondo,.divisor .gigante{transform:translate3d(0,-50%,0)}
   .divisor .gigante{transform:none}
 }
+
+/* ── Vitrina de movilidad: tarjetas horizontales, cada una del color de su pasola. La franja toma
+   el tono de la tarjeta que está al frente. --tono/--tinta los pone el script por artículo. ── */
+.vitrina{--vt-tono:#07080A;position:relative;padding:28px 0 56px;background:#07080A;background:color-mix(in oklab,var(--vt-tono) 30%,#07080A);transition:background-color .7s var(--ease)}
+.vt-pista{display:grid;grid-auto-flow:column;grid-auto-columns:min(1100px,86vw);gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;padding:10px calc((100vw - min(1100px,86vw)) / 2) 18px;scroll-padding-inline:calc((100vw - min(1100px,86vw)) / 2)}
+.vt-pista::-webkit-scrollbar{display:none}
+.vt{--tinta:#fff;--suave-vt:rgba(255,255,255,.8);--linea-vt:rgba(255,255,255,.34);position:relative;isolation:isolate;overflow:hidden;scroll-snap-align:center;scroll-snap-stop:always;border-radius:34px;color:var(--tinta);min-height:min(640px,76svh);padding:28px 32px 26px;
+  display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.55fr) minmax(0,.6fr);grid-template-rows:auto 1fr auto;grid-template-areas:"top top top" "info escena lado" "pie pie pie";gap:14px 20px;
+  background:var(--tono);background:radial-gradient(58% 58% at 55% 52%,color-mix(in oklab,var(--tono),#fff 20%) 0%,transparent 72%),linear-gradient(155deg,color-mix(in oklab,var(--tono),#fff 6%),color-mix(in oklab,var(--tono),#000 20%));
+  box-shadow:0 40px 80px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.18);transition:opacity .5s var(--ease),scale .6s var(--ease),background .6s var(--ease)}
+.vt.clara{--tinta:#15171b;--suave-vt:rgba(20,22,26,.72);--linea-vt:rgba(20,22,26,.26)}
+.js .vt:not(.actual){opacity:.55;scale:.94}
+.vt-letra{position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;font:900 clamp(170px,30vw,420px)/.8 var(--disp);letter-spacing:-.06em;white-space:nowrap;color:color-mix(in oklab,var(--tono),#fff 13%);pointer-events:none;user-select:none}
+.vt.clara .vt-letra{color:color-mix(in oklab,var(--tono),#000 7%)}
+.vt-top{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.vt-eyebrow{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--suave-vt)}
+.vt .estado{background:transparent;color:var(--tinta);border:1px solid var(--linea-vt)}
+.vt .estado.camino::before{background:var(--tinta)}
+.vt-info{grid-area:info;align-self:center;display:flex;flex-direction:column;gap:16px;min-width:0}
+.vt h3{font-size:clamp(40px,5.2vw,74px);line-height:.92;letter-spacing:-.04em;color:var(--tinta)}
+.vt .sub{font-size:17px;line-height:1.4;color:var(--suave-vt);max-width:26ch}
+.vt-rasgos{display:flex;flex-wrap:wrap;gap:7px}
+.vt-rasgos span{font-size:12.5px;line-height:1;padding:8px 12px;border-radius:999px;border:1px solid var(--linea-vt);color:var(--tinta);white-space:nowrap}
+.vt-escena{grid-area:escena;position:relative;min-height:300px}
+.vt-luz{position:absolute;inset:14% 10% 6%;border-radius:50%;background:radial-gradient(closest-side,color-mix(in oklab,var(--tono),#fff 30%),transparent);filter:blur(20px);opacity:.7}
+.vt .pieza{position:absolute;inset:-4% -8% 0}
+.vt .pieza img{width:100%;height:100%;object-fit:contain;object-position:50% 60%;filter:drop-shadow(0 38px 30px rgba(0,0,0,.38));filter:drop-shadow(0 38px 30px color-mix(in oklab,var(--tono),#000 62%));transition:opacity .35s,translate .8s var(--ease),scale .8s var(--resorte)}
+.js .vt:not(.actual) .pieza img{translate:18% 0;scale:.86}
+.vt.agotado .pieza img{filter:grayscale(.8) brightness(.8) drop-shadow(0 30px 30px rgba(0,0,0,.4))}
+.vt .giro360{position:absolute;inset:-4% -8% 0;width:116%;height:104%;touch-action:pan-y;cursor:grab;display:none}
+.vt.modo-360 .giro360{display:block}.vt.modo-360 .pieza,.vt.modo-360 .vt-luz{visibility:hidden}
+.vt .btn-360{bottom:0;border-color:var(--linea-vt);background:rgba(0,0,0,.28);color:#fff}
+.vt .btn-360 i{color:#fff}
+.vt .pista-360{color:var(--tinta)}.vt.modo-360 .pista-360{opacity:.9}.vt.modo-360.girado .pista-360{opacity:0}
+.vt-lado{grid-area:lado;align-self:center;display:flex;flex-direction:column;align-items:flex-end;gap:18px;text-align:right}
+.vt-datos{display:flex;flex-direction:column;gap:14px}
+.vt-dato b{display:block;font:800 clamp(26px,2.6vw,36px)/1 var(--disp);letter-spacing:-.03em}
+.vt-dato b small{font:600 .42em var(--mono);letter-spacing:0;margin-left:4px;color:var(--suave-vt)}
+.vt-dato span{font:600 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--suave-vt)}
+.vt .variantes{justify-content:flex-end;gap:10px}
+.vt .variantes button{height:auto;padding:0;border:0;background:none;flex-direction:column;gap:6px;font:600 11px var(--sans);color:var(--suave-vt)}
+.vt .variantes .circ{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--linea-vt);transition:border-color .2s,background .2s,scale .3s var(--resorte)}
+.vt .variantes .punto{width:24px;height:24px;border:1px solid rgba(0,0,0,.18)}
+.vt .variantes button[aria-pressed="true"]{background:none;color:var(--tinta)}
+.vt .variantes button[aria-pressed="true"] .circ{background:var(--tinta);border-color:var(--tinta);scale:1.06}
+.vt-pie{grid-area:pie;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--linea-vt)}
+.vt .precio,.vt .precio.consulta{color:var(--tinta)}
+.vt .precio small{color:var(--suave-vt)}
+.vt .ctas{display:flex;gap:10px;flex-wrap:wrap}
+.vt .btn-oro{background:var(--tinta);color:#111;color:color-mix(in oklab,var(--tono),#000 45%);box-shadow:0 10px 26px -12px rgba(0,0,0,.6)}
+.vt.clara .btn-oro{color:#fff}
+.vt .btn-linea{background:transparent;border-color:var(--linea-vt);color:var(--tinta)}
+.vt .btn-linea:hover,.vt .btn-oro:hover{border-color:var(--tinta);transform:translateY(-1px)}
+.vt :focus-visible{outline-color:var(--tinta)}
+.vt-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:6px}
+.vt-cont{font:700 13px var(--mono);letter-spacing:.14em;color:var(--suave)}.vt-cont b{color:var(--texto)}
+.vt-puntos{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.vt-puntos button{width:8px;height:8px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.28);transition:width .35s var(--ease),background .3s}
+.vt-puntos button[aria-current="true"]{width:26px;background:var(--texto)}
+.vt-flechas{display:flex;gap:8px}
+.vt-flechas button{width:46px;height:46px;border-radius:50%;border:1px solid var(--linea2);background:rgba(255,255,255,.04);color:var(--texto);display:grid;place-items:center;transition:border-color .2s,background .2s}
+.vt-flechas button:hover{border-color:var(--texto);background:rgba(255,255,255,.1)}
+.vt-flechas button:disabled{opacity:.3;cursor:default}
+.vt-flechas i{font-size:20px}
+@media (max-width:820px){
+  .vt-pista{grid-auto-columns:88vw;gap:12px;padding-inline:6vw;scroll-padding-inline:6vw}
+  .vt{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"top" "info" "escena" "lado" "rasgos" "pie";min-height:0;padding:20px 18px 18px;border-radius:26px;gap:12px}
+  .vt .pieza,.vt .giro360{inset:0;width:100%;height:100%}
+  .vt h3{font-size:clamp(34px,10.5vw,46px)}.vt .sub{font-size:15px}
+  .vt-escena{min-height:0;aspect-ratio:1.25}
+  .vt-letra{top:44%;font-size:52vw}
+  .vt-lado{align-self:stretch;align-items:stretch;text-align:left;gap:12px}
+  .vt .variantes{justify-content:flex-start}
+  .vt-datos{flex-direction:row;justify-content:space-between;gap:10px}
+  .vt-dato b{font-size:24px}
+  .vt .variantes .circ{width:38px;height:38px}.vt .variantes .punto{width:20px;height:20px}
+  .vt-pie .ctas{width:100%}.vt-pie .ctas .btn{flex:1;justify-content:center;height:46px;padding:0 14px}
+  .vt-flechas{display:none}
+}
+@media (max-width:820px){.vt-info .vt-rasgos{display:none}.vt>.vt-rasgos{display:flex;grid-area:rasgos;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-18px;padding-inline:18px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}.vt>.vt-rasgos::-webkit-scrollbar{display:none}}
+@media (min-width:821px){.vt>.vt-rasgos{display:none}}
+@media (prefers-reduced-motion:reduce){.vitrina,.vt,.vt .pieza img{transition:none}.js .vt:not(.actual){scale:1}.js .vt:not(.actual) .pieza img{translate:0 0;scale:1}}
 </style>
 </head>
 <body>
@@ -611,22 +693,22 @@ const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
 const CATALOGO = {
   gMovilidad: [
-    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-n9/foto.webp', recorte: img('lq-n9'), giro: 'lq-n9', inicio: 19, precio: null, estado: 'camino',
+    { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-n9/foto.webp', recorte: img('lq-n9'), giro: 'lq-n9', inicio: 19, precio: null, estado: 'camino', tono: '#1784c0',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8', inicio: 7, precio: null, estado: 'camino',
+    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8', inicio: 7, precio: null, estado: 'camino', tono: '#8c1c2a',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino',
+    { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino', tono: '#2745b3',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000,
+    { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000, tonos: ['#eeb2c2', '#dcdee1', '#6c7076'],
       variantes: [['Rosa', img('s700-rosa'), '#f2b8c6', 29000], ['Blanco', img('s700-blanco'), '#f2f2f2', 29000], ['Gris', img('s700-gris'), '#8d9095', 29000]],
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
-    { nombre: 'LQ-XGW', sub: 'El más potente · con parrillas de carga', foto: img('lq-xgw'), precio: 33000, estado: 'ultima', ancha: true, invertida: true,
+    { nombre: 'LQ-XGW', sub: 'El más potente · con parrillas de carga', foto: img('lq-xgw'), precio: 33000, estado: 'ultima', ancha: true, invertida: true, tono: '#9d1b25',
       med: [[MOTOR, 1200], [VEL, 50], [AUT, 70]], rasgos: ['Motor 1200W', 'Batería de litio', 'Carga 6–8 h'] },
-    { nombre: 'LQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 23000,
+    { nombre: 'LQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 23000, tono: '#d23a2f',
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
-    { nombre: 'LQ-PP', sub: 'Con canasta · 180 kg+ de carga', foto: img('lq-pp'), precio: 24000,
+    { nombre: 'LQ-PP', sub: 'Con canasta · 180 kg+ de carga', foto: img('lq-pp'), precio: 24000, tono: '#9fd2bf',
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
-    { nombre: 'LQ-XBW', sub: 'Con canasta · urbano', foto: img('lq-xbw'), precio: null, estado: 'agotado',
+    { nombre: 'LQ-XBW', sub: 'Con canasta · urbano', foto: img('lq-xbw'), precio: null, estado: 'agotado', tono: '#1f93d4',
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
   ],
   gCarga: [
@@ -716,12 +798,39 @@ function presentacion(p, i, g, total) {
     </div>
   </section>`;
 }
+// Vitrina horizontal (movilidad): una tarjeta por artículo, pintada del color de la pasola.
+const VITRINA = new Set(['gMovilidad']);
+const esClaro = hex => { const n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2] > .45; };
+const tonoDe = (p, k) => (p.tonos && p.tonos[k]) || p.tono || '#2a2f36';
+function tarjeta(p, i, g, total) {
+  const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[4] !== 'agotado')) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
+  const id = 'p-' + slug(p.nombre); N++; TODOS.push({ id: id, p: p, g: g, foto: x.foto });
+  const tono = tonoDe(p, k0), foto = v0 ? x.foto : (p.recorte || x.foto), rasgos = `<div class="vt-rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>`;
+  const datos = (p.med || []).map(([m, v, txt]) => `<div class="vt-dato"><b>${txt || v}<small>${m.u}</small></b><span>${m.k}</span></div>`).join('');
+  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir color de ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === k0}" data-id="${id}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}><span class="circ">${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}</span>${esc(v[0])}</button>`).join('')}</div>` : '';
+  const giro = giroDe(p, k0);
+  return `<article class="vt${esClaro(tono) ? ' clara' : ''}${x.est === 'agotado' ? ' agotado' : ''}" id="${id}" style="--tono:${tono}" data-tono="${tono}" aria-roledescription="tarjeta" aria-label="${esc(p.nombre)}, ${i + 1} de ${total}">
+    <div class="vt-letra" aria-hidden="true">${esc(p.nombre.replace(/^LQ-/, ''))}</div>
+    <div class="vt-top"><span class="vt-eyebrow">${CAT_NOMBRE[g]} · ${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span><span data-badge>${badge(x.est)}</span></div>
+    <div class="vt-info"><h3>${esc(p.nombre)}</h3><p class="sub" data-sub>${esc(x.sub)}</p>${rasgos}</div>
+    <div class="vt-escena"><div class="vt-luz"></div>
+      <div class="pieza"><img src="${foto}" alt="${esc(p.nombre)}" loading="${i < 2 ? 'eager' : 'lazy'}" decoding="async" draggable="false"></div>
+      ${giro ? `<canvas class="giro360" data-giro="${giro}" data-inicio="${p.inicio || 0}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
+    </div>
+    ${rasgos}
+    <div class="vt-lado">${vars}${datos ? `<div class="vt-datos">${datos}</div>` : ''}</div>
+    <div class="vt-pie"><div class="precio${x.sinPrecio ? ' consulta' : ''}" data-precio>${x.precio}</div><div class="ctas"><a class="btn btn-linea financiar" target="_blank" rel="noopener" href="${x.fin ? waLink(x.fin) : '#'}"${x.fin ? '' : ' hidden'}><i class="ti ti-calendar-dollar" aria-hidden="true"></i> Financiarlo</a><a class="btn btn-oro quiero" target="_blank" rel="noopener" href="${waLink(x.msg)}">${x.boton}</a></div></div>
+  </article>`;
+}
 const cat = document.getElementById('catalogo');
 cat.innerHTML = SECCIONES.map(s => {
   const lista = CATALOGO[s.g];
   return `<section class="divisor" id="${s.id}" aria-labelledby="h-${s.id}"><div class="gigante" aria-hidden="true">${s.gigante}</div>
     <div class="wrap"><div><span class="eyebrow">${s.eyebrow} · ${lista.length} artículo${lista.length === 1 ? '' : 's'}</span><h2 id="h-${s.id}" style="margin-top:14px">${s.titulo}</h2></div><p class="lead">${s.lead}</p></div></section>`
-    + lista.map((p, i) => presentacion(p, i, s.g, lista.length)).join('');
+    + (VITRINA.has(s.g)
+      ? `<div class="vitrina" data-vitrina><div class="vt-pista" tabindex="0" aria-label="${esc(s.eyebrow)}: desliza para ver cada modelo">${lista.map((p, i) => tarjeta(p, i, s.g, lista.length)).join('')}</div>
+        <div class="wrap vt-nav"><span class="vt-cont" aria-live="polite"><b>01</b> / ${String(lista.length).padStart(2, '0')}</span><div class="vt-puntos">${lista.map((p, i) => `<button type="button" data-i="${i}" aria-label="Ver ${esc(p.nombre)}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div><div class="vt-flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-arrow-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div></div></div>`
+      : lista.map((p, i) => presentacion(p, i, s.g, lista.length)).join(''));
 }).join('');
 document.getElementById('filtros').innerHTML = [['', 'Todo']].concat(SECCIONES.map(s => [s.g, CAT_NOMBRE[s.g]])).map(([g, n], k) => `<button type="button" data-f="${g}" aria-pressed="${k === 0}">${n}</button>`).join('');
 document.getElementById('filtros').addEventListener('click', e => {
@@ -741,8 +850,9 @@ document.addEventListener('click', e => {
   const im = sec.querySelector('.pieza img');
   if (im.getAttribute('src') !== x.foto) { im.loading = 'eager'; im.classList.remove('cambio'); void im.offsetWidth; im.src = x.foto; im.classList.add('cambio'); const br = sec.querySelector('.brillo'); if (br) br.style.setProperty('--m', "url('" + x.foto + "')"); }
   im.alt = p.nombre + ' ' + v[0];
+  if (sec.classList.contains('vt')) { const tono = tonoDe(p, +b.dataset.k); sec.style.setProperty('--tono', tono); sec.dataset.tono = tono; sec.classList.toggle('clara', esClaro(tono)); if (sec.classList.contains('actual')) sec.closest('.vitrina').style.setProperty('--vt-tono', tono); }
   sec.classList.toggle('agotado', x.est === 'agotado');
-  sec.classList.toggle('con-giro', esVista360(x.foto));
+  if (!sec.classList.contains('vt')) sec.classList.toggle('con-giro', esVista360(x.foto));
   sec.querySelector('[data-badge]').innerHTML = badge(x.est);
   sec.querySelector('[data-sub]').textContent = x.sub;
   const pr = sec.querySelector('[data-precio]'); pr.innerHTML = x.precio; pr.classList.toggle('consulta', x.sinPrecio);
@@ -753,6 +863,36 @@ document.addEventListener('click', e => {
     cv.dataset.giro = g; cv.parentNode.querySelector('.btn-360').hidden = !g;
     if (sec.classList.contains('modo-360')) cv.parentNode.querySelector('.btn-360').click();
   }
+});
+// Vitrina: marca la tarjeta que está al frente, tiñe la franja con su color y mueve puntos/flechas.
+document.querySelectorAll('[data-vitrina]').forEach(vit => {
+  const pista = vit.querySelector('.vt-pista'), tarjetas = [...pista.querySelectorAll('.vt')];
+  const puntos = [...vit.querySelectorAll('.vt-puntos button')], cont = vit.querySelector('.vt-cont b'), [ant, sig] = vit.querySelectorAll('.vt-flechas button');
+  let actual = -1;
+  const ir = k => { const t = tarjetas[Math.max(0, Math.min(tarjetas.length - 1, k))]; pista.scrollTo({ left: t.offsetLeft - (pista.clientWidth - t.clientWidth) / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+  function marcar(k) {
+    if (k === actual) return;
+    const previa = tarjetas[actual];
+    if (previa && previa.classList.contains('modo-360')) previa.querySelector('.btn-360').click();
+    actual = k;
+    tarjetas.forEach((t, j) => t.classList.toggle('actual', j === k));
+    puntos.forEach((p, j) => p.setAttribute('aria-current', String(j === k)));
+    cont.textContent = String(k + 1).padStart(2, '0');
+    vit.style.setProperty('--vt-tono', tarjetas[k].dataset.tono);
+    ant.disabled = k === 0; sig.disabled = k === tarjetas.length - 1;
+  }
+  let pend = false;
+  const medir = () => { pend = false; const c = pista.scrollLeft + pista.clientWidth / 2; let k = 0, d = Infinity; tarjetas.forEach((t, j) => { const dj = Math.abs(t.offsetLeft + t.clientWidth / 2 - c); if (dj < d) { d = dj; k = j; } }); marcar(k); };
+  pista.addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(medir); } }, { passive: true });
+  addEventListener('resize', medir);
+  puntos.forEach((p, j) => p.addEventListener('click', () => ir(j)));
+  ant.addEventListener('click', () => ir(actual - 1)); sig.addEventListener('click', () => ir(actual + 1));
+  // Clic en una tarjeta de al lado: la trae al frente.
+  pista.addEventListener('click', e => { const t = e.target.closest('.vt'); if (t && !t.classList.contains('actual') && !e.target.closest('a,button')) ir(tarjetas.indexOf(t)); });
+  // Enlaces #p-… (tira «Explora» e índice): centran la tarjeta dentro de la vitrina.
+  addEventListener('hashchange', () => { const k = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k >= 0) ir(k); });
+  medir();
+  const k0 = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k0 > 0) ir(k0);
 });
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();
@@ -822,7 +962,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
     pend = false; const vh = innerHeight;
     if (!quieto) vivos.forEach(s => { const r = s.getBoundingClientRect(); s.style.setProperty('--p', Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height))).toFixed(3)); });
     const doc = document.documentElement; barra.style.setProperty('--leido', (scrollY / Math.max(1, doc.scrollHeight - vh)).toFixed(3));
-    let actual = -1; pres.forEach((s, k) => { const r = s.getBoundingClientRect(); if (r.top < vh * .5 && r.bottom > vh * .5) actual = k; });
+    let actual = -1; TODOS.forEach((t, k) => { const s = document.getElementById(t.id); if (s.classList.contains('vt') && !s.classList.contains('actual')) return; const r = s.getBoundingClientRect(); if (r.top < vh * .5 && r.bottom > vh * .5) actual = k; });
     idx.forEach((a, k) => a.setAttribute('aria-current', String(k === actual)));
   }
   addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(cuadro); } }, { passive: true });
@@ -894,7 +1034,7 @@ document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('cl
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.btn-360'); if (!b) return;
-    const sec = b.closest('.pres'), cv = sec.querySelector('.giro360'), txt = b.querySelector('span');
+    const sec = b.closest('.pres, .vt'), cv = sec.querySelector('.giro360'), txt = b.querySelector('span');
     if (sec.classList.contains('modo-360')) {
       sec.classList.remove('modo-360', 'girado'); b.setAttribute('aria-pressed', 'false'); txt.textContent = 'Girar 360°'; return;
     }

@@ -1,7 +1,15 @@
 {
-  "version": "59.44",
+  "version": "59.45",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.45",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda: en iPhone la página ya no se corre de lado al abrir una pasola desde un enlace.",
+        "Tienda: la LQ-H8 gira en 360° sin el plato oscuro."
+      ]
+    },
     {
       "version": "59.44",
       "fecha": "2026-09-25",

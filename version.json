@@ -1,7 +1,15 @@
 {
-  "version": "59.45",
+  "version": "59.46",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.46",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda más corta (de 16 a menos de 5 pantallas en celular): catálogo con pestañas Movilidad · Cargas · Hogar · Tecnología, cada una en vitrina horizontal de colores.",
+        "Tienda: se quitaron secciones repetidas (pósters, miniaturas, portadillas e índice) y el contacto aparece una sola vez."
+      ]
+    },
     {
       "version": "59.45",
       "fecha": "2026-09-25",

@@ -35,8 +35,8 @@
   --ease:cubic-bezier(.2,.8,.2,1); --resorte:cubic-bezier(.34,1.4,.5,1);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--noche);color:var(--texto);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden;overflow-x:clip}
+body{background:var(--noche);color:var(--texto);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;overflow-x:clip}
 img{display:block;max-width:100%}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -442,7 +442,7 @@ footer .acceso-equipo:hover{color:var(--texto)}
 
 /* ── Vitrina de movilidad: tarjetas horizontales, cada una del color de su pasola. La franja toma
    el tono de la tarjeta que está al frente. --tono/--tinta los pone el script por artículo. ── */
-.vitrina{--vt-tono:#07080A;position:relative;padding:28px 0 56px;background:#07080A;background:color-mix(in oklab,var(--vt-tono) 30%,#07080A);transition:background-color .7s var(--ease)}
+.vitrina{--vt-tono:#07080A;position:relative;overflow:hidden;overflow:clip;padding:28px 0 56px;background:#07080A;background:color-mix(in oklab,var(--vt-tono) 30%,#07080A);transition:background-color .7s var(--ease)}
 .vt-pista{display:grid;grid-auto-flow:column;grid-auto-columns:min(1100px,86vw);gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;padding:10px calc((100vw - min(1100px,86vw)) / 2) 18px;scroll-padding-inline:calc((100vw - min(1100px,86vw)) / 2)}
 .vt-pista::-webkit-scrollbar{display:none}
 .vt{--tinta:#fff;--suave-vt:rgba(255,255,255,.8);--linea-vt:rgba(255,255,255,.34);position:relative;isolation:isolate;overflow:hidden;scroll-snap-align:center;scroll-snap-stop:always;border-radius:34px;color:var(--tinta);min-height:min(640px,76svh);padding:28px 32px 26px;
@@ -697,7 +697,7 @@ const CATALOGO = {
   gMovilidad: [
     { nombre: 'LQ-N9', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-n9/foto.webp', recorte: img('lq-n9'), giro: 'lq-n9-v2', inicio: 19, precio: null, estado: 'camino', tono: '#1784c0',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8', inicio: 7, precio: null, estado: 'camino', tono: '#8c1c2a',
+    { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8-v2', inicio: 7, precio: null, estado: 'camino', tono: '#8c1c2a',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino', tono: '#2745b3',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
@@ -891,10 +891,22 @@ document.querySelectorAll('[data-vitrina]').forEach(vit => {
   ant.addEventListener('click', () => ir(actual - 1)); sig.addEventListener('click', () => ir(actual + 1));
   // Clic en una tarjeta de al lado: la trae al frente.
   pista.addEventListener('click', e => { const t = e.target.closest('.vt'); if (t && !t.classList.contains('actual') && !e.target.closest('a,button')) ir(tarjetas.indexOf(t)); });
-  // Enlaces #p-… (tira «Explora» e índice): centran la tarjeta dentro de la vitrina.
-  addEventListener('hashchange', () => { const k = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k >= 0) ir(k); });
+  // Enlaces #p-… (tira «Explora» e índice): el navegador correría la página entera hacia el lado
+  // (en iPhone se ve cortada); en su lugar se baja a la vitrina y se centra la tarjeta dentro de ella.
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#p-"]'); if (!a) return;
+    const k = tarjetas.findIndex(t => '#' + t.id === a.getAttribute('href')); if (k < 0) return;
+    e.preventDefault();
+    history.replaceState(null, '', a.getAttribute('href'));
+    const top = vit.getBoundingClientRect().top + scrollY - (document.querySelector('header') || { offsetHeight: 0 }).offsetHeight;
+    scrollTo({ top: top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    ir(k);
+  });
+  const enderezar = () => { if (scrollX) scrollTo(0, scrollY); };
+  addEventListener('scroll', enderezar, { passive: true });
+  addEventListener('hashchange', () => { enderezar(); const k = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k >= 0) ir(k); });
   medir();
-  const k0 = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k0 > 0) ir(k0);
+  const k0 = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k0 >= 0) { enderezar(); ir(k0); }
 });
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();

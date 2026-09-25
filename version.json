@@ -1,7 +1,14 @@
 {
-  "version": "59.48",
+  "version": "59.49",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.49",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda: enlace a Instagram @studio__rd en «Visítanos» y en el pie de página."
+      ]
+    },
     {
       "version": "59.48",
       "fecha": "2026-09-25",

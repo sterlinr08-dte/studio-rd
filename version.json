@@ -1,7 +1,14 @@
 {
-  "version": "59.47",
+  "version": "59.48",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.48",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda en celular: la portada muestra el modelo y «Consultar» sin bajar, y cada tarjeta de producto cabe completa en pantalla."
+      ]
+    },
     {
       "version": "59.47",
       "fecha": "2026-09-25",

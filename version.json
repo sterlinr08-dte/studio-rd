@@ -1,76 +1,115 @@
 {
-  "version": "59.43",
+  "version": "59.44",
   "url": "https://studiord.net/index.html",
   "cambios": [
     {
+      "version": "59.44",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda: las pasolas en una vitrina horizontal; cada tarjeta lleva el color de su modelo y la LQ-M12 cambia de color con su variante.",
+        "Tienda: la LQ-N9 gira en 360° sin fondo ni plato, y el botón «Girar 360°» ya no tapa la pasola."
+      ]
+    },
+    {
       "version": "59.43",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: 16 fotos de producto nuevas en calidad de estudio (pasolas, motocargas, TV, aire y neveras)."]
+      "notas": [
+        "Tienda: 16 fotos de producto nuevas en calidad de estudio (pasolas, motocargas, TV, aire y neveras)."
+      ]
     },
     {
       "version": "59.42",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: la foto de la LQ-N9 y la LQ-H8 es ahora la mejor vista de su vuelta 360°, y el giro arranca en esa misma vista."]
+      "notas": [
+        "Tienda: la foto de la LQ-N9 y la LQ-H8 es ahora la mejor vista de su vuelta 360°, y el giro arranca en esa misma vista."
+      ]
     },
     {
       "version": "59.41",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: vista 360° de la LQ-H8; el visor ya admite un giro por color o modelo."]
+      "notas": [
+        "Tienda: vista 360° de la LQ-H8; el visor ya admite un giro por color o modelo."
+      ]
     },
     {
       "version": "59.40",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: vista 360° de la LQ-N9 — botón «Girar 360°» y arrastre con el dedo o el ratón."]
+      "notas": [
+        "Tienda: vista 360° de la LQ-N9 — botón «Girar 360°» y arrastre con el dedo o el ratón."
+      ]
     },
     {
       "version": "59.39",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: velocidad de la serie 1000W (LQ-N9, LQ-H8, LQ-ZS) corregida a 60 km/h, también en el afiche de la LQ-N9."]
+      "notas": [
+        "Tienda: velocidad de la serie 1000W (LQ-N9, LQ-H8, LQ-ZS) corregida a 60 km/h, también en el afiche de la LQ-N9."
+      ]
     },
     {
       "version": "59.38",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: comercial en video de la pasola LQ-N9 armándose pieza por pieza, con botón para activar el sonido."]
+      "notas": [
+        "Tienda: comercial en video de la pasola LQ-N9 armándose pieza por pieza, con botón para activar el sonido."
+      ]
     },
     {
       "version": "59.37",
       "fecha": "2026-09-24",
-      "notas": ["Nueva portada con LQ-N9, LQ-H8 y LQ-HLD: selector, flechas y gesto para cambiar de modelo.", "Foto, características y consulta de WhatsApp sincronizadas, con transiciones y movimiento reducido."]
+      "notas": [
+        "Nueva portada con LQ-N9, LQ-H8 y LQ-HLD: selector, flechas y gesto para cambiar de modelo.",
+        "Foto, características y consulta de WhatsApp sincronizadas, con transiciones y movimiento reducido."
+      ]
     },
     {
       "version": "59.36",
       "fecha": "2026-09-24",
-      "notas": ["Tienda: las pasolas se mecen más (±20°) y el armado pieza por pieza se ve también en Android de gama media."]
+      "notas": [
+        "Tienda: las pasolas se mecen más (±20°) y el armado pieza por pieza se ve también en Android de gama media."
+      ]
     },
     {
       "version": "59.35",
       "fecha": "2026-09-24",
-      "notas": ["Acceso discreto del personal en el pie: icono de usuario y texto Personal, disponible desde cualquier dispositivo."]
+      "notas": [
+        "Acceso discreto del personal en el pie: icono de usuario y texto Personal, disponible desde cualquier dispositivo."
+      ]
     },
     {
       "version": "59.34",
       "fecha": "2026-09-24",
-      "notas": ["Cabecera sin WhatsApp y sin enlaces públicos al sistema del personal. Acceso directo por /app."]
+      "notas": [
+        "Cabecera sin WhatsApp y sin enlaces públicos al sistema del personal. Acceso directo por /app."
+      ]
     },
     {
       "version": "59.33",
       "fecha": "2026-09-25",
-      "notas": ["Nuevo ícono de STUDIO (la «S» del logo en negro y oro) en lugar del escudo heredado, en la pestaña, la app instalada y la página pública."]
+      "notas": [
+        "Nuevo ícono de STUDIO (la «S» del logo en negro y oro) en lugar del escudo heredado, en la pestaña, la app instalada y la página pública."
+      ]
     },
     {
       "version": "59.32",
       "fecha": "2026-09-23",
-      "notas": ["Tienda: portada y composición móvil refinadas; nombres de destacados siempre visibles.", "Animaciones de productos activas solo cerca de pantalla y armado más ligero."]
+      "notas": [
+        "Tienda: portada y composición móvil refinadas; nombres de destacados siempre visibles.",
+        "Animaciones de productos activas solo cerca de pantalla y armado más ligero."
+      ]
     },
     {
       "version": "59.31",
       "fecha": "2026-09-25",
-      "notas": ["Login: enlace «Ver la página de la tienda».", "Página pública: las pasolas entran girando y se mecen en 3D; hogar y tecnología se arman pieza por pieza."]
+      "notas": [
+        "Login: enlace «Ver la página de la tienda».",
+        "Página pública: las pasolas entran girando y se mecen en 3D; hogar y tecnología se arman pieza por pieza."
+      ]
     },
     {
       "version": "59.30",
       "fecha": "2026-09-25",
-      "notas": ["Página pública: botón «Acceso personal» dorado y visible también en el celular."]
+      "notas": [
+        "Página pública: botón «Acceso personal» dorado y visible también en el celular."
+      ]
     },
     {
       "version": "59.29",

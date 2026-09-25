@@ -98,10 +98,6 @@ nav a:hover{color:var(--texto)}
 .confianza i{font-size:24px;color:var(--oro-luz);flex:none}
 .confianza b{display:block;font-size:14px}
 .confianza span{font-size:12.5px;color:var(--suave);line-height:1.35}
-.filtros{display:flex;gap:6px;flex-wrap:wrap}
-.filtros button{height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--linea2);background:transparent;font:600 12.5px var(--sans);color:var(--suave)}
-.filtros button[aria-pressed="true"]{border-color:var(--oro);color:var(--texto);background:rgba(201,162,39,.12)}
-.mini[hidden]{display:none}
 .ctas{display:flex;gap:8px;flex-wrap:wrap}
 .ctas .btn{height:46px;padding:0 18px;font-size:14.5px}
 .ctas .btn[hidden]{display:none}
@@ -131,36 +127,9 @@ nav a:hover{color:var(--texto)}
 .comercial-sonido:hover{border-color:var(--oro);background:rgba(7,8,10,.8)}
 .comercial-sonido i{font-size:18px;color:var(--oro-luz)}
 @media (max-width:640px){.comercial{padding:44px 0 4px}.comercial-marco{border-radius:16px}.comercial-sonido{left:10px;bottom:10px;height:36px;padding:0 13px;font-size:12px}}
-.destacados{padding:64px 0 24px}
-.destacados .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
-.flechas{display:flex;gap:8px}
-.flechas button{width:42px;height:42px;border-radius:50%;border:1px solid var(--linea2);background:rgba(255,255,255,.03);display:grid;place-items:center;font-size:20px;transition:border-color .2s,background .2s}
-.flechas button:hover{border-color:var(--oro);background:rgba(201,162,39,.1)}
-.carrusel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:6px 16px 18px;scrollbar-width:none}
-.carrusel::-webkit-scrollbar{display:none}
-@media (min-width:1232px){.carrusel{padding-inline:calc((100vw - 1200px) / 2)}}
-.poster{position:relative;flex:none;width:clamp(230px,24vw,290px);aspect-ratio:720/897;border-radius:18px;overflow:hidden;scroll-snap-align:start;border:1px solid var(--linea);background:var(--panel);box-shadow:0 20px 40px -24px rgba(0,0,0,.8);transition:transform .45s var(--resorte),border-color .3s,box-shadow .3s;text-decoration:none}
-.poster img{width:100%;height:100%;object-fit:cover;transition:transform .8s var(--ease)}
-.poster span{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 14px;border-radius:999px;background:rgba(7,8,10,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--linea2);font:600 13px var(--sans);color:var(--texto);transition:background .25s var(--ease),border-color .25s var(--ease)}
-.poster:hover{transform:translateY(-6px);border-color:rgba(201,162,39,.55);box-shadow:0 26px 50px -20px rgba(201,162,39,.35)}
-.poster:hover img{transform:scale(1.04)}
-.poster:hover span,.poster:focus-visible span{background:rgba(7,8,10,.94);border-color:rgba(242,210,106,.55)}
-@media (max-width:620px){.poster{width:72vw}.flechas{display:none}.destacados{padding:48px 0 16px}}
-@media (max-width:620px){.explora .wrap{flex-direction:column;align-items:flex-start}.filtros{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}.filtros button{flex:none}}
 
 /* ── Explora: tira de miniaturas que lleva a cada presentación ── */
-.explora{padding:8px 0 40px}
-.explora .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
-.tira{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 14px;scrollbar-width:none;
   mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
-.tira::-webkit-scrollbar{display:none}
-@media (min-width:1232px){.tira{padding-inline:calc((100vw - 1200px) / 2)}}
-.mini{flex:none;scroll-snap-align:start;width:156px;display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;background:var(--panel);border:1px solid var(--linea);text-decoration:none;transition:border-color .2s,transform .25s var(--resorte)}
-.mini:hover{border-color:rgba(201,162,39,.5);transform:translateY(-3px)}
-.mini .ph{position:relative;height:100px;border-radius:9px;background:radial-gradient(70% 60% at 50% 70%,rgba(201,162,39,.14),transparent 70%)}
-.mini img{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain}
-.mini b{font:600 12.5px/1.2 var(--sans)}
-.mini small{font:500 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tenue)}
 
 /* ── Separador de categoría ── */
 .divisor{position:relative;padding:84px 0 36px;overflow:hidden;border-top:1px solid var(--linea)}
@@ -283,10 +252,6 @@ nav a:hover{color:var(--texto)}
 @keyframes cambio{0%{opacity:0;transform:translateX(30px) scale(.94) rotateY(-12deg)}100%{opacity:1;transform:none}}
 
 /* Índice lateral (computadora) */
-.indice{position:fixed;right:18px;top:50%;translate:0 -50%;z-index:30;display:none;flex-direction:column;gap:9px}
-.indice a{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18);transition:background .2s,scale .25s var(--resorte),box-shadow .2s}
-.indice a[aria-current="true"]{background:var(--oro-luz);scale:1.5;box-shadow:0 0 12px var(--oro-luz)}
-.indice a:hover{background:var(--oro)}
 
 /* Financiamiento y contacto */
 section.bloque{padding:96px 0}
@@ -345,7 +310,6 @@ footer .acceso-equipo:hover{color:var(--texto)}
   .escenario{max-height:460px}
 }
 
-@media (min-width:1100px){.indice{display:flex}}
 @media (max-width:1180px){nav{gap:16px}nav a{font-size:13px}nav a[href="#contacto"],nav a[href="#financiamiento"]{display:none}header .wrap{gap:14px}}
 @media (max-width:980px){
   .hero .wrap,.contacto .wrap{grid-template-columns:1fr}
@@ -453,7 +417,8 @@ footer .acceso-equipo:hover{color:var(--texto)}
 .js .vt:not(.actual){opacity:.55;scale:.94}
 .vt-letra{position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;font:900 clamp(170px,30vw,420px)/.8 var(--disp);letter-spacing:-.06em;white-space:nowrap;color:color-mix(in oklab,var(--tono),#fff 13%);pointer-events:none;user-select:none}
 .vt.clara .vt-letra{color:color-mix(in oklab,var(--tono),#000 7%)}
-.vt-top{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.vt-top{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.vt-top .estado{white-space:nowrap}
 .vt-eyebrow{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--suave-vt)}
 .vt .estado{background:transparent;color:var(--tinta);border:1px solid var(--linea-vt)}
 .vt .estado.camino::before{background:var(--tinta)}
@@ -523,6 +488,39 @@ footer .acceso-equipo:hover{color:var(--texto)}
 @media (max-width:820px){.vt-info .vt-rasgos{display:none}.vt>.vt-rasgos{display:flex;grid-area:rasgos;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-18px;padding-inline:18px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}.vt>.vt-rasgos::-webkit-scrollbar{display:none}}
 @media (min-width:821px){.vt>.vt-rasgos{display:none}}
 @media (prefers-reduced-motion:reduce){.vitrina,.vt,.vt .pieza img{transition:none}.js .vt:not(.actual){scale:1}.js .vt:not(.actual) .pieza img{translate:0 0;scale:1}}
+
+/* ── Catálogo con pestañas (una vitrina por categoría) ── */
+.catalogo{padding:56px 0 0}
+.cat-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:18px 28px;flex-wrap:wrap;margin-bottom:6px}
+.cat-cab h2{margin-top:10px}
+.cat-lead{margin-top:10px;font-size:15.5px;max-width:48ch}
+.cat-tabs{display:flex;gap:6px;padding:5px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--linea);overflow-x:auto;scrollbar-width:none;max-width:100%}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tabs button{flex:none;display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:999px;border:0;background:transparent;font:600 14px var(--sans);color:var(--suave);transition:background .25s,color .25s}
+.cat-tabs button small{font:700 10.5px var(--mono);color:var(--tenue)}
+.cat-tabs button:hover{color:var(--texto)}
+.cat-tabs button[aria-selected="true"]{background:var(--texto);color:#0A0A0A}
+.cat-tabs button[aria-selected="true"] small{color:#555}
+.vitrina[hidden]{display:none}
+.cat-tabs .t-ct{display:none}
+.vt .variantes button.pill{flex-direction:row;height:36px;padding:0 14px;border:1.5px solid var(--linea-vt);border-radius:999px;font:600 12.5px var(--sans);color:var(--tinta);white-space:nowrap}
+.vt .variantes button.pill[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--tono)}
+.vt .variantes button.pill.agot{text-decoration:line-through;opacity:.55}
+@media (max-width:820px){
+  .catalogo{padding-top:40px}
+  .cat-tabs{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;padding:4px}
+  .cat-tabs button{justify-content:center;padding:0 4px;font-size:12.5px;height:38px}
+  .cat-tabs button small,.cat-tabs .t-lg{display:none}.cat-tabs .t-ct{display:inline}
+  section.bloque{padding:44px 0}
+  .pasos{grid-template-columns:1fr 1fr;row-gap:18px;column-gap:14px}
+  .paso{padding:18px 0 0}
+  .paso h3{font-size:16px;margin:6px 0 4px}.paso p{font-size:13px}
+  .cab{margin-bottom:24px;gap:16px}
+  .contacto .wrap{gap:20px}
+  .datos-c{grid-template-columns:1fr 1fr;gap:8px}
+  .dato-c{padding:12px;gap:10px}.dato-c:nth-child(3),.dato-c:nth-child(4){grid-column:1/-1}
+  .dato-c b,.dato-c span{font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -573,7 +571,7 @@ footer .acceso-equipo:hover{color:var(--texto)}
         </div>
         <div class="acciones">
           <a class="btn btn-oro" id="hero-consulta" href="https://wa.me/18296247623?text=Hola%20STUDIO%2C%20quiero%20informaci%C3%B3n%20del%20LQ-N9" target="_blank" rel="noopener">Consultar este modelo <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></a>
-          <a class="hero-catalogo" href="#explora">Ver catálogo <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6 6 6-6M12 20V4"/></svg></a>
+          <a class="hero-catalogo" href="#catalogo">Ver catálogo <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 6 6 6-6M12 20V4"/></svg></a>
         </div>
       </div>
     </div>
@@ -601,34 +599,7 @@ footer .acceso-equipo:hover{color:var(--texto)}
     </div>
   </section>
 
-  <section class="destacados" aria-labelledby="h-dest">
-    <div class="wrap"><div><span class="eyebrow">Destacados</span><h2 id="h-dest" style="margin-top:10px">Lo nuevo en STUDIO</h2></div>
-      <div class="flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-chevron-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-chevron-right" aria-hidden="true"></i></button></div></div>
-    <div class="carrusel" id="carrusel">
-      <a class="poster" href="#p-lq-n9"><img src="img/tienda/destacados/serie1000-blanco-azul.webp" alt="STUDIO · Serie 1000W" width="720" height="897" loading="lazy" decoding="async"><span>Serie 1000W <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-lq-n9"><img src="img/tienda/destacados/lq-n9-potencia.webp?v=2" alt="STUDIO · LQ-N9" width="720" height="897" loading="lazy" decoding="async"><span>LQ-N9 <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-lq-h8"><img src="img/tienda/destacados/serie1000-rojo.webp" alt="STUDIO · LQ-H8" width="720" height="897" loading="lazy" decoding="async"><span>LQ-H8 <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#movilidad"><img src="img/tienda/destacados/serie1000-blanco.webp" alt="STUDIO · Serie 1000W" width="720" height="897" loading="lazy" decoding="async"><span>Serie 1000W <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-monta-carga-350cc"><img src="img/tienda/destacados/motocarga-350cc.webp" alt="STUDIO · Motocarga de 350cc" width="720" height="900" loading="lazy" decoding="async"><span>Motocarga 350cc <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-monta-carga-350cc"><img src="img/tienda/destacados/capacidad-carga.webp" alt="STUDIO · Gran capacidad de carga" width="720" height="900" loading="lazy" decoding="async"><span>Gran capacidad de carga <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-lq-hld"><img src="img/tienda/destacados/lq-hld-muevete.webp" alt="STUDIO · LQ-HLD" width="720" height="897" loading="lazy" decoding="async"><span>LQ-HLD <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-lq-xbw"><img src="img/tienda/destacados/lq-xbw.webp" alt="STUDIO · LQ-XBW" width="720" height="897" loading="lazy" decoding="async"><span>LQ-XBW <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-cw-smart-tv"><img src="img/tienda/destacados/tv-tamanos.webp" alt="STUDIO · CW Smart TV de 32 a 65 pulgadas" width="720" height="900" loading="lazy" decoding="async"><span>CW Smart TV <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-cw-smart-tv"><img src="img/tienda/destacados/tv-65.webp" alt="STUDIO · CW Smart TV 65 pulgadas" width="720" height="900" loading="lazy" decoding="async"><span>Smart TV 65" <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-smart-lock-facial"><img src="img/tienda/destacados/smart-lock.webp" alt="STUDIO · Smart Lock" width="720" height="897" loading="lazy" decoding="async"><span>Smart Lock <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-nevera-cw"><img src="img/tienda/destacados/neveras.webp" alt="STUDIO · Neveras CW" width="720" height="897" loading="lazy" decoding="async"><span>Neveras CW <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-ventilador-de-techo-42"><img src="img/tienda/destacados/ventilador-cristal.webp" alt="STUDIO · Ventilador cristal" width="720" height="897" loading="lazy" decoding="async"><span>Ventilador cristal <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-      <a class="poster" href="#p-ventilador-de-techo-42"><img src="img/tienda/destacados/ventilador-madera.webp" alt="STUDIO · Ventilador madera" width="720" height="897" loading="lazy" decoding="async"><span>Ventilador madera <i class="ti ti-arrow-right" aria-hidden="true"></i></span></a>
-    </div>
-  </section>
-
-  <section id="explora" class="explora" aria-labelledby="h-exp">
-    <div class="wrap"><span class="eyebrow" id="h-exp">Explora el catálogo · toca un artículo</span>
-      <div class="filtros" role="group" aria-label="Filtrar por categoría" id="filtros"></div></div>
-    <div class="tira" id="tira"></div>
-  </section>
-
-  <div id="catalogo"></div>
+  <section id="catalogo" class="catalogo" aria-labelledby="h-cat"></section>
 
   <section id="financiamiento" class="bloque banda" aria-labelledby="h-fin">
     <div class="wrap">
@@ -650,8 +621,6 @@ footer .acceso-equipo:hover{color:var(--texto)}
       <div class="aparece">
         <span class="eyebrow">Visítanos</span>
         <h2 id="h-con">Te esperamos<br>en Santiago.</h2>
-        <p class="lead">Escríbenos con el equipo que buscas y te respondemos con precio, disponibilidad y la cuota si lo quieres financiar.</p>
-        <a class="btn btn-oro js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Escribir por WhatsApp</a>
       </div>
       <div class="datos-c aparece">
         <a class="dato-c js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i><div><b>WhatsApp</b><span>829-624-7623</span></div></a>
@@ -666,13 +635,11 @@ footer .acceso-equipo:hover{color:var(--texto)}
 <footer>
   <div class="wrap">
     <span>© <span id="anio">2026</span> STUDIO · Hogar, movilidad &amp; tecnología · Santiago, República Dominicana</span>
-    <span class="enlaces-pie"><a href="#movilidad">Catálogo</a><a href="#financiamiento">Financiamiento</a><a class="acceso-equipo" href="/app" aria-label="Acceso del personal" title="Acceso del personal"><i class="ti ti-user-circle" aria-hidden="true"></i><span>Personal</span></a></span>
+    <span class="enlaces-pie"><a href="#catalogo">Catálogo</a><a href="#financiamiento">Financiamiento</a><a class="acceso-equipo" href="/app" aria-label="Acceso del personal" title="Acceso del personal"><i class="ti ti-user-circle" aria-hidden="true"></i><span>Personal</span></a></span>
   </div>
-  <div class="wrap"><p class="aviso">Tel. <a href="tel:+18095706254">809-570-6254</a> · WhatsApp <a class="js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623">829-624-7623</a> · Av. Jacinto B. Dummit, frente a Auto Repuesto Santiago · Lunes a sábado, 8:30 a.m. – 6:30 p.m.</p></div>
   <div class="wrap"><p class="aviso">Disponibilidad sujeta a existencia. Consulta precios y facilidades de pago por WhatsApp.</p></div>
 </footer>
 
-<nav class="indice" id="indice" aria-label="Artículos"></nav>
 <a class="wa-flot js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623" aria-label="Escribir a STUDIO por WhatsApp"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></a>
 <div class="barra-movil" aria-label="Contactar a STUDIO">
   <a class="bm-llamar" href="tel:+18095706254"><i class="ti ti-phone" aria-hidden="true"></i> Llamar</a>
@@ -714,29 +681,29 @@ const CATALOGO = {
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
   ],
   gCarga: [
-    { nombre: 'Monta carga hidráulico 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico',
+    { nombre: 'Monta carga hidráulico 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico', tono: '#b3261e', corto: '350',
       precios: [['Efectivo', 240000], ['Financiado', 270000]], rasgos: ['Motor 350cc', 'Volteo hidráulico', 'Alta capacidad de carga', 'Financiamiento disponible'] },
-    { nombre: 'Monta carga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico',
+    { nombre: 'Monta carga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico', tono: '#1f4fb8', corto: '350',
       precios: [['Efectivo', 160000]], rasgos: ['Motor 350cc', 'Alta capacidad de carga', 'Financiamiento disponible'] },
   ],
   gHogar: [
-    { nombre: 'CW Smart TV', sub: 'De 32" a 65" · elige tu tamaño', ancha: true,
+    { nombre: 'CW Smart TV', sub: 'De 32" a 65" · elige tu tamaño', ancha: true, tono: '#2b2f63', corto: 'TV',
       variantes: [['32"', img('tv-fila'), null, null, 'agotado', 'Android TV · 4K'], ['43"', img('tv-fila'), null, 14990, '', 'Android TV · 4K'], ['50"', img('tv-fila'), null, 21990, '', 'Google TV · 8K'], ['55"', img('tv-fila'), null, 25000, '', 'Google TV · 8K'], ['65"', img('tv-65'), null, 34000, '', 'Google TV · 8K']],
       rasgos: ['Smart TV', 'Resolución HD', 'Apps de streaming'] },
-    { nombre: 'Aire CW-STUDIO inverter', sub: 'Eficiencia 19 · WiFi',
+    { nombre: 'Aire CW-STUDIO inverter', sub: 'Eficiencia 19 · WiFi', tono: '#dfe7ee', corto: 'BTU',
       variantes: [['12,000 BTU', img('aire-24000'), null, null, 'agotado'], ['18,000 BTU', img('aire-24000'), null, null, 'agotado'], ['24,000 BTU', img('aire-24000'), null, 40000]],
       rasgos: ['Inverter', 'WiFi', 'Sistema silencioso', 'Filtros saludables', 'Normativas europeas'] },
-    { nombre: 'Nevera CW', sub: '110V · enfriamiento rápido',
+    { nombre: 'Nevera CW', sub: '110V · enfriamiento rápido', tono: '#b4bac1', corto: 'CW',
       variantes: [['8 pies', img('nevera-8'), null, null, 'agotado', 'CW-218RF'], ['11 pies', img('nevera-11'), null, 24000, '', 'CW-268RF · con dispensador de agua']],
       rasgos: ['Enfriamiento rápido', '110V · 60Hz'] },
-    { nombre: 'Ventilador de techo 42"', sub: 'Luz LED · control remoto',
+    { nombre: 'Ventilador de techo 42"', sub: 'Luz LED · control remoto', tonos: ['#c7a24c', '#b88a5c', '#e4e7ea', '#3a3d43'], corto: '42"',
       variantes: [['Cristal', img('fan-cristal'), null, 5990], ['Madera', img('fan-madera'), null, 3900], ['White', img('fan-white'), null, 3900], ['Black/White', img('fan-whiteblack'), null, 3900]],
       rasgos: ['3 velocidades', 'Motor silencioso', 'Control remoto'] },
   ],
   gTec: [
-    { nombre: 'Smart Lock facial', sub: '5 niveles de seguridad', foto: img('lock-facial'), precio: 8500,
+    { nombre: 'Smart Lock facial', sub: '5 niveles de seguridad', foto: img('lock-facial'), precio: 8500, tono: '#4b3b30', corto: 'LOCK',
       rasgos: ['Desbloqueo facial', 'Huella digital', 'Código PIN', 'Tarjeta RFID', 'Llave física', 'App móvil'] },
-    { nombre: 'Smart Lock LK0114', sub: 'Cerradura electrónica de entrada', foto: img('lock-lk014'), precio: 2800,
+    { nombre: 'Smart Lock LK0114', sub: 'Cerradura electrónica de entrada', foto: img('lock-lk014'), precio: 2800, tono: '#34373d', corto: 'LK',
       rasgos: ['Huella digital', 'PIN', 'Tarjeta', 'Llave física', 'App'] },
   ],
 };
@@ -765,43 +732,12 @@ function vista(p, v) {
   };
 }
 const badge = est => { const e = ESTADO[est]; return e ? `<span class="estado ${e[0]}">${e[1]}</span>` : ''; };
-// Una presentación a pantalla completa por artículo.
 let N = 0;
 const TODOS = [];
 // Vista 360°: `giro` (uno para todo el artículo) o `giros` (uno por variante, mismo orden).
 const esVista360 = f => /\/360\//.test(f);
 const giroDe = (p, k) => p.giros ? p.giros[k] || '' : p.giro || '';
-function presentacion(p, i, g, total) {
-  const k0 = p.variantes ? Math.max(0, p.variantes.findIndex(v => v[4] !== 'agotado')) : -1, v0 = k0 >= 0 ? p.variantes[k0] : null, x = vista(p, v0);
-  const id = 'p-' + slug(p.nombre); N++; TODOS.push({ id: id, p: p, g: g, foto: x.foto });
-  const datos = (p.med || []).map(([m, v, txt]) => `<div class="dato"><b>${txt || v}<small>${m.u}</small></b><span>${m.k}</span><i style="--v:${Math.round(v / m.max * 100)}%"></i></div>`).join('');
-  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === k0}" data-id="${id}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}>${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}${esc(v[0])}</button>`).join('')}</div>` : '';
-  const precio = p.precios && MOSTRAR_PRECIOS ? `<div class="dos-precios">${p.precios.map(([t, n]) => `<div class="precio"><small>${t}</small>${fmt(n)}</div>`).join('')}</div>`
-    : `<div class="precio${x.sinPrecio ? ' consulta' : ''}" data-precio>${x.precio}</div>`;
-  const lado = N % 2 ? 'izq' : 'der', fx = (g === 'gMovilidad' || g === 'gCarga') ? 'fx-gira' : 'fx-arma';
-  return `<section class="pres ${lado} ${fx}${x.est === 'agotado' ? ' agotado' : ''}${esVista360(x.foto) ? ' con-giro' : ''}" id="${id}" aria-label="${esc(p.nombre)}">
-    <div class="nombre-fondo" aria-hidden="true">${esc(p.nombre.split(' ')[0])}</div>
-    <div class="wrap rejilla">
-      <div class="escenario">
-        <div class="halo"></div><div class="aro a2"></div><div class="aro"></div><div class="aro a3"></div><div class="sombra"></div>
-        <span class="num">${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
-        <div class="pieza"><img src="${x.foto}" alt="${esc(p.nombre)}" loading="lazy" decoding="async"><span class="brillo" aria-hidden="true" style="--m:url('${x.foto}')"></span></div>
-        ${giroDe(p, k0) ? `<canvas class="giro360" data-giro="${giroDe(p, k0)}" data-inicio="${p.inicio || 0}" role="img" aria-label="${esc(p.nombre)} en 360°: arrastra para girar"></canvas><span class="pista-360" aria-hidden="true">← Arrastra para girar →</span><button type="button" class="btn-360" aria-pressed="false"><i class="ti ti-360-view" aria-hidden="true"></i><span>Girar 360°</span></button>` : ''}
-      </div>
-      <div class="ficha">
-        <div class="cat"><span class="eyebrow">${CAT_NOMBRE[g]}</span><span data-badge>${badge(x.est)}</span></div>
-        <h3>${esc(p.nombre)}</h3>
-        <p class="sub" data-sub>${esc(x.sub)}</p>
-        ${vars}
-        ${datos ? `<div class="datos">${datos}</div>` : ''}
-        <div class="rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>
-        <div class="pie">${precio}<div class="ctas"><a class="btn btn-linea financiar" target="_blank" rel="noopener" href="${x.fin ? waLink(x.fin) : '#'}"${x.fin ? '' : ' hidden'}><i class="ti ti-calendar-dollar" aria-hidden="true"></i> Financiarlo</a><a class="btn btn-oro quiero" target="_blank" rel="noopener" href="${waLink(x.msg)}">${x.boton}</a></div></div>
-      </div>
-    </div>
-  </section>`;
-}
-// Vitrina horizontal (movilidad): una tarjeta por artículo, pintada del color de la pasola.
-const VITRINA = new Set(['gMovilidad']);
+// Vitrina horizontal: una tarjeta por artículo, pintada del color del producto; una vitrina por categoría.
 const esClaro = hex => { const n = parseInt(hex.slice(1), 16), c = [n >> 16, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2] > .45; };
 const tonoDe = (p, k) => (p.tonos && p.tonos[k]) || p.tono || '#2a2f36';
 function tarjeta(p, i, g, total) {
@@ -809,10 +745,12 @@ function tarjeta(p, i, g, total) {
   const id = 'p-' + slug(p.nombre); N++; TODOS.push({ id: id, p: p, g: g, foto: x.foto });
   const tono = tonoDe(p, k0), foto = v0 ? x.foto : (p.recorte || x.foto), rasgos = `<div class="vt-rasgos">${p.rasgos.map(r => `<span>${esc(r)}</span>`).join('')}</div>`;
   const datos = (p.med || []).map(([m, v, txt]) => `<div class="vt-dato"><b>${txt || v}<small>${m.u}</small></b><span>${m.k}</span></div>`).join('');
-  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir color de ${esc(p.nombre)}">${p.variantes.map((v, k) => `<button type="button" aria-pressed="${k === k0}" data-id="${id}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}><span class="circ">${v[2] ? `<span class="punto" style="background:${v[2]}"></span>` : ''}</span>${esc(v[0])}</button>`).join('')}</div>` : '';
+  const vars = p.variantes ? `<div class="variantes" role="group" aria-label="Elegir ${p.variantes[0][2] ? 'color' : 'opción'} de ${esc(p.nombre)}">${p.variantes.map((v, k) => v[2]
+    ? `<button type="button" aria-pressed="${k === k0}" data-id="${id}" data-k="${k}"${v[4] === 'agotado' ? ' class="agot"' : ''}><span class="circ"><span class="punto" style="background:${v[2]}"></span></span>${esc(v[0])}</button>`
+    : `<button type="button" aria-pressed="${k === k0}" data-id="${id}" data-k="${k}" class="pill${v[4] === 'agotado' ? ' agot' : ''}"${v[4] === 'agotado' ? ' title="Agotado"' : ''}>${esc(v[0])}</button>`).join('')}</div>` : '';
   const giro = giroDe(p, k0);
   return `<article class="vt${esClaro(tono) ? ' clara' : ''}${x.est === 'agotado' ? ' agotado' : ''}" id="${id}" style="--tono:${tono}" data-tono="${tono}" aria-roledescription="tarjeta" aria-label="${esc(p.nombre)}, ${i + 1} de ${total}">
-    <div class="vt-letra" aria-hidden="true">${esc(p.nombre.replace(/^LQ-/, ''))}</div>
+    <div class="vt-letra" aria-hidden="true">${esc(p.corto || p.nombre.replace(/^LQ-/, ''))}</div>
     <div class="vt-top"><span class="vt-eyebrow">${CAT_NOMBRE[g]} · ${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span><span data-badge>${badge(x.est)}</span></div>
     <div class="vt-info"><h3>${esc(p.nombre)}</h3><p class="sub" data-sub>${esc(x.sub)}</p>${rasgos}</div>
     <div class="vt-escena"><div class="vt-luz"></div>
@@ -825,24 +763,13 @@ function tarjeta(p, i, g, total) {
   </article>`;
 }
 const cat = document.getElementById('catalogo');
-cat.innerHTML = SECCIONES.map(s => {
-  const lista = CATALOGO[s.g];
-  return `<section class="divisor" id="${s.id}" aria-labelledby="h-${s.id}"><div class="gigante" aria-hidden="true">${s.gigante}</div>
-    <div class="wrap"><div><span class="eyebrow">${s.eyebrow} · ${lista.length} artículo${lista.length === 1 ? '' : 's'}</span><h2 id="h-${s.id}" style="margin-top:14px">${s.titulo}</h2></div><p class="lead">${s.lead}</p></div></section>`
-    + (VITRINA.has(s.g)
-      ? `<div class="vitrina" data-vitrina><div class="vt-pista" tabindex="0" aria-label="${esc(s.eyebrow)}: desliza para ver cada modelo">${lista.map((p, i) => tarjeta(p, i, s.g, lista.length)).join('')}</div>
-        <div class="wrap vt-nav"><span class="vt-cont" aria-live="polite"><b>01</b> / ${String(lista.length).padStart(2, '0')}</span><div class="vt-puntos">${lista.map((p, i) => `<button type="button" data-i="${i}" aria-label="Ver ${esc(p.nombre)}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div><div class="vt-flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-arrow-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div></div></div>`
-      : lista.map((p, i) => presentacion(p, i, s.g, lista.length)).join(''));
-}).join('');
-document.getElementById('filtros').innerHTML = [['', 'Todo']].concat(SECCIONES.map(s => [s.g, CAT_NOMBRE[s.g]])).map(([g, n], k) => `<button type="button" data-f="${g}" aria-pressed="${k === 0}">${n}</button>`).join('');
-document.getElementById('filtros').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  document.querySelectorAll('#filtros button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  document.querySelectorAll('.mini').forEach(m => { m.hidden = !!b.dataset.f && m.dataset.g !== b.dataset.f; });
-  document.getElementById('tira').scrollTo({ left: 0, behavior: 'smooth' });
-});
-document.getElementById('tira').innerHTML = TODOS.map(t => `<a class="mini" data-g="${t.g}" href="#${t.id}"><span class="ph"><img src="${t.foto}" alt="" loading="lazy" decoding="async"></span><small>${CAT_NOMBRE[t.g]}</small><b>${esc(t.p.nombre)}</b></a>`).join('');
-document.getElementById('indice').innerHTML = TODOS.map(t => `<a href="#${t.id}" title="${esc(t.p.nombre)}" aria-label="${esc(t.p.nombre)}"></a>`).join('');
+cat.innerHTML = `<div class="wrap cat-cab"><div><span class="eyebrow">Catálogo</span><h2 id="h-cat">Elige lo que te mueve.</h2><p class="lead cat-lead" id="cat-lead">${esc(SECCIONES[0].lead)}</p></div>
+    <div class="cat-tabs" role="tablist" aria-label="Categorías">${SECCIONES.map((s, k) => `<button type="button" role="tab" id="tab-${s.id}" aria-controls="${s.id}" aria-selected="${k === 0}" tabindex="${k ? -1 : 0}" data-panel="${s.id}">${s.g === 'gCarga' ? '<span class="t-lg">Monta carga</span><span class="t-ct">Cargas</span>' : CAT_NOMBRE[s.g]}<small>${CATALOGO[s.g].length}</small></button>`).join('')}</div></div>`
+  + SECCIONES.map((s, n) => {
+    const lista = CATALOGO[s.g];
+    return `<div class="vitrina" data-vitrina id="${s.id}" role="tabpanel" aria-labelledby="tab-${s.id}"${n ? ' hidden' : ''}><div class="vt-pista" tabindex="0" aria-label="${esc(s.eyebrow)}: desliza para ver cada artículo">${lista.map((p, i) => tarjeta(p, i, s.g, lista.length)).join('')}</div>
+        <div class="wrap vt-nav"><span class="vt-cont" aria-live="polite"><b>01</b> / ${String(lista.length).padStart(2, '0')}</span><div class="vt-puntos">${lista.map((p, i) => `<button type="button" data-i="${i}" aria-label="Ver ${esc(p.nombre)}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div><div class="vt-flechas"><button type="button" data-dir="-1" aria-label="Anterior"><i class="ti ti-arrow-left" aria-hidden="true"></i></button><button type="button" data-dir="1" aria-label="Siguiente"><i class="ti ti-arrow-right" aria-hidden="true"></i></button></div></div></div>`;
+  }).join('');
 
 // Variantes: cambian foto (con giro de entrada), estado, precio y mensaje.
 document.addEventListener('click', e => {
@@ -866,12 +793,13 @@ document.addEventListener('click', e => {
     if (sec.classList.contains('modo-360')) cv.parentNode.querySelector('.btn-360').click();
   }
 });
-// Vitrina: marca la tarjeta que está al frente, tiñe la franja con su color y mueve puntos/flechas.
-document.querySelectorAll('[data-vitrina]').forEach(vit => {
+// Vitrinas: marcan la tarjeta que está al frente, tiñen la franja con su color y mueven puntos/flechas.
+const suave = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+const VITRINAS = [...document.querySelectorAll('[data-vitrina]')].map(vit => {
   const pista = vit.querySelector('.vt-pista'), tarjetas = [...pista.querySelectorAll('.vt')];
   const puntos = [...vit.querySelectorAll('.vt-puntos button')], cont = vit.querySelector('.vt-cont b'), [ant, sig] = vit.querySelectorAll('.vt-flechas button');
   let actual = -1;
-  const ir = k => { const t = tarjetas[Math.max(0, Math.min(tarjetas.length - 1, k))]; pista.scrollTo({ left: t.offsetLeft - (pista.clientWidth - t.clientWidth) / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+  const ir = (k, modo) => { const t = tarjetas[Math.max(0, Math.min(tarjetas.length - 1, k))]; pista.scrollTo({ left: t.offsetLeft - (pista.clientWidth - t.clientWidth) / 2, behavior: modo || suave() }); };
   function marcar(k) {
     if (k === actual) return;
     const previa = tarjetas[actual];
@@ -884,33 +812,60 @@ document.querySelectorAll('[data-vitrina]').forEach(vit => {
     ant.disabled = k === 0; sig.disabled = k === tarjetas.length - 1;
   }
   let pend = false;
-  const medir = () => { pend = false; const c = pista.scrollLeft + pista.clientWidth / 2; let k = 0, d = Infinity; tarjetas.forEach((t, j) => { const dj = Math.abs(t.offsetLeft + t.clientWidth / 2 - c); if (dj < d) { d = dj; k = j; } }); marcar(k); };
+  const medir = () => { pend = false; if (vit.hidden) return; const c = pista.scrollLeft + pista.clientWidth / 2; let k = 0, d = Infinity; tarjetas.forEach((t, j) => { const dj = Math.abs(t.offsetLeft + t.clientWidth / 2 - c); if (dj < d) { d = dj; k = j; } }); marcar(k); };
   pista.addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(medir); } }, { passive: true });
   addEventListener('resize', medir);
   puntos.forEach((p, j) => p.addEventListener('click', () => ir(j)));
   ant.addEventListener('click', () => ir(actual - 1)); sig.addEventListener('click', () => ir(actual + 1));
   // Clic en una tarjeta de al lado: la trae al frente.
   pista.addEventListener('click', e => { const t = e.target.closest('.vt'); if (t && !t.classList.contains('actual') && !e.target.closest('a,button')) ir(tarjetas.indexOf(t)); });
-  // Enlaces #p-… (tira «Explora» e índice): el navegador correría la página entera hacia el lado
-  // (en iPhone se ve cortada); en su lugar se baja a la vitrina y se centra la tarjeta dentro de ella.
-  document.addEventListener('click', e => {
-    const a = e.target.closest('a[href^="#p-"]'); if (!a) return;
-    const k = tarjetas.findIndex(t => '#' + t.id === a.getAttribute('href')); if (k < 0) return;
-    e.preventDefault();
-    history.replaceState(null, '', a.getAttribute('href'));
-    const top = vit.getBoundingClientRect().top + scrollY - (document.querySelector('header') || { offsetHeight: 0 }).offsetHeight;
-    scrollTo({ top: top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    ir(k);
-  });
-  const enderezar = () => { if (scrollX) scrollTo(0, scrollY); };
-  addEventListener('scroll', enderezar, { passive: true });
-  addEventListener('hashchange', () => { enderezar(); const k = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k >= 0) ir(k); });
-  medir();
-  const k0 = tarjetas.findIndex(t => '#' + t.id === location.hash); if (k0 >= 0) { enderezar(); ir(k0); }
+  return { vit, tarjetas, ir, medir };
 });
+// Pestañas del catálogo: una categoría a la vez.
+const TABS = [...document.querySelectorAll('.cat-tabs [role="tab"]')];
+function elegirCategoria(id) {
+  const v = VITRINAS.find(x => x.vit.id === id); if (!v) return null;
+  TABS.forEach(t => { const on = t.dataset.panel === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+  VITRINAS.forEach(x => { x.vit.hidden = x !== v; });
+  document.getElementById('cat-lead').textContent = SECCIONES.find(s => s.id === id).lead;
+  v.medir();
+  return v;
+}
+TABS.forEach((t, k) => {
+  t.addEventListener('click', () => elegirCategoria(t.dataset.panel));
+  t.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault(); const n = TABS[(k + (e.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length];
+    n.focus(); elegirCategoria(n.dataset.panel);
+  });
+});
+// Enlaces a una categoría (#movilidad…) o a un artículo (#p-…): se abre su pestaña, se baja al catálogo y se
+// centra la tarjeta dentro de la vitrina. Nunca se deja al navegador correr la página hacia el lado (iPhone).
+function abrirDestino(hash, modo) {
+  const id = hash.replace(/^#/, ''); if (!id) return false;
+  let v = VITRINAS.find(x => x.vit.id === id), k = 0;
+  if (!v) { v = VITRINAS.find(x => x.tarjetas.some(t => t.id === id)); if (!v) return false; k = v.tarjetas.findIndex(t => t.id === id); }
+  elegirCategoria(v.vit.id);
+  const top = cat.getBoundingClientRect().top + scrollY - (document.querySelector('header') || { offsetHeight: 0 }).offsetHeight;
+  scrollTo({ top: top, behavior: modo || suave() });
+  requestAnimationFrame(() => v.ir(k, modo));
+  return true;
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  const h = a.getAttribute('href');
+  if (h === '#catalogo' || abrirDestino(h)) {
+    if (h === '#catalogo') return;
+    e.preventDefault(); history.replaceState(null, '', h);
+  }
+});
+const enderezar = () => { if (scrollX) scrollTo(0, scrollY); };
+addEventListener('scroll', enderezar, { passive: true });
+addEventListener('hashchange', () => { enderezar(); abrirDestino(location.hash); });
+VITRINAS.forEach(v => v.medir());
+if (location.hash) { enderezar(); abrirDestino(location.hash, 'auto'); }
 document.querySelectorAll('.js-wa').forEach(a => { a.href = waLink(a.dataset.msg || 'Hola STUDIO, quiero información'); a.target = '_blank'; a.rel = 'noopener'; });
 document.getElementById('anio').textContent = new Date().getFullYear();
-document.querySelectorAll('.flechas button').forEach(b => b.addEventListener('click', () => { const c = document.getElementById('carrusel'); c.scrollBy({ left: +b.dataset.dir * Math.max(260, c.clientWidth * .8) }); }));
 // «Abierto ahora» con el horario real (lunes a sábado 8:30–6:30, hora de Santo Domingo).
 (function () {
   try {

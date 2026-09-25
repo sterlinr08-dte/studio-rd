@@ -1,7 +1,14 @@
 {
-  "version": "59.46",
+  "version": "59.47",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.47",
+      "fecha": "2026-09-25",
+      "notas": [
+        "Tienda: se quitó código y estilos que ya no se usaban; la página carga más ligera y se ve igual."
+      ]
+    },
     {
       "version": "59.46",
       "fecha": "2026-09-25",

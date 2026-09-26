@@ -606,7 +606,7 @@ const WHATSAPP = '18296247623';
    WhatsApp pregunta por el precio. */
 const MOSTRAR_PRECIOS = false;
 // Fotos mejoradas (estudio, alta resolución): se sirven desde img/tienda/hd/ con el mismo nombre.
-const HD = new Set(["aire-24000", "fan-madera", "fan-white", "fan-whiteblack", "lock-facial", "lock-lk014", "ilq-hld", "lq-h8", "lq-n9", "lq-pp", "lq-xbw", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
+const HD = new Set(["aire-24000", "fan-cristal", "fan-madera", "fan-white", "fan-whiteblack", "lock-facial", "lock-lk014", "ilq-hld", "lq-h8", "lq-n9", "lq-pp", "lq-xbw", "lq-zs", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
 const img = n => 'img/tienda/' + (HD.has(n) ? 'hd/' : '') + n + '.webp';
 const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60, u: 'km/h' }, AUT = { k: 'Autonomía', max: 70, u: 'km' };
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
@@ -616,7 +616,7 @@ const CATALOGO = {
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-H8', sub: 'Serie 1000W · freno de disco', foto: 'img/tienda/360/lq-h8/foto.webp', recorte: img('lq-h8'), giro: 'lq-h8-v2', inicio: 7, precio: null, estado: 'camino', tono: '#8c1c2a',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), precio: null, estado: 'camino', tono: '#2745b3',
+    { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), giro: 'lq-zs-v2', inicio: 0, precio: null, estado: 'camino', tono: '#2745b3',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000, tonos: ['#eeb2c2', '#dcdee1', '#6c7076'],
       variantes: [['Rosa', img('s700-rosa'), '#f2b8c6', 29000], ['Blanco', img('s700-blanco'), '#f2f2f2', 29000], ['Gris', img('s700-gris'), '#8d9095', 29000]],

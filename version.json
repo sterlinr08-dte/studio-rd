@@ -1,7 +1,14 @@
 {
-  "version": "59.50",
+  "version": "59.51",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.51",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Catálogo mayorista privado en studiord.net/mayoristas: solo abre con el enlace con clave; precios guardados en Supabase (no en el código), Disponible/Agotado y pedido por WhatsApp al mayorista."
+      ]
+    },
     {
       "version": "59.50",
       "fecha": "2026-09-26",

@@ -240,6 +240,29 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   .bolsa{margin-left:auto}
   .cat-cab{padding:14px 0 10px}
 }
+/* Botones de variante, iguales a los de la tienda: círculo con el color o píldora con el tamaño/modelo. */
+.mc{grid-template-rows:auto 1fr auto auto auto}
+.mc-var{position:relative;z-index:1;display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:4px}
+.mc-var button{display:inline-flex;flex-direction:column;align-items:center;gap:5px;font:600 11px var(--sans);color:var(--suave-vt);-webkit-tap-highlight-color:transparent}
+.mc-var .circ{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--linea-vt);transition:border-color .2s,background .2s,scale .3s var(--resorte)}
+.mc-var .punto{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.18)}
+.mc-var button[aria-pressed="true"]{color:var(--tinta)}
+.mc-var button[aria-pressed="true"] .circ{background:var(--tinta);border-color:var(--tinta);scale:1.06}
+.mc-var button.pill{flex-direction:row;height:34px;padding:0 13px;border:1.5px solid var(--linea-vt);border-radius:999px;background:color-mix(in oklab,var(--tono),#000 10%);font:600 12.5px var(--sans);color:var(--tinta);white-space:nowrap;transition:background .2s,color .2s,transform .2s var(--resorte)}
+.mc-var button.pill[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:var(--tono)}
+.mc-var button.pill.agot{text-decoration:line-through;opacity:.55}
+.mc-var button:active{transform:scale(.94)}
+.mc-escena img.cambio{animation:cambio .55s var(--resorte)}
+@keyframes cambio{0%{opacity:0;transform:translateX(30px) scale(.94) rotateY(-12deg)}100%{opacity:1;transform:none}}
+@media (max-width:700px){
+  .mc{grid-template-rows:auto minmax(0,1fr) auto auto auto}
+  .mc.con-var{height:min(470px,calc(100svh - 230px))}
+  .mc-var{gap:6px 8px}
+  .mc-var .circ{width:34px;height:34px}.mc-var .punto{width:18px;height:18px}
+  .mc-var button{font-size:10.5px;gap:4px}
+  .mc-var button.pill{height:32px;padding:0 9px;font-size:12px}
+  .mc-var:has(.pill){gap:6px}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -329,25 +352,70 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
              : '<button class="agregar" data-mas="' + p.id + '">Agregar</button>';
   }
 
-  function tarjeta(p) {
-    const tono = p.tono || '#2a2f38';
-    return '<article class="mc' + (esClaro(tono) ? ' clara' : '') + (p.disponible ? '' : ' agotado') + '" data-id="' + p.id + '" style="--tono:' + esc(tono) + '">'
-      + '<span class="mc-letra" aria-hidden="true">' + esc(p.letra || '') + '</span>'
+  // Tarjetas como en la tienda: los artículos de una misma familia (colores, tamaños, modelos)
+  // van en UNA tarjeta con botones; cada variante conserva su precio, foto y disponibilidad.
+  let tarjetas = [];                 // [{ clave, grupo, familia, vars: [items] }]
+  const sel = new Map();             // clave de tarjeta → id de la variante elegida
+  const tarjetaDe = new Map();       // id de artículo → clave de su tarjeta
+  function armarTarjetas() {
+    tarjetas = []; tarjetaDe.clear(); const porFam = new Map();
+    for (const p of items) {
+      const clave = p.familia ? 'f:' + p.grupo + ':' + p.familia : 'a:' + p.id;
+      let t = porFam.get(clave);
+      if (!t) { t = { clave, grupo: p.grupo, familia: p.familia, vars: [] }; porFam.set(clave, t); tarjetas.push(t); }
+      t.vars.push(p); tarjetaDe.set(p.id, clave);
+    }
+    for (const t of tarjetas) if (!sel.has(t.clave)) sel.set(t.clave, (t.vars.find(v => v.disponible) || t.vars[0]).id);
+  }
+  const elegida = t => t.vars.find(v => v.id === sel.get(t.clave)) || t.vars[0];
+
+  function botones(t, p) {
+    if (t.vars.length < 2) return '';
+    return '<div class="mc-var" role="group" aria-label="Opciones de ' + esc(t.familia) + '">' + t.vars.map(v =>
+      '<button data-var="' + v.id + '" aria-pressed="' + (v.id === p.id) + '"' + (v.punto ? '' : ' class="pill' + (v.disponible ? '' : ' agot') + '"')
+      + (v.disponible ? '' : ' title="Agotado"') + '>'
+      + (v.punto ? '<span class="circ"><span class="punto" style="background:' + esc(v.punto) + '"></span></span>' + esc(v.variante) : esc(v.variante)) + '</button>').join('') + '</div>';
+  }
+
+  function interior(t) {
+    const p = elegida(t);
+    return '<span class="mc-letra" aria-hidden="true">' + esc(p.letra || '') + '</span>'
       + '<div class="mc-top"><span class="mc-det">' + esc(p.detalle) + '</span>'
       + '<span class="estado' + (p.disponible ? '">Disponible' : ' no">Agotado') + '</span></div>'
       + '<div class="mc-escena"><div class="mc-luz"></div>' + (p.foto ? '<img src="' + esc(p.foto) + '" alt="' + esc(p.nombre) + '" loading="lazy">' : '') + '</div>'
-      + '<h3>' + esc(p.nombre) + '</h3>'
-      + '<div class="mc-pie"><div class="precio"><small>Precio mayorista</small><b>' + rd(p.precio) + '</b></div><div class="accion">' + accion(p) + '</div></div>'
-      + '</article>';
+      + '<h3>' + esc(t.familia || p.nombre) + '</h3>'
+      + botones(t, p)
+      + '<div class="mc-pie"><div class="precio"><small>Precio mayorista</small><b>' + rd(p.precio) + '</b></div><div class="accion">' + accion(p) + '</div></div>';
+  }
+  function clases(t) { const p = elegida(t), tono = p.tono || '#2a2f38'; return { tono, clara: esClaro(tono), agotado: !p.disponible, id: p.id }; }
+
+  function tarjeta(t) {
+    const c = clases(t);
+    return '<article class="mc' + (c.clara ? ' clara' : '') + (c.agotado ? ' agotado' : '') + (t.vars.length > 1 ? ' con-var' : '') + '" data-card="' + esc(t.clave) + '" data-id="' + c.id + '" style="--tono:' + esc(c.tono) + '">'
+      + interior(t) + '</article>';
+  }
+
+  // Cambiar de variante: la tarjeta toma el color, la foto (con giro de entrada), el precio y el estado de la elegida.
+  function elegir(id) {
+    const clave = tarjetaDe.get(id), t = tarjetas.find(x => x.clave === clave); if (!t) return;
+    const el = [...document.querySelectorAll('.mc')].find(x => x.dataset.card === clave); if (!el) return;
+    sel.set(clave, id);
+    const c = clases(t);
+    el.innerHTML = interior(t);
+    el.dataset.id = c.id; el.style.setProperty('--tono', c.tono);
+    el.classList.toggle('clara', c.clara); el.classList.toggle('agotado', c.agotado);
+    const im = el.querySelector('.mc-escena img'); if (im && !quieto) { im.loading = 'eager'; im.classList.add('cambio'); }
+    if (el.classList.contains('actual')) el.closest('.grupo').style.setProperty('--g-tono', c.tono);
   }
 
   function pintar() {
+    armarTarjetas();
     const grupos = [...new Set(items.map(p => p.grupo))].sort((a, b) => (ORDEN.indexOf(a) + 99) % 99 - (ORDEN.indexOf(b) + 99) % 99);
     const slug = g => 'g-' + g.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '-').toLowerCase();
     $('#app').innerHTML = '<section class="cat-cab"><div><p class="eyebrow">Precios al por mayor</p><h1>Catálogo mayorista</h1>'
       + '<p class="lead">Elige artículos y cantidades, revisa tu pedido y envíalo por WhatsApp.<span class="extra"> Te confirmamos disponibilidad y entrega.</span></p></div></section>'
-      + '<div class="tabs-bar"><nav class="cat-tabs" role="tablist" aria-label="Categorías">' + grupos.map((g, i) => '<button role="tab" aria-selected="' + (i === 0) + '" data-g="' + slug(g) + '">' + esc(g) + ' <small>' + items.filter(p => p.grupo === g).length + '</small></button>').join('') + '</nav></div>'
-      + grupos.map(g => { const l = items.filter(p => p.grupo === g);
+      + '<div class="tabs-bar"><nav class="cat-tabs" role="tablist" aria-label="Categorías">' + grupos.map((g, i) => '<button role="tab" aria-selected="' + (i === 0) + '" data-g="' + slug(g) + '">' + esc(g) + ' <small>' + tarjetas.filter(t => t.grupo === g).length + '</small></button>').join('') + '</nav></div>'
+      + grupos.map(g => { const l = tarjetas.filter(t => t.grupo === g);
           return '<section class="grupo" id="' + slug(g) + '"><div class="grupo-cab"><h2>' + esc(g) + '</h2><span class="total-g">' + l.length + (l.length === 1 ? ' ARTÍCULO' : ' ARTÍCULOS') + '</span><span class="cuenta" aria-hidden="true"><b data-cuenta>1</b> / ' + l.length + (l.length > 1 ? ' <i>desliza</i>' : '') + '</span></div>'
             + '<div class="pista">' + l.map(tarjeta).join('') + '</div></section>'; }).join('')
       + '<p class="nota">Precios en pesos dominicanos, sujetos a cambio sin previo aviso. Enlace privado: no lo compartas.</p>';
@@ -482,6 +550,8 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   document.addEventListener('click', e => {
     const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]'), tab = e.target.closest('[data-g]');
     const quitar = e.target.closest('[data-quitar]');
+    const vb = e.target.closest('[data-var]');
+    if (vb) { elegir(+vb.dataset.var); return; }
     if (e.target.closest('[data-abrir]')) abrir();
     else if (e.target.closest('[data-cerrar]')) cerrar();
     else if (e.target.closest('[data-vaciar]')) { if (confirm('¿Vaciar todo el pedido?')) { const ids = [...carro.keys()]; carro.clear(); ids.forEach(repintar); resumen(); setTimeout(cerrar, 250); } }

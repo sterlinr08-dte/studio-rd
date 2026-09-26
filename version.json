@@ -1,7 +1,14 @@
 {
-  "version": "59.52",
+  "version": "59.53",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.53",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Catálogo mayorista: carrito «Tu pedido» para ver lo agregado, cambiar cantidades, quitar o vaciar, con total y envío por WhatsApp; el pedido se recuerda en el teléfono del cliente."
+      ]
+    },
     {
       "version": "59.52",
       "fecha": "2026-09-26",

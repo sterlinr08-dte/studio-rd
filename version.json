@@ -1,7 +1,16 @@
 {
-  "version": "59.49",
+  "version": "59.50",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.50",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Tienda: vista 360° en LQ-ZS, LQ-M12 rosa, LQ-XGW, LQ-HLD, LQ-PP y las dos monta cargas (9 productos giran).",
+        "Tienda: fotos de estudio nuevas de LQ-ZS, 4 ventiladores y 2 cerraduras; en celular el giro 360° se ve más grande.",
+        "Tienda: los botones de opción (colores, tamaños, acabados) ya no quedan opacos bajo la sombra del producto."
+      ]
+    },
     {
       "version": "59.49",
       "fecha": "2026-09-25",

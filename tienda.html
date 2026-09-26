@@ -469,6 +469,9 @@ footer .acceso-equipo:hover{color:var(--texto)}
   .vt .precio small{display:inline;margin:0}
   .vt-pie .ctas .btn{height:42px;font-size:14px}
   .vt-nav{margin-top:0}
+  /* En 360° el giro usa también el espacio de los datos, para que la pieza no se vea pequeña. */
+  .vt.modo-360 .vt-lado,.vt.modo-360>.vt-rasgos,.vt.modo-360 .sub{display:none}
+  .vt.modo-360 .vt-escena,.vt.modo-360 .vt-escena:has(.btn-360){height:clamp(200px,calc(100svh - 440px),320px)}
 }
 </style>
 </head>
@@ -618,12 +621,12 @@ const CATALOGO = {
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
     { nombre: 'LQ-ZS', sub: 'Serie 1000W · freno de disco', foto: img('lq-zs'), giro: 'lq-zs-v2', inicio: 0, precio: null, estado: 'camino', tono: '#2745b3',
       med: [[MOTOR, 1000], [VEL, 60], [AUT, 70, '60–70']], rasgos: ['Litio 48V 20Ah', 'Luces LED', 'Pantalla digital', 'Encendido inteligente', 'Carga 6–8 h'] },
-    { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000, tonos: ['#eeb2c2', '#dcdee1', '#6c7076'],
+    { nombre: 'LQ-M12', sub: 'Urbano, ligero y en tres colores', ancha: true, precio: 29000, tonos: ['#eeb2c2', '#dcdee1', '#6c7076'], giros: ['s700-rosa-v2', '', ''],
       variantes: [['Rosa', img('s700-rosa'), '#f2b8c6', 29000], ['Blanco', img('s700-blanco'), '#f2f2f2', 29000], ['Gris', img('s700-gris'), '#8d9095', 29000]],
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
-    { nombre: 'LQ-XGW', sub: 'El más potente · con parrillas de carga', foto: img('lq-xgw'), precio: 33000, estado: 'ultima', ancha: true, invertida: true, tono: '#9d1b25',
+    { nombre: 'LQ-XGW', sub: 'El más potente · con parrillas de carga', foto: img('lq-xgw'), precio: 33000, estado: 'ultima', ancha: true, invertida: true, tono: '#9d1b25', giro: 'lq-xgw-v2', inicio: 0,
       med: [[MOTOR, 1200], [VEL, 50], [AUT, 70]], rasgos: ['Motor 1200W', 'Batería de litio', 'Carga 6–8 h'] },
-    { nombre: 'LQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 23000, tono: '#d23a2f',
+    { nombre: 'LQ-HLD', sub: 'Con canasta · 180 kg+ de carga', foto: img('ilq-hld'), precio: 23000, tono: '#d23a2f', giro: 'ilq-hld-v2', inicio: 0,
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
     { nombre: 'LQ-PP', sub: 'Con canasta · 180 kg+ de carga', foto: img('lq-pp'), precio: 24000, tono: '#9fd2bf',
       med: [[MOTOR, 700], [VEL, 45]], rasgos: ['Litio 48V 20Ah', 'Alarma con control', 'Pantalla LED', 'Direccionales', 'Neumáticos al vacío'] },
@@ -631,9 +634,9 @@ const CATALOGO = {
       med: [[MOTOR, 700], [VEL, 45], [AUT, 60]], rasgos: ['Batería de litio', 'Carga 6–8 h'] },
   ],
   gCarga: [
-    { nombre: 'Monta carga hidráulico 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico', tono: '#b3261e', corto: '350',
+    { nombre: 'Monta carga hidráulico 350cc', sub: 'Volteo hidráulico con 2 botellas', foto: img('motocarga-hidraulica'), estado: 'unico', tono: '#b3261e', giro: 'motocarga-hidraulica-v2', inicio: 0, corto: '350',
       precios: [['Efectivo', 240000], ['Financiado', 270000]], rasgos: ['Motor 350cc', 'Volteo hidráulico', 'Alta capacidad de carga', 'Financiamiento disponible'] },
-    { nombre: 'Monta carga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico', tono: '#1f4fb8', corto: '350',
+    { nombre: 'Monta carga 350cc', sub: 'Potente, resistente y eficiente', foto: img('motocarga-350'), estado: 'unico', tono: '#1f4fb8', giro: 'motocarga-350-v2', inicio: 0, corto: '350',
       precios: [['Efectivo', 160000]], rasgos: ['Motor 350cc', 'Alta capacidad de carga', 'Financiamiento disponible'] },
   ],
   gHogar: [

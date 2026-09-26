@@ -1,7 +1,14 @@
 {
-  "version": "59.55",
+  "version": "59.56",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.56",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Catálogo mayorista: colores y tamaños como en la web, una tarjeta por producto con botones de color (LQ-M12) y de tamaño o modelo (TV, aire, nevera, ventilador)."
+      ]
+    },
     {
       "version": "59.55",
       "fecha": "2026-09-26",

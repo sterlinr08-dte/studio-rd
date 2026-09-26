@@ -1,7 +1,14 @@
 {
-  "version": "59.53",
+  "version": "59.54",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.54",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Catálogo mayorista ajustado para celular: pestañas fijas, portada breve, producto completo en pantalla, «1 / 10 desliza» y barra con «Ver pedido» que cabe en teléfonos pequeños."
+      ]
+    },
     {
       "version": "59.53",
       "fecha": "2026-09-26",

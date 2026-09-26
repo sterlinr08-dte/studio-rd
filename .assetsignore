@@ -7,3 +7,9 @@
 .claude/
 skills-lock.json
 .assetsignore
+
+# Nunca servir el repositorio interno ni cachés locales: .git expondría todo el código e historial,
+# y además su paquete supera el límite de 25 MiB por archivo y hace fallar el despliegue.
+.git
+.git/
+.wrangler/

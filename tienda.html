@@ -314,7 +314,9 @@ footer .acceso-equipo:hover{color:var(--texto)}
 .vt{--tinta:#fff;--suave-vt:rgba(255,255,255,.8);--linea-vt:rgba(255,255,255,.34);position:relative;isolation:isolate;overflow:hidden;scroll-snap-align:center;scroll-snap-stop:always;border-radius:34px;color:var(--tinta);min-height:min(640px,76svh);padding:28px 32px 26px;
   display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.55fr) minmax(0,.6fr);grid-template-rows:auto 1fr auto;grid-template-areas:"top top top" "info escena lado" "pie pie pie";gap:14px 20px;
   background:var(--tono);background:radial-gradient(58% 58% at 55% 52%,color-mix(in oklab,var(--tono),#fff 20%) 0%,transparent 72%),linear-gradient(155deg,color-mix(in oklab,var(--tono),#fff 6%),color-mix(in oklab,var(--tono),#000 20%));
-  box-shadow:0 40px 80px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.18);transition:opacity .5s var(--ease),scale .6s var(--ease),background .6s var(--ease)}
+  box-shadow:0 40px 80px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.18);transition:opacity .5s var(--ease),scale .6s var(--ease),background .6s var(--ease),--tono .6s var(--ease),color .4s var(--ease)}
+/* --tono registrado: el degradado de la tarjeta se funde al cambiar de color/variante en vez de saltar. */
+@property --tono{syntax:'<color>';inherits:true;initial-value:#07080A}
 .vt.clara{--tinta:#15171b;--suave-vt:rgba(20,22,26,.72);--linea-vt:rgba(20,22,26,.26)}
 .js .vt:not(.actual){opacity:.55;scale:.94}
 .vt-letra{position:absolute;z-index:-1;left:50%;top:50%;translate:-50% -50%;font:900 clamp(170px,30vw,420px)/.8 var(--disp);letter-spacing:-.06em;white-space:nowrap;color:color-mix(in oklab,var(--tono),#fff 13%);pointer-events:none;user-select:none}

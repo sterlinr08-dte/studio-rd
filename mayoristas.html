@@ -130,7 +130,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 .cat-cab h1{animation-delay:.06s}.cat-cab .lead{animation-delay:.12s}.cat-tabs{animation-delay:.2s}
 @keyframes portadaEntra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 /* Tarjetas: aparecen en cascada al verse; la foto llega deslizándose y se enfoca. */
-.js .mc{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease),box-shadow .35s var(--ease)}
+.js .mc{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease),box-shadow .35s var(--ease),--tono .6s var(--ease),color .4s var(--ease)}
 .js .mc.si{opacity:1;transform:none}
 .mc-escena img{transition:translate .8s var(--ease),scale .8s var(--resorte),opacity .5s var(--ease)}
 .js .mc:not(.si) .mc-escena img{translate:18% 0;scale:.86;opacity:0}
@@ -143,7 +143,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 .cant output.salta,.carro .res b.salta{animation:salta .35s var(--resorte)}
 @keyframes pop{from{transform:scale(.86)}to{transform:none}}
 @keyframes salta{40%{transform:scale(1.22)}}
-.grupo{transition:background-color .7s var(--ease)}
+.grupo{transition:background-color .7s var(--ease),--g-tono .7s var(--ease)}
 /* ── Carrito: se abre desde la barra de abajo o la bolsa de la cabecera ── */
 .bolsa{position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--linea2);background:rgba(255,255,255,.04);color:var(--texto);animation:pop .4s var(--resorte)}
 .bolsa[hidden]{display:none}
@@ -263,6 +263,20 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   .mc-var button.pill{height:32px;padding:0 9px;font-size:12px}
   .mc-var:has(.pill){gap:6px}
 }
+/* Cambio de variante animado: el tono de la tarjeta y de la franja se funde (propiedades registradas para
+   que el degradado pueda interpolar), el botón elegido rebota y precio/descripción entran deslizándose. */
+@property --tono{syntax:'<color>';inherits:true;initial-value:#2a2f38}
+@property --g-tono{syntax:'<color>';inherits:true;initial-value:#07080A}
+.mc{transition:opacity .7s var(--ease),transform .7s var(--ease),box-shadow .35s var(--ease),--tono .6s var(--ease),color .4s var(--ease)}
+.grupo{transition:--g-tono .7s var(--ease)}
+.mc-var button[aria-pressed="true"] .circ,.mc-var button.pill[aria-pressed="true"]{animation:pop .42s var(--resorte)}
+.mc-var button{transition:transform .18s var(--ease),color .3s var(--ease)}
+.mc-var button:active{transform:scale(.92)}
+.mc.cambia .precio b,.mc.cambia .mc-det,.mc.cambia .estado{animation:sube .45s var(--ease) both}
+.mc.cambia .mc-det{animation-delay:.04s}.mc.cambia .estado{animation-delay:.08s}
+.mc.cambia .mc-letra{animation:letra .6s var(--ease) both}
+@keyframes sube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes letra{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -405,6 +419,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     el.dataset.id = c.id; el.style.setProperty('--tono', c.tono);
     el.classList.toggle('clara', c.clara); el.classList.toggle('agotado', c.agotado);
     const im = el.querySelector('.mc-escena img'); if (im && !quieto) { im.loading = 'eager'; im.classList.add('cambio'); }
+    if (!quieto) { el.classList.remove('cambia'); void el.offsetWidth; el.classList.add('cambia'); }
     if (el.classList.contains('actual')) el.closest('.grupo').style.setProperty('--g-tono', c.tono);
   }
 

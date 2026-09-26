@@ -144,6 +144,48 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 @keyframes pop{from{transform:scale(.86)}to{transform:none}}
 @keyframes salta{40%{transform:scale(1.22)}}
 .grupo{transition:background-color .7s var(--ease)}
+/* ── Carrito: se abre desde la barra de abajo o la bolsa de la cabecera ── */
+.bolsa{position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--linea2);background:rgba(255,255,255,.04);color:var(--texto);animation:pop .4s var(--resorte)}
+.bolsa[hidden]{display:none}
+.bolsa svg{width:21px;height:21px}
+.insignia{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--oro-luz);color:#0A0A0A;font:800 11px/20px var(--sans);text-align:center;font-variant-numeric:tabular-nums}
+.insignia.salta{animation:salta .35s var(--resorte)}
+.carro button.res{text-align:left;color:var(--texto);padding:4px 6px 4px 0}
+.carro .res u{color:var(--oro-luz);text-decoration:none;border-bottom:1px solid rgba(242,210,106,.5)}
+.hoja-fondo{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s}
+.hoja{position:fixed;z-index:51;left:0;right:0;bottom:0;max-height:86svh;display:flex;flex-direction:column;background:#0E1014;border:1px solid var(--linea2);border-bottom:0;border-radius:28px 28px 0 0;box-shadow:0 -30px 80px -20px rgba(0,0,0,.8);transform:translateY(105%);visibility:hidden;transition:transform .5s var(--resorte),visibility .5s}
+.abierta .hoja-fondo{opacity:1;visibility:visible}
+.abierta .hoja{transform:none;visibility:visible}
+.abierta body,body.abierta{overflow:hidden}
+.hoja-asa{width:40px;height:5px;border-radius:99px;background:rgba(255,255,255,.2);margin:10px auto 0}
+.hoja-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 20px 12px;border-bottom:1px solid var(--linea)}
+.hoja-cab h2{font:800 26px/1.05 var(--disp);letter-spacing:-.03em;margin-top:4px}
+.cerrar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--linea2);color:var(--texto)}
+.cerrar svg{width:18px;height:18px}
+.hoja-lista{overflow-y:auto;overscroll-behavior:contain;padding:8px 20px;flex:1}
+.linea{display:grid;grid-template-columns:64px 1fr auto;grid-template-rows:auto auto;gap:4px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--linea)}
+.linea:last-child{border-bottom:0}
+.linea .mini{grid-row:1/3;width:64px;height:64px;border-radius:16px;background:radial-gradient(60% 60% at 50% 45%,color-mix(in oklab,var(--tono),#fff 18%),var(--tono));display:grid;place-items:center;overflow:hidden}
+.linea .mini img{width:88%;height:88%;object-fit:contain;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35))}
+.linea h3{font:700 15.5px/1.2 var(--disp);letter-spacing:-.01em}
+.linea .unit{font:500 12.5px var(--mono);color:var(--suave);font-variant-numeric:tabular-nums}
+.linea .sub{grid-column:3;grid-row:1;justify-self:end;font:800 16px var(--disp);font-variant-numeric:tabular-nums}
+.linea .ctrl{grid-column:2/4;grid-row:2;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.linea .cant{height:36px;background:rgba(255,255,255,.08);color:var(--texto);box-shadow:none;animation:none}
+.linea .cant button{width:36px;height:36px;font-size:18px}
+.quitar{font:600 12.5px var(--sans);color:#FF8A7D;padding:6px 2px}
+.vacio{padding:34px 0;text-align:center;color:var(--suave)}
+.hoja-pie{padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--linea2);display:grid;gap:10px;background:#0B0D10}
+.hoja-tot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.hoja-tot small{display:block;font:600 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--suave)}
+.hoja-tot b{font:800 28px/1.1 var(--disp);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.vaciar{font:600 13px var(--sans);color:var(--suave);text-decoration:underline;text-underline-offset:3px}
+.hoja .wa{margin:0;justify-content:center;width:100%}
+.seguir{height:44px;border-radius:999px;border:1px solid var(--linea2);font:600 14.5px var(--sans);color:var(--texto)}
+@media (min-width:701px){
+  .hoja{left:auto;top:0;width:430px;max-height:none;border-radius:28px 0 0 28px;border-bottom:1px solid var(--linea2);transform:translateX(105%)}
+  .hoja-asa{display:none}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -153,6 +195,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   <div class="wrap cab">
     <span class="logo"><img src="logo-studio.png" alt="STUDIO"></span>
     <span class="sello">Mayoristas</span>
+    <button class="bolsa" id="bolsa" data-abrir aria-label="Ver pedido" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="insignia" id="insignia">0</span></button>
   </div>
 </header>
 <main class="wrap" id="app">
@@ -160,13 +203,27 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 </main>
 <div class="carro" id="carro" aria-live="polite">
   <div class="wrap">
-    <div class="res"><small id="carro-n">0 artículos</small><b id="carro-t">RD$0</b></div>
+    <button class="res" data-abrir aria-haspopup="dialog"><small><span id="carro-n">0 artículos</span> · <u>Ver pedido</u></small><b id="carro-t">RD$0</b></button>
     <a class="wa" id="wa" href="#" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>
       Enviar pedido
     </a>
   </div>
 </div>
+<div class="hoja-fondo" id="hoja-fondo" data-cerrar></div>
+<aside class="hoja" id="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-t" aria-hidden="true">
+  <div class="hoja-asa" aria-hidden="true"></div>
+  <div class="hoja-cab">
+    <div><p class="eyebrow">Tu pedido</p><h2 id="hoja-t">0 artículos</h2></div>
+    <button class="cerrar" data-cerrar aria-label="Cerrar pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="hoja-lista" id="hoja-lista"></div>
+  <div class="hoja-pie">
+    <div class="hoja-tot"><div><small>Total mayorista</small><b id="hoja-total">RD$0</b></div><button class="vaciar" data-vaciar>Vaciar pedido</button></div>
+    <a class="wa" id="wa2" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>Enviar pedido por WhatsApp</a>
+    <button class="seguir" data-cerrar>Seguir agregando</button>
+  </div>
+</aside>
 <script>
 (() => {
   const SB = 'https://edbknlkjnlfmkkiizdbe.supabase.co';
@@ -196,6 +253,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
       const d = await r.json();
       if (!Array.isArray(d)) return aviso('Enlace no válido', 'Este enlace ya no está activo. Pide uno nuevo a STUDIO.');
       items = d;
+      recuperar();
       pintar();
     } catch (e) {
       aviso('No se pudo cargar', 'Revisa tu conexión y vuelve a intentarlo.');
@@ -292,27 +350,78 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     const p = items.find(x => x.id === id), el = document.querySelector('.mc[data-id="' + id + '"] .accion');
     if (p && el) { el.innerHTML = accion(p); saltar(el.querySelector('output')); }
     resumen();
-    saltar(document.getElementById('carro-t'));
+    saltar(document.getElementById('carro-t')); saltar(document.getElementById('insignia'));
   }
 
   function resumen() {
-    let n = 0, t = 0; const lineas = [];
+    let n = 0, t = 0; const lineas = [], filas = [];
     for (const [id, c] of carro) {
       const p = items.find(x => x.id === id); if (!p) continue;
       n += c; t += c * p.precio;
       lineas.push('• ' + c + ' × ' + p.nombre + ' — ' + rd(c * p.precio));
+      filas.push('<div class="linea" data-linea="' + id + '" style="--tono:' + esc(p.tono || '#2a2f38') + '">'
+        + '<div class="mini">' + (p.foto ? '<img src="' + esc(p.foto) + '" alt="">' : '') + '</div>'
+        + '<div><h3>' + esc(p.nombre) + '</h3><span class="unit">' + rd(p.precio) + ' c/u</span></div>'
+        + '<b class="sub">' + rd(c * p.precio) + '</b>'
+        + '<div class="ctrl"><div class="cant"><button data-menos="' + id + '" aria-label="Quitar uno de ' + esc(p.nombre) + '">−</button><output>' + c + '</output><button data-mas="' + id + '" aria-label="Agregar uno de ' + esc(p.nombre) + '">+</button></div>'
+        + '<button class="quitar" data-quitar="' + id + '">Quitar</button></div></div>');
     }
+    const txt = n + (n === 1 ? ' artículo' : ' artículos');
     $('#carro').classList.toggle('ver', n > 0);
-    $('#carro-n').textContent = n + (n === 1 ? ' artículo' : ' artículos');
+    $('#carro-n').textContent = txt;
     $('#carro-t').textContent = rd(t);
+    $('#bolsa').hidden = n === 0;
+    $('#insignia').textContent = n;
+    $('#hoja-t').textContent = txt;
+    $('#hoja-total').textContent = rd(t);
+    $('#hoja-lista').innerHTML = filas.join('') || '<p class="vacio">Tu pedido está vacío. Agrega artículos del catálogo.</p>';
     const msg = 'Hola STUDIO, quiero hacer este pedido al por mayor:\n\n' + lineas.join('\n') + '\n\nTotal: ' + rd(t);
-    $('#wa').href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+    $('#wa').href = $('#wa2').href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+    guardar();
+  }
+
+  // El pedido se recuerda en este teléfono si el cliente cierra y vuelve a abrir el enlace.
+  const LLAVE = 'studio_mayoristas_pedido';
+  function guardar() { try { localStorage.setItem(LLAVE, JSON.stringify([...carro])); } catch (e) {} }
+  function recuperar() {
+    try {
+      for (const [id, c] of JSON.parse(localStorage.getItem(LLAVE) || '[]')) {
+        const p = items.find(x => x.id === id);
+        if (p && p.disponible && c > 0) carro.set(id, Math.min(999, c | 0));
+      }
+    } catch (e) {}
+  }
+
+  let antesDeAbrir = null;
+  function abrir() {
+    antesDeAbrir = document.activeElement;
+    document.documentElement.classList.add('abierta'); document.body.classList.add('abierta');
+    $('#hoja').setAttribute('aria-hidden', 'false');
+    setTimeout(() => $('#hoja .cerrar').focus({ preventScroll: true }), 60);
+  }
+  function cerrar() {
+    document.documentElement.classList.remove('abierta'); document.body.classList.remove('abierta');
+    $('#hoja').setAttribute('aria-hidden', 'true');
+    if (antesDeAbrir) antesDeAbrir.focus({ preventScroll: true });
+  }
+  addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('abierta')) cerrar(); });
+
+  function cambiar(id, c) {
+    c > 0 ? carro.set(id, c) : carro.delete(id);
+    repintar(id);
+    const out = document.querySelector('[data-linea="' + id + '"] output'); saltar(out);
+    if (!carro.size && document.body.classList.contains('abierta')) setTimeout(cerrar, 350);
   }
 
   document.addEventListener('click', e => {
     const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]'), tab = e.target.closest('[data-g]');
-    if (mas) { const id = +mas.dataset.mas; carro.set(id, (carro.get(id) || 0) + 1); repintar(id); }
-    else if (menos) { const id = +menos.dataset.menos, c = (carro.get(id) || 0) - 1; c > 0 ? carro.set(id, c) : carro.delete(id); repintar(id); }
+    const quitar = e.target.closest('[data-quitar]');
+    if (e.target.closest('[data-abrir]')) abrir();
+    else if (e.target.closest('[data-cerrar]')) cerrar();
+    else if (e.target.closest('[data-vaciar]')) { if (confirm('¿Vaciar todo el pedido?')) { const ids = [...carro.keys()]; carro.clear(); ids.forEach(repintar); resumen(); setTimeout(cerrar, 250); } }
+    else if (quitar) cambiar(+quitar.dataset.quitar, 0);
+    else if (mas) { const id = +mas.dataset.mas; cambiar(id, (carro.get(id) || 0) + 1); }
+    else if (menos) { const id = +menos.dataset.menos; cambiar(id, (carro.get(id) || 0) - 1); }
     else if (tab) {
       document.querySelectorAll('.cat-tabs button').forEach(b => b.setAttribute('aria-selected', b === tab));
       const sec = document.getElementById(tab.dataset.g);

@@ -1,7 +1,14 @@
 {
-  "version": "59.54",
+  "version": "59.55",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.55",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Tienda y catálogo mayorista: cada tamaño del CW Smart TV (32\", 43\", 50\", 65\") con su propia foto recortada."
+      ]
+    },
     {
       "version": "59.54",
       "fecha": "2026-09-26",

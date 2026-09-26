@@ -609,7 +609,7 @@ const WHATSAPP = '18296247623';
    WhatsApp pregunta por el precio. */
 const MOSTRAR_PRECIOS = false;
 // Fotos mejoradas (estudio, alta resolución): se sirven desde img/tienda/hd/ con el mismo nombre.
-const HD = new Set(["aire-24000", "fan-cristal", "fan-madera", "fan-white", "fan-whiteblack", "lock-facial", "lock-lk014", "ilq-hld", "lq-h8", "lq-n9", "lq-pp", "lq-xbw", "lq-zs", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-55", "tv-fila"]);
+const HD = new Set(["aire-24000", "fan-cristal", "fan-madera", "fan-white", "fan-whiteblack", "lock-facial", "lock-lk014", "ilq-hld", "lq-h8", "lq-n9", "lq-pp", "lq-xbw", "lq-zs", "lq-xgw", "motocarga-350", "motocarga-hidraulica", "nevera-11", "nevera-8", "s700-blanco", "s700-gris", "s700-rosa", "tv-32", "tv-43", "tv-50", "tv-55", "tv-65", "tv-fila"]);
 const img = n => 'img/tienda/' + (HD.has(n) ? 'hd/' : '') + n + '.webp';
 const MOTOR = { k: 'Motor', max: 1200, u: 'W' }, VEL = { k: 'Velocidad', max: 60, u: 'km/h' }, AUT = { k: 'Autonomía', max: 70, u: 'km' };
 /* variantes: [nombre, foto, color del punto, precio, estado, subtítulo]. estado 'agotado' = botón «Avísame». */
@@ -641,7 +641,7 @@ const CATALOGO = {
   ],
   gHogar: [
     { nombre: 'CW Smart TV', sub: 'De 32" a 65" · elige tu tamaño', ancha: true, tono: '#2b2f63', corto: 'TV',
-      variantes: [['32"', img('tv-fila'), null, null, 'agotado', 'Android TV · 4K'], ['43"', img('tv-fila'), null, 14990, '', 'Android TV · 4K'], ['50"', img('tv-fila'), null, 21990, '', 'Google TV · 8K'], ['55"', img('tv-fila'), null, 25000, '', 'Google TV · 8K'], ['65"', img('tv-65'), null, 34000, '', 'Google TV · 8K']],
+      variantes: [['32"', img('tv-32'), null, null, 'agotado', 'Android TV · 4K'], ['43"', img('tv-43'), null, 14990, '', 'Android TV · 4K'], ['50"', img('tv-50'), null, 21990, '', 'Google TV · 8K'], ['55"', img('tv-55'), null, 25000, '', 'Google TV · 8K'], ['65"', img('tv-65'), null, 34000, '', 'Google TV · 8K']],
       rasgos: ['Smart TV', 'Resolución HD', 'Apps de streaming'] },
     { nombre: 'Aire CW-STUDIO inverter', sub: 'Eficiencia 19 · WiFi', tono: '#dfe7ee', corto: 'BTU',
       variantes: [['12,000 BTU', img('aire-24000'), null, null, 'agotado'], ['18,000 BTU', img('aire-24000'), null, null, 'agotado'], ['24,000 BTU', img('aire-24000'), null, 40000]],

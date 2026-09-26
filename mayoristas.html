@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
@@ -117,12 +118,38 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   .mc-escena{min-height:180px}
   .mc h3{font-size:27px}
   .precio b{font-size:24px}
+
+  /* Vitrina en celular: la tarjeta del frente se enfoca y la franja toma su color, como en la tienda. */
+  .grupo{--g-tono:#07080A;margin-inline:-16px;padding-inline:16px;padding-bottom:12px;background:color-mix(in oklab,var(--g-tono) 26%,#07080A)}
+  .js .mc.si:not(.actual){opacity:.55;transform:scale(.94)}
+  .js .mc.si:not(.actual) .mc-escena img{translate:18% 0;scale:.86}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ── Movimiento (el mismo de la tienda) ── */
+.progreso{position:absolute;left:0;bottom:-1px;height:2px;width:100%;transform-origin:left;transform:scaleX(var(--leido,0));background:linear-gradient(90deg,#8A6D12,var(--oro-luz));box-shadow:0 0 10px rgba(242,210,106,.6)}
+.cat-cab>div>*,.cat-tabs{animation:portadaEntra .7s var(--ease) both}
+.cat-cab h1{animation-delay:.06s}.cat-cab .lead{animation-delay:.12s}.cat-tabs{animation-delay:.2s}
+@keyframes portadaEntra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+/* Tarjetas: aparecen en cascada al verse; la foto llega deslizándose y se enfoca. */
+.js .mc{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease),box-shadow .35s var(--ease)}
+.js .mc.si{opacity:1;transform:none}
+.mc-escena img{transition:translate .8s var(--ease),scale .8s var(--resorte),opacity .5s var(--ease)}
+.js .mc:not(.si) .mc-escena img{translate:18% 0;scale:.86;opacity:0}
+@media (hover:hover){
+  .js .mc.si:hover{transform:translateY(-4px);box-shadow:0 40px 70px -34px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.22)}
+  .mc:hover .mc-escena img{scale:1.04}
+}
+/* Botón y contador: respuesta al tocar y salto del número. */
+.agregar,.cant{animation:pop .35s var(--resorte)}
+.cant output.salta,.carro .res b.salta{animation:salta .35s var(--resorte)}
+@keyframes pop{from{transform:scale(.86)}to{transform:none}}
+@keyframes salta{40%{transform:scale(1.22)}}
+.grupo{transition:background-color .7s var(--ease)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
 <body>
 <header>
+  <div class="progreso" aria-hidden="true"></div>
   <div class="wrap cab">
     <span class="logo"><img src="logo-studio.png" alt="STUDIO"></span>
     <span class="sello">Mayoristas</span>
@@ -216,13 +243,56 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) document.querySelectorAll('.cat-tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.g === e.target.id)); }), { rootMargin: '-45% 0px -50% 0px' });
       document.querySelectorAll('.grupo').forEach(g => io.observe(g));
     }
+    movimiento();
     resumen();
   }
 
+  // Movimiento, como en la tienda: las tarjetas entran en cascada al verse y, en el celular,
+  // la tarjeta del frente de cada vitrina se enfoca y tiñe la franja con su color.
+  const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function movimiento() {
+    const mcs = [...document.querySelectorAll('.mc')];
+    if (quieto || !('IntersectionObserver' in window)) mcs.forEach(m => m.classList.add('si'));
+    else {
+      const ap = new IntersectionObserver(es => es.forEach(e => {
+        if (!e.isIntersecting) return;
+        const hermanas = [...e.target.parentNode.children].filter(x => !x.classList.contains('si'));
+        e.target.style.transitionDelay = Math.min(hermanas.indexOf(e.target), 3) * 90 + 'ms';
+        e.target.classList.add('si'); ap.unobserve(e.target);
+        setTimeout(() => { e.target.style.transitionDelay = ''; }, 1200);
+      }), { threshold: .12 });
+      mcs.forEach(m => ap.observe(m));
+    }
+    document.querySelectorAll('.pista').forEach(pista => {
+      const grupo = pista.closest('.grupo'), tarjetas = [...pista.children];
+      let pend = false;
+      const medir = () => {
+        pend = false;
+        const c = pista.scrollLeft + pista.clientWidth / 2; let k = 0, d = Infinity;
+        tarjetas.forEach((t, j) => { const dj = Math.abs(t.offsetLeft + t.clientWidth / 2 - c); if (dj < d) { d = dj; k = j; } });
+        tarjetas.forEach((t, j) => t.classList.toggle('actual', j === k));
+        grupo.style.setProperty('--g-tono', tarjetas[k].style.getPropertyValue('--tono'));
+      };
+      pista.addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(medir); } }, { passive: true });
+      addEventListener('resize', medir);
+      medir();
+    });
+  }
+
+  // Barra dorada de la cabecera: marca cuánto se ha recorrido del catálogo.
+  (() => {
+    const barra = document.querySelector('.progreso'); let pend = false;
+    const pintarBarra = () => { pend = false; const h = document.documentElement.scrollHeight - innerHeight; barra.style.setProperty('--leido', h > 0 ? Math.min(1, scrollY / h) : 0); };
+    addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(pintarBarra); } }, { passive: true });
+  })();
+
+  function saltar(el) { if (!el || quieto) return; el.classList.remove('salta'); void el.offsetWidth; el.classList.add('salta'); }
+
   function repintar(id) {
     const p = items.find(x => x.id === id), el = document.querySelector('.mc[data-id="' + id + '"] .accion');
-    if (p && el) el.innerHTML = accion(p);
+    if (p && el) { el.innerHTML = accion(p); saltar(el.querySelector('output')); }
     resumen();
+    saltar(document.getElementById('carro-t'));
   }
 
   function resumen() {

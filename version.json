@@ -1,7 +1,15 @@
 {
-  "version": "59.51",
+  "version": "59.52",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.52",
+      "fecha": "2026-09-26",
+      "notas": [
+        "Catálogo mayorista con el estilo de la tienda: tarjetas del color de cada producto, letra de fondo y vitrina horizontal en celular.",
+        "Animaciones como en la tienda: entrada de portada, tarjetas en cascada, foto que entra deslizándose, tarjeta del frente enfocada con la franja de su color, barra dorada de avance y contador que salta al agregar."
+      ]
+    },
     {
       "version": "59.51",
       "fecha": "2026-09-26",

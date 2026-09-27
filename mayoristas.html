@@ -649,8 +649,8 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   function esconder() { clearTimeout(asomaT); const a = $('#asoma'); a.classList.remove('si'); a.setAttribute('aria-hidden', 'true'); }
   addEventListener('scroll', () => { if ($('#asoma').classList.contains('si')) esconder(); }, { passive: true });
 
-  // Un carrito sale del botón, recibe los productos del pedido (las fotos caen dentro) y se va rodando
-  // hacia la derecha con rayas de velocidad: «tu pedido va en camino». Solo decorativo, dura ~1.5 s.
+  // Un carrito llega rodando hasta el botón, recibe los productos del pedido (las fotos caen dentro) y se va rodando
+  // hacia la derecha con rayas de velocidad: «tu pedido va en camino». Solo decorativo, dura ~2.3 s.
   function llevarPedido(wa) {
     if (!document.body.animate) return;
     const r = wa.getBoundingClientRect(), W = 118, H = 92;
@@ -668,24 +668,33 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     document.body.appendChild(v);
     // Las fotos van delante de la canasta: se reordenan para que queden "dentro" (canasta encima).
     v.querySelectorAll('.cosa').forEach(c => v.insertBefore(c, v.querySelector('svg')));
-    const lejos = innerWidth - x0 + 40, at = (x, y, extra = '') => `translate(${x}px,${y}px) ${extra}`;
+    // Llega desde la izquierda y frena sobre el botón, recibe el pedido y se va por la derecha.
+    const D = 2300, lejos = innerWidth - x0 + 40, at = (x, y, extra = '') => `translate(${x}px,${y}px) ${extra}`;
     const carroA = v.animate([
-      { transform: at(x0, y0 + 30, 'scale(.2)'), opacity: 0 },
-      { transform: at(x0, y0, 'scale(1.08)'), opacity: 1, offset: .12 },
-      { transform: at(x0, y0, 'scale(1)'), offset: .2 },
-      { transform: at(x0, y0), offset: .5 },
-      { transform: at(x0 - 14, y0 + 2, 'rotate(-5deg)'), offset: .6 },
-      { transform: at(x0 + lejos * .35, y0, 'rotate(2deg)'), offset: .8 },
-      { transform: at(x0 + lejos, y0 - 6, 'rotate(0)'), opacity: 1 }
-    ], { duration: 1500, easing: 'linear' });
+      { transform: at(-W - 20, y0, 'rotate(0)'), easing: 'cubic-bezier(.2,.7,.35,1)' },
+      { transform: at(x0 + 10, y0, 'rotate(5deg)'), offset: .24 },
+      { transform: at(x0 - 3, y0 + 1, 'rotate(-2deg)'), offset: .29 },
+      { transform: at(x0, y0, 'rotate(0)'), offset: .33 },
+      { transform: at(x0, y0), offset: .62 },
+      { transform: at(x0 - 14, y0 + 2, 'rotate(-5deg)'), offset: .69, easing: 'cubic-bezier(.5,0,.9,.5)' },
+      { transform: at(x0 + lejos, y0 - 6, 'rotate(2deg)') }
+    ], { duration: D, easing: 'ease-in-out' });
     v.querySelectorAll('.cosa').forEach((c, i) => c.animate([
       { transform: 'translateY(-90px) rotate(-18deg) scale(.7)', opacity: 0 },
-      { transform: 'translateY(-90px) rotate(-18deg) scale(.7)', opacity: 0, offset: .15 + i * .06 },
-      { transform: 'translateY(4px) rotate(4deg) scale(1)', opacity: 1, offset: .38 + i * .06 },
+      { transform: 'translateY(-90px) rotate(-18deg) scale(.7)', opacity: 0, offset: .33 + i * .05 },
+      { transform: 'translateY(4px) rotate(4deg) scale(1)', opacity: 1, offset: .47 + i * .05 },
+      { transform: 'translateY(0) rotate(0) scale(1)', opacity: 1, offset: .55 + i * .05 },
       { transform: 'translateY(0) rotate(0) scale(1)', opacity: 1 }
-    ], { duration: 1500 * .6, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'both' }));
-    v.querySelectorAll('.rueda').forEach(g => g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(0)', offset: .55 }, { transform: 'rotate(900deg)' }], { duration: 1500, easing: 'cubic-bezier(.6,0,.9,.6)' }));
-    v.querySelectorAll('.raya').forEach((l, i) => l.animate([{ opacity: 0, transform: 'scaleX(.2)' }, { opacity: 0, transform: 'scaleX(.2)', offset: .62 + i * .03 }, { opacity: 1, transform: 'scaleX(1)', offset: .8 }, { opacity: 0, transform: 'scaleX(1.4)' }], { duration: 1500 }));
+    ], { duration: D, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'both' }));
+    v.querySelectorAll('.rueda').forEach(g => g.animate([
+      { transform: 'rotate(0)', easing: 'cubic-bezier(.2,.7,.35,1)' }, { transform: 'rotate(720deg)', offset: .26 },
+      { transform: 'rotate(720deg)', offset: .69, easing: 'cubic-bezier(.6,0,.9,.6)' }, { transform: 'rotate(1620deg)' }
+    ], { duration: D }));
+    v.querySelectorAll('.raya').forEach((l, i) => l.animate([
+      { opacity: 1, transform: 'scaleX(1.3)' }, { opacity: 0, transform: 'scaleX(.3)', offset: .22 + i * .02 },
+      { opacity: 0, transform: 'scaleX(.2)', offset: .72 + i * .03 }, { opacity: 1, transform: 'scaleX(1)', offset: .86 },
+      { opacity: 0, transform: 'scaleX(1.4)' }
+    ], { duration: D }));
     carroA.finished.catch(() => {}).then(() => v.remove());
   }
 

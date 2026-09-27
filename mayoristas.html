@@ -698,23 +698,35 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     carroA.finished.catch(() => {}).then(() => v.remove());
   }
 
-  // Enviar por WhatsApp: animación a la par del enlace (no se retrasa ni se bloquea la apertura de WhatsApp).
+  // Enviar por WhatsApp: primero se ve la animación completa (el carrito llega, recoge el pedido y se va)
+  // y al terminar se abre WhatsApp. En el celular se abre en la misma pestaña (una ventana nueva abierta
+  // con retraso la bloquea Safari); el pedido queda guardado si el cliente vuelve con «atrás».
+  const ICONO_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  let enviando = false;
+  function restaurarWa() {
+    enviando = false;
+    document.querySelectorAll('.wa').forEach(w => { clearTimeout(w._t); if (w.dataset.html) w.innerHTML = w.dataset.html; w.classList.remove('envia'); });
+  }
+  addEventListener('pageshow', e => { if (e.persisted) restaurarWa(); });
   document.addEventListener('click', e => {
     const wa = e.target.closest('.wa');
     if (!wa || quieto || !carro.size) return;
-    const r = wa.getBoundingClientRect(), onda = document.createElement('span');
+    e.preventDefault();
+    if (enviando) return;
+    enviando = true;
+    const url = wa.href, r = wa.getBoundingClientRect(), onda = document.createElement('span');
     onda.className = 'onda'; onda.style.left = (e.clientX ? e.clientX - r.left : r.width / 2) + 'px'; onda.style.top = (e.clientY ? e.clientY - r.top : r.height / 2) + 'px';
     wa.classList.remove('envia'); void wa.offsetWidth; wa.classList.add('envia');
     llevarPedido(wa);
-    // El texto cambia en el acto (antes de que el teléfono pase a WhatsApp) y vuelve a la normalidad
-    // unos segundos después de que el cliente regresa a la página.
     if (!wa.dataset.html) wa.dataset.html = wa.innerHTML;
-    wa.innerHTML = '<span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Abriendo WhatsApp…</span>';
+    wa.innerHTML = '<span class="ok">' + ICONO_OK + 'Preparando tu pedido…</span>';
     wa.appendChild(onda); setTimeout(() => onda.remove(), 700);
-    const volver = () => { clearTimeout(wa._t); wa._t = setTimeout(() => { wa.innerHTML = wa.dataset.html; wa.classList.remove('envia'); }, 2400); };
-    volver();
-    const alRegresar = () => { if (document.visibilityState === 'visible') { volver(); document.removeEventListener('visibilitychange', alRegresar); } };
-    document.addEventListener('visibilitychange', alRegresar);
+    setTimeout(() => { wa.innerHTML = '<span class="ok">' + ICONO_OK + 'Abriendo WhatsApp…</span>'; }, 1500);
+    setTimeout(() => {
+      if (matchMedia('(pointer:coarse)').matches) location.href = url;
+      else { const w = open(url, '_blank'); if (w) w.opener = null; else location.href = url; }
+      wa._t = setTimeout(restaurarWa, 2500);
+    }, 2150);
   });
 
   document.addEventListener('click', e => {

@@ -1,7 +1,14 @@
 {
-  "version": "59.60",
+  "version": "59.61",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.61",
+      "fecha": "2026-09-27",
+      "notas": [
+        "Catálogo mayorista: al enviar el pedido, WhatsApp se abre cuando termina la animación del carrito (antes se abría tan rápido que no se veía)."
+      ]
+    },
     {
       "version": "59.60",
       "fecha": "2026-09-27",

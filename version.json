@@ -1,7 +1,14 @@
 {
-  "version": "59.59",
+  "version": "59.60",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.60",
+      "fecha": "2026-09-27",
+      "notas": [
+        "Catálogo mayorista animado: al agregar, la foto vuela a la bolsa y aparece un resumen del pedido; al enviar por WhatsApp, un carrito llega, recoge el pedido y se va."
+      ]
+    },
     {
       "version": "59.59",
       "fecha": "2026-09-27",

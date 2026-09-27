@@ -309,7 +309,12 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 @keyframes waOnda{from{transform:scale(0);opacity:1}to{transform:scale(16);opacity:0}}
 .wa .ok{display:inline-flex;align-items:center;gap:9px;animation:sube .4s var(--ease) both}
 .wa .ok svg{animation:pop .45s var(--resorte)}
-.wa-vuelo{position:fixed;z-index:60;left:0;top:0;width:26px;height:26px;color:#25D366;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));will-change:transform,opacity}
+.viaje{position:fixed;z-index:60;left:0;top:0;width:118px;height:92px;pointer-events:none;will-change:transform}
+.viaje svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 14px rgba(0,0,0,.5))}
+.viaje .rueda{transform-box:fill-box;transform-origin:center}
+.viaje .cosa{position:absolute;bottom:36px;width:38px;height:38px;border-radius:11px;background:radial-gradient(60% 60% at 50% 45%,color-mix(in oklab,var(--tono),#fff 18%),var(--tono));display:grid;place-items:center;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,.35),0 0 0 1.5px rgba(255,255,255,.18)}
+.viaje .cosa img{width:88%;height:88%;object-fit:contain}
+.viaje .raya{position:absolute;right:100%;transform-origin:right;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(242,210,106,.9));opacity:0}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -644,6 +649,46 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   function esconder() { clearTimeout(asomaT); const a = $('#asoma'); a.classList.remove('si'); a.setAttribute('aria-hidden', 'true'); }
   addEventListener('scroll', () => { if ($('#asoma').classList.contains('si')) esconder(); }, { passive: true });
 
+  // Un carrito sale del botón, recibe los productos del pedido (las fotos caen dentro) y se va rodando
+  // hacia la derecha con rayas de velocidad: «tu pedido va en camino». Solo decorativo, dura ~1.5 s.
+  function llevarPedido(wa) {
+    if (!document.body.animate) return;
+    const r = wa.getBoundingClientRect(), W = 118, H = 92;
+    const x0 = Math.max(8, r.left + r.width / 2 - W / 2), y0 = r.top - H + 14;
+    const v = document.createElement('div'); v.className = 'viaje';
+    v.innerHTML = '<span class="raya" style="top:38px;width:46px"></span><span class="raya" style="top:52px;width:70px"></span><span class="raya" style="top:66px;width:38px"></span>'
+      + [...carro].reverse().slice(0, 3).map(([id], i) => { const p = items.find(x => x.id === id); return p ? '<span class="cosa" style="left:' + (20 + i * 24) + 'px;--tono:' + esc(p.tono || '#2a2f38') + ';z-index:' + (3 - i) + '">' + (p.foto ? '<img src="' + esc(p.foto) + '" alt="">' : '') + '</span>' : ''; }).join('')
+      + '<svg viewBox="0 0 118 92" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<path d="M4 22h14l6 8" stroke="#F2D26A" stroke-width="5"/>'
+      + '<path d="M20 30h92l-10 34H30Z" fill="rgba(201,162,39,.28)" stroke="#F2D26A" stroke-width="5"/>'
+      + '<path d="M44 34v26M64 34v26M84 34v26" stroke="#F2D26A" stroke-width="2.5" opacity=".55"/>'
+      + '<path d="M30 64l-4 10h78" stroke="#F2D26A" stroke-width="5"/>'
+      + '<g class="rueda"><circle cx="38" cy="83" r="7" fill="#0A0A0A" stroke="#F2D26A" stroke-width="4"/><path d="M38 78v10" stroke="#F2D26A" stroke-width="2"/></g>'
+      + '<g class="rueda"><circle cx="96" cy="83" r="7" fill="#0A0A0A" stroke="#F2D26A" stroke-width="4"/><path d="M96 78v10" stroke="#F2D26A" stroke-width="2"/></g></svg>';
+    document.body.appendChild(v);
+    // Las fotos van delante de la canasta: se reordenan para que queden "dentro" (canasta encima).
+    v.querySelectorAll('.cosa').forEach(c => v.insertBefore(c, v.querySelector('svg')));
+    const lejos = innerWidth - x0 + 40, at = (x, y, extra = '') => `translate(${x}px,${y}px) ${extra}`;
+    const carroA = v.animate([
+      { transform: at(x0, y0 + 30, 'scale(.2)'), opacity: 0 },
+      { transform: at(x0, y0, 'scale(1.08)'), opacity: 1, offset: .12 },
+      { transform: at(x0, y0, 'scale(1)'), offset: .2 },
+      { transform: at(x0, y0), offset: .5 },
+      { transform: at(x0 - 14, y0 + 2, 'rotate(-5deg)'), offset: .6 },
+      { transform: at(x0 + lejos * .35, y0, 'rotate(2deg)'), offset: .8 },
+      { transform: at(x0 + lejos, y0 - 6, 'rotate(0)'), opacity: 1 }
+    ], { duration: 1500, easing: 'linear' });
+    v.querySelectorAll('.cosa').forEach((c, i) => c.animate([
+      { transform: 'translateY(-90px) rotate(-18deg) scale(.7)', opacity: 0 },
+      { transform: 'translateY(-90px) rotate(-18deg) scale(.7)', opacity: 0, offset: .15 + i * .06 },
+      { transform: 'translateY(4px) rotate(4deg) scale(1)', opacity: 1, offset: .38 + i * .06 },
+      { transform: 'translateY(0) rotate(0) scale(1)', opacity: 1 }
+    ], { duration: 1500 * .6, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'both' }));
+    v.querySelectorAll('.rueda').forEach(g => g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(0)', offset: .55 }, { transform: 'rotate(900deg)' }], { duration: 1500, easing: 'cubic-bezier(.6,0,.9,.6)' }));
+    v.querySelectorAll('.raya').forEach((l, i) => l.animate([{ opacity: 0, transform: 'scaleX(.2)' }, { opacity: 0, transform: 'scaleX(.2)', offset: .62 + i * .03 }, { opacity: 1, transform: 'scaleX(1)', offset: .8 }, { opacity: 0, transform: 'scaleX(1.4)' }], { duration: 1500 }));
+    carroA.finished.catch(() => {}).then(() => v.remove());
+  }
+
   // Enviar por WhatsApp: animación a la par del enlace (no se retrasa ni se bloquea la apertura de WhatsApp).
   document.addEventListener('click', e => {
     const wa = e.target.closest('.wa');
@@ -651,16 +696,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     const r = wa.getBoundingClientRect(), onda = document.createElement('span');
     onda.className = 'onda'; onda.style.left = (e.clientX ? e.clientX - r.left : r.width / 2) + 'px'; onda.style.top = (e.clientY ? e.clientY - r.top : r.height / 2) + 'px';
     wa.classList.remove('envia'); void wa.offsetWidth; wa.classList.add('envia');
-    const ic = wa.querySelector('svg');   // se toma antes de cambiar el texto
-    if (ic && ic.animate) {
-      const o = ic.getBoundingClientRect(), v = ic.cloneNode(true); v.setAttribute('class', 'wa-vuelo'); document.body.appendChild(v);
-      const x0 = o.left, y0 = o.top, x1 = Math.min(innerWidth - 40, x0 + 140), y1 = Math.max(10, y0 - 260);
-      v.animate([
-        { transform: `translate(${x0}px,${y0}px) scale(1) rotate(0)`, opacity: 1 },
-        { transform: `translate(${x0 + 20}px,${y0 - 40}px) scale(1.6) rotate(-12deg)`, opacity: 1, offset: .3 },
-        { transform: `translate(${x1}px,${y1}px) scale(.6) rotate(24deg)`, opacity: 0 }
-      ], { duration: 650, easing: 'cubic-bezier(.3,.7,.3,1)' }).finished.catch(() => {}).then(() => v.remove());
-    }
+    llevarPedido(wa);
     // El texto cambia en el acto (antes de que el teléfono pase a WhatsApp) y vuelve a la normalidad
     // unos segundos después de que el cliente regresa a la página.
     if (!wa.dataset.html) wa.dataset.html = wa.innerHTML;

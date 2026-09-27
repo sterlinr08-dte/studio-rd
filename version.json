@@ -1,7 +1,14 @@
 {
-  "version": "59.61",
+  "version": "59.62",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.62",
+      "fecha": "2026-09-27",
+      "notas": [
+        "Web de clientes con carrito: precios de cliente final, botón Agregar con la foto que vuela al carrito, resumen del pedido, botón «Ver» en el celular y envío del pedido por WhatsApp con el carrito animado."
+      ]
+    },
     {
       "version": "59.61",
       "fecha": "2026-09-27",

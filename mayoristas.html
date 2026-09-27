@@ -297,6 +297,19 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 .asoma-pie b{font:800 18px var(--disp);font-variant-numeric:tabular-nums}
 .asoma-pie span{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:linear-gradient(180deg,var(--oro-luz),var(--oro));color:#0A0A0A;font:700 13.5px var(--sans)}
 @media (max-width:700px){.asoma{top:calc(118px + env(safe-area-inset-top))}}
+/* ── Enviar por WhatsApp: el botón se hunde, un brillo lo cruza, el logo sale volando como mensaje enviado
+   y el texto confirma. No retrasa el enlace: WhatsApp se abre al instante, la animación corre a la par. ── */
+.wa{position:relative;overflow:hidden;isolation:isolate;-webkit-tap-highlight-color:transparent}
+.wa::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.65) 50%,transparent 70%);transform:translateX(-120%)}
+.wa.envia{animation:waHunde .55s var(--resorte)}
+.wa.envia::after{animation:waBrillo .7s var(--ease) .1s}
+@keyframes waHunde{25%{transform:scale(.93)}60%{transform:scale(1.04)}}
+@keyframes waBrillo{to{transform:translateX(120%)}}
+.wa .onda{position:absolute;z-index:-1;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;animation:waOnda .6s var(--ease) forwards}
+@keyframes waOnda{from{transform:scale(0);opacity:1}to{transform:scale(16);opacity:0}}
+.wa .ok{display:inline-flex;align-items:center;gap:9px;animation:sube .4s var(--ease) both}
+.wa .ok svg{animation:pop .45s var(--resorte)}
+.wa-vuelo{position:fixed;z-index:60;left:0;top:0;width:26px;height:26px;color:#25D366;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.4));will-change:transform,opacity}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -630,6 +643,34 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   }
   function esconder() { clearTimeout(asomaT); const a = $('#asoma'); a.classList.remove('si'); a.setAttribute('aria-hidden', 'true'); }
   addEventListener('scroll', () => { if ($('#asoma').classList.contains('si')) esconder(); }, { passive: true });
+
+  // Enviar por WhatsApp: animación a la par del enlace (no se retrasa ni se bloquea la apertura de WhatsApp).
+  document.addEventListener('click', e => {
+    const wa = e.target.closest('.wa');
+    if (!wa || quieto || !carro.size) return;
+    const r = wa.getBoundingClientRect(), onda = document.createElement('span');
+    onda.className = 'onda'; onda.style.left = (e.clientX ? e.clientX - r.left : r.width / 2) + 'px'; onda.style.top = (e.clientY ? e.clientY - r.top : r.height / 2) + 'px';
+    wa.classList.remove('envia'); void wa.offsetWidth; wa.classList.add('envia');
+    const ic = wa.querySelector('svg');   // se toma antes de cambiar el texto
+    if (ic && ic.animate) {
+      const o = ic.getBoundingClientRect(), v = ic.cloneNode(true); v.setAttribute('class', 'wa-vuelo'); document.body.appendChild(v);
+      const x0 = o.left, y0 = o.top, x1 = Math.min(innerWidth - 40, x0 + 140), y1 = Math.max(10, y0 - 260);
+      v.animate([
+        { transform: `translate(${x0}px,${y0}px) scale(1) rotate(0)`, opacity: 1 },
+        { transform: `translate(${x0 + 20}px,${y0 - 40}px) scale(1.6) rotate(-12deg)`, opacity: 1, offset: .3 },
+        { transform: `translate(${x1}px,${y1}px) scale(.6) rotate(24deg)`, opacity: 0 }
+      ], { duration: 650, easing: 'cubic-bezier(.3,.7,.3,1)' }).finished.catch(() => {}).then(() => v.remove());
+    }
+    // El texto cambia en el acto (antes de que el teléfono pase a WhatsApp) y vuelve a la normalidad
+    // unos segundos después de que el cliente regresa a la página.
+    if (!wa.dataset.html) wa.dataset.html = wa.innerHTML;
+    wa.innerHTML = '<span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Abriendo WhatsApp…</span>';
+    wa.appendChild(onda); setTimeout(() => onda.remove(), 700);
+    const volver = () => { clearTimeout(wa._t); wa._t = setTimeout(() => { wa.innerHTML = wa.dataset.html; wa.classList.remove('envia'); }, 2400); };
+    volver();
+    const alRegresar = () => { if (document.visibilityState === 'visible') { volver(); document.removeEventListener('visibilitychange', alRegresar); } };
+    document.addEventListener('visibilitychange', alRegresar);
+  });
 
   document.addEventListener('click', e => {
     const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]'), tab = e.target.closest('[data-g]');

@@ -483,7 +483,7 @@ footer .acceso-equipo:hover{color:var(--texto)}
 .pd-bolsa svg{width:21px;height:21px}
 .pd-ins{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--oro-luz);color:#0A0A0A;font:800 11px/20px var(--sans);text-align:center;font-variant-numeric:tabular-nums}
 .pd-salta{animation:pdSalta .35s var(--resorte)}
-.pd-bolsa.pd-recibe{animation:pdRecibe .5s var(--resorte)}
+.pd-recibe{animation:pdRecibe .5s var(--resorte)}
 @keyframes pdPop{from{transform:scale(.86)}to{transform:none}}
 @keyframes pdSalta{40%{transform:scale(1.22)}}
 @keyframes pdRecibe{30%{transform:scale(1.28) rotate(-8deg)}60%{transform:scale(.94) rotate(4deg)}}
@@ -565,6 +565,15 @@ html.pd-abierta body{overflow:hidden}
   .barra-movil.con-pedido .bm-wa{display:none}
   .barra-movil.con-pedido .bm-pedido{display:flex;align-items:center;justify-content:space-between;gap:8px;height:48px;padding:0 18px 0 20px;border:0;border-radius:999px;background:linear-gradient(180deg,var(--oro-luz),var(--oro));color:#0A0A0A;font:700 15px var(--sans);animation:pdPop .4s var(--resorte)}
   .bm-pedido b{font-variant-numeric:tabular-nums}
+  /* En el celular la bolsa vive en «Ver pedido» (barra de abajo): ahí llega la foto y rebota el contador. */
+  .pd-bolsa{display:none!important}
+  .bm-pedido #bm-pedido-n{margin-right:auto}
+  .barra-movil.con-pedido .bm-pedido{white-space:nowrap;padding:0 16px;gap:6px;font-size:14.5px}
+  .bm-ins:empty{display:none}
+  .bm-bolsa{position:relative;display:grid;place-items:center;width:26px;height:26px;margin-right:4px}
+  .bm-bolsa svg{width:24px;height:24px}
+  .bm-ins{position:absolute;top:-8px;right:-9px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:#0A0A0A;color:var(--oro-luz);font:800 10.5px/18px var(--sans);text-align:center;font-variant-numeric:tabular-nums}
+  .pd-asoma{top:auto;bottom:calc(82px + env(safe-area-inset-bottom));transform:translateY(8px) scale(.94);transform-origin:bottom right}
 }
 @media (prefers-reduced-motion:reduce){.pd-bolsa,.pd-cant,.pd-salta,.pd-recibe,.pd-fila.nueva,.pd-ok,.pd-ok svg,.bm-pedido{animation:none!important}.pd-hoja,.pd-fondo,.pd-asoma{transition:none}}
 </style>
@@ -692,7 +701,7 @@ html.pd-abierta body{overflow:hidden}
 <div class="barra-movil" aria-label="Contactar a STUDIO">
   <a class="bm-llamar" href="tel:+18095706254"><i class="ti ti-phone" aria-hidden="true"></i> Llamar</a>
   <a class="bm-wa js-wa" data-msg="Hola STUDIO, quiero información" href="https://wa.me/18296247623"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i> Escribir por WhatsApp</a>
-  <button type="button" class="bm-pedido" data-pd-abrir><span id="bm-pedido-n">Ver pedido</span><b id="bm-pedido-t">RD$ 0</b></button>
+  <button type="button" class="bm-pedido" data-pd-abrir><span class="bm-bolsa" id="bm-bolsa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><span class="bm-ins" id="bm-ins">0</span></span><span id="bm-pedido-n">Ver pedido</span><b id="bm-pedido-t">RD$ 0</b></button>
 </div>
 <button type="button" class="pd-asoma" id="pd-asoma" data-pd-abrir aria-hidden="true" tabindex="-1"></button>
 <div class="pd-fondo" data-pd-cerrar></div>
@@ -1163,7 +1172,7 @@ document.getElementById('anio').textContent = new Date().getFullYear();
     const txt = n + (n === 1 ? ' artículo' : ' artículos');
     $('#pd-bolsa').hidden = n === 0; $('#pd-ins').textContent = n;
     $('.barra-movil').classList.toggle('con-pedido', n > 0);
-    $('#bm-pedido-n').textContent = 'Ver pedido (' + n + ')'; $('#bm-pedido-t').textContent = fmt(t);
+    $('#bm-pedido-n').textContent = 'Ver pedido'; $('#bm-ins').textContent = n || ''; $('#bm-pedido-t').textContent = n ? fmt(t) : '';
     $('#pd-titulo').textContent = txt; $('#pd-total').textContent = fmt(t);
     $('#pd-lista').innerHTML = filas.join('') || '<p class="pd-vacio">Tu pedido está vacío. Agrega artículos del catálogo.</p>';
     $('#pd-enviar').href = waLink('Hola STUDIO, quiero hacer este pedido:\n\n' + lineas.join('\n') + '\n\nTotal: ' + fmt(t) + '\n\n¿Está disponible?');
@@ -1174,7 +1183,7 @@ document.getElementById('anio').textContent = new Date().getFullYear();
   function cambiar(clave, c) {
     c > 0 ? carro.set(clave, Math.min(99, c)) : carro.delete(clave);
     repintarTarjeta(clave); resumen();
-    saltar($('#pd-ins')); saltar($('#bm-pedido-t'));
+    saltar($('#pd-ins')); saltar($('#bm-ins')); saltar($('#bm-pedido-t'));
     const sec = document.getElementById(clave.split('|')[0]); if (sec) saltar(sec.querySelector('.pd-cant output'));
     saltar(document.querySelector('[data-pd-linea="' + clave + '"] output'));
     if (!carro.size && document.documentElement.classList.contains('pd-abierta')) setTimeout(cerrar, 350);
@@ -1187,8 +1196,9 @@ document.getElementById('anio').textContent = new Date().getFullYear();
   // La foto de la tarjeta vuela en curva a la bolsa (o al botón del pedido en la barra del celular).
   function destino() {
     const b = $('#pd-bolsa'); b.hidden = false;
-    let r = b.getBoundingClientRect(); if (r.width) return { el: b, r };
-    const m = $('.barra-movil'); m.classList.add('con-pedido'); const bp = $('.bm-pedido'); return { el: bp, r: bp.getBoundingClientRect() };
+    const r = b.getBoundingClientRect(); if (r.width) return { el: b, r };
+    // Celular: la bolsa está dentro de «Ver pedido»; en el primer artículo la barra cambia antes de que llegue la foto.
+    $('.barra-movil').classList.add('con-pedido'); const bb = $('#bm-bolsa'); return { el: bb, r: bb.getBoundingClientRect() };
   }
   function volar(sec) {
     const img = sec && (sec.classList.contains('modo-360') ? sec.querySelector('.giro360') : sec.querySelector('.pieza img'));

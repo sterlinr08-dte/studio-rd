@@ -277,6 +277,26 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 .mc.cambia .mc-letra{animation:letra .6s var(--ease) both}
 @keyframes sube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes letra{from{opacity:0;scale:.94}to{opacity:1;scale:1}}
+/* ── Al agregar: la foto vuela a la bolsa en curva, la bolsa rebota y asoma un resumen del pedido ── */
+.vuelo{position:fixed;z-index:48;left:0;top:0;pointer-events:none;object-fit:contain;filter:drop-shadow(0 14px 14px rgba(0,0,0,.45));will-change:transform,opacity}
+.bolsa.recibe{animation:recibe .5s var(--resorte)}
+@keyframes recibe{30%{transform:scale(1.28) rotate(-8deg)}60%{transform:scale(.94) rotate(4deg)}}
+.asoma{position:fixed;z-index:45;right:12px;top:calc(72px + env(safe-area-inset-top));width:min(300px,calc(100vw - 24px));padding:12px;border-radius:22px;background:rgba(18,20,25,.92);backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);border:1px solid var(--linea2);box-shadow:0 30px 60px -20px rgba(0,0,0,.85);color:var(--texto);text-align:left;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.94);transform-origin:top right;transition:opacity .25s var(--ease),transform .45s var(--resorte),visibility .45s}
+.asoma.si{opacity:1;visibility:visible;transform:none}
+.asoma-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;font:600 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--suave);padding:0 2px 8px}
+.asoma-cab b{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--oro-luz);color:#0A0A0A;font:800 11px/20px var(--sans);letter-spacing:0;text-align:center}
+.asoma-fila{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:6px 2px;border-top:1px solid var(--linea)}
+.asoma-fila .mini{width:44px;height:44px;border-radius:12px;background:radial-gradient(60% 60% at 50% 45%,color-mix(in oklab,var(--tono),#fff 18%),var(--tono));display:grid;place-items:center;overflow:hidden}
+.asoma-fila .mini img{width:86%;height:86%;object-fit:contain}
+.asoma-fila h4{font:700 13px/1.2 var(--disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asoma-fila small{font:500 11.5px var(--mono);color:var(--suave);font-variant-numeric:tabular-nums}
+.asoma-fila>b{font:800 13.5px var(--disp);font-variant-numeric:tabular-nums}
+.asoma-fila.nueva{animation:sube .45s var(--ease) both}
+.asoma-mas{font:500 12px var(--sans);color:var(--suave);padding:4px 2px 0}
+.asoma-pie{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-top:10px;border-top:1px solid var(--linea2)}
+.asoma-pie b{font:800 18px var(--disp);font-variant-numeric:tabular-nums}
+.asoma-pie span{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;background:linear-gradient(180deg,var(--oro-luz),var(--oro));color:#0A0A0A;font:700 13.5px var(--sans)}
+@media (max-width:700px){.asoma{top:calc(118px + env(safe-area-inset-top))}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}.js .mc,.js .mc .mc-escena img{opacity:1!important;transform:none!important;translate:none!important;scale:none!important}}
 </style>
 </head>
@@ -292,6 +312,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
 <main class="wrap" id="app">
   <div class="aviso" id="estado"><p>Cargando catálogo…</p></div>
 </main>
+<button class="asoma" id="asoma" data-abrir aria-hidden="true" tabindex="-1"></button>
 <div class="carro" id="carro" aria-live="polite">
   <div class="wrap">
     <button class="res" data-abrir aria-haspopup="dialog"><small><span id="carro-n">0 artículos</span><span class="ver-txt"> · <u>Ver pedido</u></span></small><b id="carro-t">RD$0</b></button>
@@ -562,16 +583,68 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
     if (!carro.size && document.body.classList.contains('abierta')) setTimeout(cerrar, 350);
   }
 
+  // Al agregar desde una tarjeta: la foto (la de la variante elegida) vuela en curva hasta la bolsa,
+  // la bolsa rebota y asoma un resumen del pedido que se cierra solo; tocarlo abre el pedido completo.
+  function destino() {
+    const b = $('#bolsa'); b.hidden = false;   // en el primer artículo la bolsa aparece para recibir la foto
+    const r = b.getBoundingClientRect();
+    return r.width ? { el: b, r } : { el: $('#carro-t'), r: $('#carro-t').getBoundingClientRect() };
+  }
+  function volar(tarjeta) {
+    const img = tarjeta && tarjeta.querySelector('.mc-escena img');
+    if (quieto || !img || !img.animate) return Promise.resolve();
+    const o = img.getBoundingClientRect(), { el, r: d } = destino();
+    const w = Math.min(o.width, 150), h = w * (o.height / o.width || 1);
+    const x0 = o.left + o.width / 2 - w / 2, y0 = o.top + o.height / 2 - h / 2;
+    const x1 = d.left + d.width / 2 - w / 2, y1 = d.top + d.height / 2 - h / 2;
+    const cy = Math.min(y0, y1) - 110, pasos = 16, kf = [];
+    for (let i = 0; i <= pasos; i++) {
+      const t = i / pasos, u = 1 - t;
+      const x = x0 + (x1 - x0) * t, y = u * u * y0 + 2 * u * t * cy + t * t * y1;
+      kf.push({ transform: `translate(${x}px,${y}px) rotate(${-18 * t}deg) scale(${1 - .82 * t})`, opacity: t > .9 ? 1 - (t - .9) * 8 : 1 });
+    }
+    const v = img.cloneNode(); v.className = 'vuelo'; v.removeAttribute('loading');
+    v.style.width = w + 'px'; v.style.height = h + 'px';
+    document.body.appendChild(v);
+    return v.animate(kf, { duration: 720, easing: 'cubic-bezier(.45,0,.25,1)' }).finished.catch(() => {}).then(() => {
+      v.remove(); el.classList.remove('recibe'); void el.offsetWidth; el.classList.add('recibe');
+    });
+  }
+  let asomaT = 0;
+  function asomar(id) {
+    if (quieto) return;
+    const a = $('#asoma'), filas = [...carro].reverse(), n = filas.reduce((s, [, c]) => s + c, 0);
+    let t = 0; for (const [i, c] of carro) { const p = items.find(x => x.id === i); if (p) t += c * p.precio; }
+    const vis = filas.slice(0, 3).map(([i, c]) => {
+      const p = items.find(x => x.id === i); if (!p) return '';
+      return '<div class="asoma-fila' + (i === id ? ' nueva' : '') + '" style="--tono:' + esc(p.tono || '#2a2f38') + '"><div class="mini">' + (p.foto ? '<img src="' + esc(p.foto) + '" alt="">' : '') + '</div>'
+        + '<div><h4>' + esc(p.nombre) + '</h4><small>' + c + ' × ' + rd(p.precio) + '</small></div><b>' + rd(c * p.precio) + '</b></div>';
+    }).join('');
+    const resto = filas.length - 3;
+    a.innerHTML = '<div class="asoma-cab">Tu pedido <b>' + n + '</b></div>' + vis
+      + (resto > 0 ? '<p class="asoma-mas">+ ' + resto + (resto === 1 ? ' artículo más' : ' artículos más') + '</p>' : '')
+      + '<div class="asoma-pie"><b>' + rd(t) + '</b><span>Ver pedido</span></div>';
+    a.setAttribute('aria-label', 'Ver pedido: ' + n + ' artículos, ' + rd(t));
+    a.classList.add('si'); a.setAttribute('aria-hidden', 'false');
+    clearTimeout(asomaT); asomaT = setTimeout(esconder, 2600);
+  }
+  function esconder() { clearTimeout(asomaT); const a = $('#asoma'); a.classList.remove('si'); a.setAttribute('aria-hidden', 'true'); }
+  addEventListener('scroll', () => { if ($('#asoma').classList.contains('si')) esconder(); }, { passive: true });
+
   document.addEventListener('click', e => {
     const mas = e.target.closest('[data-mas]'), menos = e.target.closest('[data-menos]'), tab = e.target.closest('[data-g]');
     const quitar = e.target.closest('[data-quitar]');
     const vb = e.target.closest('[data-var]');
     if (vb) { elegir(+vb.dataset.var); return; }
-    if (e.target.closest('[data-abrir]')) abrir();
+    if (e.target.closest('[data-abrir]')) { esconder(); abrir(); }
     else if (e.target.closest('[data-cerrar]')) cerrar();
     else if (e.target.closest('[data-vaciar]')) { if (confirm('¿Vaciar todo el pedido?')) { const ids = [...carro.keys()]; carro.clear(); ids.forEach(repintar); resumen(); setTimeout(cerrar, 250); } }
     else if (quitar) cambiar(+quitar.dataset.quitar, 0);
-    else if (mas) { const id = +mas.dataset.mas; cambiar(id, (carro.get(id) || 0) + 1); }
+    else if (mas) {
+      const id = +mas.dataset.mas, tarjeta = mas.closest('.mc');
+      if (tarjeta && !quieto) { volar(tarjeta).then(() => { cambiar(id, (carro.get(id) || 0) + 1); asomar(id); }); }
+      else cambiar(id, (carro.get(id) || 0) + 1);
+    }
     else if (menos) { const id = +menos.dataset.menos; cambiar(id, (carro.get(id) || 0) - 1); }
     else if (tab) {
       marcarTab(tab.dataset.g);

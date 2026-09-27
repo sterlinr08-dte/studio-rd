@@ -1,7 +1,14 @@
 {
-  "version": "59.58",
+  "version": "59.59",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.59",
+      "fecha": "2026-09-27",
+      "notas": [
+        "Las fotos de productos se actualizan siempre: la app instalada ya no se queda con fotos viejas guardadas."
+      ]
+    },
     {
       "version": "59.58",
       "fecha": "2026-09-27",

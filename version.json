@@ -1,7 +1,14 @@
 {
-  "version": "59.57",
+  "version": "59.58",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.58",
+      "fecha": "2026-09-27",
+      "notas": [
+        "Fotos de los CW Smart TV pulidas: los 5 tamaños iguales y sin deformaciones, textos de la caja corregidos (PULGADAS, Netflix, YouTube)."
+      ]
+    },
     {
       "version": "59.57",
       "fecha": "2026-09-26",

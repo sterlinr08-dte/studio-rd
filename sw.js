@@ -1,7 +1,7 @@
 // NEXUS PRO v10 — Service Worker
 // Cachea SOLO archivos estáticos. No toca datos ni peticiones dinámicas.
 
-const CACHE_NAME = 'studio-rd-v2';
+const CACHE_NAME = 'studio-rd-v3';  // v3 (27-sep-2026): purga imágenes viejas guardadas (fotos de TV)
 const ASSETS_OPCIONALES = [
   '/manifest.json',
   '/icon-192.png',
@@ -48,16 +48,33 @@ self.addEventListener('fetch', e => {
   const esImagen = /\.(png|jpg|jpeg|webp|gif|svg|ico)$/i.test(url);
   if (!esImagen) return; // todo lo demás pasa directo
 
+  // Fotos de productos de la tienda/catálogo: primero la red (siempre la versión publicada),
+  // la copia guardada solo si no hay conexión. Antes era «caché para siempre» y el teléfono
+  // seguía mostrando fotos viejas después de publicar (27-sep-2026).
+  if (url.includes('/img/tienda/')) {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Resto de imágenes/iconos: se responde con la copia guardada y se actualiza en segundo plano.
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
+      const red = fetch(e.request).then(resp => {
         if (resp && resp.status === 200) {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return resp;
       }).catch(() => cached);
+      return cached || red;
     })
   );
 });

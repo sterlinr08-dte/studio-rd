@@ -569,6 +569,9 @@ html.pd-abierta body{overflow:hidden}
   .pd-bolsa{display:none!important}
   .bm-pedido #bm-pedido-n{margin-right:auto}
   .barra-movil.con-pedido .bm-pedido{white-space:nowrap;padding:0 16px;gap:6px;font-size:14.5px}
+  .barra-movil.con-pedido{grid-template-columns:auto auto;justify-content:space-between}
+  .barra-movil.con-pedido .bm-pedido{padding:0 20px 0 16px;gap:10px}
+  .bm-pedido #bm-pedido-n{margin-right:0}
   .bm-ins:empty{display:none}
   .bm-bolsa{position:relative;display:grid;place-items:center;width:26px;height:26px;margin-right:4px}
   .bm-bolsa svg{width:24px;height:24px}
@@ -1219,7 +1222,7 @@ document.getElementById('anio').textContent = new Date().getFullYear();
     for (const [k, c] of carro) { const it = info(k); if (it) { n += c; t += c * it.precio; } }
     a.innerHTML = '<div class="pd-asoma-cab">Tu pedido <b>' + n + '</b></div>' + filas.slice(0, 3).map(([k, c]) => { const it = info(k); return it ? '<div class="pd-fila' + (k === clave ? ' nueva' : '') + '" style="--tono:' + esc(it.tono) + '"><div class="pd-mini"><img src="' + esc(it.foto) + '" alt=""></div><div><h4>' + esc(it.nombre) + '</h4><small>' + c + ' × ' + fmt(it.precio) + '</small></div><b>' + fmt(c * it.precio) + '</b></div>' : ''; }).join('')
       + (filas.length > 3 ? '<p class="pd-mas">+ ' + (filas.length - 3) + (filas.length === 4 ? ' artículo más' : ' artículos más') + '</p>' : '')
-      + '<div class="pd-asoma-pie"><b>' + fmt(t) + '</b><span>Ver pedido</span></div>';
+      + '<div class="pd-asoma-pie"><b>' + fmt(t) + '</b><span>Ver</span></div>';
     a.setAttribute('aria-label', 'Ver pedido: ' + n + ' artículos, ' + fmt(t));
     a.classList.add('si'); a.setAttribute('aria-hidden', 'false');
     clearTimeout(asomaT); asomaT = setTimeout(esconder, 2600);

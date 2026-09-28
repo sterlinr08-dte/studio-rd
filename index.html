@@ -4,6 +4,20 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>Studio — Hogar, movilidad y tecnología</title>
+<!-- Sentry (28-sep-2026): alarma de errores del navegador. Solo errores: sin Session Replay, sin Tracing, sin datos
+     personales (sendDefaultPii:false). El loader es chico (~3 KB) y baja el SDK completo solo cuando ocurre un error. -->
+<script>
+window.sentryOnLoad=function(){
+  Sentry.init({
+    environment:/studiord\.net$/.test(location.hostname)?'produccion':'pruebas',
+    sendDefaultPii:false,
+    // No reportar errores de extensiones del navegador ni de páginas abiertas en local.
+    denyUrls:[/extensions\//i,/^chrome:\/\//i,/^safari-(web-)?extension:/i],
+    beforeSend:function(e){ if(!/studiord\.net$/.test(location.hostname)) return null; return e; }
+  });
+};
+</script>
+<script src="https://js.sentry-cdn.com/b3c89ff2adf6d1a833e1d01a96b7891d.min.js" crossorigin="anonymous"></script>
 <script>/* Marca por dominio: en studiord.net el login/splash usan la piel STUDIO (solo CSS + textos; misma app). */
 (function(){try{if(true){document.documentElement.classList.add('nx-studio');document.title='Iniciar sesión · Studio';var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';document.head.appendChild(l);}}catch(e){}})();</script>
 

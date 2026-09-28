@@ -134,6 +134,7 @@
   }
 
   function vistaRedes() {
+    if (BD.cargado) bdTimer();   // Instagram/Facebook también en tiempo real
     const pch = (k, l, ic, col) => `<button class="rs-canal${BD.red === k ? ' on' : ''}" onclick="window.nxCRM.red('${k}')"><i class="ti ${ic}" style="color:${col}"></i> ${l}</button>`;
     return `<div class="rs-hub crm-ocultar-en-chat"><div class="rs-hub-head"><div class="rs-hub-title"><div class="rs-hub-icon"><i class="ti ti-affiliate"></i></div><div><h3>Redes Sociales</h3><p>Gestiona tus mensajes desde un solo lugar</p></div></div>
         <div class="rs-hub-buscar"><i class="ti ti-search"></i><input type="text" value="${esc(BD.q)}" placeholder="Buscar conversaciones..." oninput="window.nxCRM.bdBuscar(this.value)"></div></div>
@@ -512,16 +513,116 @@
     }
     if (faltan.length) { const m = document.getElementById('bdMsgs'); if (m) { m.innerHTML = bdMsgsHTML(); bdAlFondo(); } }
   }
-  function bdTimer() {
-    if (BD.timer) return;
-    BD.timer = setInterval(async () => {
-      if (!document.querySelector('.crmB .wa-shell') || document.hidden) { if (!document.querySelector('.crmB .wa-shell')) { clearInterval(BD.timer); BD.timer = null; } return; }
-      const antes = BD.sel ? (BD.convs.find(x => String(x.id) === String(BD.sel)) || {}).ultimo_mensaje_at : null;
-      await bdCargar();
-      if (BD.sel) { const c = BD.convs.find(x => String(x.id) === String(BD.sel)); if (c && c.ultimo_mensaje_at !== antes) { await bdCargarMsgs(BD.sel); if (c.no_leidos > 0) api().patch('crm_conversaciones', 'id=eq.' + c.id, { no_leidos: 0 }).catch(() => {}); } }
-      bdPintarParcial();
-    }, 10000);
+  // Respaldo por consulta: cada 10 s si el tiempo real no está conectado; cada 60 s si lo está (por si se perdió un evento).
+  let bdUltimaConsulta = 0;
+  async function bdRefrescar() {
+    bdUltimaConsulta = Date.now();
+    const antes = BD.sel ? (BD.convs.find(x => String(x.id) === String(BD.sel)) || {}).ultimo_mensaje_at : null;
+    await bdCargar();
+    if (BD.sel) { const c = BD.convs.find(x => String(x.id) === String(BD.sel)); if (c && c.ultimo_mensaje_at !== antes) { await bdCargarMsgs(BD.sel); if (c.no_leidos > 0) api().patch('crm_conversaciones', 'id=eq.' + c.id, { no_leidos: 0 }).catch(() => {}); } }
+    bdPintarParcial();
   }
+  function bdTimer() {
+    bdRealtime();
+    if (BD.timer) return;
+    BD.timer = setInterval(() => {
+      if (!document.querySelector('.crmB .wa-shell')) { clearInterval(BD.timer); BD.timer = null; bdRealtimeCerrar(); return; }
+      if (document.hidden) return;
+      if (Date.now() - bdUltimaConsulta < (BD.rt.vivo ? 60000 : 10000)) return;
+      bdRefrescar();
+    }, 2000);
+  }
+
+  // ── Tiempo real (28-sep-2026): los mensajes entrantes, los enviados (también los del teléfono) y los cambios de estado
+  // (✓ enviado, ✓✓ entregado, ✓✓ azul leído) aparecen al instante, igual que en WhatsApp. Mismo patrón probado del inbox
+  // de NEXUS PRO: SDK supabase-js (UMD) y setAuth con el token del usuario ANTES de suscribirse, para que la RLS se
+  // aplique como «authenticated» (sin eso cada evento llega 401). Solo LEE: nada se envía solo.
+  BD.rt = { sb: null, canal: null, vivo: false, token: '', reintento: null, pintar: null };
+  function bdCargarSDK() {
+    return new Promise((resolve) => {
+      if (window.supabase && window.supabase.createClient) return resolve();
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+      s.onload = resolve; s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+  }
+  function bdPintarPronto() { clearTimeout(BD.rt.pintar); BD.rt.pintar = setTimeout(bdPintarParcial, 60); }
+  function bdOrdenar() { BD.convs.sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || ''))); }
+  function bdEvConversacion(ev) {
+    const n = ev.new || {};
+    if (!n.id) return;
+    const i = BD.convs.findIndex(x => String(x.id) === String(n.id));
+    if (n.archivada) { if (i >= 0) BD.convs.splice(i, 1); }
+    else if (i >= 0) BD.convs[i] = Object.assign({}, BD.convs[i], n);
+    else BD.convs.push(n);
+    bdOrdenar();
+    // Si la conversación está abierta en pantalla, lo nuevo ya se está viendo: no cuenta como no leído.
+    if (String(n.id) === String(BD.sel) && n.no_leidos > 0 && !document.hidden) {
+      const c = BD.convs.find(x => String(x.id) === String(n.id)); if (c) c.no_leidos = 0;
+      api().patch('crm_conversaciones', 'id=eq.' + n.id, { no_leidos: 0 }).catch(() => {});
+    }
+    bdPintarPronto();
+  }
+  function bdEvMensaje(ev) {
+    const n = ev.new || {};
+    if (!n.id || String(n.conversacion_id) !== String(BD.sel)) return;
+    const i = BD.msgs.findIndex(x => String(x.id) === String(n.id));
+    if (i >= 0) BD.msgs[i] = Object.assign({}, BD.msgs[i], n);
+    else {
+      // Reemplaza la burbuja provisional («enviando…») del mismo texto en vez de duplicarla.
+      const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && x.cuerpo === n.cuerpo) : -1;
+      if (t >= 0) BD.msgs[t] = n; else BD.msgs.push(n);
+      BD.msgs.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+    }
+    bdPintarPronto();
+  }
+  async function bdRealtime() {
+    const A = api() || {};
+    if (!A.url || !A.key) return;
+    const tok = A.token || '';
+    if (BD.rt.sb) {
+      // El token de la sesión se renueva: se lo pasamos al socket para que no pierda los permisos.
+      if (tok && tok !== BD.rt.token) { BD.rt.token = tok; try { await BD.rt.sb.realtime.setAuth(tok); } catch (e) {} }
+      if (!BD.rt.canal) bdSuscribir();   // se había cerrado al salir de la bandeja
+      return;
+    }
+    try {
+      await bdCargarSDK();
+      if (!window.supabase || !window.supabase.createClient) return;
+      BD.rt.sb = window.supabase.createClient(A.url, A.key, { auth: { persistSession: false, autoRefreshToken: false } });
+      if (tok) { BD.rt.token = tok; await BD.rt.sb.realtime.setAuth(tok); }
+      bdSuscribir();
+    } catch (e) { console.error('[CRM bandeja] tiempo real', e); BD.rt.sb = null; }
+  }
+  function bdSuscribir() {
+    const sb = BD.rt.sb; if (!sb) return;
+    if (BD.rt.canal) { try { sb.removeChannel(BD.rt.canal); } catch (e) {} }
+    BD.rt.canal = sb.channel('studio-crm-bandeja')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversaciones' }, bdEvConversacion)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_mensajes' }, bdEvMensaje)
+      .subscribe((estado) => {
+        const antes = BD.rt.vivo;
+        BD.rt.vivo = estado === 'SUBSCRIBED';
+        // Al (re)conectar se recarga una vez por si llegó algo mientras estaba desconectado.
+        if (BD.rt.vivo && !antes) bdRefrescar();
+        if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT' || estado === 'CLOSED') {
+          clearTimeout(BD.rt.reintento);
+          if (document.querySelector('.crmB .wa-shell')) BD.rt.reintento = setTimeout(async () => { const A = api() || {}; if (A.token && BD.rt.sb) { BD.rt.token = A.token; try { await BD.rt.sb.realtime.setAuth(A.token); } catch (e) {} } bdSuscribir(); }, 5000);
+        }
+      });
+  }
+  function bdRealtimeCerrar() {
+    clearTimeout(BD.rt.reintento);
+    if (BD.rt.sb && BD.rt.canal) { try { BD.rt.sb.removeChannel(BD.rt.canal); } catch (e) {} }
+    BD.rt.canal = null; BD.rt.vivo = false;
+  }
+  // Al volver a la pestaña (iPhone suspende el socket en segundo plano): reconectar y ponerse al día.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !document.querySelector('.crmB .wa-shell')) return;
+    if (BD.rt.sb && !BD.rt.vivo) bdSuscribir(); else bdRealtime();
+    bdRefrescar();
+  });
   async function bdAbrir(id) {
     BD.sel = id; BD.msgs = []; repintar();
     await bdCargarMsgs(id);

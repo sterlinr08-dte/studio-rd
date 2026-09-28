@@ -1,7 +1,16 @@
 {
-  "version": "59.66",
+  "version": "59.67",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.67",
+      "fecha": "2026-09-28",
+      "notas": [
+        "Bandeja del CRM: enviar plantilla cuando pasaron 24 horas, responder citando un mensaje y botón «Reintentar» si un mensaje falla.",
+        "Los chats largos abren en lo más reciente y cargan los mensajes anteriores al subir; en el iPhone el chat se ajusta al teclado.",
+        "La pestaña Redes queda junto a Mensajes (WhatsApp)."
+      ]
+    },
     {
       "version": "59.66",
       "fecha": "2026-09-28",

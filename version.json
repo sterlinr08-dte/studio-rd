@@ -1,7 +1,14 @@
 {
-  "version": "59.67",
+  "version": "59.68",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.68",
+      "fecha": "2026-09-28",
+      "notas": [
+        "CRM: botón «Sincronizar conversaciones» que trae a la bandeja los chats y mensajes anteriores de WhatsApp e Instagram, sin duplicar ni enviar nada."
+      ]
+    },
     {
       "version": "59.67",
       "fecha": "2026-09-28",

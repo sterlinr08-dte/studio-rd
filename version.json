@@ -1,7 +1,14 @@
 {
-  "version": "59.64",
+  "version": "59.65",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.65",
+      "fecha": "2026-09-28",
+      "notas": [
+        "Alarma de errores (Sentry) en el sistema, la tienda y mayoristas: avisa si algo falla, sin grabar pantallas ni datos personales."
+      ]
+    },
     {
       "version": "59.64",
       "fecha": "2026-09-28",

@@ -136,15 +136,24 @@ async function procesarMensaje(p: Any, canal: Any, canales: Any[]) {
   const cuando = p.timestamp ?? msg.timestamp ?? new Date().toISOString();
 
   if (!entrante && pid) {
+    // Si ya existe con este id (crm-enviar lo guardó primero), no se duplica.
+    const { data: ya } = await db.from("crm_mensajes").select("id").eq("proveedor_msg_id", pid).maybeSingle();
+    if (ya) return;
     // Espejo de un envío hecho desde STUDIO que aún no tiene id del proveedor: se completa en vez de duplicarlo.
+    // Adjunto sin texto: el webhook trae cuerpo "" y la base guarda null → se compara por tipo con adjunto (fix 28-sep-2026).
     const desde = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data: propio } = await db.from("crm_mensajes").select("id").eq("conversacion_id", c.id).eq("direccion", "out").is("proveedor_msg_id", null)
-      .eq("cuerpo", cuerpo).gte("created_at", desde).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    let q = db.from("crm_mensajes").select("id").eq("conversacion_id", c.id).eq("direccion", "out").is("proveedor_msg_id", null).gte("created_at", desde);
+    q = cuerpo ? q.eq("cuerpo", cuerpo) : q.or("cuerpo.is.null,cuerpo.eq.").not("media_path", "is", null);
+    const { data: propio } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (propio) { await db.from("crm_mensajes").update({ proveedor_msg_id: pid, estado: "enviado" }).eq("id", propio.id); return; }
   }
+  // El cliente (o el teléfono) citó un mensaje: se enlaza al original si lo tenemos.
+  let respondeA: string | null = null;
+  const citado = p.metadata?.quotedMessageId ?? msg.quotedMessageId ?? msg.context?.id ?? null;
+  if (citado) { const { data: o } = await db.from("crm_mensajes").select("id").eq("proveedor_msg_id", String(citado)).maybeSingle(); respondeA = o?.id ?? null; }
   const ins = await db.from("crm_mensajes").insert({
     organizacion_id: canal.organizacion_id, conversacion_id: c.id, direccion: entrante ? "in" : "out", tipo, cuerpo, media_path: mediaPath,
-    proveedor_msg_id: pid, estado: entrante ? "recibido" : "enviado", desde_telefono: !entrante, created_at: cuando,
+    proveedor_msg_id: pid, estado: entrante ? "recibido" : "enviado", desde_telefono: !entrante, created_at: cuando, responde_a_id: respondeA,
   });
   if (ins.error && ins.error.code !== "23505") throw new Error("mensaje: " + ins.error.message);
 

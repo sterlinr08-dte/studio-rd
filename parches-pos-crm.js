@@ -79,7 +79,7 @@
   async function recargar() { await cargar(); repintar(); if (S.ficha) pintarFicha(); }
 
   // ── Pantalla igual a la del CRM de BAYOL CELL (pedido del dueño: «Yo quiero el CRM que tengo en bayol cell taller»):
-  // selector de línea, pestañas Mensajes · Leads · Campañas · Redes, Buscar + Filtros, chips Todos/No leídos/Pendientes.
+  // selector de línea, pestañas Mensajes · Redes · Leads · Campañas (Redes junto a WhatsApp, pedido del dueño 28-sep-2026), Buscar + Filtros, chips Todos/No leídos/Pendientes.
   function render() {
     ensureCSS();
     if (!S.cargado && !S.error) { cargar().then(repintar); }
@@ -100,7 +100,7 @@
     return `<div class="nxCrm crmB${BD.sel && (S.vista === 'mensajes' || S.vista === 'redes') ? ' chat-abierto' : ''}">
       <div class="crm-ocultar-en-chat">${S.vista === 'mensajes' ? selector : ''}
       <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
-        ${tab('mensajes', 'Mensajes', 'ti-brand-whatsapp')}${tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '')}${tab('campanas', 'Campañas', 'ti-speakerphone')}${tab('redes', 'Redes', 'ti-share')}
+        ${tab('mensajes', 'Mensajes', 'ti-brand-whatsapp')}${tab('redes', 'Redes', 'ti-share')}${tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '')}${tab('campanas', 'Campañas', 'ti-speakerphone')}
       </div>
       <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}

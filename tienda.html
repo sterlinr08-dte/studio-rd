@@ -284,6 +284,8 @@ footer .acceso-equipo:hover{color:var(--texto)}
 .hero-escena[data-modelo="1"]{--luz-x:7%}.hero-escena[data-modelo="2"]{--luz-x:-7%}
 .hero-letra{position:absolute;top:8%;left:0;right:0;text-align:center;font:800 clamp(100px,15vw,210px)/1 var(--disp);letter-spacing:-.075em;color:transparent;-webkit-text-stroke:1px rgba(247,245,239,.12);z-index:-1;pointer-events:none}
 .hero-pedestal{position:absolute;left:8%;right:8%;bottom:10%;height:14%;border-radius:50%;border:1px solid rgba(201,162,39,.36);background:rgba(247,245,239,.025);box-shadow:0 24px 34px rgba(0,0,0,.24);z-index:-1}
+picture:has(>#hero-foto){display:contents}
+#hero-foto-m{display:none}
 #hero-foto{width:96%;height:90%;object-fit:contain;filter:drop-shadow(0 24px 20px rgba(0,0,0,.45));cursor:grab}
 #hero-foto:active{cursor:grabbing}
 .hero-contador{position:absolute;bottom:0;right:5%;font:500 11px var(--mono);letter-spacing:.12em;color:var(--suave)}
@@ -629,7 +631,7 @@ html.pd-abierta body{overflow:hidden}
         <div class="hero-escena" id="hero-escena" data-modelo="0">
           <span class="hero-letra" aria-hidden="true" id="hero-letra">N9</span>
           <div class="hero-pedestal" aria-hidden="true"></div>
-          <img id="hero-foto" src="img/tienda/hd/lq-n9.webp" alt="Pasola eléctrica LQ-N9" width="900" height="721" fetchpriority="high" draggable="false">
+          <picture><source id="hero-foto-m" media="(max-width: 700px)" srcset="img/tienda/hd/m/lq-n9.webp"><img id="hero-foto" src="img/tienda/hd/lq-n9.webp" alt="Pasola eléctrica LQ-N9" width="900" height="721" fetchpriority="high" draggable="false"></picture>
           <span class="hero-contador" aria-hidden="true"><b id="hero-numero">01</b> / 03</span>
         </div>
         <div class="hero-controles" role="group" aria-label="Elegir modelo destacado">
@@ -1115,7 +1117,10 @@ document.getElementById('anio').textContent = new Date().getFullYear();
     if (destino === actual) { feedback.textContent = ''; return; }
     feedback.classList.remove('hero-error');
     feedback.textContent = 'Cargando ' + p.nombre + '…';
-    const nueva = new Image(); nueva.src = p.recorte || p.foto;
+    // Celular: versión liviana de la foto de portada (img/tienda/hd/m/, 900 px) — misma que usa <picture>.
+    const grande = p.recorte || p.foto, movil = /img\/tienda\/hd\/[a-z0-9-]+\.webp$/.test(grande) ? grande.replace('/hd/', '/hd/m/') : grande;
+    const enMovil = matchMedia('(max-width: 700px)').matches;
+    const nueva = new Image(); nueva.src = enMovil ? movil : grande;
     try {
       if (nueva.decode) await nueva.decode();
       else await new Promise((resolve, reject) => { if (nueva.complete) return nueva.naturalWidth ? resolve() : reject(); nueva.onload = resolve; nueva.onerror = reject; });
@@ -1123,7 +1128,7 @@ document.getElementById('anio').textContent = new Date().getFullYear();
     if (turno !== revision) return;
     const direccion = destino === (actual + 1) % modelos.length ? 1 : -1;
     actual = destino;
-    fotos.src = p.recorte || p.foto; fotos.alt = 'Pasola eléctrica ' + p.nombre;
+    document.getElementById('hero-foto-m').srcset = movil; fotos.src = grande; fotos.alt = 'Pasola eléctrica ' + p.nombre;
     document.getElementById('hero-modelo').textContent = p.nombre;
     document.getElementById('hero-sub').textContent = p.sub;
     document.getElementById('hero-estado').innerHTML = badge(p.estado || '');

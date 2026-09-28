@@ -1,7 +1,15 @@
 {
-  "version": "59.65",
+  "version": "59.66",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.66",
+      "fecha": "2026-09-28",
+      "notas": [
+        "Bandeja del CRM en tiempo real: los mensajes de WhatsApp e Instagram llegan al instante, y los ✓✓ de entregado y leído se actualizan solos.",
+        "WhatsApp de STUDIO (829-624-7623) e Instagram studio__rd conectados a la bandeja."
+      ]
+    },
     {
       "version": "59.65",
       "fecha": "2026-09-28",

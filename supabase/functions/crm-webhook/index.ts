@@ -14,7 +14,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const WEBHOOK_SECRET = Deno.env.get("ZERNIO_WEBHOOK_SECRET") ?? "";
+// Secreto de firma: variable ZERNIO_WEBHOOK_SECRET o, si no está, crm_secretos('zernio_webhook') (generado en la base,
+// solo service_role; así la clave nunca pasa por el chat ni el repo — 28-sep-2026).
+let WEBHOOK_SECRET = Deno.env.get("ZERNIO_WEBHOOK_SECRET") ?? "";
 const ZERNIO_API_KEY = Deno.env.get("ZERNIO_API_KEY") ?? "";
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -172,6 +174,10 @@ async function procesarEstado(p: Any) {
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
   const raw = await req.text();
+  if (!WEBHOOK_SECRET) {
+    const { data: sec } = await db.from("crm_secretos").select("valor").eq("nombre", "zernio_webhook").maybeSingle();
+    WEBHOOK_SECRET = String(sec?.valor ?? "");
+  }
   if (!WEBHOOK_SECRET) return json({ ok: false, error: "webhook_secret_not_configured" }, 503);
   if (!(await firmaValida(raw, req.headers.get("X-Zernio-Signature")))) return json({ ok: false, error: "invalid_signature" }, 401);
   let p: Any; try { p = JSON.parse(raw); } catch { return json({ ok: false, error: "invalid_json" }, 400); }

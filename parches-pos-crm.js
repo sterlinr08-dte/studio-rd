@@ -102,7 +102,7 @@
       <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
         ${tab('mensajes', 'Mensajes', 'ti-brand-whatsapp')}${tab('redes', 'Redes', 'ti-share')}${tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '')}${tab('campanas', 'Campañas', 'ti-speakerphone')}
       </div>
-      <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
+      <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.bdSincronizar()" title="Sincronizar conversaciones" aria-label="Sincronizar conversaciones"><i class="ti ti-cloud-download"></i></button><button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}
     </div>`;
   }
@@ -834,6 +834,46 @@
     if (String(BD.sel) === String(conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(conv), bdCargar()]); bdPintarParcial(); bdAlFondo(); }
   }
 
+  // ── Sincronizar conversaciones (28-sep-2026): trae de Zernio los chats y mensajes que ya existían antes de conectar la
+  // bandeja (historial del WhatsApp Business del teléfono e Instagram). No duplica, no crea leads, no marca no leídos.
+  async function bdSincronizar() {
+    if (BD.sincronizando) return;
+    if (!confirm('¿Sincronizar las conversaciones de WhatsApp e Instagram? Se traen los chats y mensajes anteriores que guarda Zernio. No se envía nada a los clientes.')) return;
+    BD.sincronizando = true;
+    cerrar('bdSincM');
+    const ov = document.createElement('div'); ov.id = 'bdSincM'; ov.className = 'overlay open';
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:440px"><div class="mt"><span><i class="ti ti-cloud-download"></i> Sincronizar conversaciones</span></div><div id="bdSincTx" class="bd-sinc">Preparando…</div><div class="bd-sinc-barra"><i id="bdSincBar"></i></div><p class="crm-nota">No cierres esta ventana. Puede tardar unos minutos si hay muchos chats.</p></div>`;
+    document.body.appendChild(ov);
+    const tx = t => { const e = document.getElementById('bdSincTx'); if (e) e.innerHTML = t; };
+    const b = apiBase();
+    const llamar = async (body) => {
+      const r = await fetch(`${b.url}/functions/v1/crm-sincronizar`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({})); if (!r.ok || !j.ok) throw new Error(j.mensaje || j.error || ('HTTP ' + r.status)); return j;
+    };
+    const tot = { chats: 0, nuevos: 0, leidos: 0 };
+    try {
+      const { canales } = await llamar({});
+      if (!canales || !canales.length) throw new Error('No hay canales encendidos');
+      for (let ci = 0; ci < canales.length; ci++) {
+        const cn = canales[ci], nom = (PLAT[cn.plataforma] || PLAT.whatsapp)[0];
+        let cursor = null, vueltas = 0;
+        do {
+          tx(`<b>${esc(nom)}</b> (${ci + 1} de ${canales.length})<br>${tot.chats} chats revisados · ${tot.nuevos} mensajes nuevos`);
+          const bar = document.getElementById('bdSincBar'); if (bar) bar.style.width = Math.min(95, ((ci + Math.min(vueltas, 9) / 10) / canales.length) * 100) + '%';
+          const j = await llamar({ canal_id: cn.id, cursor: cursor, limit: 8 });
+          tot.chats += j.chats || 0; tot.nuevos += j.mensajes_nuevos || 0; tot.leidos += j.mensajes_leidos || 0;
+          cursor = j.siguiente_cursor || null; vueltas++;
+        } while (cursor && vueltas < 60 && document.getElementById('bdSincM'));
+      }
+      const bar = document.getElementById('bdSincBar'); if (bar) bar.style.width = '100%';
+      tx(`<b>Listo.</b><br>${tot.chats} chats revisados · <b>${tot.nuevos}</b> mensajes nuevos traídos.`);
+      toast('ok', 'Conversaciones sincronizadas', tot.nuevos + ' mensajes nuevos');
+    } catch (e) { tx(`<b>No se pudo terminar:</b> ${esc(String(e.message || e))}<br>Lo que ya se trajo queda guardado; puedes volver a intentarlo.`); }
+    BD.sincronizando = false;
+    const m = document.querySelector('#bdSincM .modal'); if (m) m.insertAdjacentHTML('beforeend', `<button type="button" class="bd-btn-plant" style="align-self:flex-end" onclick="document.getElementById('bdSincM').remove()">Cerrar</button>`);
+    await bdCargar(); if (BD.sel) await bdCargarMsgs(BD.sel); repintar();
+  }
+
   // ── Plantillas (ventana de 24 h cerrada): lista las APROBADAS de la línea, rellena variables con vista previa y envía.
   async function bdPlantillas() {
     const c = BD.convs.find(x => String(x.id) === String(BD.sel)); if (!c) return;
@@ -1048,6 +1088,9 @@
 .bd-plant-item small{font-size:11px;color:#64748b;text-transform:lowercase}.bd-plant-item span{font-size:12.5px;color:#334155;white-space:pre-wrap}
 .bd-plant-prev{background:#dcf8c6;border-radius:10px;padding:10px 12px}.bd-plant-prev small{font-size:11px;color:#166534;font-weight:700}.bd-plant-prev .tx{white-space:pre-wrap;font-size:13.5px;margin-top:4px}
 .bd-plant-enviar{align-self:flex-end}
+.bd-sinc{font-size:13.5px;line-height:1.5;color:var(--c-ink,#111);margin:6px 0 10px}
+.bd-sinc-barra{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}.bd-sinc-barra i{display:block;height:100%;width:3%;background:#128C7E;border-radius:999px;transition:width .4s}
+#bdSincM .modal{display:flex;flex-direction:column;gap:6px}
 .crmB .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .crmB .crm-leads-top{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}.crmB .crm-leads-f{display:flex;gap:6px;flex-wrap:wrap}
 .crmB .crm-lead-f{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:#334155;cursor:pointer}.crmB .crm-lead-f.on{background:#dcfce7;color:#15803d;font-weight:700;border-color:#bbf7d0}
@@ -1082,7 +1125,7 @@
   }
 
   window.nxCRM = {
-    bdAbrir, bdEnviar, bdAdjuntar, bdReintentar, bdCitar, bdIrA, bdPlantillas, bdPlantEnviar, bdTeclado,
+    bdAbrir, bdEnviar, bdAdjuntar, bdReintentar, bdSincronizar, bdCitar, bdIrA, bdPlantillas, bdPlantEnviar, bdTeclado,
     bdCitaQuitar: function () { BD.cita = null; const cb = document.getElementById('bdCitaBar'); if (cb) cb.innerHTML = ''; },
     bdAbajo: function () { const m = document.getElementById('bdMsgs'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); BD.pegadoAbajo = true; const b = document.getElementById('bdAbajo'); if (b) b.classList.remove('on'); },
     bdBorrador: function (v) { if (BD.sel) BD.borr[BD.sel] = v; },

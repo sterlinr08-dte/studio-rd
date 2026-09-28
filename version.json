@@ -1,7 +1,14 @@
 {
-  "version": "59.63",
+  "version": "59.64",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.64",
+      "fecha": "2026-09-28",
+      "notas": [
+        "Portada de la web de clientes más rápida en el celular: la foto grande de la pasola ahora es una versión liviana para teléfono."
+      ]
+    },
     {
       "version": "59.63",
       "fecha": "2026-09-28",

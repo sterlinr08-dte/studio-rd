@@ -14007,7 +14007,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finErrTxt(e) {
     const m = String(e && e.message || e || '');
     try { console.error('[Financiamiento]', m, e); } catch (x) {}
-    const map = { FIN_IMEI_FALTANTE: 'Falta el IMEI de un equipo. Elige un IMEI por cada unidad.', FIN_IMEI_NO_DISPONIBLE: 'Un IMEI ya no está disponible (se vendió o está apartado). Elige otro.', VENTA_IMEI_OTRO_ALMACEN: 'El IMEI está en otro almacén. Cambia de almacén o elige otro IMEI.', FIN_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja y vuelve a intentar.', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor que el mínimo del plan. Súbela y vuelve a intentar.', FIN_PLAN_INVALIDO: 'Ese plan ya no está activo. Elige otro plan.', FIN_SOLICITUD_NO_PENDIENTE: 'Esta solicitud ya fue decidida. Refresca la pantalla.', FIN_PAGO_EXCEDE_SALDO: 'El monto es mayor que lo que se debe de esta cuota. Revisa el monto.', FIN_NO_ACTIVO: 'Este financiamiento no está activo.', FIN_APROBAR_SIN_PERMISO: 'Solo un administrador o gerente puede aprobar o rechazar.', FIN_REVERSA_SIN_PERMISO: 'Solo un administrador o gerente puede anular pagos.', FIN_CONDONAR_SIN_PERMISO: 'Solo un administrador o gerente puede perdonar recargos.', FIN_EXPEDIENTE_INCOMPLETO: 'Faltan documentos del cliente (cédula, foto, video o firma). No se puede aprobar todavía.', FIN_EXPEDIENTE_YA_ENVIADO: 'El cliente ya envió sus documentos.', FIN_TEXTOS_VACIOS: 'Faltan los textos del link. Pide ayuda a un administrador.', FIN_MOTIVO_REQUERIDO: 'Escribe el motivo.', FIN_TERMINOS_SIN_PERMISO: 'Solo un administrador o gerente puede cambiar el interés o el recargo.', FIN_MANUAL_UN_RENGLON: 'Con monto a mano solo va un concepto. Quita los demás renglones.', FIN_MANUAL_CONCEPTO_INVALIDO: 'Escribe qué se financia y un monto mayor que cero.', FIN_ITEM_SIN_PRODUCTO: 'Un renglón no tiene artículo. Elige el artículo o marca «Poner el monto a mano».', FIN_SIN_PERMISO: 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.', VENTA_ITEM_INVALIDO: 'Un artículo ya no existe o está inactivo. Quítalo y agrégalo de nuevo.', INVENTARIO_SIN_STOCK: 'No hay existencia suficiente de un artículo.', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta de banco activa.' };
+    const map = { FIN_IMEI_FALTANTE: 'Falta el IMEI de un equipo. Elige un IMEI por cada unidad.', FIN_IMEI_NO_DISPONIBLE: 'Un IMEI ya no está disponible (se vendió o está apartado). Elige otro.', VENTA_IMEI_OTRO_ALMACEN: 'El IMEI está en otro almacén. Cambia de almacén o elige otro IMEI.', FIN_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja y vuelve a intentar.', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor que el mínimo del plan. Súbela y vuelve a intentar.', FIN_PLAN_INVALIDO: 'Ese plan ya no está activo. Elige otro plan.', FIN_SOLICITUD_NO_PENDIENTE: 'Esta solicitud ya fue decidida. Refresca la pantalla.', FIN_PAGO_EXCEDE_SALDO: 'El monto es mayor que lo que se debe de esta cuota. Revisa el monto.', FIN_NO_ACTIVO: 'Este financiamiento no está activo.', FIN_APROBAR_SIN_PERMISO: 'Solo un administrador o gerente puede aprobar o rechazar.', FIN_REVERSA_SIN_PERMISO: 'Solo un administrador o gerente puede anular pagos.', FIN_CONDONAR_SIN_PERMISO: 'Solo un administrador o gerente puede perdonar recargos.', FIN_EXPEDIENTE_INCOMPLETO: 'Faltan documentos del cliente (cédula, foto, video o firma). No se puede aprobar todavía.', FIN_EXPEDIENTE_YA_ENVIADO: 'El cliente ya envió sus documentos.', FIN_TEXTOS_VACIOS: 'Faltan los textos del link. Pide ayuda a un administrador.', FIN_MOTIVO_REQUERIDO: 'Escribe el motivo.', FIN_COBRO_SIN_PERMISO: 'Tu usuario aún no tiene permiso para cobrar; avisa al administrador.', FIN_TERMINOS_SIN_PERMISO: 'Solo un administrador o gerente puede cambiar el interés o el recargo.', FIN_MANUAL_UN_RENGLON: 'Con monto a mano solo va un concepto. Quita los demás renglones.', FIN_MANUAL_CONCEPTO_INVALIDO: 'Escribe qué se financia y un monto mayor que cero.', FIN_ITEM_SIN_PRODUCTO: 'Un renglón no tiene artículo. Elige el artículo o marca «Poner el monto a mano».', FIN_SIN_PERMISO: 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.', VENTA_ITEM_INVALIDO: 'Un artículo ya no existe o está inactivo. Quítalo y agrégalo de nuevo.', INVENTARIO_SIN_STOCK: 'No hay existencia suficiente de un artículo.', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta de banco activa.' };
     for (const k in map) if (m.indexOf(k) >= 0) return map[k];
     if (/row-level security|42501|permission denied|violates row/i.test(m)) return 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.';
     if (/Failed to fetch|NetworkError|Load failed|network|timeout/i.test(m)) return 'No hay conexión con el sistema. Revisa el internet y vuelve a intentar.';
@@ -14230,10 +14230,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finCajaAvisoHTML() {
     if (_caja && _caja.id) return '';
     const puedeCaja = puedeVer('caja');
-    return `<div class="ffAviso warn" role="alert"><i class="ti ti-lock"></i><div><b>La caja está cerrada.</b> Para cobrar en efectivo hay que abrirla primero. Transferencia y tarjeta sí se pueden registrar.${puedeCaja ? '' : ' Pídele al cajero que abra su caja.'}</div>${puedeCaja ? `<button type="button" class="nxF2Btn" onclick="cerrarModalFin();window.nxPosTab('caja')"><i class="ti ti-lock-open"></i> Abrir caja</button>` : ''}</div>`;
+    // El efectivo entra en la caja abierta DEL MISMO USUARIO (cajaQS filtra por usuario; el servidor igual).
+    return `<div class="ffAviso warn" role="alert"><i class="ti ti-lock"></i><div><b>La caja está cerrada.</b> Para cobrar en efectivo hay que abrir tu caja primero. Transferencia y tarjeta sí se pueden registrar.${puedeCaja ? '' : ' Si no tienes acceso a Caja, pídele al administrador que te lo dé o registra transferencia o tarjeta.'}</div>${puedeCaja ? `<button type="button" class="nxF2Btn" onclick="cerrarModalFin();window.nxPosTab('caja')"><i class="ti ti-lock-open"></i> Abrir caja</button>` : ''}</div>`;
   }
   window.cerrarModalFin = function () { cerrarModal('nxFinM'); };
-  function finPuedeCobrar() { return rolEfectivo() !== 'vendedor'; }
+  // Decisión del dueño (29-sep-2026): el vendedor también cobra cuotas (migración 36 en el servidor).
+  // Hasta que se aplique, el servidor responde FIN_SIN_PERMISO y finErrTxt lo explica en palabras claras.
+  function finPuedeCobrar() { return !!rolEfectivo(); }
   window.nxFinV2Cobrar = async function (finId, cuotaId) {
     const f = finFinDe(finId); if (!f) return;
     const c = cuotaId ? finCuotaDe(cuotaId) : cuotasDe(finId).find(x => !x.pagado); if (!c) { toast('info', 'Este cliente no tiene cuotas pendientes'); return; }
@@ -14243,7 +14246,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     cerrarModal('nxFinM'); nxFinV2EnsureCSS();
     const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     const montoTxt = r2(p.total).toLocaleString('en-US', { minimumFractionDigits: 2 });
-    const bloqueo = !finPuedeCobrar() ? `<div class="ffAviso bad" role="alert"><i class="ti ti-user-x"></i><div><b>Tu usuario es vendedor.</b> Por ahora el sistema solo deja registrar cobros a cajeros, gerentes y administradores. Pídele al cajero que lo registre.</div></div>` : '';
+    const bloqueo = '';
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px"><div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${c.numero} de ${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       ${bloqueo}${finCajaAvisoHTML()}
       <div class="ffCobCli"><b>${esc(f.cliente_nombre || '')}</b><span>${esc(f.descripcion || '')}</span><span class="${at > 0 ? 'rojo' : ''}">${at > 0 ? 'Venció el ' + finFechaCorta(c.fecha_venc) + ' · ' + at + (at === 1 ? ' día' : ' días') + ' de atraso' : 'Vence el ' + finFechaCorta(c.fecha_venc)}</span></div>
@@ -14268,7 +14271,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const st = _finV2Cobro; if (!st) return; const f = finFinDe(st.finId); const c = finCuotaDe(st.cuotaId); if (!f || !c) return;
     const monto = r2(finNum(val('fpMonto')));
     if (!st.metodo) { toast('err', 'Elige cómo pagó', 'Efectivo, transferencia o tarjeta'); return; }
-    if (!finPuedeCobrar()) { toast('err', 'Tu usuario no puede registrar cobros', 'Pídele al cajero'); return; }
+    if (!finPuedeCobrar()) { toast('err', 'Tu usuario no puede registrar cobros', 'Vuelve a entrar al sistema'); return; }
     if (!(monto > 0)) { toast('err', 'Escribe el monto', 'Debe ser mayor que cero'); return; }
     if (monto > st.pend.total + 0.01) { toast('err', 'El monto es mayor que lo que se debe', 'Esta cuota debe ' + fmt2(st.pend.total)); return; }
     if (st.metodo === 'efectivo') {
@@ -14299,7 +14302,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           filas: [{ label: 'Cuota', valor: c.numero + ' de ' + (f.cuotas_total || cuotasDe(f.id).length) }, { label: 'Balance actual', valor: fmt2(finSaldoTrasPago(f2 || f, _pg)) }], folio: finRecFolio(_pg)
         }, [{ label: 'Ver comprobante', icon: 'ti-receipt', onclick: () => window.nxFinComprobante(_pg.id) }, { label: 'Estado de cuenta', icon: 'ti-file-text', onclick: () => window.nxFinEstadoCuenta(f.id) }]);
       }
-    } catch (e) { if (btn) btn.disabled = false; toast('err', 'No se pudo registrar el cobro', finErrTxt(e)); }
+    } catch (e) { if (btn) btn.disabled = false; const m = String(e && e.message || e || ''); toast('err', 'No se pudo registrar el cobro', /FIN_SIN_PERMISO|row-level security|42501/i.test(m) ? finErrTxt({ message: 'FIN_COBRO_SIN_PERMISO' }) : finErrTxt(e)); }
   };
 
   // ══ Fase 4 (réplica NEXUS PRO): COMPROBANTE DE PAGO y ESTADO DE CUENTA ═════════════════════

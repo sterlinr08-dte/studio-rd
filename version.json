@@ -1,7 +1,14 @@
 {
-  "version": "59.69",
+  "version": "59.70",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.70",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Financiamiento: el vendedor también puede cobrar cuotas (transferencia y tarjeta siempre; efectivo con su caja abierta)."
+      ]
+    },
     {
       "version": "59.69",
       "fecha": "2026-09-29",

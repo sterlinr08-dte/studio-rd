@@ -1,8 +1,8 @@
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- 35 · «Financiamiento fácil» — seguimiento en el servidor            *** NO APLICADA ***
+-- 35 · «Financiamiento fácil» — seguimiento en el servidor            *** APLICADA ***
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- ESTADO: NO APLICADA en ninguna base. Pendiente de que el dueño autorice la publicación.
--- Escrita el 29-sep-2026 (bitácora docs/bitacora/2026-09-29-*-claude.md). NO correr sin autorización.
+-- ESTADO: APLICADA en STUDIO RD (edbknlkjnlfmkkiizdbe) el 29-sep-2026 13:00 UTC con autorización del dueño,
+-- junto con la publicación de 59.69 (bitácora docs/bitacora/2026-09-29-1306-claude.md). No volver a correr.
 -- Antes de aplicar en STUDIO RD (edbknlkjnlfmkkiizdbe): comparar con pg_get_functiondef() que las funciones
 -- que aquí se reemplazan (pos_fin_crear_financiamiento_v2, pos_fin_aprobar_solicitud, pos_fin_sol_ver,
 -- pos_fin_mora_calculada) sigan iguales a 14 / 32 / 25 del repositorio; si alguien las cambió en vivo, fusionar.

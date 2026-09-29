@@ -20,6 +20,11 @@
 --   5. Aprobar exige el expediente por link completo (cédula frente y dorso, foto con cédula, video, firma).
 --   6. Interés y recargo de una solicitud solo los cambia admin/gerente (los empleados crean con los de la tienda).
 --   7. El link del cliente (pos_fin_sol_ver) muestra las cuotas con las condiciones de su solicitud.
+--   8. «Monto a mano» (29-sep, 2.ª entrega): pos_fin_solicitudes.monto_manual = true permite UN renglón sin
+--      producto (concepto libre + monto). Al aprobar, la venta se crea con pos_fin_venta_concepto_libre:
+--      un renglón con producto_id NULL, inventario_aplicado = true desde el inicio, sin IMEI ni reserva.
+--      pos_registrar_venta_atomica (Factura) NO cambia: sigue exigiendo producto en cada renglón.
+--      Nunca se toca inventario ni seriales con un monto a mano.
 -- El frontend 59.69 funciona antes y después: detecta la columna pos_fin_solicitudes.num_cuotas y, si no
 -- existe, sigue con la elección de plan; y lee mora_* del financiamiento solo si vienen en la fila.
 --
@@ -37,7 +42,8 @@ alter table public.pos_fin_solicitudes
   add column if not exists metodo text,
   add column if not exists mora_tipo text,
   add column if not exists mora_valor numeric,
-  add column if not exists mora_dias_gracia integer;
+  add column if not exists mora_dias_gracia integer,
+  add column if not exists monto_manual boolean not null default false;
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'pos_fin_solicitudes_terminos_chk') then
     alter table public.pos_fin_solicitudes add constraint pos_fin_solicitudes_terminos_chk check (
@@ -108,6 +114,55 @@ end $function$;
 drop trigger if exists pos_fin_solicitud_terminos_guard on public.pos_fin_solicitudes;
 create trigger pos_fin_solicitud_terminos_guard before insert or update on public.pos_fin_solicitudes
   for each row execute function public.pos_fin_solicitud_terminos_guard();
+
+-- 3b) Renglones de la solicitud: sin producto SOLO cuando es monto a mano (y entonces un solo renglón) --------
+create or replace function public.pos_fin_solicitud_items_guard()
+ returns trigger language plpgsql set search_path to 'public' as $function$
+declare v_n int; v_sin int;
+begin
+  if jsonb_typeof(coalesce(new.items,'[]'::jsonb)) <> 'array' then return new; end if;
+  select count(*), count(*) filter (where nullif(x->>'producto_id','') is null) into v_n, v_sin from jsonb_array_elements(new.items) x;
+  if coalesce(new.monto_manual,false) then
+    if v_n <> 1 or v_sin <> 1 then raise exception 'FIN_MANUAL_UN_RENGLON'; end if;
+    if length(trim(coalesce(new.items->0->>'nombre',''))) < 3 or coalesce((new.items->0->>'precio')::numeric,0) <= 0 then raise exception 'FIN_MANUAL_CONCEPTO_INVALIDO'; end if;
+  elsif v_sin > 0 then
+    raise exception 'FIN_ITEM_SIN_PRODUCTO';
+  end if;
+  return new;
+end $function$;
+drop trigger if exists pos_fin_solicitud_items_guard on public.pos_fin_solicitudes;
+create trigger pos_fin_solicitud_items_guard before insert or update of items, monto_manual on public.pos_fin_solicitudes
+  for each row execute function public.pos_fin_solicitud_items_guard();
+
+-- 3c) Venta a crédito por concepto libre (monto a mano). Misma forma de pos_registrar_venta_atomica pero SIN
+--     inventario: inventario_aplicado = true desde el inicio, producto_id NULL, sin IMEI. Solo la usa la aprobación.
+create or replace function public.pos_fin_venta_concepto_libre(p_operacion_id uuid, p_venta jsonb, p_items jsonb)
+ returns uuid language plpgsql set search_path to 'public' as $function$
+declare v_org uuid := mi_organizacion(); v_id uuid; v_usuario text; v_total numeric := coalesce((p_venta->>'total')::numeric,0);
+begin
+  if mi_rol() not in ('admin','gerente') then raise exception 'FIN_SIN_PERMISO'; end if;
+  if p_operacion_id is null then raise exception 'VENTA_OPERACION_REQUERIDA'; end if;
+  select id into v_id from public.pos_ventas where organizacion_id=v_org and operacion_id=p_operacion_id;
+  if v_id is not null then return v_id; end if;   -- reintento: la misma venta
+  if jsonb_array_length(p_items) <> 1 or nullif(p_items->0->>'producto_id','') is not null then raise exception 'FIN_MANUAL_UN_RENGLON'; end if;
+  if v_total <= 0 or abs(coalesce((p_items->0->>'importe')::numeric,0) - v_total) > 0.01 then raise exception 'VENTA_TOTAL_NO_CUADRA'; end if;
+  if coalesce((p_venta->>'pagado_efectivo')::numeric,0) > 0 and not exists (select 1 from public.pos_cajas c where c.id=nullif(p_venta->>'caja_id','')::uuid and c.organizacion_id=v_org and c.estado='abierta') then
+    raise exception 'VENTA_CAJA_CERRADA';
+  end if;
+  select us.nom into v_usuario from public.profiles pr join public.usuarios_sistema us on us.id=pr.usuario_sistema_id where pr.id=auth.uid() limit 1;
+  insert into public.pos_ventas (cliente_id, cliente_nombre, a_credito, subtotal, itbis, total, descuento, metodo_pago, pagos, pagado_efectivo, pagado_tarjeta, pagado_transferencia,
+    pagado_otro, credito_monto, recibido, devuelta, tipo_comprobante, numero_factura, almacen_id, estado, caja_id, created_by_name, fecha, organizacion_id, inventario_aplicado, operacion_id)
+  values (nullif(p_venta->>'cliente_id','')::uuid, nullif(left(p_venta->>'cliente_nombre',200),''), true, coalesce((p_venta->>'subtotal')::numeric,0), 0, v_total, 0,
+    'Crédito', coalesce(p_venta->'pagos','[]'::jsonb), coalesce((p_venta->>'pagado_efectivo')::numeric,0), coalesce((p_venta->>'pagado_tarjeta')::numeric,0), coalesce((p_venta->>'pagado_transferencia')::numeric,0),
+    0, coalesce((p_venta->>'credito_monto')::numeric,0), coalesce((p_venta->>'recibido')::numeric,0), 0, 'sin', nullif(left(p_venta->>'numero_factura',80),''), nullif(p_venta->>'almacen_id','')::uuid, 'completada',
+    nullif(p_venta->>'caja_id','')::uuid, coalesce(v_usuario, nullif(left(p_venta->>'created_by_name',120),''), 'Sistema'), now(), v_org, true, p_operacion_id)
+  returning id into v_id;
+  insert into public.pos_venta_items (venta_id, producto_id, nombre, precio, cantidad, itbis, descuento, importe, serial, organizacion_id, linea_orden)
+  values (v_id, null, left(p_items->0->>'nombre',300), (p_items->0->>'precio')::numeric, coalesce((p_items->0->>'cantidad')::numeric,1), false, 0, (p_items->0->>'importe')::numeric, null, v_org, 1);
+  return v_id;
+end $function$;
+revoke all on function public.pos_fin_venta_concepto_libre(uuid, jsonb, jsonb) from public, anon;
+grant execute on function public.pos_fin_venta_concepto_libre(uuid, jsonb, jsonb) to authenticated;
 
 -- 4) Recargo congelado al crear (respaldo para cualquier insert que no lo traiga) + relleno ------------------
 create or replace function public.pos_fin_zy_mora_al_crear()
@@ -341,8 +396,13 @@ begin
     'tipo_comprobante', 'sin', 'numero_factura', v_num, 'almacen_id', v_alm, 'caja_id', v_caja,
     'created_by_name', coalesce(v_usuario,'Sistema'));
 
-  v_res := public.pos_registrar_venta_atomica(coalesce(p_operacion_id, gen_random_uuid()), v_venta, v_items, v_token, v_imei_pedidos);
-  v_venta_id := (v_res->'venta'->>'id')::uuid;
+  if coalesce(s.monto_manual,false) then
+    -- 35 §8: monto a mano → venta por concepto libre, sin inventario ni IMEI (v_imei_pedidos es 0: no hay productos).
+    v_venta_id := public.pos_fin_venta_concepto_libre(coalesce(p_operacion_id, gen_random_uuid()), v_venta, v_items);
+  else
+    v_res := public.pos_registrar_venta_atomica(coalesce(p_operacion_id, gen_random_uuid()), v_venta, v_items, v_token, v_imei_pedidos);
+    v_venta_id := (v_res->'venta'->>'id')::uuid;
+  end if;
   if v_venta_id is null then raise exception 'FIN_VENTA_NO_CREADA'; end if;
 
   v_fin := public.pos_fin_crear_financiamiento_v2(v_venta_id, pl.id, s.primera_fecha, s.id, null);
@@ -402,5 +462,6 @@ commit;
 --   select column_name from information_schema.columns where table_name='pos_fin_solicitudes' and column_name in ('num_cuotas','frecuencia','tasa','mora_tipo');
 --   select polname, polcmd from pg_policy where polrelid='public.pos_fin_planes'::regclass;
 --   select count(*) from public.pos_financiamientos where plan_id is not null and mora_tipo is null;   -- debe ser 0
+--   select column_name from information_schema.columns where table_name='pos_fin_solicitudes' and column_name='monto_manual';
 -- Reversa (si hiciera falta): volver a correr 14 §7 y §13, 32 y 25 §4 del repositorio y el bloque RLS de 14 para
 -- pos_fin_planes; las columnas nuevas pueden quedarse (NULL = comportamiento anterior).

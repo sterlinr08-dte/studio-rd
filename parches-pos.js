@@ -1546,15 +1546,18 @@
   }
   // Solicitud de financiamiento (24-sep-2026, pedido del dueño: «agregar artículo tiene que ser más parecido al de
   // facturar»): mismo botón, mismo panel en línea y misma lista; al elegir, el artículo va a la solicitud.
-  function finSolSearchBoxHTML() {
-    return '<button type="button" class="scan" id="facSearchBox" onclick="window.nxProdPicker(\'finsol\')" aria-label="Buscar artículo">'
-      + '<i class="ti ti-scan"></i><span>Escanea o busca por nombre, código o marca…</span></button>';
+  // dest: 'finsol' (solicitud) o 'fincot' (cotizador, 29-sep-2026): mismo botón, mismo panel en línea.
+  function finSolSearchBoxHTML(dest) {
+    dest = dest || 'finsol';
+    return '<button type="button" class="scan" id="facSearchBox" onclick="window.nxProdPicker(\'' + dest + '\')" aria-label="Buscar artículo">'
+      + '<i class="ti ti-scan"></i><span>' + (dest === 'fincot' ? 'Busca el artículo para tomar su precio a crédito…' : 'Escanea o busca por nombre, código o marca…') + '</span></button>';
   }
-  const ppkSlotId = () => _prodPickDest === 'finsol' ? 'solProdSlot' : 'facSearchSlot';
-  const ppkLista = () => _prodPickDest === 'factura' || _prodPickDest === 'finsol';
+  const ppkFin = () => _prodPickDest === 'finsol' || _prodPickDest === 'fincot';
+  const ppkSlotId = () => _prodPickDest === 'finsol' ? 'solProdSlot' : _prodPickDest === 'fincot' ? 'cotProdSlot' : 'facSearchSlot';
+  const ppkLista = () => _prodPickDest === 'factura' || ppkFin();
   window.nxProdPickCerrar = function () {
     const slot = document.getElementById(ppkSlotId());
-    if (slot && slot.querySelector('#nxProdPick')) { slot.innerHTML = _prodPickDest === 'finsol' ? finSolSearchBoxHTML() : facSearchBoxHTML(); return; }
+    if (slot && slot.querySelector('#nxProdPick')) { slot.innerHTML = ppkFin() ? finSolSearchBoxHTML(_prodPickDest) : facSearchBoxHTML(); return; }
     const ov = document.getElementById('nxProdPick'); if (ov) ov.remove();
   };
   window.nxProdPicker = function (destino) {
@@ -1601,14 +1604,14 @@
   function pintarProdPick(q, animate) {
     const wrap = document.getElementById('ppkList'); if (!wrap) return;
     q = (q || '').toLowerCase().trim();
-    let lista = _prodPickDest === 'finsol' ? _prods.filter(p => p.tipo !== 'servicio' && p.activo !== false) : _prods;
+    let lista = ppkFin() ? _prods.filter(p => p.tipo !== 'servicio' && p.activo !== false) : _prods;
     if (q) lista = lista.filter(p => ((p.nombre || '') + ' ' + (p.codigo || '') + ' ' + (p.referencia || '') + ' ' + (p.marca || '')).toLowerCase().includes(q));
     const total = lista.length; const show = lista.slice(0, 400);
     const cliMayor = (clienteSel() || {}).nivel_precio === 'mayor';
     const rows = show.map(p => {
       const exi = Number(p.stock || 0);
       const pf = Number(p.precio || 0), pm = Number(p.precio_mayor || 0) > 0 ? Number(p.precio_mayor) : pf;
-      const aplica = _prodPickDest === 'finsol' ? Number(p.precio_credito || p.precio || 0) : precioCli(p);
+      const aplica = ppkFin() ? Number(p.precio_credito || p.precio || 0) : precioCli(p);
       const abierto = String(_ppkOpen) === String(p.id);
       const serv = p.tipo === 'servicio';
       const min = Number(p.stock_min || 0);
@@ -1868,6 +1871,7 @@
   window.nxProdPickElegir = function (id) {
     const p = _prods.find(x => String(x.id) === String(id)); if (!p) return;
     if (_prodPickDest === 'finsol') { _ppkOpen = ''; _ppkSerSel = []; window.nxProdPickCerrar(); window.nxFinSolProdAdd(id); return; }
+    if (_prodPickDest === 'fincot') { _ppkOpen = ''; _ppkSerSel = []; window.nxProdPickCerrar(); window.nxFinCotProd(id); return; }
     if (p.serial) {
       // Con IMEI: agrega y abre la ventanilla para elegirlos (mismo flujo del chip 📱)
       window.nxPpkImei(id);
@@ -12189,12 +12193,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     _finPlanes = pl || []; _finSols = so || []; _finPerfiles = pf || []; _finRefs = rf || []; _finCtas = ct || [];
     // ¿Ya está aplicada la migración 35 (condiciones por solicitud)? Si la columna no existe, PostgREST responde
     // 400 y el asistente sigue con la elección de plan de antes. Nada se escribe para averiguarlo.
-    if (_finTerminos === null) { const pr = await g('pos_fin_solicitudes', 'select=id,num_cuotas,frecuencia,tasa,mora_tipo&limit=1'); _finTerminos = Array.isArray(pr); }
+    if (_finTerminos === null) { const pr = await g('pos_fin_solicitudes', 'select=id,num_cuotas,frecuencia,tasa,mora_tipo,monto_manual&limit=1'); _finTerminos = Array.isArray(pr); }
   }
   // Condiciones de cada solicitud (decisión del dueño, 29-sep-2026): número de pagos, frecuencia, inicial e interés
   // se eligen por caso; el plan activo solo pone los valores de la tienda (interés, recargo y método).
   let _finTerminos = null;
   function finTerminosOn() { return _finTerminos === true; }
+  // «Poner el monto a mano» (un concepto libre sin producto): también requiere la migración 35 (columna
+  // monto_manual y la venta por concepto libre en la aprobación). Sin ella, la casilla no se muestra.
+  function finManualOn() { return _finTerminos === true; }
+  function finWizManualItem(s) { return (s.items || []).find(it => it.manual || (!it.producto_id && it.nombre)) || null; }
   // Espejo de public.pos_fin_plan_efectivo (migración 35): el plan base con las condiciones de la solicitud encima.
   function finPlanEfectivo(s) {
     const base = s && s.plan_id ? _finPlanes.find(p => String(p.id) === String(s.plan_id)) : null; if (!base) return null;
@@ -12236,6 +12244,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         frecuencia: t && b0 ? b0.frecuencia : null, num_cuotas: t && b0 ? Number(b0.num_cuotas) : null, tasa: null };
     }
     if (vista === 'planes') _finPlanEdit = null;
+    if (vista === 'cotizar' && !_finCot) _finCot = finCotNuevo();
     if (vista === 'cobrar' || vista === 'hoy') { const v0 = vista; getAPI().get('pos_cajas', cajaQS('abierta', 1)).then(cj => { const antes = !!(_caja && _caja.id); _caja = (cj && cj[0]) || null; if (antes !== !!(_caja && _caja.id) && _finV2Vista === v0 && _posTab === 'cuotas') finV2Repintar(); }).catch(() => {}); }
     finV2Repintar();
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
@@ -12331,6 +12340,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffBig.p{background:#0A0A0A;border-color:#0A0A0A;color:#FFFEFA}.ffBig.p .ic{background:rgba(255,255,255,.08);color:var(--ff-gold)}
 .ffBig .txt{display:flex;flex-direction:column;gap:3px}.ffBig b{font-size:17px;font-weight:700;letter-spacing:-.2px}.ffBig small{font-size:12.5px;color:var(--f2-steel);line-height:1.35}.ffBig.p small{color:rgba(255,254,250,.7)}
 .ffBig .bdg{position:absolute;top:12px;right:12px;min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:#fee2e2;color:#b91c1c;font:700 13px/26px var(--f2-mono);text-align:center}
+.ffBig4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:980px){.ffBig4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ffSwitch{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#3f3f3a;cursor:pointer;min-height:40px}
+.ffSwitch input{position:absolute;opacity:0;width:0;height:0}.ffSwTrack{width:40px;height:24px;border-radius:999px;background:#d6d0bf;position:relative;transition:background .16s;flex-shrink:0}
+.ffSwTrack::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .16s cubic-bezier(.22,1,.36,1)}
+.ffSwitch input:checked+.ffSwTrack{background:var(--ff-gold)}.ffSwitch input:checked+.ffSwTrack::after{transform:translateX(16px)}
+.ffSwitch input:focus-visible+.ffSwTrack{outline:2px solid var(--ff-gold-d);outline-offset:2px}
+.ffCotLista{display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:1px solid var(--f2-line)}.ffCotLista .nxF2Line{font-size:13px}
 .ffAdm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
 .ffAdm button{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border-radius:12px;border:1px solid var(--f2-line);background:#fff;color:var(--ff-ink);font:600 13px/1.2 inherit;cursor:pointer;font-family:inherit}
 .ffAdm button i{font-size:18px;color:var(--ff-gold-d)}.ffAdm button .nxF2Badge{margin-left:auto;font-family:var(--f2-mono)}
@@ -12391,7 +12408,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffModo{display:inline-flex;border:1px solid var(--f2-line);border-radius:10px;overflow:hidden}.ffModo button{min-width:48px;min-height:36px;border:0;background:#fff;font:700 13px inherit;font-family:inherit;cursor:pointer;color:var(--f2-steel)}.ffModo button.on{background:var(--ff-gold-s);color:var(--ff-ink)}
 #ffFrec button.on{border:1.5px solid var(--ff-gold)!important;background:var(--ff-gold-s)!important;color:var(--ff-ink)!important}
 .ffResumenVivo{border-color:var(--ff-gold);background:#FFFEFA}
-@media (max-width:640px){.ffBig3{grid-template-columns:1fr}.ffBig{min-height:0;flex-direction:row;align-items:center;padding:14px}.ffBig .txt{display:flex;flex-direction:column;gap:2px}.ffAdm{grid-template-columns:repeat(2,minmax(0,1fr))}.ffPlanes{grid-template-columns:1fr}}
+@media (max-width:640px){.ffBig3,.ffBig4{grid-template-columns:1fr}.ffBig{min-height:0;flex-direction:row;align-items:center;padding:14px}.ffBig .txt{display:flex;flex-direction:column;gap:2px}.ffAdm{grid-template-columns:repeat(2,minmax(0,1fr))}.ffPlanes{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.ffBig{transition:none}}
 `;
     document.head.appendChild(s);
@@ -12406,8 +12423,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const big = (cls, ic, t, sub, go, bdg) => `<button type="button" class="ffBig ${cls}" onclick="window.nxFinV2Go('${go}')"><span class="ic"><i class="ti ${ic}"></i></span><span class="txt"><b>${t}</b><small>${sub}</small></span>${bdg ? `<span class="bdg">${bdg}</span>` : ''}</button>`;
     const guia = `<button type="button" class="nxF2Back ffGuiaBtn" aria-label="Guía de financiamiento" onclick="window.nxFinGuia()"><i class="ti ti-help-circle"></i> Guía</button>`;
     let html = finV2HeaderHTML('Financiamiento', admin ? 'Solicitudes, cobros y cartera' : 'Solicitudes y cobros de cuotas', null, guia) + `
-      <div class="ffBig3">
+      <div class="ffBig3 ffBig4">
         ${big('p', 'ti-file-plus', 'Nueva solicitud', 'Cliente, equipo y plan en 5 pasos', 'solicitud')}
+        ${big('', 'ti-calculator', 'Consultar / Cotizar', 'Calcula la cuota sin guardar nada', 'cotizar')}
         ${big('', 'ti-cash', 'Cobrar cuota', 'Busca por cédula, teléfono o nombre', 'cobrar')}
         ${big('', 'ti-calendar-due', 'Quién paga hoy', hoy.length ? hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie atrasado hoy', 'hoy', hoy.length || '')}
       </div>`;
@@ -12464,6 +12482,110 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return finV2HeaderHTML('Quién paga hoy', l.length ? l.length + (l.length === 1 ? ' cliente' : ' clientes') + ' · ' + fmt2(tot) : 'Nadie tiene cuotas atrasadas ni de hoy', 'cartera') + finCajaAvisoHTML()
       + (l.length ? '<div style="font-size:12.5px;color:var(--f2-steel);margin-bottom:8px">Primero los más atrasados. «Recordar» abre WhatsApp con el mensaje listo; tú decides si lo envías.</div>' + l.map(x => finCobFilaHTML(x.f, x)).join('') : '<div class="nxF2Card" style="align-items:center;text-align:center;color:var(--f2-steel);font-size:13px;padding:26px"><i class="ti ti-mood-happy" style="font-size:28px"></i>Todos están al día. No hay cuotas que cobrar hoy.</div>');
   }
+  // ══ «Consultar / Cotizar» (29-sep-2026): calculadora de cuotas. NO escribe nada en la base. ═══════════════
+  // Usa la MISMA fórmula que el servidor (finV2Amortizar = pos_fin_amortizacion, migración 30) y el mismo interés
+  // de la tienda que el asistente (plan activo + condiciones). Los empleados ven la cuota, no el interés.
+  let _finCot = null;
+  function finCotBase() { return _finPlanes.find(p => p.activo) || null; }
+  function finCotNuevo() {
+    const b = finCotBase();
+    return { monto: null, concepto: '', producto_id: null, inicial: null, iniModo: 'monto', iniPct: null, frecuencia: b ? b.frecuencia : 'mensual', num_cuotas: b ? Number(b.num_cuotas) : 12, tasa: null, primera_fecha: finWizFechaSugerida(b || { frecuencia: 'mensual' }), fechaManual: false, todas: false };
+  }
+  function finCotPlan(c) {
+    const b = finCotBase(); if (!b) return null;
+    const pl = Object.assign({}, b, { frecuencia: c.frecuencia || b.frecuencia, num_cuotas: Number(c.num_cuotas || b.num_cuotas), cuotas_fase1: 0, tasa2: 0, inicial_min_pct: 0 });
+    if (c.tasa != null && puedeVerMin()) pl.tasa1 = Number(c.tasa);
+    return pl;
+  }
+  function finCotCalc(c) {
+    const pl = finCotPlan(c); const monto = r2(Number(c.monto || 0)); const ini = Math.max(r2(Number(c.inicial || 0)), 0); const cap = r2(monto - ini);
+    if (!pl || !(monto > 0) || !(Number(c.num_cuotas) >= 1 && Number(c.num_cuotas) <= 120) || !(cap > 0) || !c.primera_fecha) return null;
+    const rows = finV2Amortizar(cap, pl, c.primera_fecha); const c1 = rows[0].cuota; const iguales = rows.every(r => Math.abs(r.cuota - c1) < 1);
+    const suma = r2(rows.reduce((a, r) => a + r.cuota, 0));
+    return { pl, monto, ini, cap, n: rows.length, cuota: c1, iguales, suma, total: r2(ini + suma), rows };
+  }
+  function finCotFrase(c, r) {
+    return 'Paga ' + fmt2(r.ini) + ' de inicial hoy · ' + r.n + ' pagos de ' + (r.iguales ? '' : 'desde ') + fmt2(r.cuota) + ' ' + finFrecCada(r.pl.frecuencia) + ' · Total ' + fmt2(r.total) + ' · Primer pago ' + finFechaBonita(c.primera_fecha);
+  }
+  function finCotWaTexto(c, r) {
+    const que = c.concepto ? c.concepto : 'tu compra';
+    return 'Hola, te comparto la cotización de ' + empNom() + ' para ' + que + ':\n'
+      + '• Precio: ' + fmt2(r.monto) + '\n• Inicial: ' + fmt2(r.ini) + '\n• ' + r.n + ' pagos de ' + (r.iguales ? '' : 'desde ') + fmt2(r.cuota) + ' ' + finFrecCada(r.pl.frecuencia) + '\n• Total a pagar: ' + fmt2(r.total) + '\n• Primer pago: ' + finFechaBonita(c.primera_fecha) + '\n\n'
+      + 'Es una cotización, no un contrato. El financiamiento se aprueba después de revisar tus documentos.';
+  }
+  function finCotResultadoHTML(c) {
+    const r = finCotCalc(c);
+    if (!finCotBase()) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>Falta el interés de la tienda.</b> Pídele a un administrador que active un plan en Financiamiento → Planes.</div></div>`;
+    if (!r) return `<div class="nxF2Card ffResumenVivo"><div class="ffMin">${!(Number(c.monto) > 0) ? 'Escribe el monto a financiar (o elige un artículo).' : Number(c.inicial || 0) >= Number(c.monto) ? 'La inicial tiene que ser menor que el monto (' + fmt2(c.monto) + ').' : 'Elige cada cuánto paga, en cuántos pagos y la fecha del primer pago.'}</div></div>`;
+    const lista = (c.todas ? r.rows : r.rows.slice(0, 3)).map(x => `<div class="nxF2Line"><span>Pago ${x.numero} · ${finFechaCorta(x.fecha_venc)}</span><b class="nxF2Mono">${fmt2(x.cuota)}</b></div>`).join('');
+    return `<div class="nxF2Card ffResumenVivo"><div class="nxF2Lbl">Así quedaría</div>
+      <div class="ffPlanBig">Paga <b class="nxF2Mono">${fmt2(r.ini)}</b> de inicial hoy · <b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(r.pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div>
+      <div class="ffMin">Primer pago: <b>${esc(finFechaBonita(c.primera_fecha))}</b> · Se financian ${fmt2(r.cap)}${puedeVerMin() ? ' al ' + Number(r.pl.tasa1) + ' % por pago' : ''}.</div>
+      <div class="ffCotLista">${lista}${r.rows.length > 3 ? `<button type="button" class="ffCambiar" onclick="window.nxFinCotTodas()">${c.todas ? 'Ver menos' : 'Ver todas (' + r.rows.length + ')'}</button>` : ''}</div>
+      <div class="nxF2G2" style="margin-top:6px"><button type="button" class="nxF2Btn wa" onclick="window.nxFinCotWA()"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</button><button type="button" class="nxF2Btn p" onclick="window.nxFinCotConvertir()"><i class="ti ti-file-plus"></i> Convertir en solicitud</button></div>
+      <div style="font-size:11px;color:var(--f2-steel);text-align:center">Solo es una consulta: no se guarda nada.</div></div>`;
+  }
+  function finCotHTML() {
+    const c = _finCot || (_finCot = finCotNuevo()); const admin = puedeVerMin(); const b = finCotBase();
+    const fr = (k, t) => `<button type="button" class="${c.frecuencia === k ? 'on' : ''}" data-f="${k}" onclick="window.nxFinCotSet('frecuencia','${k}')">${t}</button>`;
+    const chip = n => `<button type="button" class="nxF2Chip ${Number(c.num_cuotas) === n ? 'on' : ''}" onclick="window.nxFinCotSet('num_cuotas',${n})">${n}</button>`;
+    const iniTxt = c.iniModo === 'pct' ? (c.iniPct != null ? c.iniPct : '') : (c.inicial != null ? c.inicial : '');
+    return finV2HeaderHTML('Consultar / Cotizar', 'Calcula la cuota sin guardar nada', 'cartera') + `
+      <div class="nxF2Card"><div class="h">Monto a financiar</div>
+        <div id="cotProdSlot" class="nxF2Slot">${finSolSearchBoxHTML('fincot')}</div>
+        ${c.concepto ? `<div class="ffLinea ok" id="cotConcepto"><i class="ti ti-check"></i> ${esc(c.concepto)}</div>` : ''}
+        <div class="nxF2F"><label for="cotMonto">O escribe el precio a crédito (RD$)</label><input id="cotMonto" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${c.monto != null ? esc(c.monto) : ''}" oninput="window.nxFinCotMonto(this.value)"></div>
+      </div>
+      <div class="nxF2Card"><div class="h">Inicial (lo que paga hoy) <span class="ffModo"><button type="button" class="${c.iniModo === 'pct' ? '' : 'on'}" onclick="window.nxFinCotIniModo('monto')">RD$</button><button type="button" class="${c.iniModo === 'pct' ? 'on' : ''}" onclick="window.nxFinCotIniModo('pct')">%</button></span></div>
+        <input id="cotIni" class="mono ffMontoIn" inputmode="decimal" placeholder="${c.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinCotIni(this.value)" aria-label="Inicial">
+        <div class="ffMin" id="cotIniEq">${c.iniModo === 'pct' && c.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(c.inicial) + '</b>' : 'Puede ser 0 si no da inicial.'}</div>
+      </div>
+      <div class="nxF2Card"><div class="h">¿Cada cuánto paga?</div><div class="nxF2Meth ffMeth" id="cotFrec">${fr('mensual', 'Mensual')}${fr('quincenal', 'Quincenal')}${fr('semanal', 'Semanal')}</div></div>
+      <div class="nxF2Card"><div class="h">¿En cuántos pagos?</div>
+        <div class="nxF2Chips" style="margin:0">${[3, 6, 12, 18, 24].map(chip).join('')}</div>
+        <div class="nxF2F"><label for="cotN">Otro número de pagos</label><input id="cotN" class="mono" inputmode="numeric" value="${esc(c.num_cuotas || '')}" oninput="window.nxFinCotN(this.value)"></div>
+      </div>
+      ${admin && b ? `<div class="nxF2Card"><div class="h">Interés por pago (solo administrador)</div><div class="nxF2F"><label for="cotTasa">Interés por cada pago (%)</label><input id="cotTasa" class="mono" inputmode="decimal" value="${esc(c.tasa != null ? c.tasa : b.tasa1)}" oninput="window.nxFinCotTasa(this.value)"></div><div style="font-size:12px;color:var(--f2-steel)">El de la tienda es ${Number(b.tasa1 || 0)} %. Los empleados no ven este dato.</div></div>` : ''}
+      <div class="nxF2Card"><div class="h">Primer pago</div><div class="nxF2F"><label for="cotFecha">Fecha del primer pago</label><input id="cotFecha" type="date" value="${esc(c.primera_fecha || '')}" min="${hoyISOPos()}" onchange="window.nxFinCotFecha(this.value)"></div></div>
+      <div id="cotRes">${finCotResultadoHTML(c)}</div>`;
+  }
+  function finCotRefrescar() { const c = _finCot; const box = document.getElementById('cotRes'); if (box) box.innerHTML = finCotResultadoHTML(c); const eq = document.getElementById('cotIniEq'); if (eq) eq.innerHTML = c.iniModo === 'pct' && c.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(c.inicial) + '</b>' : 'Puede ser 0 si no da inicial.'; }
+  function finCotReIni(c) { if (c.iniModo === 'pct' && c.iniPct != null) c.inicial = r2(Number(c.monto || 0) * c.iniPct / 100); }
+  window.nxFinCotMonto = function (v) { const c = _finCot; const t = String(v || '').trim(); c.monto = t === '' ? null : r2(finNum(t)); c.concepto = ''; c.producto_id = null; finCotReIni(c); finCotRefrescar(); const l = document.getElementById('cotConcepto'); if (l) l.remove(); };
+  window.nxFinCotProd = function (id) { const p = _prods.find(x => String(x.id) === String(id)); if (!p) return; const c = _finCot; c.monto = r2(p.precio_credito || p.precio || 0); c.concepto = p.nombre; c.producto_id = p.id; finCotReIni(c); finV2Repintar(); toast('ok', 'Precio tomado', p.nombre + ' · ' + fmt2(c.monto)); };
+  window.nxFinCotIniModo = function (m) { const c = _finCot; c.iniModo = m; c.iniPct = m === 'pct' && c.inicial != null && Number(c.monto) > 0 ? Math.round(c.inicial / Number(c.monto) * 1000) / 10 : null; finV2Repintar(); };
+  window.nxFinCotIni = function (v) { const c = _finCot; const t = String(v || '').trim(); if (c.iniModo === 'pct') { c.iniPct = t === '' ? null : finNum(t); c.inicial = c.iniPct == null ? null : r2(Number(c.monto || 0) * c.iniPct / 100); } else c.inicial = t === '' ? null : finNum(t); finCotRefrescar(); };
+  window.nxFinCotSet = function (k, v) { const c = _finCot; c[k] = v; if (k === 'frecuencia' && !c.fechaManual) c.primera_fecha = finWizFechaSugerida({ frecuencia: v }); finV2Repintar(); };
+  window.nxFinCotN = function (v) { const n = parseInt(String(v).replace(/\D/g, ''), 10); _finCot.num_cuotas = n > 0 ? n : null; document.querySelectorAll('#v-pos .nxF2Chip').forEach(x => { if (/^\d+$/.test(x.textContent.trim())) x.classList.toggle('on', Number(x.textContent) === n); }); finCotRefrescar(); };
+  window.nxFinCotTasa = function (v) { if (!puedeVerMin()) return; const t = String(v || '').trim(); _finCot.tasa = t === '' ? null : finNum(t); finCotRefrescar(); };
+  window.nxFinCotFecha = function (v) { _finCot.primera_fecha = v || _finCot.primera_fecha; _finCot.fechaManual = true; finCotRefrescar(); };
+  window.nxFinCotTodas = function () { _finCot.todas = !_finCot.todas; finCotRefrescar(); };
+  // WhatsApp: pide el número del cliente (no hay cliente elegido en una consulta) y abre wa.me con el texto listo.
+  window.nxFinCotWA = async function () {
+    const c = _finCot; const r = finCotCalc(c); if (!r) { toast('err', 'Completa la cotización primero'); return; }
+    let num = '';
+    for (let i = 0; i < 3 && !num; i++) {
+      const t = await finDialogo({ titulo: 'Enviar cotización por WhatsApp', icono: 'ti-brand-whatsapp', texto: '<div class="ffLinkTx" style="font-family:inherit;font-size:13px;user-select:text">' + esc(finCotWaTexto(c, r)).replace(/\n/g, '<br>') + '</div>¿A qué número se envía? Se abre WhatsApp y tú tocas «Enviar».', campo: { label: 'WhatsApp del cliente', placeholder: '809-000-0000', min: 10, error: 'Escribe el número con el código de área (10 números).' }, ok: 'Abrir WhatsApp' });
+      if (t === null) return;
+      num = waNum(t); if (!num) toast('err', 'Número inválido', 'Escribe 10 números, por ejemplo 8095551234');
+    }
+    if (!num) return;
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(finCotWaTexto(c, r)), '_blank', 'noopener,noreferrer');
+  };
+  // Convertir en solicitud: abre el asistente con lo cotizado. Si el monto fue a mano y la función existe
+  // (migración 35), el paso 2 arranca en modo «monto a mano»; si no, el empleado elige el artículo.
+  window.nxFinCotConvertir = function () {
+    const c = _finCot; const r = finCotCalc(c); if (!r) { toast('err', 'Completa la cotización primero'); return; }
+    const b = finCotBase(); const t = finTerminosOn();
+    const prod = c.producto_id ? _prods.find(x => String(x.id) === String(c.producto_id)) : null;
+    const items = prod ? [{ producto_id: prod.id, nombre: prod.nombre, precio: r.monto, cantidad: 1, serial: '' }] : (finManualOn() ? [{ producto_id: null, nombre: c.concepto || '', precio: r.monto, cantidad: 1, serial: '', manual: true }] : []);
+    _finSolForm = { paso: 1, cliente_id: null, cliQ: '', nuevo: null, items: items, manualOn: !prod && finManualOn(), inicial: r.ini, iniModo: c.iniModo, iniPct: c.iniPct, inicial_metodo: null,
+      plan_id: b ? b.id : null, primera_fecha: c.primera_fecha, fechaManual: true, perfil: {}, refs: [], notas: 'Viene de una cotización: ' + finCotFrase(c, r),
+      frecuencia: t ? c.frecuencia : null, num_cuotas: t ? Number(c.num_cuotas) : null, tasa: t && puedeVerMin() ? c.tasa : null };
+    if (prod && prod.serial) toast('info', 'Recuerda elegir el IMEI en el paso 2');
+    if (!prod && !finManualOn()) toast('info', 'En el paso 2 elige el artículo', 'El monto se toma del artículo');
+    window.nxFinV2Go('solicitud');
+  };
   function renderFinV2() {
     nxFinV2EnsureCSS();
     let body = '';
@@ -12475,6 +12597,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     else if (_finV2Vista === 'enviada') body = finWizEnviadaHTML();
     else if (_finV2Vista === 'cobrar') body = finCobrarHTML();
     else if (_finV2Vista === 'hoy') body = finHoyHTML();
+    else if (_finV2Vista === 'cotizar') body = finCotHTML();
     else if (_finV2Vista === 'aprobacion') body = finV2AprobacionHTML();
     else if (_finV2Vista === 'detalle') body = finV2DetalleHTML();
     else if (_finV2Vista === 'cobranza') body = finV2CobranzaHTML();
@@ -12994,7 +13117,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         : `<div class="ffCant"><button type="button" aria-label="Menos" onclick="window.nxFinWizCant(${i},-1)">−</button><b>${Number(it.cantidad)}</b><button type="button" aria-label="Más" onclick="window.nxFinWizCant(${i},1)">+</button></div>`;
       return `<div class="ffEq"><div class="ffEqTop"><div style="min-width:0;flex:1"><b>${esc(it.nombre)}</b>${pr.codigo ? `<small class="nxF2Mono">${esc(pr.codigo)}</small>` : ''}</div><button type="button" class="x" aria-label="Quitar ${esc(it.nombre)}" onclick="window.nxFinSolItemDel(${i})"><i class="ti ti-trash"></i></button></div><div class="ffEqBot">${cant}<div style="text-align:right">${precio}${Number(it.cantidad) > 1 ? `<small>${Number(it.cantidad)} × ${fmt2(it.precio)}</small>` : ''}</div></div></div>`;
     };
-    return `<div class="nxF2Card"><div class="h">¿Qué se lleva?</div>
+    const m = finWizManualItem(s); const manual = !!(s.manualOn && finManualOn());
+    const toggle = finManualOn() ? `<label class="ffSwitch"><input type="checkbox" id="ffManual" ${manual ? 'checked' : ''} onchange="window.nxFinWizManual(this.checked)"><span class="ffSwTrack"></span><span>Poner el monto a mano</span></label>` : '';
+    if (manual) return `<div class="nxF2Card"><div class="h">¿Qué se financia?${toggle}</div>
+        <div class="nxF2F"><label for="ffMConcepto">¿Qué se financia? *</label><input id="ffMConcepto" autocomplete="off" placeholder="Ej.: Motor eléctrico usado, reparación de aire…" value="${esc(m ? m.nombre : '')}" oninput="window.nxFinWizManualLeer()"></div>
+        <div class="nxF2F"><label for="ffMMonto">Monto a financiar (RD$) *</label><input id="ffMMonto" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(m && m.precio ? m.precio : '')}" oninput="window.nxFinWizManualLeer()"></div>
+        <div class="ffAviso info"><i class="ti ti-info-circle"></i><div>Este monto <b>no toca el inventario</b> ni pide IMEI. Úsalo solo cuando no hay un artículo del catálogo.</div></div>
+      </div>`;
+    return `<div class="nxF2Card"><div class="h">¿Qué se lleva?${toggle}</div>
         <div id="solProdSlot" class="nxF2Slot">${finSolSearchBoxHTML()}</div>
         <div id="solItems">${s.items.length ? s.items.map(itemHTML).join('') : '<div class="ffVacio">Toca el buscador y elige el equipo. Si tiene IMEI, se te pedirá.</div>'}</div>
         ${s.items.length ? `<div class="nxF2Line tot"><span>Precio a crédito</span><span class="nxF2Mono" id="solTotal">${fmt2(finWizTotal(s))}</span></div>` : ''}
@@ -13133,7 +13263,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!cli.cedula) avisos.push('El cliente no tiene cédula guardada.');
     const blq = (t, paso, html) => `<div class="nxF2Card ffRes"><div class="h">${t}<button type="button" class="ffCambiar" onclick="window.nxFinWizPaso(${paso})">Cambiar</button></div>${html}</div>`;
     return blq('Cliente', 1, `<div class="ffResTx"><b>${esc(cli.nombre || '')}</b><span>${esc([cli.cedula ? 'Cédula ' + cli.cedula : '', cli.telefono].filter(Boolean).join(' · '))}</span></div>`)
-      + blq('Equipo', 2, s.items.map(it => `<div class="nxF2Line"><span>${esc(it.nombre)}${Number(it.cantidad) > 1 ? ' × ' + Number(it.cantidad) : ''}${it.serial ? `<br><small class="nxF2Mono">IMEI ${esc(it.serial)}</small>` : ''}</span><b class="nxF2Mono">${fmt2(r2(Number(it.precio) * Number(it.cantidad)))}</b></div>`).join(''))
+      + blq(s.manualOn ? 'Qué se financia (monto a mano)' : 'Equipo', 2, s.items.map(it => `<div class="nxF2Line"><span>${esc(it.nombre)}${Number(it.cantidad) > 1 ? ' × ' + Number(it.cantidad) : ''}${it.serial ? `<br><small class="nxF2Mono">IMEI ${esc(it.serial)}</small>` : ''}</span><b class="nxF2Mono">${fmt2(r2(Number(it.precio) * Number(it.cantidad)))}</b></div>`).join(''))
       + blq('Plan', 3, pl && r ? `<div class="ffResPlan">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b>${r.ini > 0 ? ' en ' + esc(s.inicial_metodo || '') : ''} · <b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div><div class="ffMin">Primer pago: <b>${esc(finFechaBonita(s.primera_fecha))}</b>${pl.porCaso ? '' : ' · ' + esc(pl.nombre)}</div>` : '<div class="ffVacio">Falta elegir el plan.</div>')
       + blq('Datos del cliente', 4, `<div class="nxF2Line"><span>Trabaja en</span><b>${esc(pf.lugar_trabajo || '—')}</b></div><div class="nxF2Line"><span>Gana al mes</span><b class="nxF2Mono">${pf.ingreso_mensual ? fmt2(pf.ingreso_mensual) : '—'}</b></div><div class="nxF2Line"><span>Gasta al mes</span><b class="nxF2Mono">${pf.gastos_mensuales ? fmt2(pf.gastos_mensuales) : '—'}</b></div><div class="nxF2Line"><span>Referencias</span><b>${refsN}</b></div><div class="nxF2Line"><span>Fiador</span><b>${pf.tiene_fiador && pf.fiador_nombre ? esc(pf.fiador_nombre) : 'No'}</b></div>${peso != null ? `<div class="nxF2Line tot"><span>La cuota es de lo que gana</span><span class="nxF2Badge ${peso > 40 ? 'bad' : peso > 30 ? 'warn' : 'ok'}">${peso} %</span></div>` : ''}`)
       + (avisos.length ? `<div class="ffAviso warn"><i class="ti ti-alert-triangle"></i><div>${avisos.map(esc).join('<br>')}</div></div>` : '')
@@ -13151,6 +13281,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (has('ffNNom') && s.nuevo) s.nuevo = { nombre: val('ffNNom'), cedula: val('ffNCed'), telefono: val('ffNTel'), direccion: val('ffNDir') };
     if (has('ffIni')) { const v = String(val('ffIni') || '').trim(); if (s.iniModo === 'pct') { s.iniPct = v === '' ? null : finNum(v); s.inicial = s.iniPct == null ? null : r2(finWizTotal(s) * s.iniPct / 100); } else s.inicial = v === '' ? null : finNum(v); }
     if (has('ffN')) { const n = parseInt(String(val('ffN')).replace(/\D/g, ''), 10); s.num_cuotas = n > 0 ? n : null; }
+    if (has('ffMConcepto')) { const c = (val('ffMConcepto') || '').trim(); const mo = finNum(val('ffMMonto')); s.items = [{ producto_id: null, nombre: c, precio: r2(mo), cantidad: 1, serial: '', manual: true }]; }
     if (has('ffTasa') && puedeVerMin()) { const t = String(val('ffTasa') || '').trim(); s.tasa = t === '' ? null : finNum(t); }
     if (has('ffFecha')) s.primera_fecha = val('ffFecha') || s.primera_fecha;
     if (has('solNotas')) s.notas = (val('solNotas') || '').trim();
@@ -13173,6 +13304,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!s.cliente_id) return 'Elige el cliente o crea uno nuevo.';
     }
     if (paso === 2) {
+      if (s.manualOn && finManualOn()) { const m = finWizManualItem(s); if (!m || String(m.nombre || '').trim().length < 3) return 'Escribe qué se financia.'; if (!(Number(m.precio) > 0)) return 'Escribe el monto a financiar (mayor que cero).'; return null; }
       if (!s.items.length) return 'Agrega el equipo que se lleva.';
       const sinImei = s.items.find(it => { const pr = _prods.find(x => String(x.id) === String(it.producto_id)); return pr && pr.serial && !String(it.serial || '').trim(); });
       if (sinImei) return 'Elige el IMEI de ' + sinImei.nombre + '.';
@@ -13248,6 +13380,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       window.nxFinSolCliente(nuevo.id);
     } catch (e) { finWizError(finErrTxt(e)); }
   };
+  window.nxFinWizManual = function (on) {
+    finSolLeerForm(); const s = _finSolForm; s.manualOn = !!on;
+    if (on) { const m = finWizManualItem(s); s.items = m ? [m] : [{ producto_id: null, nombre: '', precio: 0, cantidad: 1, serial: '', manual: true }]; }
+    else s.items = s.items.filter(it => !it.manual && it.producto_id);
+    finV2Repintar(); setTimeout(() => { const i = document.getElementById('ffMConcepto'); if (i && on) i.focus(); }, 60);
+  };
+  window.nxFinWizManualLeer = function () { finSolLeerForm(); };
   window.nxFinWizCant = function (i, d) { const it = _finSolForm && _finSolForm.items[i]; if (!it) return; it.cantidad = Math.max(1, Number(it.cantidad || 1) + d); finV2Repintar(); };
   window.nxFinWizPlan = function (id) {
     finSolLeerForm(); const s = _finSolForm; s.plan_id = id; const pl = finWizPlan(s);
@@ -13343,6 +13482,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (nuevas.length) await getAPI().post('pos_fin_referencias', nuevas.map(r => ({ cliente_id: s.cliente_id, nombre: r.nombre, telefono: r.telefono || null, parentesco: r.parentesco || null })));
       const cuerpo = { cliente_id: s.cliente_id, items: s.items.map(it => ({ producto_id: it.producto_id, nombre: it.nombre, precio: r2(it.precio), cantidad: Number(it.cantidad), serial: it.serial || null })), precio_total: total, inicial: ini, inicial_metodo: s.inicial_metodo || 'efectivo', plan_id: pl.id, primera_fecha: s.primera_fecha, estado: 'pendiente', notas: s.notas || null, creado_por_nombre: finYo() };
       // Condiciones por caso (solo con la migración 35): el interés solo lo manda admin/gerente y solo si cambió.
+      if (s.manualOn && finManualOn()) cuerpo.monto_manual = true;
       if (finTerminosOn()) { cuerpo.frecuencia = s.frecuencia; cuerpo.num_cuotas = Number(s.num_cuotas); const base = _finPlanes.find(b => String(b.id) === String(pl.id)); if (puedeVerMin() && s.tasa != null && base && Number(s.tasa) !== Number(base.tasa1)) cuerpo.tasa = Number(s.tasa); }
       const r = await getAPI().post('pos_fin_solicitudes', cuerpo);
       const sol = r && r[0];
@@ -13867,7 +14007,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finErrTxt(e) {
     const m = String(e && e.message || e || '');
     try { console.error('[Financiamiento]', m, e); } catch (x) {}
-    const map = { FIN_IMEI_FALTANTE: 'Falta el IMEI de un equipo. Elige un IMEI por cada unidad.', FIN_IMEI_NO_DISPONIBLE: 'Un IMEI ya no está disponible (se vendió o está apartado). Elige otro.', VENTA_IMEI_OTRO_ALMACEN: 'El IMEI está en otro almacén. Cambia de almacén o elige otro IMEI.', FIN_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja y vuelve a intentar.', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor que el mínimo del plan. Súbela y vuelve a intentar.', FIN_PLAN_INVALIDO: 'Ese plan ya no está activo. Elige otro plan.', FIN_SOLICITUD_NO_PENDIENTE: 'Esta solicitud ya fue decidida. Refresca la pantalla.', FIN_PAGO_EXCEDE_SALDO: 'El monto es mayor que lo que se debe de esta cuota. Revisa el monto.', FIN_NO_ACTIVO: 'Este financiamiento no está activo.', FIN_APROBAR_SIN_PERMISO: 'Solo un administrador o gerente puede aprobar o rechazar.', FIN_REVERSA_SIN_PERMISO: 'Solo un administrador o gerente puede anular pagos.', FIN_CONDONAR_SIN_PERMISO: 'Solo un administrador o gerente puede perdonar recargos.', FIN_EXPEDIENTE_INCOMPLETO: 'Faltan documentos del cliente (cédula, foto, video o firma). No se puede aprobar todavía.', FIN_EXPEDIENTE_YA_ENVIADO: 'El cliente ya envió sus documentos.', FIN_TEXTOS_VACIOS: 'Faltan los textos del link. Pide ayuda a un administrador.', FIN_MOTIVO_REQUERIDO: 'Escribe el motivo.', FIN_TERMINOS_SIN_PERMISO: 'Solo un administrador o gerente puede cambiar el interés o el recargo.', FIN_SIN_PERMISO: 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.', VENTA_ITEM_INVALIDO: 'Un artículo ya no existe o está inactivo. Quítalo y agrégalo de nuevo.', INVENTARIO_SIN_STOCK: 'No hay existencia suficiente de un artículo.', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta de banco activa.' };
+    const map = { FIN_IMEI_FALTANTE: 'Falta el IMEI de un equipo. Elige un IMEI por cada unidad.', FIN_IMEI_NO_DISPONIBLE: 'Un IMEI ya no está disponible (se vendió o está apartado). Elige otro.', VENTA_IMEI_OTRO_ALMACEN: 'El IMEI está en otro almacén. Cambia de almacén o elige otro IMEI.', FIN_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja y vuelve a intentar.', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor que el mínimo del plan. Súbela y vuelve a intentar.', FIN_PLAN_INVALIDO: 'Ese plan ya no está activo. Elige otro plan.', FIN_SOLICITUD_NO_PENDIENTE: 'Esta solicitud ya fue decidida. Refresca la pantalla.', FIN_PAGO_EXCEDE_SALDO: 'El monto es mayor que lo que se debe de esta cuota. Revisa el monto.', FIN_NO_ACTIVO: 'Este financiamiento no está activo.', FIN_APROBAR_SIN_PERMISO: 'Solo un administrador o gerente puede aprobar o rechazar.', FIN_REVERSA_SIN_PERMISO: 'Solo un administrador o gerente puede anular pagos.', FIN_CONDONAR_SIN_PERMISO: 'Solo un administrador o gerente puede perdonar recargos.', FIN_EXPEDIENTE_INCOMPLETO: 'Faltan documentos del cliente (cédula, foto, video o firma). No se puede aprobar todavía.', FIN_EXPEDIENTE_YA_ENVIADO: 'El cliente ya envió sus documentos.', FIN_TEXTOS_VACIOS: 'Faltan los textos del link. Pide ayuda a un administrador.', FIN_MOTIVO_REQUERIDO: 'Escribe el motivo.', FIN_TERMINOS_SIN_PERMISO: 'Solo un administrador o gerente puede cambiar el interés o el recargo.', FIN_MANUAL_UN_RENGLON: 'Con monto a mano solo va un concepto. Quita los demás renglones.', FIN_MANUAL_CONCEPTO_INVALIDO: 'Escribe qué se financia y un monto mayor que cero.', FIN_ITEM_SIN_PRODUCTO: 'Un renglón no tiene artículo. Elige el artículo o marca «Poner el monto a mano».', FIN_SIN_PERMISO: 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.', VENTA_ITEM_INVALIDO: 'Un artículo ya no existe o está inactivo. Quítalo y agrégalo de nuevo.', INVENTARIO_SIN_STOCK: 'No hay existencia suficiente de un artículo.', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta de banco activa.' };
     for (const k in map) if (m.indexOf(k) >= 0) return map[k];
     if (/row-level security|42501|permission denied|violates row/i.test(m)) return 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.';
     if (/Failed to fetch|NetworkError|Load failed|network|timeout/i.test(m)) return 'No hay conexión con el sistema. Revisa el internet y vuelve a intentar.';

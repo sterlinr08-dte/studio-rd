@@ -12399,10 +12399,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffChecks{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px}.ffChecks .ok{color:#15803d}.ffChecks .no{color:#b91c1c;font-weight:700}
 .ffRevisar{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--ff-gold);border-radius:12px;background:var(--ff-gold-s);font-size:13px;cursor:pointer}
 .ffRevisar input{width:22px;height:22px;flex-shrink:0;accent-color:#806515}
-.ffDlg .ffDlgTx{font-size:14px;line-height:1.5;color:#3f3f3a;margin:4px 0 12px}.ffDlg .ffDlgTx .nxF2Line{font-size:13px;padding:3px 0}
+.ffDlg .ffDlgTx{font-size:14.5px;line-height:1.5;color:#3f3f3a;margin:0 0 12px}.ffDlg .ffDlgTx .nxF2Line{font-size:13px;padding:3px 0}
 .ffDlg textarea{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:16px;font-family:inherit;resize:vertical}
 .ffDlgErr{font-size:12.5px;color:#b91c1c;font-weight:600;min-height:16px}
-.ffDlgAcc{display:flex;gap:8px;margin-top:12px}.ffDlgAcc .nxF2Btn{flex:1;min-height:48px}
 .ffLinkTx{font-family:var(--f2-mono);font-size:12px;word-break:break-all;background:var(--ff-canvas);border-radius:8px;padding:8px;margin-bottom:8px;user-select:all;-webkit-user-select:all}
 .ffMisSol{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .ffModo{display:inline-flex;border:1px solid var(--f2-line);border-radius:10px;overflow:hidden}.ffModo button{min-width:48px;min-height:36px;border:0;background:#fff;font:700 13px inherit;font-family:inherit;cursor:pointer;color:var(--f2-steel)}.ffModo button.on{background:var(--ff-gold-s);color:var(--ff-ink)}
@@ -12410,6 +12409,54 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffResumenVivo{border-color:var(--ff-gold);background:#FFFEFA}
 @media (max-width:640px){.ffBig3,.ffBig4{grid-template-columns:1fr}.ffBig{min-height:0;flex-direction:row;align-items:center;padding:14px}.ffBig .txt{display:flex;flex-direction:column;gap:2px}.ffAdm{grid-template-columns:repeat(2,minmax(0,1fr))}.ffPlanes{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.ffBig{transition:none}}
+/* Ventana única del financiamiento */
+.overlay.ffWin{--f2-line:var(--nx-line-2,rgba(148,163,184,.18));--f2-ink:var(--nx-ink,#0f172a);--f2-steel:var(--nx-steel,#64748b);--f2-blue:var(--studio-gold,#C9A227);--f2-blue-l:var(--studio-gold-soft,rgba(201,162,39,.13));--f2-mono:var(--nx-mono,ui-monospace,monospace);--ff-gold:var(--studio-gold,#C9A227);--ff-gold-d:var(--studio-gold-dark,#806515);--ff-gold-s:var(--studio-gold-soft,rgba(201,162,39,.13));--ff-ink:#111;--ff-canvas:#F7F5EF;--ff-line:#E6E1D3;padding:0!important;align-items:center;justify-content:center;background:rgba(10,10,10,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:hidden;z-index:120}
+.ffWinBox{position:relative;background:#FFFEFA;color:var(--ff-ink);width:100%;max-width:520px;max-height:calc(100vh - 200px);display:flex;flex-direction:column;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden;margin:16px;animation:ffWinIn .2s cubic-bezier(.22,1,.36,1)}
+@supports (height:1dvh){.ffWinBox{max-height:calc(100dvh - 200px)}}
+.overlay.ffWin[data-ancho="sm"] .ffWinBox{max-width:440px}.overlay.ffWin[data-ancho="lg"] .ffWinBox{max-width:640px}
+.ffWinHd{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 18px;border-bottom:1px solid var(--ff-line);flex-shrink:0}
+.ffWinT{flex:1;min-width:0}.ffWinT>div{font-size:16px;font-weight:700;letter-spacing:-.2px;line-height:1.2}.ffWinT i{color:var(--ff-gold-d);margin-right:6px}.ffWinT small{display:block;font-size:12px;color:var(--f2-steel);margin-top:2px}
+.ffWinX{width:44px;height:44px;border-radius:12px;border:0;background:var(--ff-canvas);color:var(--ff-ink);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ffWinX:active{transform:translateY(1px)}
+.ffWinBody{overflow-y:auto;padding:14px 18px;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch;font-size:13.5px}
+.ffWinBody>*:last-child{margin-bottom:0}
+.ffWinFt{padding:12px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--ff-line);background:#FFFEFA;display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0}
+.overlay.ffWin .ffWinFt .nxF2Btn,.overlay.ffWin .ffWinFt .btn{flex:1 1 0;min-height:48px!important;height:auto!important;font-size:14px!important;margin:0;border-radius:12px;justify-content:center}
+.overlay.ffWin .ffWinBody,.overlay.ffWin .ffWinHd{text-transform:none;letter-spacing:normal}
+.ffWinFt .btn.bghost{border:1px solid var(--ff-line);background:#fff;color:var(--ff-ink)}
+.ffWinFt .ffFtNota{flex-basis:100%;font-size:12px;color:var(--f2-steel);text-align:center;margin:-2px 0 0}
+.ffWinDrag{display:none}
+.overlay.ffWin .ffWinFt.ffApilar .nxF2Btn.p{flex:1 1 100%}
+.overlay.ffWin .ffWinFt.ffApilar .nxF2Btn:not(.p){flex:1 1 calc(50% - 5px)}
+.ffWinHc .nxF2Lbl,.ffWinHc .nxF2K>span:first-child{text-transform:uppercase;letter-spacing:.04em}
+.ffWin .nxF2F input,.ffWin .nxF2F select,.ffWin .nxF2F textarea{font-size:16px}
+.ffWin .ffCobCli{margin-bottom:10px}
+@media (max-width:720px){
+  .overlay.ffWin{align-items:flex-end}
+  .ffWinBox{max-width:none!important;margin:0;border-radius:20px 20px 0 0;max-height:calc(100vh - 110px);animation:ffWinUp .2s cubic-bezier(.22,1,.36,1)}
+  @supports (height:1dvh){.ffWinBox{max-height:calc(100dvh - 110px)}}
+  .ffWinDrag{display:block;position:absolute;top:6px;left:50%;width:40px;height:4px;border-radius:2px;background:#d6d0bf;transform:translateX(-50%)}
+  .ffWinHd{padding-top:16px}
+  .ffWinFt .nxF2Btn,.ffWinFt .btn{flex:1 1 calc(50% - 5px)}
+  .overlay.ffWin .ffWinFt.ffApilar .nxF2Btn,.overlay.ffWin .ffWinFt.ffApilar .btn{flex:1 1 100%}
+}
+@keyframes ffWinIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ffWinUp{from{opacity:.6;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.ffWinBox{animation:none}}
+/* Con una ventana abierta los avisos van arriba y solo se ve el más reciente: la ventana deja ese espacio libre */
+body.ffWinAbierta #toastS{bottom:auto!important;top:max(12px,env(safe-area-inset-top))!important}
+body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
+/* Ticket del recibo */
+.ffTicket{margin:0 auto;max-width:340px;background:#fff;border:1px solid var(--ff-line);border-radius:14px;padding:18px 16px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.ffTkEmp{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--f2-steel)}.ffTkEmp img{border-radius:9px}
+.ffTkOk{width:48px;height:48px;border-radius:50%;background:#dcfce7;color:#15803d;font-size:28px;display:flex;align-items:center;justify-content:center}
+.ffTkTit{font-size:18px;font-weight:800;letter-spacing:-.2px}.ffTkCli{font-size:13px;color:var(--f2-steel);margin-top:-6px}
+.ffTkRows{width:100%;border-top:1px dashed var(--ff-line);border-bottom:1px dashed var(--ff-line);padding:8px 0;display:flex;flex-direction:column;gap:4px}
+.ffTkRow{display:flex;justify-content:space-between;font-size:12.5px}.ffTkRow span{color:var(--f2-steel)}.ffTkRow b{font-family:var(--f2-mono)}
+.ffTkMonto{font:700 30px/1 var(--f2-mono);letter-spacing:-.5px;margin:4px 0}
+.ffTkBar{width:70%;height:34px;background:repeating-linear-gradient(90deg,#111 0 2px,transparent 2px 4px,#111 4px 5px,transparent 5px 8px,#111 8px 11px,transparent 11px 13px)}
+.ffTkFolio{font:600 11px var(--f2-mono);color:var(--f2-steel);letter-spacing:.1em}
+.ffWinHc .nxF2Chips{margin-top:0}
 `;
     document.head.appendChild(s);
   }
@@ -12517,11 +12564,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const r = finCotCalc(c);
     if (!finCotBase()) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>Falta el interés de la tienda.</b> Pídele a un administrador que active un plan en Financiamiento → Planes.</div></div>`;
     if (!r) return `<div class="nxF2Card ffResumenVivo"><div class="ffMin">${!(Number(c.monto) > 0) ? 'Escribe el monto a financiar (o elige un artículo).' : Number(c.inicial || 0) >= Number(c.monto) ? 'La inicial tiene que ser menor que el monto (' + fmt2(c.monto) + ').' : 'Elige cada cuánto paga, en cuántos pagos y la fecha del primer pago.'}</div></div>`;
-    const lista = (c.todas ? r.rows : r.rows.slice(0, 3)).map(x => `<div class="nxF2Line"><span>Pago ${x.numero} · ${finFechaCorta(x.fecha_venc)}</span><b class="nxF2Mono">${fmt2(x.cuota)}</b></div>`).join('');
+    const lista = r.rows.slice(0, 3).map(x => `<div class="nxF2Line"><span>Pago ${x.numero} · ${finFechaCorta(x.fecha_venc)}</span><b class="nxF2Mono">${fmt2(x.cuota)}</b></div>`).join('');
     return `<div class="nxF2Card ffResumenVivo"><div class="nxF2Lbl">Así quedaría</div>
       <div class="ffPlanBig">Paga <b class="nxF2Mono">${fmt2(r.ini)}</b> de inicial hoy · <b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(r.pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div>
       <div class="ffMin">Primer pago: <b>${esc(finFechaBonita(c.primera_fecha))}</b> · Se financian ${fmt2(r.cap)}${puedeVerMin() ? ' al ' + Number(r.pl.tasa1) + ' % por pago' : ''}.</div>
-      <div class="ffCotLista">${lista}${r.rows.length > 3 ? `<button type="button" class="ffCambiar" onclick="window.nxFinCotTodas()">${c.todas ? 'Ver menos' : 'Ver todas (' + r.rows.length + ')'}</button>` : ''}</div>
+      <div class="ffCotLista">${lista}${r.rows.length > 3 ? `<button type="button" class="ffCambiar" onclick="window.nxFinCotTodas()">Ver todas (${r.rows.length})</button>` : ''}</div>
       <div class="nxF2G2" style="margin-top:6px"><button type="button" class="nxF2Btn wa" onclick="window.nxFinCotWA()"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</button><button type="button" class="nxF2Btn p" onclick="window.nxFinCotConvertir()"><i class="ti ti-file-plus"></i> Convertir en solicitud</button></div>
       <div style="font-size:11px;color:var(--f2-steel);text-align:center">Solo es una consulta: no se guarda nada.</div></div>`;
   }
@@ -12559,7 +12606,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxFinCotN = function (v) { const n = parseInt(String(v).replace(/\D/g, ''), 10); _finCot.num_cuotas = n > 0 ? n : null; document.querySelectorAll('#v-pos .nxF2Chip').forEach(x => { if (/^\d+$/.test(x.textContent.trim())) x.classList.toggle('on', Number(x.textContent) === n); }); finCotRefrescar(); };
   window.nxFinCotTasa = function (v) { if (!puedeVerMin()) return; const t = String(v || '').trim(); _finCot.tasa = t === '' ? null : finNum(t); finCotRefrescar(); };
   window.nxFinCotFecha = function (v) { _finCot.primera_fecha = v || _finCot.primera_fecha; _finCot.fechaManual = true; finCotRefrescar(); };
-  window.nxFinCotTodas = function () { _finCot.todas = !_finCot.todas; finCotRefrescar(); };
+  window.nxFinCotTodas = function () {
+    const c = _finCot; const r = finCotCalc(c); if (!r) return;
+    finVentana({ id: 'ffCotTodas', titulo: 'Los ' + r.n + ' pagos', icono: 'ti-calendar', ancho: 'sm', sub: finFrecCada(r.pl.frecuencia) + ' · ' + fmt2(r.cuota) + (r.iguales ? '' : ' el primero'),
+      cuerpo: `<div class="ffCotLista" style="border:0;padding:0">${r.rows.map(x => `<div class="nxF2Line"><span>Pago ${x.numero} · ${finFechaCorta(x.fecha_venc)}</span><b class="nxF2Mono">${fmt2(x.cuota)}</b></div>`).join('')}<div class="nxF2Line tot"><span>Total en pagos</span><b class="nxF2Mono">${fmt2(r.suma)}</b></div></div>`,
+      pie: `<button type="button" class="nxF2Btn" onclick="document.getElementById('ffCotTodas').remove()">Cerrar</button>` });
+  };
   // WhatsApp: pide el número del cliente (no hay cliente elegido en una consulta) y abre wa.me con el texto listo.
   window.nxFinCotWA = async function () {
     const c = _finCot; const r = finCotCalc(c); if (!r) { toast('err', 'Completa la cotización primero'); return; }
@@ -12586,6 +12638,86 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!prod && !finManualOn()) toast('info', 'En el paso 2 elige el artículo', 'El monto se toma del artículo');
     window.nxFinV2Go('solicitud');
   };
+  // ══ Ventana única del financiamiento (29-sep-2026, «Ajusta las ventanas») ══════════════════════════════
+  // Todas las ventanas emergentes del módulo (cobro, recibo, confirmaciones, IMEI, link del expediente, firma,
+  // historial, cuotas de la cotización) salen de aquí: en celular es una hoja pegada abajo (esquinas 20 px,
+  // cabecera y pie fijos, cuerpo con scroll, safe-area y teclado); en escritorio, un diálogo centrado de
+  // 440–640 px. Escape cierra siempre; tocar el fondo cierra solo si la ventana no tiene nada que perder.
+  // Solo cambia la envoltura: los ids y botones de adentro son los mismos de siempre.
+  // o = { id, titulo, icono, sub, cuerpo, pie, ancho ('sm'|'md'|'lg'), destructivo, claseBox, apilar, alCerrar }
+  let _finWinVv = false;
+  function finWinVvAjustar() {
+    const vv = window.visualViewport; if (!vv) return;
+    document.querySelectorAll('.overlay.ffWin').forEach(ov => {
+      if (window.matchMedia && window.matchMedia('(max-width:720px)').matches) { ov.style.top = vv.offsetTop + 'px'; ov.style.height = vv.height + 'px'; }
+      else { ov.style.top = ''; ov.style.height = ''; }
+    });
+  }
+  // Escape cierra la ventana de encima aunque el foco esté fuera (p. ej. en celular no se enfoca nada).
+  function finWinEscape(e) {
+    if (e.key !== 'Escape') return;
+    const todas = document.querySelectorAll('.overlay.ffWin'); const ov = todas[todas.length - 1]; if (!ov) return;
+    e.stopPropagation(); e.preventDefault(); if (ov.__cerrar) ov.__cerrar(); else ov.remove();
+  }
+  let _finWinEsc = false;
+  function finWinSincronizar() {
+    const hay = !!document.querySelector('.overlay.ffWin');
+    document.body.classList.toggle('ffWinAbierta', hay);
+    if (hay && !_finWinEsc) { _finWinEsc = true; document.addEventListener('keydown', finWinEscape, true); }
+    if (!hay && _finWinEsc) { _finWinEsc = false; document.removeEventListener('keydown', finWinEscape, true); }
+    if (hay && !_finWinVv && window.visualViewport) { _finWinVv = true; window.visualViewport.addEventListener('resize', finWinVvAjustar); window.visualViewport.addEventListener('scroll', finWinVvAjustar); }
+    if (!hay && _finWinVv && window.visualViewport) { _finWinVv = false; window.visualViewport.removeEventListener('resize', finWinVvAjustar); window.visualViewport.removeEventListener('scroll', finWinVvAjustar); }
+    if (hay) finWinVvAjustar();
+  }
+  let _finWinObs = null;
+  function finVentana(o) {
+    o = o || {};
+    cerrarModal(o.id); nxFinV2EnsureCSS();
+    if (!_finWinObs) { _finWinObs = new MutationObserver(finWinSincronizar); _finWinObs.observe(document.body, { childList: true }); }
+    const ov = document.createElement('div'); ov.id = o.id; ov.className = 'overlay open ffWin'; ov.dataset.ancho = o.ancho || 'md';
+    let cerrada = false;
+    const cerrar = () => { if (cerrada) return; cerrada = true; ov.remove(); if (o.alCerrar) { try { o.alCerrar(); } catch (e) {} } };
+    ov.__cerrar = cerrar;
+    ov.innerHTML = `<div class="ffWinBox${o.claseBox ? ' ' + o.claseBox : ''}" role="dialog" aria-modal="true" aria-labelledby="${o.id}T">
+        <div class="ffWinHd"><span class="ffWinDrag" aria-hidden="true"></span><div class="ffWinT"><div id="${o.id}T">${o.icono ? `<i class="ti ${o.icono}"></i>` : ''}${esc(o.titulo || '')}</div>${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</div><button type="button" class="ffWinX" aria-label="Cerrar"><i class="ti ti-x"></i></button></div>
+        <div class="ffWinBody">${o.cuerpo || ''}</div>
+        ${o.pie ? `<div class="ffWinFt${o.apilar ? ' ffApilar' : ''}">${o.pie}</div>` : ''}
+      </div>`;
+    ov.querySelector('.ffWinX').addEventListener('click', cerrar);
+    if (!o.destructivo) ov.addEventListener('click', e => { if (e.target === ov) cerrar(); });
+    ov.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      const f = Array.from(ov.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(x => !x.disabled && x.offsetParent !== null);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    });
+    document.body.appendChild(ov); finWinSincronizar();
+    // Foco dentro de la ventana (para Escape y Tab). En pantalla táctil no se enfoca un campo (abriría el teclado).
+    setTimeout(() => { const p = ov.querySelector('.ffWinBody input:not([type=hidden]),.ffWinBody textarea,.ffWinBody select'); const b = ov.querySelector('.ffWinFt .nxF2Btn.p:not(:disabled),.ffWinFt .btn.bc1:not(:disabled)'); const fino = !!(window.matchMedia && window.matchMedia('(pointer:fine)').matches); try { ((p && fino) ? p : (b || ov.querySelector('.ffWinX'))).focus({ preventScroll: true }); } catch (e) {} }, 40);
+    return ov;
+  }
+  // Recibo del cobro de cuota: tarjeta tipo ticket dentro de la ventana y 3 botones limpios en el pie.
+  // (Sustituye a nxReciboAnimado SOLO en financiamiento; el recibo de abonos del POS no cambia.)
+  function finReciboVentana(d, acciones) {
+    d = d || {}; acciones = acciones || [];
+    const filas = (d.filas || []).map(f => `<div class="ffTkRow"><span>${esc(f.label)}</span><b>${esc(f.valor)}</b></div>`).join('');
+    const cuerpo = `<div class="ffTicket" role="img" aria-label="${esc(d.titulo || 'Pago recibido')} ${esc(fmt2(d.monto))}">
+        <div class="ffTkEmp"><img src="icon-192.png" alt="" width="34" height="34"><span>${esc(d.empresa || empNom())}</span></div>
+        <div class="ffTkOk"><i class="ti ti-circle-check"></i></div>
+        <div class="ffTkTit">${esc(d.titulo || 'Pago recibido')}</div>
+        ${d.cliente ? `<div class="ffTkCli">${esc(d.cliente)}</div>` : ''}
+        <div class="ffTkRows">${filas}</div>
+        <div class="ffTkMonto">${esc(fmt2(d.monto))}</div>
+        <div class="ffTkBar" aria-hidden="true"></div>
+        ${d.folio ? `<div class="ffTkFolio">${esc(d.folio)}</div>` : ''}
+      </div>`;
+    const pie = acciones.map((a, i) => `<button type="button" class="nxF2Btn${i === 0 ? ' p' : ''}" data-i="${i}"><i class="ti ${a.icon || 'ti-check'}"></i> ${esc(a.label)}</button>`).join('') + `<button type="button" class="nxF2Btn" data-cerrar="1"><i class="ti ti-x"></i> Cerrar</button>`;
+    const ov = finVentana({ id: 'nxFinRecibo', titulo: d.titulo || 'Pago recibido', icono: 'ti-receipt-2', ancho: 'sm', apilar: true, cuerpo, pie });
+    ov.querySelectorAll('.ffWinFt [data-i]').forEach(b => b.addEventListener('click', () => { const a = acciones[Number(b.dataset.i)]; ov.__cerrar(); if (a && a.onclick) { try { a.onclick(); } catch (e) {} } }));
+    ov.querySelector('.ffWinFt [data-cerrar]').addEventListener('click', () => ov.__cerrar());
+    return ov;
+  }
   function renderFinV2() {
     nxFinV2EnsureCSS();
     let body = '';
@@ -12785,11 +12917,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxFinHistCredito = function (cliId) {
     if (!cliId) { toast('err', 'Cliente no encontrado'); return; }
     _hcCli = cliId; _hcTabF = 'resumen';
-    cerrarModal('nxFinHc');
-    const ov = document.createElement('div'); ov.id = 'nxFinHc'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxF2 fhcModal" role="dialog" aria-label="Historial crediticio"><div class="nxF2Head"><button type="button" class="nxF2Back" aria-label="Cerrar" onclick="document.getElementById('nxFinHc').remove()"><i class="ti ti-arrow-left"></i></button><div style="flex:1;min-width:0"><div class="t">Historial crediticio</div><div class="s">Comportamiento de pago del cliente en STUDIO</div></div></div><div id="fhcBody"></div></div>`;
-    document.body.appendChild(ov);
+    finVentana({ id: 'nxFinHc', titulo: 'Historial crediticio', icono: 'ti-history', sub: 'Comportamiento de pago del cliente en STUDIO', ancho: 'lg', claseBox: 'nxF2 ffWinHc', cuerpo: '<div id="fhcBody"></div>', pie: `<button type="button" class="nxF2Btn" onclick="document.getElementById('nxFinHc').remove()">Cerrar</button>` });
     finHcRender();
   };
   window.nxFinHcTab = function (t) { _hcTabF = t; finHcRender(); };
@@ -13438,16 +13566,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const usados = new Set(); _finSolForm.items.forEach((x, j) => { if (j !== i && x.producto_id === it.producto_id) String(x.serial || '').split(',').map(t => t.trim()).filter(Boolean).forEach(t => usados.add(t)); });
     const sel = new Set(String(it.serial || '').split(',').map(t => t.trim()).filter(Boolean));
     rows = rows.filter(r => !usados.has(r.serial));
-    const ov = document.createElement('div'); ov.id = 'nxFinSolSer'; ov.className = 'overlay open';
-    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal" style="max-width:420px;max-height:90vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-device-mobile"></i> IMEI · ${esc(it.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinSolSer').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Marca los IMEI a financiar — <b>la cantidad se ajusta sola</b> a los que elijas.</div>
+    finVentana({ id: 'nxFinSolSer', titulo: 'IMEI · ' + it.nombre, icono: 'ti-device-mobile', ancho: 'sm', destructivo: true,
+      cuerpo: `<div style="font-size:12.5px;color:#475569;margin-bottom:8px">Marca los IMEI a financiar — <b>la cantidad se ajusta sola</b> a los que elijas.</div>
         ${rows.length > 1 ? '<div style="margin-bottom:7px">' + posBuscador({ id: 'nxFinSolSerQ', inputmode: 'numeric', placeholder: 'Buscar IMEI…', oninput: "document.querySelectorAll('#nxFinSolSer [data-ser]').forEach(function(l){l.style.display=l.getAttribute('data-ser').indexOf(this.value.toLowerCase())>=0?'':'none'}.bind(this))" }) + '</div>' : ''}
-        <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px">${rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:11.5px"><input type="checkbox" data-serial="${esc(r.serial)}"${sel.has(r.serial) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : '<div style="text-align:center;color:#475569;font-size:12px;padding:18px">No hay IMEI disponibles de este artículo en el almacén.</div>'}</div>
-        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn bghost" type="button" style="flex:1" onclick="document.getElementById('nxFinSolSer').remove()">Cancelar</button><button class="btn bc1" type="button" style="flex:2" onclick="window.nxFinSolImeiOk(${i})"><i class="ti ti-check"></i> Listo</button></div>
-      </div>`;
-    document.body.appendChild(ov);
+        <div style="display:flex;flex-direction:column;gap:6px">${rows.length ? rows.map(r => `<label class="nxEntAfin" data-ser="${esc(String(r.serial || '').toLowerCase())}" style="font-size:12.5px"><input type="checkbox" data-serial="${esc(r.serial)}"${sel.has(r.serial) ? ' checked' : ''}> ${colorDotHTML(r.color)} <span style="font-family:var(--mono,monospace)">${esc(r.serial)}</span></label>`).join('') : '<div style="text-align:center;color:#475569;font-size:12.5px;padding:18px">No hay IMEI disponibles de este artículo en el almacén.</div>'}</div>`,
+      pie: `<button class="btn bghost" type="button" onclick="document.getElementById('nxFinSolSer').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinSolImeiOk(${i})"><i class="ti ti-check"></i> Listo</button>` });
   };
   window.nxFinSolImeiOk = function (i) {
     const it = _finSolForm && _finSolForm.items[i]; if (!it) return;
@@ -13801,17 +13924,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const s = _finSols.find(x => String(x.id) === String(id)); if (!s) return;
     const pl = finPlanEfectivo(s); const rows = pl ? finV2Amortizar(r2(s.precio_total - s.inicial), pl, s.primera_fecha) : [];
     const t = finExpTextos(s, pl, rows);
-    cerrarModal('nxFinM');
-    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
-    const ta = 'width:100%;min-height:96px;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:14px;line-height:1.45;font-family:inherit;resize:vertical;text-transform:none';
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:560px;max-height:92vh;display:flex;flex-direction:column"><div class="mt"><span><i class="ti ti-link"></i> Link del expediente · ${esc(s.codigo || '')}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:12px;color:#475569">Revisa y corrige los textos antes de crear el link. El cliente verá la declaración y leerá el guion en el video.</div>
-        <label style="font-size:11px;font-weight:700;color:#475569">Declaración (lo que acepta)<textarea id="fxDecl" style="${ta}">${esc(s.declaracion || t.decl)}</textarea></label>
-        <label style="font-size:11px;font-weight:700;color:#475569">Texto que leerá en el video<textarea id="fxGuion" style="${ta}">${esc(s.video_guion || t.guion)}</textarea></label>
-      </div>
-      <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinExpCrear('${s.id}')"><i class="ti ti-check"></i> ${s.exp_token ? 'Guardar textos' : 'Crear link'}</button></div></div>`;
-    document.body.appendChild(ov);
+    const ta = 'width:100%;min-height:96px;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:16px;line-height:1.45;font-family:inherit;resize:vertical;text-transform:none;box-sizing:border-box';
+    finVentana({ id: 'nxFinM', titulo: 'Link del expediente · ' + (s.codigo || ''), icono: 'ti-link', destructivo: true,
+      cuerpo: `<div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12.5px;color:#475569">Revisa y corrige los textos antes de crear el link. El cliente verá la declaración y leerá el guion en el video.</div>
+        <label style="font-size:12px;font-weight:700;color:#475569">Declaración (lo que acepta)<textarea id="fxDecl" style="${ta}">${esc(s.declaracion || t.decl)}</textarea></label>
+        <label style="font-size:12px;font-weight:700;color:#475569">Texto que leerá en el video<textarea id="fxGuion" style="${ta}">${esc(s.video_guion || t.guion)}</textarea></label>
+      </div>`,
+      pie: `<button class="btn bghost" type="button" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinExpCrear('${s.id}')"><i class="ti ti-check"></i> ${s.exp_token ? 'Guardar textos' : 'Crear link'}</button>` });
   };
   window.nxFinExpCrear = async function (id) {
     const decl = (document.getElementById('fxDecl') || {}).value || '', guion = (document.getElementById('fxGuion') || {}).value || '';
@@ -14021,18 +14141,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finDialogo(o) {
     o = o || {};
     return new Promise(res => {
-      cerrarModal('nxFinDlg'); nxFinV2EnsureCSS();
-      const ov = document.createElement('div'); ov.id = 'nxFinDlg'; ov.className = 'overlay open';
-      const fin = v => { const x = document.getElementById('nxFinDlg'); if (x) x.remove(); res(v); };
-      ov.addEventListener('click', ev => { if (ev.target === ov) fin(null); });
+      let listo = false; const fin = v => { if (listo) return; listo = true; const x = document.getElementById('nxFinDlg'); if (x) x.remove(); res(v); };
       const c = o.campo;
-      ov.innerHTML = `<div class="modal nxPrForm ffDlg" role="dialog" aria-modal="true" aria-labelledby="ffDlgT" style="max-width:440px">
-          <div class="mt"><span id="ffDlgT">${o.icono ? `<i class="ti ${o.icono}"></i> ` : ''}${esc(o.titulo || 'Confirmar')}</span></div>
-          ${o.texto ? `<div class="ffDlgTx">${o.texto}</div>` : ''}
-          ${c ? `<div class="nxF2F"><label for="ffDlgIn">${esc(c.label || 'Motivo')}</label><textarea id="ffDlgIn" rows="3" placeholder="${esc(c.placeholder || '')}"></textarea><div class="ffDlgErr" id="ffDlgErr"></div></div>` : ''}
-          <div class="ffDlgAcc"><button type="button" class="nxF2Btn" id="ffDlgNo">${esc(o.cancelar || 'Cancelar')}</button><button type="button" class="nxF2Btn ${o.peligro ? 'd' : 'p'}" id="ffDlgSi">${esc(o.ok || 'Aceptar')}</button></div>
-        </div>`;
-      document.body.appendChild(ov);
+      const ov = finVentana({ id: 'nxFinDlg', titulo: o.titulo || 'Confirmar', icono: o.icono, ancho: 'sm', destructivo: !!(o.peligro || c), alCerrar: () => fin(null),
+        cuerpo: `${o.texto ? `<div class="ffDlgTx">${o.texto}</div>` : ''}${c ? `<div class="nxF2F"><label for="ffDlgIn">${esc(c.label || 'Motivo')}</label><textarea id="ffDlgIn" rows="3" placeholder="${esc(c.placeholder || '')}"></textarea><div class="ffDlgErr" id="ffDlgErr"></div></div>` : ''}`,
+        pie: `<button type="button" class="nxF2Btn" id="ffDlgNo">${esc(o.cancelar || 'Cancelar')}</button><button type="button" class="nxF2Btn ${o.peligro ? 'd' : 'p'}" id="ffDlgSi">${esc(o.ok || 'Aceptar')}</button>` });
+      ov.classList.add('ffDlg');
       const inp = document.getElementById('ffDlgIn');
       document.getElementById('ffDlgNo').onclick = () => fin(null);
       document.getElementById('ffDlgSi').onclick = () => {
@@ -14041,8 +14155,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (v.length < (c.min || 3)) { const er = document.getElementById('ffDlgErr'); if (er) er.textContent = c.error || 'Escribe un poco más (mínimo ' + (c.min || 3) + ' letras).'; inp.focus(); return; }
         fin(v);
       };
-      ov.addEventListener('keydown', ev => { if (ev.key === 'Escape') fin(null); });
-      setTimeout(() => { if (inp) inp.focus(); else { const b = document.getElementById('ffDlgSi'); if (b) b.focus(); } }, 60);
+      setTimeout(() => { if (inp) { try { inp.focus(); } catch (e) {} } }, 60);
     });
   }
 
@@ -14182,13 +14295,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxFinV2FirmarTienda = function (id) {
     const f = finFinDe(id); if (!f) return;
-    cerrarModal('nxFinM');
-    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px"><div class="mt"><span><i class="ti ti-signature"></i> Firma de la tienda</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div style="font-size:11.5px;color:#475569;margin-bottom:8px">Firma con el dedo o el mouse. Se guarda con tu nombre (${esc(finYo())}) y la hora.</div>
-      <canvas id="finSigPad" class="nxF2SigPad" width="640" height="300"></canvas>
-      <div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinV2FirmaLimpiar()">Limpiar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinV2FirmaGuardar('${f.id}')"><i class="ti ti-check"></i> Guardar firma</button></div></div>`;
-    document.body.appendChild(ov); nxFinV2EnsureCSS();
+    finVentana({ id: 'nxFinM', titulo: 'Firma de la tienda', icono: 'ti-signature', ancho: 'sm', destructivo: true,
+      cuerpo: `<div style="font-size:12.5px;color:#475569;margin-bottom:8px">Firma con el dedo o el mouse. Se guarda con tu nombre (${esc(finYo())}) y la hora.</div>
+      <canvas id="finSigPad" class="nxF2SigPad" width="640" height="300"></canvas>`,
+      pie: `<button type="button" class="nxF2Btn" onclick="window.nxFinV2FirmaLimpiar()">Limpiar</button><button type="button" class="nxF2Btn p" onclick="window.nxFinV2FirmaGuardar('${f.id}')"><i class="ti ti-check"></i> Guardar firma</button>` });
     const cv = document.getElementById('finSigPad'); const ctx = cv.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
     let dib = false, trazos = 0; const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; };
     cv.addEventListener('pointerdown', e => { dib = true; trazos++; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); cv.setPointerCapture(e.pointerId); });
@@ -14243,20 +14353,16 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (!(_caja && _caja.id)) { try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {} }
     const p = finV2Pend(c); const at = finV2Atraso(c); const pl = finPlanDe(f);
     _finV2Cobro = { finId: finId, cuotaId: c.id, metodo: null, pend: p, volver: _finV2Vista };
-    cerrarModal('nxFinM'); nxFinV2EnsureCSS();
-    const ov = document.createElement('div'); ov.id = 'nxFinM'; ov.className = 'overlay open'; ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     const montoTxt = r2(p.total).toLocaleString('en-US', { minimumFractionDigits: 2 });
     const bloqueo = '';
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px"><div class="mt"><span><i class="ti ti-cash"></i> Cobrar cuota ${c.numero} de ${f.cuotas_total}</span><button class="nxBack" type="button" onclick="document.getElementById('nxFinM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      ${bloqueo}${finCajaAvisoHTML()}
+    finVentana({ id: 'nxFinM', titulo: 'Cobrar cuota ' + c.numero + ' de ' + f.cuotas_total, icono: 'ti-cash', destructivo: true,
+      cuerpo: `${bloqueo}${finCajaAvisoHTML()}
       <div class="ffCobCli"><b>${esc(f.cliente_nombre || '')}</b><span>${esc(f.descripcion || '')}</span><span class="${at > 0 ? 'rojo' : ''}">${at > 0 ? 'Venció el ' + finFechaCorta(c.fecha_venc) + ' · ' + at + (at === 1 ? ' día' : ' días') + ' de atraso' : 'Vence el ' + finFechaCorta(c.fecha_venc)}</span></div>
       <div class="nxF2Note" style="margin-bottom:10px"><div class="nxF2Line"><span>Cuota</span><span class="nxF2Mono">${fmt2(r2(p.capital + p.interes))}</span></div>${p.mora > 0 ? `<div class="nxF2Line"><span>Recargo por atraso</span><span class="nxF2Mono" style="color:#b91c1c">${fmt2(p.mora)}</span></div>` : ''}<div class="nxF2Line tot"><span>Total a cobrar</span><span class="nxF2Mono" style="font-size:15px">${fmt2(p.total)}</span></div>${p.pagado.total > 0 ? `<div style="font-size:11px;color:#b45309;margin-top:4px">Ya abonó ${fmt2(p.pagado.total)} a esta cuota.</div>` : ''}</div>
-      <div class="nxF2F"><label for="fpMonto">Monto que entrega el cliente</label><div style="display:flex;gap:6px"><input id="fpMonto" class="mono ffMontoIn" inputmode="decimal" value="${montoTxt}"><button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="document.getElementById('fpMonto').value='${montoTxt}'">Cuota completa</button></div><div style="font-size:11px;color:var(--f2-steel)">Si paga menos, se registra como abono y la cuota sigue abierta.</div></div>
+      <div class="nxF2F"><label for="fpMonto">Monto que entrega el cliente</label><div style="display:flex;gap:6px"><input id="fpMonto" class="mono ffMontoIn" inputmode="decimal" value="${montoTxt}" style="flex:1;min-width:0"><button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px;flex:0 0 auto" onclick="document.getElementById('fpMonto').value='${montoTxt}'">Cuota completa</button></div><div style="font-size:11.5px;color:var(--f2-steel)">Si paga menos, se registra como abono y la cuota sigue abierta.</div></div>
       <div class="nxF2F" style="margin-top:10px"><label>¿Cómo pagó?</label><div class="nxF2Meth ffMeth" id="fpMet"><button type="button" data-m="efectivo" onclick="window.nxFinV2Met('efectivo')"><i class="ti ti-cash"></i> Efectivo</button><button type="button" data-m="transferencia" onclick="window.nxFinV2Met('transferencia')"><i class="ti ti-building-bank"></i> Transferencia</button><button type="button" data-m="tarjeta" onclick="window.nxFinV2Met('tarjeta')"><i class="ti ti-credit-card"></i> Tarjeta</button></div><div id="fpCajaInfo" style="display:none;font-size:12px;font-weight:700;margin-top:4px;color:#b91c1c"><i class="ti ti-alert-triangle"></i> La caja está cerrada: no se puede cobrar en efectivo.</div></div>
-      <div class="nxF2G2" id="fpBanco" style="margin-top:10px;display:none"><div class="nxF2F" id="fpCtaBox"><label for="fpCta">Cuenta de banco</label><select id="fpCta">${_finCtas.map(x => `<option value="${x.id}">${esc(x.alias || x.banco_nombre)}</option>`).join('') || '<option value="">Sin cuentas activas</option>'}</select></div><div class="nxF2F"><label for="fpRef">Número de referencia</label><input id="fpRef" placeholder="Opcional"></div></div>
-      <div style="display:flex;gap:8px;margin-top:14px"><button type="button" class="nxF2Btn" style="flex:1" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button type="button" class="nxF2Btn p" style="flex:2" id="fpGo" disabled onclick="window.nxFinV2CobrarGo()"><i class="ti ti-check"></i> Registrar cobro</button></div>
-      <div id="fpHint" style="font-size:11px;color:var(--f2-steel);text-align:center;margin-top:6px">${finPuedeCobrar() ? 'Elige cómo pagó para registrar.' : ''}</div></div>`;
-    document.body.appendChild(ov);
+      <div class="nxF2G2" id="fpBanco" style="margin-top:10px;display:none"><div class="nxF2F" id="fpCtaBox"><label for="fpCta">Cuenta de banco</label><select id="fpCta">${_finCtas.map(x => `<option value="${x.id}">${esc(x.alias || x.banco_nombre)}</option>`).join('') || '<option value="">Sin cuentas activas</option>'}</select></div><div class="nxF2F"><label for="fpRef">Número de referencia</label><input id="fpRef" placeholder="Opcional"></div></div>`,
+      pie: `<div id="fpHint" class="ffFtNota">${finPuedeCobrar() ? 'Elige cómo pagó para registrar.' : ''}</div><button type="button" class="nxF2Btn" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button type="button" class="nxF2Btn p" id="fpGo" disabled onclick="window.nxFinV2CobrarGo()"><i class="ti ti-check"></i> Registrar cobro</button>` });
   };
   window.nxFinV2Met = function (m) {
     if (!_finV2Cobro) return; _finV2Cobro.metodo = m;
@@ -14288,7 +14394,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       await finV2RecargarLedger();
       const c2 = finCuotaDe(c.id); const f2 = finFinDe(f.id);
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · ' + (f.codigo || '') + ' · cuota ' + c.numero + '/' + f.cuotas_total + ' · ' + fmt2(monto) + ' · ' + metodoTxt + ((c2 && c2.pagado) ? '' : ' (parcial)'), 'Financiamiento'); } catch (e) {}
-      cerrarModal('nxFinM'); toast('ok', (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', fmt2(monto) + ((f2 && f2.estado === 'saldado') ? ' · ¡PLAN SALDADO!' : ''));
+      cerrarModal('nxFinM'); const okTit = (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', okSub = fmt2(monto) + ((f2 && f2.estado === 'saldado') ? ' · ¡PLAN SALDADO!' : '');
       if (st.volver === 'cobrar' || st.volver === 'hoy') { _finV2Vista = st.volver; } else { _finV2Vista = 'detalle'; _finV2Sel = f.id; }
       finV2Repintar();
       try { if (typeof _cajaTot !== 'undefined' && _caja) _cajaTot = await totalesCaja(_caja); } catch (e) {}
@@ -14297,11 +14403,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const _pg = (_pid ? (_finPagos || []).find(x => String(x.id) === String(_pid)) : null)
         || (_finPagos || []).find(x => x.operacion_id && String(x.operacion_id) === String(_opId))
         || (_finPagos || []).filter(x => String(x.cuota_id) === String(c.id) && x.tipo !== 'reversa').sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))[0] || null;
-      if (_pg && window.nxReciboAnimado) {
-        window.nxReciboAnimado({ empresa: empNom(), titulo: (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', cliente: f.cliente_nombre || '', monto: monto,
-          filas: [{ label: 'Cuota', valor: c.numero + ' de ' + (f.cuotas_total || cuotasDe(f.id).length) }, { label: 'Balance actual', valor: fmt2(finSaldoTrasPago(f2 || f, _pg)) }], folio: finRecFolio(_pg)
+      // El recibo ya dice «Cuota cobrada»: el toast solo sale si no hay recibo (evita el aviso duplicado encima).
+      if (_pg) {
+        finReciboVentana({ empresa: empNom(), titulo: okTit, cliente: f.cliente_nombre || '', monto: monto,
+          filas: [{ label: 'Cuota', valor: c.numero + ' de ' + (f.cuotas_total || cuotasDe(f.id).length) }, { label: 'Pagado con', valor: metodoTxt }, { label: 'Balance actual', valor: fmt2(finSaldoTrasPago(f2 || f, _pg)) }].concat((f2 && f2.estado === 'saldado') ? [{ label: 'Plan', valor: '¡Saldado!' }] : []), folio: finRecFolio(_pg)
         }, [{ label: 'Ver comprobante', icon: 'ti-receipt', onclick: () => window.nxFinComprobante(_pg.id) }, { label: 'Estado de cuenta', icon: 'ti-file-text', onclick: () => window.nxFinEstadoCuenta(f.id) }]);
-      }
+      } else toast('ok', okTit, okSub);
     } catch (e) { if (btn) btn.disabled = false; const m = String(e && e.message || e || ''); toast('err', 'No se pudo registrar el cobro', /FIN_SIN_PERMISO|row-level security|42501/i.test(m) ? finErrTxt({ message: 'FIN_COBRO_SIN_PERMISO' }) : finErrTxt(e)); }
   };
 

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Guía de financiamiento · STUDIO</title>
+<style>
+  /* Guía de mostrador para empleados (29-sep-2026, «Financiamiento fácil»). Línea gráfica: DESIGN.md
+     (negro estructural, blanco cálido, oro STUDIO como único acento; SF Pro / Inter). Cabe en una hoja. */
+  :root { --negro: #0A0A0A; --carbon: #171717; --lienzo: #F7F5EF; --papel: #FFFEFA; --tinta: #111111; --grafito: #686862; --oro: #C9A227; --oro-o: #806515; --rojo: #B42318; --linea: #E6E1D3; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--lienzo); color: var(--tinta); font-family: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, Inter, "Helvetica Neue", sans-serif; font-size: 14px; line-height: 1.45; }
+  .hoja { max-width: 820px; margin: 16px auto; background: var(--papel); border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; }
+  header { background: var(--negro); color: var(--papel); padding: 16px 22px; display: flex; align-items: center; gap: 14px; border-bottom: 3px solid var(--oro); }
+  header img { width: 44px; height: 44px; border-radius: 10px; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -.2px; }
+  header p { margin: 2px 0 0; font-size: 12.5px; color: rgba(255, 254, 250, .72); }
+  header .imp { margin-left: auto; background: var(--oro); color: var(--negro); border: 0; border-radius: 10px; min-height: 44px; padding: 0 16px; font: 600 14px inherit; font-family: inherit; cursor: pointer; }
+  main { padding: 16px 22px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  section { min-width: 0; }
+  h2 { font-size: 15px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  h2 .n { width: 26px; height: 26px; border-radius: 8px; background: var(--negro); color: var(--oro); display: inline-flex; align-items: center; justify-content: center; font: 700 13px ui-monospace, "SF Mono", Menlo, monospace; flex-shrink: 0; }
+  ol, ul { margin: 0; padding-left: 20px; }
+  li { margin: 0 0 5px; }
+  li b { color: var(--tinta); }
+  .nota { color: var(--grafito); font-size: 12.5px; }
+  .regla { grid-column: 1 / -1; background: var(--negro); color: var(--papel); border-radius: 12px; padding: 14px 18px; display: flex; gap: 14px; align-items: center; }
+  .regla .ic { width: 40px; height: 40px; border-radius: 10px; background: var(--oro); color: var(--negro); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; flex-shrink: 0; }
+  .regla b { color: var(--oro); font-size: 16px; display: block; }
+  .regla span { font-size: 13px; color: rgba(255, 254, 250, .8); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  td { border-top: 1px solid var(--linea); padding: 5px 4px; vertical-align: top; }
+  td:first-child { font-weight: 600; width: 44%; }
+  .full { grid-column: 1 / -1; }
+  footer { padding: 8px 22px 14px; font-size: 11.5px; color: var(--grafito); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  @media (max-width: 700px) { main { grid-template-columns: 1fr; padding: 14px 16px; } header { padding: 14px 16px; flex-wrap: wrap; } header .imp { margin-left: 0; width: 100%; } .hoja { margin: 0; border-radius: 0; border: 0; } }
+  @media print {
+    @page { size: letter; margin: 10mm; }
+    html, body { background: #fff; font-size: 10.5px; line-height: 1.35; }
+    header { padding: 10px 14px; } header h1 { font-size: 17px; } header img { width: 34px; height: 34px; }
+    li { margin-bottom: 3px; } h2 { font-size: 13px; margin-bottom: 5px; } td { padding: 3px 4px; font-size: 10.5px; }
+    .regla { padding: 9px 12px; } .regla b { font-size: 13.5px; } .regla span { font-size: 11px; } .nota { font-size: 10.5px; }
+    footer { padding: 4px 4px 0; }
+    .hoja { margin: 0; border: 0; border-radius: 0; max-width: none; }
+    header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .regla, h2 .n { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    header .imp { display: none; }
+    main { gap: 10px 16px; padding: 12px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+  <header>
+    <img src="icon-192.png" alt="" width="44" height="44">
+    <div><h1>Guía de financiamiento</h1><p>Para el mostrador de STUDIO · Menú Financiamiento</p></div>
+    <button class="imp" type="button" onclick="window.print()">Imprimir</button>
+  </header>
+  <main>
+    <div class="regla" role="note">
+      <div class="ic">!</div>
+      <div><b>Nunca entregues el equipo antes de la aprobación y la firma del contrato.</b>
+      <span>Primero: solicitud enviada → documentos del cliente completos → aprobada por un administrador o gerente → contrato firmado. Después se entrega.</span></div>
+    </div>
+
+    <section>
+      <h2><span class="n">1</span> Hacer una solicitud</h2>
+      <ol>
+        <li>Toca <b>Nueva solicitud</b>. Verás «Paso 1 de 5».</li>
+        <li><b>Cliente:</b> búscalo por nombre, cédula o teléfono. Si no aparece, toca <b>Crear cliente</b> (nombre, cédula, teléfono y dirección).</li>
+        <li><b>Equipo:</b> busca el artículo. Si tiene IMEI, marca el IMEI del equipo que se lleva.</li>
+        <li><b>Plan:</b> elige cada cuánto paga y en cuántos pagos (o el plan), la <b>inicial</b> y cómo la paga, y la fecha del primer pago. Mira el resumen: «Inicial · pagos de · Total».</li>
+        <li><b>Datos del cliente:</b> dónde trabaja, cuánto gana y gasta al mes y <b>2 referencias</b>. Fiador si tiene.</li>
+        <li><b>Revisar y enviar:</b> revisa todo y toca <b>Enviar a aprobación</b>.</li>
+        <li>Toca <b>Enviar link de documentos al cliente</b>. Se abre WhatsApp con el mensaje listo: tú tocas «Enviar».</li>
+      </ol>
+      <p class="nota">El cliente sube con el link: cédula (frente y dorso), una foto con la cédula, un video leyendo la declaración y su firma. Sin eso no se puede aprobar.</p>
+    </section>
+
+    <section>
+      <h2><span class="n">2</span> Cobrar una cuota</h2>
+      <ol>
+        <li>Toca <b>Cobrar cuota</b> y escribe la <b>cédula</b>, el <b>teléfono</b> o el <b>nombre</b>.</li>
+        <li>Toca <b>Cobrar</b> en el cliente. El monto ya viene lleno con lo que debe (con recargo si está atrasado).</li>
+        <li>Elige <b>cómo pagó</b> (Efectivo, Transferencia o Tarjeta) y toca <b>Registrar cobro</b>.</li>
+      </ol>
+      <p class="nota">Si paga menos, se guarda como abono. Al terminar sale el recibo: «Ver comprobante» tiene el botón de WhatsApp para enviárselo (tú decides).</p>
+      <h2 style="margin-top:12px"><span class="n">3</span> Quién paga hoy</h2>
+      <p style="margin:0">Toca <b>Quién paga hoy</b>: salen primero los más atrasados. <b>Recordar</b> abre WhatsApp con el mensaje listo.</p>
+    </section>
+
+    <section class="full">
+      <h2><span class="n">4</span> Si algo falla</h2>
+      <table>
+        <tr><td>«La caja está cerrada»</td><td>Para cobrar en efectivo hay que abrir la caja (botón <b>Abrir caja</b>). Transferencia y tarjeta sí se pueden registrar.</td></tr>
+        <tr><td>«Falta algo…» en un paso</td><td>Lee el mensaje rojo: dice exactamente qué falta. Complétalo y toca <b>Siguiente</b>.</td></tr>
+        <tr><td>«Ese cliente ya existe»</td><td>Usa el cliente que ya está. No crees otro con la misma cédula.</td></tr>
+        <tr><td>«Un IMEI ya no está disponible»</td><td>Ese equipo se vendió o está apartado. Elige otro IMEI.</td></tr>
+        <tr><td>«No hay conexión con el sistema»</td><td>Revisa el internet y vuelve a intentar. No repitas el cobro sin revisar si ya salió el recibo.</td></tr>
+        <tr><td>«Tu usuario no tiene permiso»</td><td>Aprobar, anular pagos, perdonar recargos y cambiar planes lo hace un administrador o gerente.</td></tr>
+        <tr><td>Cobraste mal</td><td>No cobres otra vez. Avisa a un administrador para que anule el pago equivocado.</td></tr>
+      </table>
+    </section>
+  </main>
+  <footer><span>STUDIO · Financiamiento</span><span>Dudas: pregunta al administrador o gerente de turno.</span></footer>
+</div>
+</body>
+</html>

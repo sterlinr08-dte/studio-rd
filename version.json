@@ -1,7 +1,17 @@
 {
-  "version": "59.68",
+  "version": "59.69",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.69",
+      "fecha": "2026-09-29",
+      "notas": [
+        "Financiamiento fácil: inicio con tres botones grandes (Nueva solicitud, Cobrar cuota, Quién paga hoy) y guía para el mostrador.",
+        "Nueva solicitud paso a paso (5 pasos), con cliente nuevo sin salir, referencias en línea y link de documentos por WhatsApp (tú tocas Enviar).",
+        "Cobrar cuota en 3 toques, con aviso claro si la caja está cerrada. Aprobar exige los documentos completos del cliente.",
+        "Factura ya no ofrece «Financiar el resto en cuotas»: todo financiamiento pasa por solicitud y aprobación."
+      ]
+    },
     {
       "version": "59.68",
       "fecha": "2026-09-28",

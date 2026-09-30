@@ -4,9 +4,10 @@
   "cambios": [
     {
       "version": "59.70",
-      "fecha": "2026-09-29",
+      "fecha": "2026-09-30",
       "notas": [
-        "Financiamiento: el vendedor también puede cobrar cuotas (transferencia y tarjeta siempre; efectivo con su caja abierta)."
+        "Financiamiento: el vendedor puede cobrar cuotas si el administrador lo activa en Permisos por rol («Cobrar cuotas de financiamiento»). Transferencia y tarjeta siempre; efectivo con su caja abierta.",
+        "Seguridad: solo el administrador y el gerente pueden cambiar los permisos de los roles."
       ]
     },
     {

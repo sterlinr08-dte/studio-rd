@@ -1,7 +1,7 @@
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- 36 · Financiamiento: el VENDEDOR (u otro rol) cobra cuotas SI SU ROL LO TIENE ACTIVADO   *** NO APLICADA ***
+-- 36 · Financiamiento: el VENDEDOR (u otro rol) cobra cuotas SI SU ROL LO TIENE ACTIVADO   *** APLICADA 30-sep-2026 ***
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- ESTADO: NO APLICADA en ninguna base. Se aplica al publicar 59.70.
+-- ESTADO: APLICADA el 30-sep-2026 (~01:20 UTC) en edbknlkjnlfmkkiizdbe vía apply_migration «36_fin_cobro_por_rol», tras comprobar md5 del trigger (d8381d58…) y políticas sin cambios. Verificado: trigger con fin_cobrar, pos_acceso_select + pos_acceso_admin, pos_fin_pagos_insert abierto a roles de la org.
 -- Decisiones del dueño: 29-sep-2026 «el vendedor cobra cuotas»; 30-sep-2026 precisa: «el vendedor por rol
 -- depende si está habilitado o no». Por eso el cobro NO se abre a todo vendedor: se abre a cualquier rol cuyo
 -- registro en pos_acceso tenga el permiso especial 'fin_cobrar' (casilla «Cobrar cuotas de financiamiento» en

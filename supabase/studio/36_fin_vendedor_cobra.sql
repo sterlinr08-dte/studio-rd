@@ -1,32 +1,34 @@
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- 36 · Financiamiento: el VENDEDOR también cobra cuotas                 *** NO APLICADA ***
+-- 36 · Financiamiento: el VENDEDOR (u otro rol) cobra cuotas SI SU ROL LO TIENE ACTIVADO   *** NO APLICADA ***
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
--- ESTADO: NO APLICADA en ninguna base. Pendiente de que el dueño autorice la publicación (sería con 59.70).
--- Decisión del dueño (29-sep-2026): el rol «vendedor» puede registrar cobros de cuotas.
+-- ESTADO: NO APLICADA en ninguna base. Se aplica al publicar 59.70.
+-- Decisiones del dueño: 29-sep-2026 «el vendedor cobra cuotas»; 30-sep-2026 precisa: «el vendedor por rol
+-- depende si está habilitado o no». Por eso el cobro NO se abre a todo vendedor: se abre a cualquier rol cuyo
+-- registro en pos_acceso tenga el permiso especial 'fin_cobrar' (casilla «Cobrar cuotas de financiamiento» en
+-- Permisos por rol). Admin, gerente y cajero cobran siempre, como hasta hoy.
 --
--- Qué cambia (solo la lista de roles; nada más):
---   1. Trigger pos_fin_validar_pago_insert(): la fila de pago (tipo 'pago') acepta también 'vendedor'.
---      La REVERSA sigue siendo solo admin/gerente (misma función, rama tipo='reversa', sin cambios).
---   2. Política RLS pos_fin_pagos_insert: INSERT también para 'vendedor'.
+-- Qué cambia:
+--   1. Trigger pos_fin_validar_pago_insert(): un rol distinto de admin/gerente/cajero solo puede insertar un
+--      pago (tipo 'pago') si pos_acceso(org, rol).modulos contiene 'fin_cobrar'; si no → FIN_COBRO_SIN_PERMISO.
+--      La REVERSA sigue siendo solo admin/gerente (rama tipo='reversa', sin cambios).
+--   2. Política RLS pos_fin_pagos_insert: cualquier usuario con rol de la organización (el trigger decide).
+--   3. pos_acceso (quién puede cambiar permisos): antes CUALQUIER rol de la organización podía escribir en esa
+--      tabla (política pos_acceso_admin «for all» con mi_rol() is not null), o sea un vendedor podía darse
+--      permisos a sí mismo. Ahora: leer = cualquier rol de la organización (el menú lo necesita);
+--      crear/cambiar/borrar = solo admin y gerente.
 -- Lo que NO cambia:
 --   · pos_fin_registrar_pago_v2 (no tiene lista de roles: se apoya en el trigger y la RLS).
---   · Efectivo sigue exigiendo caja abierta DEL MISMO USUARIO (pos_fin_caja_abierta → FIN_CAJA_CERRADA):
---     un vendedor solo cobra en efectivo si tiene su propia caja abierta (pos_abrir_mi_caja lo permite a
---     cualquier rol; el módulo Caja del POS se le da en Permisos por rol). Transferencia y tarjeta no
---     necesitan caja.
+--   · Efectivo sigue exigiendo caja abierta DEL MISMO USUARIO (FIN_CAJA_CERRADA). Transferencia y tarjeta no.
 --   · pos_fin_reversar_pago y pos_fin_condonar_mora: solo admin/gerente.
---   · Recibo y estado de cuenta: solo lectura (pos_fin_pagos_select ya es para cualquier rol).
 --
--- Objetos EN VIVO que se reemplazan (leídos el 29-sep-2026 en edbknlkjnlfmkkiizdbe, solo lectura):
---   · public.pos_fin_validar_pago_insert(): pg_get_functiondef md5 d8381d587f3e19237e9232b5d3d22ecb
---     (5087 caracteres; prosrc md5 494bbe97316737db5e37bff773fd113f, 4935). Comparado línea por línea con
---     14_financiamiento_v2.sql §8: idéntico salvo 3 líneas de comentario que el repo tiene y la base no
---     (la base guarda la versión sin comentarios). La copia de abajo parte del texto del repo.
---   · policy pos_fin_pagos_insert on public.pos_fin_pagos: with check
---     ((mi_rol() = ANY (ARRAY['admin','gerente','cajero'])) AND (organizacion_id = mi_organizacion()))
---     = 08_rls.sql:131.
---   · Datos al leer: 0 pos_fin_pagos, 0 pos_financiamientos (no hay nada que migrar).
--- Reversa: volver a correr 14 §8 y la política de 08_rls.sql:131.
+-- Objetos EN VIVO que se reemplazan (leídos el 30-sep-2026 en edbknlkjnlfmkkiizdbe, solo lectura):
+--   · public.pos_fin_validar_pago_insert(): pg_get_functiondef md5 d8381d587f3e19237e9232b5d3d22ecb (sin cambios
+--     desde la lectura del 29-sep; = 14_financiamiento_v2.sql §8 salvo comentarios).
+--   · policy pos_fin_pagos_insert: ((mi_rol() = ANY (ARRAY['admin','gerente','cajero'])) AND (organizacion_id = mi_organizacion())).
+--   · policy pos_acceso_admin (for all): using ((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion()))
+--     with check ((mi_rol() IS NOT NULL) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))) = 08_rls.sql:95.
+--   · Datos al leer: 0 filas en pos_acceso (el sistema usa los roles por defecto), 0 pos_fin_pagos.
+-- Reversa: volver a correr 14 §8, la política de 08_rls.sql:131 y la de 08_rls.sql:95.
 -- ════════════════════════════════════════════════════════════════════════════════════════════════
 
 begin;
@@ -40,9 +42,15 @@ declare
   v_principal_pagado numeric:=0; v_interes_pagado numeric:=0; v_mora_pagada numeric:=0; v_mora_total numeric:=0; v_mora_calc numeric:=0;
   v_cap_pend numeric:=0; v_int_pend numeric:=0; v_mora_pend numeric:=0; v_resto numeric:=0; v_orig public.pos_fin_pagos%rowtype;
 begin
-  -- 36 (decisión del dueño 29-sep-2026): el vendedor también registra cobros de cuotas.
-  if v_rol not in ('admin','gerente','cajero','vendedor') then raise exception 'FIN_SIN_PERMISO'; end if;
+  if v_rol is null then raise exception 'FIN_SIN_PERMISO'; end if;
   if v_org is null then raise exception 'FIN_ORG_REQUERIDA'; end if;
+  -- 36 (dueño 30-sep-2026): otro rol (p. ej. vendedor) cobra solo si su rol tiene 'fin_cobrar' en pos_acceso.
+  if v_rol not in ('admin','gerente','cajero') then
+    if new.tipo is distinct from 'pago' or not exists (select 1 from public.pos_acceso a
+         where a.organizacion_id=v_org and a.rol=v_rol and a.modulos ? 'fin_cobrar') then
+      raise exception 'FIN_COBRO_SIN_PERMISO';
+    end if;
+  end if;
   if new.organizacion_id is null then new.organizacion_id:=v_org; end if;
   if new.organizacion_id<>v_org then raise exception 'FIN_ORG_INVALIDA'; end if;
   if coalesce(new.monto,0)<=0 then raise exception 'FIN_MONTO_INVALIDO'; end if;
@@ -105,13 +113,21 @@ begin
   return new;
 end $function$;
 
--- 2) Política de INSERT en pos_fin_pagos (antes 08_rls.sql:131) -----------------------------------------
+-- 2) Política de INSERT en pos_fin_pagos (antes 08_rls.sql:131): el trigger decide qué rol cobra ------------
 drop policy if exists pos_fin_pagos_insert on public.pos_fin_pagos;
 create policy pos_fin_pagos_insert on public.pos_fin_pagos as permissive for insert to authenticated
-  with check (((mi_rol() = ANY (ARRAY['admin'::text, 'gerente'::text, 'cajero'::text, 'vendedor'::text])) AND (organizacion_id = mi_organizacion())));
+  with check (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion())));
+
+-- 3) pos_acceso: todos leen, solo admin/gerente cambian permisos (antes 08_rls.sql:95) ----------------------
+drop policy if exists pos_acceso_admin on public.pos_acceso;
+create policy pos_acceso_select on public.pos_acceso as permissive for select to public
+  using (((mi_rol() IS NOT NULL) AND (organizacion_id = mi_organizacion())));
+create policy pos_acceso_admin on public.pos_acceso as permissive for all to public
+  using (((mi_rol() = ANY (ARRAY['admin'::text, 'gerente'::text])) AND (organizacion_id = mi_organizacion())))
+  with check (((mi_rol() = ANY (ARRAY['admin'::text, 'gerente'::text])) AND ((organizacion_id IS NULL) OR (organizacion_id = mi_organizacion()))));
 
 commit;
 
 -- Verificación sugerida después de aplicar (solo lectura):
---   select prosrc like '%''vendedor''%' from pg_proc where proname='pos_fin_validar_pago_insert';   -- true
---   select pg_get_expr(polwithcheck, polrelid) from pg_policy where polname='pos_fin_pagos_insert';  -- incluye vendedor
+--   select prosrc like '%fin_cobrar%' from pg_proc where proname='pos_fin_validar_pago_insert';        -- true
+--   select polname, polcmd from pg_policy where polrelid='public.pos_acceso'::regclass;               -- select + admin

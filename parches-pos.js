@@ -60,6 +60,11 @@
   let _acceso = [], _rolPreview = '';
   const MODULOS = [['inicio', 'Inicio'], ['avisos', 'Avisos'], ['vender', 'Vender'], ['factura', 'Factura'], ['prefactura', 'Prefactura'], ['reparaciones', 'Reparaciones'], ['reacond', 'Reacondicionado'], ['productos', 'Inventario'], ['inventario', 'Kardex'], ['cotizaciones', 'Cotizaciones'], ['compras', 'Compras'], ['entidades', 'Entidades'], ['crm', 'CRM'], ['clientes', 'Clientes'], ['caja', 'Caja'], ['cuotas', 'Financiamiento / Cuotas'], ['apartados', 'Apartados'], ['ventas', 'Historial'], ['notascredito', 'Notas de crédito'], ['prefhist', 'Prefacturas'], ['reportes', 'Reportes'], ['contabilidad', 'Contabilidad'], ['rrhh', 'Rec. Humanos'], ['ajustes', 'Ajustes']];
   const _MODKEYS = MODULOS.map(m => m[0]);
+  // Permisos especiales por rol (no son módulos del menú). Se guardan en pos_acceso.modulos junto a los módulos.
+  // fin_cobrar (dueño 30-sep-2026): el vendedor (u otro rol) cobra cuotas solo si su rol lo tiene activado.
+  // Admin, gerente y cajero cobran siempre. El servidor lo vuelve a comprobar (migración 36).
+  const CAPACIDADES = [['fin_cobrar', 'Cobrar cuotas de financiamiento']];
+  const FIN_COBRA_SIEMPRE = ['admin', 'gerente', 'cajero'];
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
     ['gerente', 'Gerente', _MODKEYS.filter(k => k !== 'ajustes')],
@@ -2217,13 +2222,14 @@
     const mods = isNew ? ['inicio'] : accesoRol(rol);
     cerrarModal('nxAccForm');
     const chks = MODULOS.map(m => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${m[0]}"${mods.indexOf(m[0]) >= 0 ? ' checked' : ''}${m[0] === 'inicio' ? ' checked disabled' : ''}> ${m[1]}</label>`).join('');
+    const caps = FIN_COBRA_SIEMPRE.indexOf(rol) >= 0 ? '' : `<div style="font-size:11.5px;color:#475569;margin:12px 0 6px;font-weight:600">Permisos especiales</div><div class="nxEntAfines" style="grid-template-columns:1fr">${CAPACIDADES.map(c => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${c[0]}"${mods.indexOf(c[0]) >= 0 ? ' checked' : ''}> ${c[1]}</label>`).join('')}</div>`;
     const ov = document.createElement('div'); ov.id = 'nxAccForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-shield-lock"></i> ${isNew ? 'Nuevo rol' : 'Rol · ' + esc(label)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAccForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div class="fr"><label>Nombre del rol *</label><input id="accNom" class="no-upper" value="${esc(label)}" placeholder="Ej: Supervisor, Almacenista"${preset ? ' readonly style="background:#f8fafc"' : ''}></div>
         <div style="font-size:11.5px;color:#475569;margin:2px 0 8px">Marca los módulos que este rol puede ver y usar.</div>
-        <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr 1fr">${chks}</div></div>
+        <div style="overflow-y:auto;flex:1"><div class="nxEntAfines" style="grid-template-columns:1fr 1fr">${chks}</div>${caps}</div>
         <div class="fe" style="margin-top:10px;gap:8px">
           ${(!isNew && !preset) ? `<button aria-label="Eliminar este rol" class="btn bc3 bsm" type="button" style="margin-right:auto" onclick="window.nxRolDel('${rol}')"><i class="ti ti-minus"></i></button>` : ''}
           <button class="btn bghost" type="button" onclick="document.getElementById('nxAccForm').remove()">Cancelar</button>
@@ -2236,7 +2242,7 @@
     const isNew = !rol;
     const nombre = (val('accNom') || '').trim();
     if ((isNew || !rolEsPreset(rol)) && !nombre) { toast('err', 'Pon el nombre del rol'); return; }
-    const mods = ['inicio'].concat(MODULOS.filter(m => m[0] !== 'inicio' && document.getElementById('acc_' + m[0]) && document.getElementById('acc_' + m[0]).checked).map(m => m[0]));
+    const mods = ['inicio'].concat(MODULOS.concat(CAPACIDADES).filter(m => m[0] !== 'inicio' && document.getElementById('acc_' + m[0]) && document.getElementById('acc_' + m[0]).checked).map(m => m[0]));
     try {
       if (isNew) {
         const key = 'rol_' + nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 28);
@@ -14344,9 +14350,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return `<div class="ffAviso warn" role="alert"><i class="ti ti-lock"></i><div><b>La caja está cerrada.</b> Para cobrar en efectivo hay que abrir tu caja primero. Transferencia y tarjeta sí se pueden registrar.${puedeCaja ? '' : ' Si no tienes acceso a Caja, pídele al administrador que te lo dé o registra transferencia o tarjeta.'}</div>${puedeCaja ? `<button type="button" class="nxF2Btn" onclick="cerrarModalFin();window.nxPosTab('caja')"><i class="ti ti-lock-open"></i> Abrir caja</button>` : ''}</div>`;
   }
   window.cerrarModalFin = function () { cerrarModal('nxFinM'); };
-  // Decisión del dueño (29-sep-2026): el vendedor también cobra cuotas (migración 36 en el servidor).
-  // Hasta que se aplique, el servidor responde FIN_SIN_PERMISO y finErrTxt lo explica en palabras claras.
-  function finPuedeCobrar() { return !!rolEfectivo(); }
+  // Dueño (30-sep-2026): admin, gerente y cajero cobran siempre; el vendedor (u otro rol) solo si su rol tiene
+  // activado «Cobrar cuotas de financiamiento» en Permisos por rol. El servidor lo comprueba igual (migración 36).
+  function finPuedeCobrar() { const r = rolEfectivo(); if (!r) return false; return FIN_COBRA_SIEMPRE.indexOf(r) >= 0 || accesoRol(r).indexOf('fin_cobrar') >= 0; }
   window.nxFinV2Cobrar = async function (finId, cuotaId) {
     const f = finFinDe(finId); if (!f) return;
     const c = cuotaId ? finCuotaDe(cuotaId) : cuotasDe(finId).find(x => !x.pagado); if (!c) { toast('info', 'Este cliente no tiene cuotas pendientes'); return; }
@@ -14354,7 +14360,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const p = finV2Pend(c); const at = finV2Atraso(c); const pl = finPlanDe(f);
     _finV2Cobro = { finId: finId, cuotaId: c.id, metodo: null, pend: p, volver: _finV2Vista };
     const montoTxt = r2(p.total).toLocaleString('en-US', { minimumFractionDigits: 2 });
-    const bloqueo = '';
+    const bloqueo = finPuedeCobrar() ? '' : `<div class="ffAviso bad" role="alert"><i class="ti ti-user-x"></i><div><b>Tu usuario todavía no puede cobrar cuotas.</b> El administrador lo activa en Permisos por rol → «Cobrar cuotas de financiamiento». Mientras tanto, pídele al cajero que registre el cobro.</div></div>`;
     finVentana({ id: 'nxFinM', titulo: 'Cobrar cuota ' + c.numero + ' de ' + f.cuotas_total, icono: 'ti-cash', destructivo: true,
       cuerpo: `${bloqueo}${finCajaAvisoHTML()}
       <div class="ffCobCli"><b>${esc(f.cliente_nombre || '')}</b><span>${esc(f.descripcion || '')}</span><span class="${at > 0 ? 'rojo' : ''}">${at > 0 ? 'Venció el ' + finFechaCorta(c.fecha_venc) + ' · ' + at + (at === 1 ? ' día' : ' días') + ' de atraso' : 'Vence el ' + finFechaCorta(c.fecha_venc)}</span></div>
@@ -14377,7 +14383,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const st = _finV2Cobro; if (!st) return; const f = finFinDe(st.finId); const c = finCuotaDe(st.cuotaId); if (!f || !c) return;
     const monto = r2(finNum(val('fpMonto')));
     if (!st.metodo) { toast('err', 'Elige cómo pagó', 'Efectivo, transferencia o tarjeta'); return; }
-    if (!finPuedeCobrar()) { toast('err', 'Tu usuario no puede registrar cobros', 'Vuelve a entrar al sistema'); return; }
+    if (!finPuedeCobrar()) { toast('err', 'Tu usuario no puede cobrar cuotas', 'El administrador lo activa en Permisos por rol'); return; }
     if (!(monto > 0)) { toast('err', 'Escribe el monto', 'Debe ser mayor que cero'); return; }
     if (monto > st.pend.total + 0.01) { toast('err', 'El monto es mayor que lo que se debe', 'Esta cuota debe ' + fmt2(st.pend.total)); return; }
     if (st.metodo === 'efectivo') {

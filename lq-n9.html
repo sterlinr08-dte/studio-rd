@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LQ-N9 en tu casa</title>
+<meta name="theme-color" content="#0A0A0A">
+<meta name="robots" content="noindex">
+<script type="module" src="https://unpkg.com/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<style>
+  :root{
+    --negro:#0A0A0A; --carbon:#171717; --lienzo:#F7F5EF; --superficie:#FFFEFA;
+    --tinta:#111111; --grafito:#686862; --oro:#C9A227; --oro-claro:#E3C45C; --oro-oscuro:#806515;
+    --linea:rgba(17,17,17,.10);
+    --sf:-apple-system,"SF Pro Text","SF Pro Display",system-ui,Inter,"Helvetica Neue",sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+    --curva:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--lienzo);color:var(--tinta);font-family:var(--sf);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ——— Escenario (negro) ——— */
+  .escenario{background:radial-gradient(120% 80% at 50% 30%,#232120 0%,var(--negro) 70%);color:#F4F2EC;padding:max(14px,env(safe-area-inset-top)) 16px 0}
+  .barra{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .barra img{width:40px;height:40px;border-radius:10px}
+  .barra .marca{font-weight:700;letter-spacing:.14em;font-size:12px}
+  .barra .marca small{display:block;font-weight:500;letter-spacing:.02em;color:#A9A59B;font-size:12px}
+  .para{margin-left:auto;text-align:right;font-size:12px;color:#A9A59B}
+  .para input{display:block;margin-top:2px;background:transparent;border:0;border-bottom:1px dashed rgba(201,162,39,.55);color:#F4F2EC;font:600 14px var(--sf);text-align:right;width:170px;padding:2px 0;outline:none}
+  .para input:focus{border-bottom-color:var(--oro)}
+
+  .hero{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:4px;padding-top:18px}
+  .titulo .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--oro-claro);font-weight:600}
+  .titulo h1{margin:4px 0 6px;font-size:clamp(28px,6vw,44px);line-height:1.05;letter-spacing:-.02em;font-weight:700;text-wrap:balance}
+  .titulo p{margin:0;color:#C9C5BA;max-width:44ch}
+
+  model-viewer{width:100%;height:min(62vh,520px);min-height:340px;--poster-color:transparent;background:transparent;outline:none}
+  .ar-btn{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:10px;
+    background:var(--oro);color:#111;border:0;border-radius:999px;padding:13px 22px;font:700 15px var(--sf);cursor:pointer;
+    box-shadow:0 10px 30px rgba(201,162,39,.28);transition:transform .16s var(--curva),background .16s}
+  .ar-btn:hover{background:var(--oro-claro)} .ar-btn:active{transform:translateX(-50%) translateY(1px)}
+  .ar-btn svg{width:20px;height:20px}
+  .ar-aviso{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+    color:#E9E5DA;border-radius:999px;padding:9px 16px;font-size:13px;width:max-content;max-width:92%;text-align:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  model-viewer[ar-status="session-started"] .ar-aviso{display:none}
+  .gesto{position:absolute;top:10px;right:0;font-size:12px;color:#8E8A80}
+
+  .colores{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:14px 0 22px;flex-wrap:wrap}
+  .colores span.lbl{font-size:12px;color:#A9A59B;margin-right:4px}
+  .chip{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.18);cursor:pointer;padding:0;position:relative;transition:transform .16s var(--curva)}
+  .chip[aria-pressed="true"]{border-color:var(--oro);box-shadow:0 0 0 3px rgba(201,162,39,.25)}
+  .chip:focus-visible{outline:2px solid var(--oro-claro);outline-offset:3px}
+  .nombre-color{font-size:13px;color:#E9E5DA;font-weight:600;min-width:90px}
+
+  /* ——— Contenido (lienzo) ——— */
+  main{max-width:1080px;margin:0 auto;padding:22px 16px calc(40px + env(safe-area-inset-bottom));display:grid;gap:16px}
+  .tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:18px;padding:18px}
+  .tarjeta h2{margin:0 0 12px;font-size:17px;letter-spacing:-.01em}
+  .tarjeta h2 small{font-weight:500;color:var(--grafito);font-size:12px;margin-left:6px}
+
+  .medidas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .medida{border-radius:14px;background:var(--lienzo);padding:12px}
+  .medida b{display:block;font-size:clamp(17px,4.8vw,22px);white-space:nowrap;letter-spacing:-.02em}
+  .medida span{font-size:12px;color:var(--grafito)}
+  .medida .edit{display:flex;align-items:baseline;gap:4px;color:var(--tinta)}
+  .medida input{width:100%;min-width:0;border:0;border-bottom:1px dashed rgba(128,101,21,.45);background:transparent;font:700 clamp(17px,4.8vw,22px) var(--sf);letter-spacing:-.02em;color:var(--tinta);padding:0 0 2px;font-variant-numeric:tabular-nums;border-radius:0}
+  .medida input:focus{outline:none;border-bottom:2px solid var(--oro)}
+  .medida i{font-style:normal;font-weight:600;font-size:14px;color:var(--grafito)}
+  .nota{font-size:12.5px;color:var(--grafito);margin:12px 0 0}
+
+  .ficha{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin:0}
+  .ficha div{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--linea);font-size:14px}
+  .ficha dt{color:var(--grafito)} .ficha dd{margin:0;font-weight:600;text-align:right}
+
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .campo{display:grid;gap:4px}
+  .campo label{font-size:12px;color:var(--grafito);font-weight:500}
+  .campo input,.campo select{width:100%;min-height:44px;border:1px solid var(--linea);border-radius:12px;padding:10px 12px;font:600 16px var(--sf);background:#fff;color:var(--tinta);font-variant-numeric:tabular-nums}
+  .campo input:focus,.campo select:focus{outline:2px solid var(--oro);outline-offset:0;border-color:transparent}
+  .resultado{margin-top:14px;border-radius:16px;background:var(--negro);color:#F4F2EC;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .resultado .grande{grid-column:1/-1}
+  .resultado small{display:block;font-size:12px;color:#A9A59B}
+  .resultado b{font-size:18px}
+  .resultado .grande b{font-size:30px;color:var(--oro-claro);letter-spacing:-.02em}
+
+  .cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;border-radius:16px;border:0;cursor:pointer;
+    background:#1F9D55;color:#fff;font:700 16px var(--sf);text-decoration:none;transition:transform .16s var(--curva)}
+  .cta:active{transform:translateY(1px)}
+  .cta svg{width:20px;height:20px}
+  .pie{font-size:12px;color:var(--grafito);text-align:center;margin:4px 0 0}
+
+  @media (min-width:860px){
+    .hero{grid-template-columns:.8fr 1.2fr;align-items:center}
+    model-viewer{height:520px}
+    main{grid-template-columns:1fr 1fr}
+    .ancha{grid-column:1/-1}
+  }
+  @media (max-width:420px){ .ficha{grid-template-columns:1fr} .para input{width:130px} }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+
+<section class="escenario">
+  <div class="barra">
+    <img src="/logo-studio.webp" alt="STUDIO">
+    <div class="marca">STUDIO<small>Santiago</small></div>
+    <label class="para">Propuesta para
+      <input id="cliente" placeholder="Cliente" autocomplete="off">
+    </label>
+  </div>
+
+  <div class="hero">
+    <div class="titulo">
+      <div class="eyebrow">Pasola eléctrica LQ-N9</div>
+      <h1>Mírala en tu casa antes de llevártela</h1>
+      <p>Gírala con el dedo. Toca <b>Ver en mi casa</b> y la pasola aparece a tamaño real en tu marquesina, sala o parqueo.</p>
+    </div>
+
+    <div style="position:relative">
+      <model-viewer id="mv" src="/ar/lq-n9.glb" alt="Pasola eléctrica LQ-N9 en 3D"
+        ar ar-modes="scene-viewer webxr quick-look" ar-scale="fixed" ar-placement="floor"
+        camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="1200" rotation-per-second="18deg"
+        camera-orbit="-30deg 76deg auto" field-of-view="28deg" min-camera-orbit="auto 20deg auto" max-camera-orbit="auto 88deg auto"
+        shadow-intensity="1.1" shadow-softness=".9" exposure="1.05" environment-image="neutral" interaction-prompt="none">
+        <button slot="ar-button" class="ar-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg>
+          Ver en mi casa
+        </button>
+        <div class="ar-aviso" id="arAviso">Abre esta página en tu celular para verla en tu casa</div>
+      </model-viewer>
+      <div class="gesto">Arrastra para girar · pellizca para acercar</div>
+    </div>
+  </div>
+
+  <div class="colores"><span class="lbl">Color</span><span class="chip" style="background:linear-gradient(135deg,#2a9fe0 50%,#c9ccd1 50%)" aria-hidden="true"></span><span class="nombre-color">Azul con plateado</span></div>
+</section>
+
+<main>
+  <section class="tarjeta">
+    <h2>Tamaño real</h2>
+    <div class="medidas num">
+      <label class="medida"><span class="edit"><input id="mL" inputmode="decimal" value="180" aria-label="Largo en centímetros"><i>cm</i></span><span>Largo</span></label>
+      <label class="medida"><span class="edit"><input id="mA" inputmode="decimal" value="70" aria-label="Ancho en centímetros"><i>cm</i></span><span>Ancho</span></label>
+      <label class="medida"><span class="edit"><input id="mH" inputmode="decimal" value="130" aria-label="Alto en centímetros"><i>cm</i></span><span>Alto con espejos</span></label>
+    </div>
+    <p class="nota">En modo «Ver en mi casa» la pasola se muestra a esta escala, así el cliente sabe si cabe en su espacio. Toca una medida para cambiarla cuando tengas la exacta; la pasola en 3D se ajusta sola.</p>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Ficha <small>según catálogo STUDIO</small></h2>
+    <dl class="ficha num">
+      <div><dt>Motor</dt><dd>1000 W</dd></div>
+      <div><dt>Velocidad</dt><dd>Hasta 60 km/h</dd></div>
+      <div><dt>Autonomía</dt><dd>60–70 km</dd></div>
+      <div><dt>Batería</dt><dd>Litio 48V 20Ah</dd></div>
+      <div><dt>Carga</dt><dd>6–8 horas</dd></div>
+      <div><dt>Frenos</dt><dd>De disco</dd></div>
+      <div><dt>Luces</dt><dd>LED</dd></div>
+      <div><dt>Pantalla</dt><dd>Digital</dd></div>
+      <div><dt>Encendido</dt><dd>Inteligente</dd></div>
+      <div><dt>Gasolina</dt><dd>No usa</dd></div>
+    </dl>
+  </section>
+
+  <section class="tarjeta ancha">
+    <h2>Propuesta de pago <small>sujeta a aprobación</small></h2>
+    <div class="form">
+      <div class="campo"><label for="precio">Precio (RD$)</label><input id="precio" inputmode="numeric" value="" placeholder="Escribe el precio"></div>
+      <div class="campo"><label for="inicial">Inicial (RD$)</label><input id="inicial" inputmode="numeric" value="20,000"></div>
+      <div class="campo"><label for="cuotas">Cantidad de pagos</label><input id="cuotas" inputmode="numeric" value="12"></div>
+      <div class="campo"><label for="frec">Frecuencia</label>
+        <select id="frec"><option value="mensual">Mensual</option><option value="quincenal">Quincenal</option><option value="semanal">Semanal</option></select></div>
+      <div class="campo" style="grid-column:1/-1"><label for="interes">Recargo total del financiamiento (%) — lo define el gerente</label><input id="interes" inputmode="decimal" value="0"></div>
+    </div>
+    <div class="resultado num" aria-live="polite">
+      <div class="grande"><small id="lblCuota">Pago mensual</small><b id="rCuota">RD$0</b></div>
+      <div><small>Monto a financiar</small><b id="rFin">RD$0</b></div>
+      <div><small>Total a pagar</small><b id="rTotal">RD$0</b></div>
+    </div>
+    <p class="nota">Cifras de ejemplo para conversar con el cliente. Las condiciones finales las aprueba el administrador o el gerente de STUDIO.</p>
+  </section>
+
+  <section class="ancha" style="display:grid;gap:8px">
+    <a class="cta" id="wa" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.1 5.1 0 0 0 1.1 2.7 11.6 11.6 0 0 0 4.4 3.9c1.6.7 2.3.8 3.1.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.3c0-.1-.2-.2-.4-.3Z"/></svg>
+      Quiero la LQ-N9
+    </a>
+    <p class="pie">STUDIO · Modelo 3D creado a partir de las fotos reales de la LQ-N9; algunos detalles pueden variar.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var mv=document.getElementById('mv');
+  var TEL='18296247623';
+  var colorActual='azul con plateado';
+  mv.addEventListener('ar-status',function(e){ if(e.detail.status==='failed'){ document.getElementById('arAviso').textContent='Tu equipo no soporta AR aquí; ábrela en el navegador del celular'; } });
+
+  // Medidas editables: la pasola 3D se escala a la medida escrita (base del modelo 180 × 70 × 130 cm)
+  var BASE={mL:180,mA:70,mH:130};
+  var qs=new URLSearchParams(location.search);
+  [['mL','largo'],['mA','ancho'],['mH','alto']].forEach(function(p){var v=parseFloat(qs.get(p[1]));if(v>0)document.getElementById(p[0]).value=v;});
+  function escalar(){
+    var f=function(id){var v=parseFloat(String(document.getElementById(id).value).replace(',','.'));return v>0?v/BASE[id]:1};
+    mv.scale=f('mL').toFixed(4)+' '+f('mH').toFixed(4)+' '+f('mA').toFixed(4);
+  }
+  ['mL','mA','mH'].forEach(function(id){document.getElementById(id).addEventListener('input',escalar)});
+  escalar();
+
+  var n=function(id){return parseFloat(String(document.getElementById(id).value).replace(/[^\d.]/g,''))||0};
+  var rd=function(v){return 'RD$'+Math.round(v).toLocaleString('es-DO')};
+  var PAL={mensual:'Pago mensual',quincenal:'Pago quincenal',semanal:'Pago semanal'};
+  function calc(){
+    var precio=n('precio'), ini=Math.min(n('inicial'),precio), k=Math.max(1,Math.round(n('cuotas'))), pct=n('interes');
+    var fin=precio-ini, total=fin*(1+pct/100), cuota=total/k, f=document.getElementById('frec').value;
+    document.getElementById('lblCuota').textContent=PAL[f]+' × '+k;
+    document.getElementById('rCuota').textContent=rd(cuota);
+    document.getElementById('rFin').textContent=rd(fin);
+    document.getElementById('rTotal').textContent=rd(total+ini);
+    var cli=document.getElementById('cliente').value.trim();
+    var msg='Hola STUDIO'+(cli?', soy '+cli:'')+'. Me interesa la pasola eléctrica LQ-N9 ('+colorActual+').'+
+      (precio?' Propuesta: inicial '+rd(ini)+' y '+k+' pagos '+f+'es de '+rd(cuota)+'.':'');
+    document.getElementById('wa').href='https://wa.me/'+TEL+'?text='+encodeURIComponent(msg);
+  }
+  ['precio','inicial','cuotas','interes','frec','cliente'].forEach(function(id){document.getElementById(id).addEventListener('input',calc)});
+  ['precio','inicial'].forEach(function(id){var el=document.getElementById(id);el.addEventListener('blur',function(){var v=n(id);el.value=v?v.toLocaleString('es-DO'):''})});
+  calc();
+})();
+</script>
+</body>
+</html>

@@ -4925,6 +4925,9 @@ function refrescarVistaActual(){
 let _syncBusy=false,_syncLast=0;
 async function nxSyncDatos(force){
   if(_syncBusy||!sesion)return;
+  // STUDIO (tienda) no tiene las tablas de Seguros «clientes»/«facturas»: esta lectura fallaba cada 45 s y al volver a la
+  // app, gastando red y batería en el teléfono (auditoría CRM 02-oct-2026). El POS carga lo suyo desde pos_*.
+  if((sesion.org&&sesion.org.tipo==='tienda')||document.body.classList.contains('org-tienda'))return;
   if(!force&&Date.now()-_syncLast<45000)return; // máx. 1 lectura cada 45 seg (liviano)
   _syncBusy=true;
   try{
@@ -6886,7 +6889,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.70';
+const APP_VERSION='59.71';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

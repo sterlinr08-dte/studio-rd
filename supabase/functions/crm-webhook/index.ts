@@ -9,6 +9,9 @@
 //   · si falla el procesamiento responde 500 para que Zernio reintente (Bayol respondía 200 aunque fallara);
 //   · una cuenta desconocida se registra APAGADA en crm_canales y no se procesa hasta que el administrador la activa.
 // Nunca envía mensajes: solo recibe y guarda.
+// 02-oct-2026 (CRM afinado): un reintento de Zernio de un mensaje ya guardado se descarta ANTES de descargar el adjunto
+// (antes dejaba archivos huérfanos en crm-media); la hora del mensaje manda sobre la del evento; los errores de la base al
+// actualizar estados o completar el eco ya no se tragan; el usuario de Instagram solo se reescribe si cambió.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -105,7 +108,7 @@ async function procesarMensaje(p: Any, canal: Any, canales: Any[]) {
   const zConv = conv.id ?? msg.conversationId ?? null;
 
   // Conversación (canal + contacto).
-  let { data: c } = await db.from("crm_conversaciones").select("id, crm_id, cliente_id, contacto_nombre, zernio_conversation_id").eq("canal_id", canal.id).eq("contacto_id", contacto.id).maybeSingle();
+  let { data: c } = await db.from("crm_conversaciones").select("id, crm_id, cliente_id, contacto_nombre, contacto_usuario, zernio_conversation_id").eq("canal_id", canal.id).eq("contacto_id", contacto.id).maybeSingle();
   let nueva = false;
   if (!c) {
     let clienteId: string | null = null;
@@ -113,40 +116,44 @@ async function procesarMensaje(p: Any, canal: Any, canales: Any[]) {
     const ins = await db.from("crm_conversaciones").insert({
       organizacion_id: canal.organizacion_id, canal_id: canal.id, plataforma, contacto_id: contacto.id, telefono_e164: contacto.tel,
       contacto_nombre: nombre, contacto_usuario: usuario, zernio_conversation_id: zConv, cliente_id: clienteId,
-    }).select("id, crm_id, cliente_id, contacto_nombre, zernio_conversation_id").single();
+    }).select("id, crm_id, cliente_id, contacto_nombre, contacto_usuario, zernio_conversation_id").single();
     if (ins.error) {
       if (ins.error.code !== "23505") throw new Error("conversacion: " + ins.error.message);
-      ({ data: c } = await db.from("crm_conversaciones").select("id, crm_id, cliente_id, contacto_nombre, zernio_conversation_id").eq("canal_id", canal.id).eq("contacto_id", contacto.id).single());
+      ({ data: c } = await db.from("crm_conversaciones").select("id, crm_id, cliente_id, contacto_nombre, contacto_usuario, zernio_conversation_id").eq("canal_id", canal.id).eq("contacto_id", contacto.id).single());
     } else { c = ins.data; nueva = true; }
   } else {
     const upd: Record<string, unknown> = {};
     if (nombre && !c.contacto_nombre) upd.contacto_nombre = nombre;
     if (zConv && zConv !== c.zernio_conversation_id) upd.zernio_conversation_id = zConv;
-    if (usuario) upd.contacto_usuario = usuario;
-    if (Object.keys(upd).length) await db.from("crm_conversaciones").update(upd).eq("id", c.id);
+    if (usuario && usuario !== c.contacto_usuario) upd.contacto_usuario = usuario;
+    if (Object.keys(upd).length) { const u = await db.from("crm_conversaciones").update(upd).eq("id", c.id); if (u.error) throw new Error("conversacion: " + u.error.message); }
   }
   if (!c) throw new Error("conversacion no disponible");
 
   // Contenido.
   let tipo = "texto", mediaPath: string | null = null;
   const adj = Array.isArray(msg.attachments) ? msg.attachments : [];
-  if (adj.length) { tipo = tipoAdjunto(adj[0].type || adj[0].originalType); if (adj[0].url) mediaPath = await guardarAdjunto(adj[0].url, plataforma, tipo); }
+  if (adj.length) tipo = tipoAdjunto(adj[0].type || adj[0].originalType);
   const cuerpo: string = msg.text ?? msg.body ?? (p.metadata?.unsupported ? "[mensaje no soportado]" : "");
   const pid: string | null = msg.platformMessageId ?? msg.id ?? null;
-  const cuando = p.timestamp ?? msg.timestamp ?? new Date().toISOString();
+  // La hora del MENSAJE manda: en un reintento tardío la hora del evento es posterior y desordenaba el chat.
+  const cuando = msg.timestamp ?? msg.createdAt ?? p.timestamp ?? new Date().toISOString();
 
-  if (!entrante && pid) {
-    // Si ya existe con este id (crm-enviar lo guardó primero), no se duplica.
+  if (pid) {
+    // Ya guardado (reintento de Zernio, o crm-enviar lo guardó primero): no se duplica ni se descarga otra vez el adjunto.
     const { data: ya } = await db.from("crm_mensajes").select("id").eq("proveedor_msg_id", pid).maybeSingle();
     if (ya) return;
+  }
+  if (!entrante && pid) {
     // Espejo de un envío hecho desde STUDIO que aún no tiene id del proveedor: se completa en vez de duplicarlo.
     // Adjunto sin texto: el webhook trae cuerpo "" y la base guarda null → se compara por tipo con adjunto (fix 28-sep-2026).
     const desde = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     let q = db.from("crm_mensajes").select("id").eq("conversacion_id", c.id).eq("direccion", "out").is("proveedor_msg_id", null).gte("created_at", desde);
     q = cuerpo ? q.eq("cuerpo", cuerpo) : q.or("cuerpo.is.null,cuerpo.eq.").not("media_path", "is", null);
     const { data: propio } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (propio) { await db.from("crm_mensajes").update({ proveedor_msg_id: pid, estado: "enviado" }).eq("id", propio.id); return; }
+    if (propio) { const u = await db.from("crm_mensajes").update({ proveedor_msg_id: pid, estado: "enviado" }).eq("id", propio.id); if (u.error) throw new Error("eco: " + u.error.message); return; }
   }
+  if (adj.length && adj[0].url) mediaPath = await guardarAdjunto(adj[0].url, plataforma, tipo);
   // El cliente (o el teléfono) citó un mensaje: se enlaza al original si lo tenemos.
   let respondeA: string | null = null;
   const citado = p.metadata?.quotedMessageId ?? msg.quotedMessageId ?? msg.context?.id ?? null;
@@ -177,7 +184,8 @@ async function procesarEstado(p: Any) {
   const estado = p.event === "message.failed" ? "fallido" : p.event === "message.read" ? "leido" : "entregado";
   const upd: Record<string, unknown> = { estado };
   if (estado === "fallido") upd.error = JSON.stringify(p.error ?? msg.error ?? "fallido").slice(0, 500);
-  await db.from("crm_mensajes").update(upd).in("proveedor_msg_id", ids);
+  const u = await db.from("crm_mensajes").update(upd).in("proveedor_msg_id", ids);
+  if (u.error) throw new Error("estado: " + u.error.message);
 }
 
 Deno.serve(async (req) => {
@@ -205,7 +213,10 @@ Deno.serve(async (req) => {
     if (prev.data?.procesado_at) return json({ ok: true, deduplicated: true });
     eventoRow = prev.data?.id;
   }
-  const cerrar = (error: string | null) => db.from("crm_webhook_eventos").update({ procesado_at: new Date().toISOString(), error }).eq("id", eventoRow!);
+  const cerrar = async (error: string | null) => {
+    const r = await db.from("crm_webhook_eventos").update({ procesado_at: new Date().toISOString(), error }).eq("id", eventoRow!);
+    if (r.error) console.error("crm-webhook: no se pudo cerrar el evento", r.error.message);
+  };
 
   try {
     if (!accountId || !plataforma || !["whatsapp", "instagram", "facebook"].includes(plataforma)) { await cerrar("ignorado: plataforma o cuenta"); return json({ ok: true, ignored: true }); }
@@ -215,10 +226,14 @@ Deno.serve(async (req) => {
       const org = await organizacion();
       if (!org) throw new Error("sin organización");
       const a = p.account ?? {};
+      // Mismo número que un canal ya existente (p. ej. la línea se reconectó en Zernio con otra cuenta): se deja
+      // constancia para que el administrador actualice el canal, en vez de perderlo en silencio.
+      const telNuevo = soloDigitos(a.phoneNumber ?? a.username ?? "");
+      const gemelo = plataforma === "whatsapp" && telNuevo.length >= 10 ? (canales ?? []).find((c: Any) => c.plataforma === "whatsapp" && soloDigitos(c.identificador).slice(-10) === telNuevo.slice(-10)) : null;
       const nuevo = await db.from("crm_canales").insert({ organizacion_id: org, plataforma, zernio_account_id: accountId, nombre: a.name ?? a.displayName ?? a.username ?? null,
         identificador: a.phoneNumber ?? a.username ?? a.platformUserId ?? null, activo: false }).select("*").single();
       if (nuevo.error && nuevo.error.code !== "23505") throw new Error("canal: " + nuevo.error.message);
-      await cerrar("canal nuevo registrado apagado"); return json({ ok: true, canal_nuevo: true });
+      await cerrar(gemelo ? `cuenta nueva de Zernio para el número de «${gemelo.nombre ?? gemelo.identificador}»: actualizar ese canal` : "canal nuevo registrado apagado"); return json({ ok: true, canal_nuevo: true });
     }
     await db.from("crm_canales").update({ ultimo_evento_at: new Date().toISOString() }).eq("id", canal.id);
     if (!canal.activo) { await cerrar("canal apagado"); return json({ ok: true, canal_apagado: true }); }

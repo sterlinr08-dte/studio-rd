@@ -1,4 +1,8 @@
-/* STUDIO · CRM Fase 1 (24-sep-2026) — réplica mejorada del CRM de BAYOL CELL Taller, sin canales externos.
+/* STUDIO · CRM (pantalla tipo BAYOL CELL: Mensajes · Redes · Leads · Campañas) + Bandeja de WhatsApp/Instagram/Facebook.
+ * 02-oct-2026 «CRM afinado» (bitácora 2026-10-01-2245-claude): abrir/cerrar un chat ya no redibuja todo el POS; lista
+ * paginada por plataforma con «Cargar más», búsqueda en el servidor y Archivadas; tiempo real que se reconecta bien;
+ * enlaces de fotos/audios que se renuevan antes de vencer; estados de carga y error con «Reintentar»; 16 px en iPhone.
+ * Historia del módulo: CRM Fase 1 (24-sep-2026) — réplica mejorada del CRM de BAYOL CELL Taller, sin canales externos.
  * Pedido del dueño: «Vamos a replicar el CRM de bayol cell taller y aplicarle mejoras» + «Si» a la Fase 1.
  * Del de Bayol: embudo nuevo → contactado → cotizado → ganado | perdido, asignación (admin ve todo, el resto lo suyo
  * y lo libre), vincular cliente, permiso de mensajes. Mejoras (lo que a Bayol le falta, ver bitácora 2026-09-24-2115):
@@ -41,10 +45,13 @@
   function repintar() {
     // Al repintar el módulo se conserva lo que el empleado estaba escribiendo, el cursor y la posición del chat.
     const tx = document.getElementById('bdTx'), mm = document.getElementById('bdMsgs');
-    let snap = { foco: false, ini: 0, fin: 0, scroll: null, abajo: true };
-    try { snap = { foco: !!tx && document.activeElement === tx, ini: tx ? tx.selectionStart : 0, fin: tx ? tx.selectionEnd : 0, scroll: mm ? mm.scrollTop : null, abajo: BD.pegadoAbajo }; } catch (e) {}
+    const ll = document.getElementById('bdList');
+    let snap = { foco: false, ini: 0, fin: 0, scroll: null, abajo: true, lista: 0 };
+    try { snap = { foco: !!tx && document.activeElement === tx, ini: tx ? tx.selectionStart : 0, fin: tx ? tx.selectionEnd : 0, scroll: mm ? mm.scrollTop : null, abajo: BD.pegadoAbajo, lista: ll ? ll.scrollTop : 0 }; } catch (e) {}
     try { ctx().renderPOS && ctx().renderPOS(); } catch (e) {}
+    BD.listaHTML = '';
     try {
+      const l2 = document.getElementById('bdList'); if (l2 && snap.lista) l2.scrollTop = snap.lista;
       const t2 = document.getElementById('bdTx'); if (t2 && snap.foco) { t2.focus(); try { t2.setSelectionRange(snap.ini, snap.fin); } catch (e) {} }
       const m2 = document.getElementById('bdMsgs'); if (m2) { if (snap.abajo || snap.scroll === null) m2.scrollTop = m2.scrollHeight; else m2.scrollTop = snap.scroll; bdEnganchar(m2); }
       bdAltoVisual();
@@ -392,21 +399,83 @@
   // 24 h de WhatsApp, canal activo). Nada se envía solo: únicamente cuando el empleado pulsa Enviar.
   const PLAT = { whatsapp: ['WhatsApp', 'ti-brand-whatsapp', '#15803d'], instagram: ['Instagram', 'ti-brand-instagram', '#c13584'], facebook: ['Facebook', 'ti-brand-messenger', '#1877f2'] };
   const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todos', asig: 'todas', linea: '', red: 'instagram', buscando: false, q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '',
-    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null };
+    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null,
+    // 02-oct-2026 (CRM afinado): lista paginada por plataforma, búsqueda en el servidor, archivadas, estado de carga del
+    // chat y repintado por partes (cabecera, lista y pie) en vez de redibujar todo el POS.
+    clave: '', convsMas: false, cargandoMas: false, cargandoLista: false, avisoRed: '', listaHTML: '', listaScroll: 0, msgsEstado: '', firmaCab: '', firmaPie: '' };
   const PAG = 80;   // mensajes por página (los más nuevos primero; al subir se cargan los anteriores, como en Bayol)
+  const PAGC = 200; // conversaciones por página de la lista («Cargar más» trae las siguientes)
   function apiBase() { const a = api() || {}; return { url: a.url, key: a.key, tok: a.token || a.key }; }
   function bdPendiente(c) { return c.ultimo_inbound_at && (!c.ultima_respuesta_at || c.ultima_respuesta_at < c.ultimo_inbound_at); }
   function bdVentana(c) { if (!c || c.plataforma !== 'whatsapp') return true; return !!c.ultimo_inbound_at && (Date.now() - new Date(c.ultimo_inbound_at).getTime()) < 24 * 3600e3; }
   function bdHora(ts) { if (!ts) return ''; const d = diaRD(ts), h = hoyISO(); return d === h ? hora(ts) : d === addDays(h, -1) ? 'ayer' : dmy(ts).slice(0, 5); }
   function bdNombre(c) { const cli = cliDe(c.cliente_id); return (cli && cli.nombre) || c.contacto_nombre || c.contacto_usuario || c.telefono_e164 || 'Contacto'; }
+  function bdPlat() { return S.vista === 'redes' ? BD.red : 'whatsapp'; }
+  function bdArch() { return BD.filtro === 'archivadas'; }
+  function bdFiltroBase() { return 'plataforma=eq.' + bdPlat() + '&archivada=eq.' + bdArch(); }
   async function bdCargar() {
+    const clave = bdPlat() + '|' + bdArch();
     try {
       const [convs, canales] = await Promise.all([
-        api().get('crm_conversaciones', 'select=*&archivada=eq.false&order=ultimo_mensaje_at.desc.nullslast&limit=300'),
+        api().get('crm_conversaciones', 'select=*&' + bdFiltroBase() + '&order=ultimo_mensaje_at.desc.nullslast&limit=' + PAGC),
         api().get('crm_canales', 'select=*&order=plataforma.asc')
       ]);
-      BD.convs = convs || []; BD.canales = canales || []; BD.cargado = true; BD.error = '';
-    } catch (e) { BD.error = errTxt(e); BD.cargado = true; }
+      if (clave !== bdPlat() + '|' + bdArch()) return;   // el usuario cambió de pestaña mientras cargaba
+      const nuevas = convs || [];
+      if (BD.clave !== clave) { BD.convs = nuevas; BD.convsMas = nuevas.length === PAGC; }
+      else {
+        // Se conservan las conversaciones más antiguas ya cargadas («Cargar más» o encontradas al buscar).
+        const ids = new Set(nuevas.map(c => String(c.id)));
+        const corte = nuevas.length === PAGC ? Date.parse(nuevas[nuevas.length - 1].ultimo_mensaje_at || 0) || 0 : 0;
+        const resto = corte ? BD.convs.filter(c => !ids.has(String(c.id)) && c.plataforma === bdPlat() && !!c.archivada === bdArch() && (Date.parse(c.ultimo_mensaje_at || 0) || 0) < corte) : [];
+        BD.convs = nuevas.concat(resto);
+        if (!resto.length) BD.convsMas = nuevas.length === PAGC;
+      }
+      BD.clave = clave; bdOrdenar();
+      BD.canales = canales || []; BD.cargado = true; BD.error = ''; BD.avisoRed = ''; BD.cargandoLista = false;
+    } catch (e) {
+      BD.cargandoLista = false;
+      if (BD.cargado && !BD.error && BD.convs.length) BD.avisoRed = errTxt(e);   // la lista se queda; solo un aviso
+      else { BD.error = errTxt(e); BD.cargado = true; }
+    }
+  }
+  async function bdCargarMas() {
+    if (BD.cargandoMas || !BD.convsMas) return;
+    const ult = BD.convs.filter(c => c.ultimo_mensaje_at && c.plataforma === bdPlat()).slice(-1)[0];
+    if (!ult) { BD.convsMas = false; return; }
+    BD.cargandoMas = true; bdPintarLista();
+    const clave = bdPlat() + '|' + bdArch();
+    try {
+      const filas = await api().get('crm_conversaciones', 'select=*&' + bdFiltroBase() + '&ultimo_mensaje_at=lt.' + encodeURIComponent(ult.ultimo_mensaje_at) + '&order=ultimo_mensaje_at.desc.nullslast&limit=' + PAGC) || [];
+      if (clave === BD.clave) {
+        const ids = new Set(BD.convs.map(c => String(c.id)));
+        filas.forEach(f => { if (!ids.has(String(f.id))) BD.convs.push(f); });
+        BD.convsMas = filas.length === PAGC; bdOrdenar();
+      }
+    } catch (e) { toast('err', 'No se pudieron cargar más conversaciones', errTxt(e)); }
+    BD.cargandoMas = false; bdPintarLista();
+  }
+  // Búsqueda en el servidor (nombre, teléfono, usuario o último mensaje): encuentra también los chats viejos que aún no
+  // se han cargado en la lista. Se espera a que el usuario deje de escribir.
+  let bdBuscarT = null;
+  function bdBuscarServidor() {
+    clearTimeout(bdBuscarT);
+    const q = BD.q.trim(); if (q.length < 2) return;
+    bdBuscarT = setTimeout(async () => {
+      const limpio = q.replace(/[(),*%:"\\]/g, ' ').replace(/\s+/g, ' ').trim(), dig = q.replace(/\D/g, '');
+      if (!limpio && !dig) return;
+      const cond = [];
+      if (limpio) ['contacto_nombre', 'contacto_usuario', 'ultimo_mensaje_preview'].forEach(k => cond.push(k + '.ilike.*' + limpio + '*'));
+      if (dig.length >= 3) cond.push('telefono_e164.ilike.*' + dig + '*');
+      const clave = BD.clave;
+      try {
+        const filas = await api().get('crm_conversaciones', 'select=*&' + bdFiltroBase() + '&or=' + encodeURIComponent('(' + cond.join(',') + ')') + '&order=ultimo_mensaje_at.desc.nullslast&limit=60') || [];
+        if (clave !== BD.clave || BD.q.trim() !== q) return;
+        const ids = new Set(BD.convs.map(c => String(c.id))); let hay = false;
+        filas.forEach(f => { if (!ids.has(String(f.id))) { BD.convs.push(f); hay = true; } });
+        if (hay) { bdOrdenar(); bdPintarLista(); }
+      } catch (e) {}
+    }, 350);
   }
   function bdFusionar(filas, id) {
     if (String(BD.sel) !== String(id)) return;
@@ -414,15 +483,17 @@
     filas.forEach(f => porId.set(String(f.id), Object.assign({}, porId.get(String(f.id)) || {}, f)));
     const reales = [...porId.values()];
     // Burbujas provisionales: se quedan hasta que aparezca el mensaje real con el mismo texto.
-    const tmps = BD.msgs.filter(m => String(m.id).startsWith('tmp-') && String(m._conv) === String(id) && !reales.some(r => r.direccion === 'out' && r.cuerpo === m.cuerpo && r.created_at >= m._desde));
+    const tmps = BD.msgs.filter(m => String(m.id).startsWith('tmp-') && String(m._conv) === String(id) && !reales.some(r => (r.idempotency_key && 'tmp-' + r.idempotency_key === String(m.id)) || (r.direccion === 'out' && r.cuerpo === m.cuerpo && Date.parse(r.created_at) >= Date.parse(m._desde) - 120000)));
     BD.msgs = reales.concat(tmps).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
   }
   async function bdCargarMsgs(id) {
     try {
       const filas = await api().get('crm_mensajes', 'select=*&conversacion_id=eq.' + id + '&order=created_at.desc&limit=' + PAG) || [];
+      if (String(BD.sel) !== String(id)) return;
       if (!BD.msgs.some(m => !String(m.id).startsWith('tmp-'))) BD.hayMas = filas.length === PAG;
       bdFusionar(filas, id);
-    } catch (e) {}
+      BD.msgsEstado = BD.msgs.length ? 'ok' : 'vacio';
+    } catch (e) { if (String(BD.sel) === String(id) && !BD.msgs.some(m => !String(m.id).startsWith('tmp-'))) BD.msgsEstado = 'error'; }
   }
   async function bdCargarViejos() {
     if (!BD.sel || !BD.hayMas || BD.cargandoViejos) return;
@@ -436,13 +507,14 @@
       bdFusionar(filas, id); bdSyncMsgs(false);
       if (box) box.scrollTop = top + (box.scrollHeight - alto);   // mantiene a la vista el mismo mensaje
       bdFirmar();
-    } catch (e) {} finally { BD.cargandoViejos = false; }
+    } catch (e) { toast('err', 'No se pudieron cargar los mensajes anteriores', 'Revisa la conexión y vuelve a subir.'); } finally { BD.cargandoViejos = false; }
   }
   function bdLista() {
     const q = BD.q.trim().toLowerCase(), me = yo();
     return BD.convs.filter(c => {
       if (S.vista === 'redes') { if (c.plataforma !== BD.red) return false; }
       else { if (c.plataforma !== 'whatsapp') return false; if (BD.linea && String(c.canal_id) !== String(BD.linea)) return false; }
+      if (!!c.archivada !== bdArch()) return false;
       if (BD.filtro === 'no_leidos' && !(c.no_leidos > 0)) return false;
       if (BD.filtro === 'pendientes' && !bdPendiente(c)) return false;
       if (BD.asig === 'mias' && String(c.asignado_id || '') !== String(me || '')) return false;
@@ -457,23 +529,39 @@
     return dmy(iso).slice(0, 5);
   }
   function bdListaHTML() {
-    const base = BD.convs.filter(c => S.vista === 'redes' ? c.plataforma === BD.red : c.plataforma === 'whatsapp');
-    if (!base.length) return `<div class="crm-vacio">${S.vista === 'redes' ? 'Todavía no han llegado mensajes de ' + (BD.red === 'instagram' ? 'Instagram' : 'Facebook') + '.' : 'Todavía no han llegado mensajes de WhatsApp.'}</div>`;
+    const aviso = BD.avisoRed ? '<div class="bd-aviso-red"><i class="ti ti-wifi-off"></i> Sin conexión con el servidor. Reintentando…</div>' : '';
+    const base = BD.convs.filter(c => c.plataforma === bdPlat() && !!c.archivada === bdArch());
+    if (!base.length) {
+      if (BD.cargandoLista) return aviso + '<div class="crm-vacio">Cargando conversaciones…</div>';
+      if (bdArch()) return aviso + '<div class="crm-vacio">No hay conversaciones archivadas.</div>';
+      return aviso + `<div class="crm-vacio">${S.vista === 'redes' ? 'Todavía no han llegado mensajes de ' + (BD.red === 'instagram' ? 'Instagram' : 'Facebook') + '.' : 'Todavía no han llegado mensajes de WhatsApp.'}</div>`;
+    }
     const l = bdLista();
-    if (!l.length) return '<div class="crm-vacio">Ninguna conversación coincide con lo que buscas.</div>';
-    return l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp, nl = c.no_leidos > 0, pend = bdPendiente(c);
-      return `<div class="wa-row${String(BD.sel) === String(c.id) ? ' active' : ''}${nl ? ' no-leido' : ''}${pend ? ' pendiente' : ''}" onclick="window.nxCRM.bdAbrir('${c.id}')">
+    const mas = BD.convsMas ? `<button type="button" class="bd-mas-convs" onclick="window.nxCRM.bdCargarMas()"${BD.cargandoMas ? ' disabled' : ''}>${BD.cargandoMas ? '<i class="ti ti-loader-2 crm-girando"></i> Cargando…' : '<i class="ti ti-chevron-down"></i> Cargar más conversaciones'}</button>` : '';
+    if (!l.length) return aviso + `<div class="crm-vacio">${BD.q.trim() ? 'Buscando también en las conversaciones anteriores…' : 'Ninguna conversación coincide con este filtro.'}</div>` + mas;
+    return aviso + l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp, nl = c.no_leidos > 0, pend = bdPendiente(c);
+      return `<div class="wa-row${String(BD.sel) === String(c.id) ? ' active' : ''}${nl ? ' no-leido' : ''}${pend ? ' pendiente' : ''}" data-id="${esc(c.id)}" onclick="window.nxCRM.bdAbrir('${c.id}')">
         <div class="wa-avatar-wrap"><div class="wa-avatar">${esc(ini(bdNombre(c)))}</div><span class="wa-wa-badge p-${c.plataforma}"><i class="ti ${p[1]}"></i></span></div>
         <div style="min-width:0;flex:1"><div class="r1"><span class="fila-nombre">${esc(bdNombre(c))}</span><span class="fila-hora">${bdHoraRel(c.ultimo_mensaje_at)}</span></div>
           <div class="r2"><span class="fila-preview">${esc(c.ultimo_mensaje_preview || '')}</span><span class="r2b">${pend ? '<span class="fila-pendiente"><i class="ti ti-user-exclamation"></i> Atender</span>' : ''}${nl ? `<span class="fila-badge">${c.no_leidos}</span>` : ''}${c.asignado_nombre ? `<span class="fila-asignado">${esc(c.asignado_nombre)}</span>` : ''}</span></div></div>
-      </div>`; }).join('');
+      </div>`; }).join('') + mas;
+  }
+  // La lista solo se toca si cambió lo que se ve (cada evento de tiempo real ya no la redibuja entera sin necesidad).
+  function bdPintarLista() {
+    const l = document.getElementById('bdList'); if (!l) return;
+    const h = bdListaHTML(); if (h === BD.listaHTML && l.childElementCount) return;
+    BD.listaHTML = h; l.innerHTML = h; bdEngancharLista(l);
+  }
+  function bdEngancharLista(l) {
+    if (!l || l._bd) return; l._bd = true;
+    l.addEventListener('scroll', () => { if (BD.convsMas && !BD.cargandoMas && !BD.q.trim() && l.scrollHeight - l.scrollTop - l.clientHeight < 240) bdCargarMas(); }, { passive: true });
   }
   function bdIcono(e) { return ({ pendiente: '<i class="ti ti-clock"></i>', enviado: '<i class="ti ti-check"></i>', entregado: '<i class="ti ti-checks"></i>', leido: '<i class="ti ti-checks" style="color:#53bdeb"></i>', fallido: '<i class="ti ti-alert-circle" style="color:#dc2626"></i>' })[e] || ''; }
   function bdQuien(m, nombre) { return m.direccion === 'out' ? 'Tú' : (nombre || 'Cliente'); }
   function bdResumen(m) { if (!m) return ''; if (m.cuerpo) return String(m.cuerpo); return ({ imagen: '📷 Foto', video: '🎥 Video', audio: '🎤 Audio', documento: '📄 Documento', plantilla: '📋 Plantilla' })[m.tipo] || 'Mensaje'; }
   function bdPuedeCitar(c) { return !!c && c.plataforma === 'whatsapp'; }
   function bdBurbuja(m, nombre) {
-    const out = m.direccion === 'out', u = m.media_path ? BD.urls[m.media_path] : null, tmp = String(m.id).startsWith('tmp-');
+    const out = m.direccion === 'out', u = bdUrl(m.media_path), tmp = String(m.id).startsWith('tmp-');
     const media = m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen" onload="window.nxCRM.bdMediaLista()"></a>` : m.tipo === 'audio' ? `<audio controls preload="metadata" src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls preload="metadata" src="${esc(u)}" onloadedmetadata="window.nxCRM.bdMediaLista()"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`) : '';
     let cita = '';
     if (m.responde_a_id) {
@@ -505,13 +593,18 @@
     return BD.msgs.map(m => {
       const d = diaRD(m.created_at), sep = d !== dia; dia = d;
       const o = m.responde_a_id ? BD.msgs.find(x => String(x.id) === String(m.responde_a_id)) : null;
-      const k = [m.estado, m.cuerpo, m.media_path ? (BD.urls[m.media_path] ? 'u' : 'p') : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
+      const k = [m.estado, m.cuerpo, m.media_path ? (bdUrl(m.media_path) || 'p') : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
       return { id: String(m.id), k: k, html: (sep ? `<div class="wa-dia">${d === hoyISO() ? 'Hoy' : dmy(m.created_at)}</div>` : '') + bdBurbuja(m, nom) };
     });
   }
   function bdBloque(it) { const d = document.createElement('div'); d.className = 'bd-m'; d.dataset.id = it.id; d.dataset.k = it.k; d.innerHTML = it.html; return d; }
+  function bdUrl(path) { const x = path ? BD.urls[path] : null; return x && x.vence > Date.now() ? x.u : null; }
   function bdMsgsHTML() {
-    if (!BD.msgs.length) return '<div class="wa-chat-empty">Cargando mensajes…</div>';
+    if (!BD.msgs.length) {
+      if (BD.msgsEstado === 'error') return '<div class="wa-chat-empty">No se pudieron cargar los mensajes.<br><button type="button" class="btn-mini" style="margin-top:8px" onclick="window.nxCRM.bdReintentarCarga()"><i class="ti ti-refresh"></i> Reintentar</button></div>';
+      if (BD.msgsEstado === 'vacio') return '<div class="wa-chat-empty">Todavía no hay mensajes en esta conversación.</div>';
+      return '<div class="wa-chat-empty">Cargando mensajes…</div>';
+    }
     return (BD.hayMas ? '<div class="bd-mas"><i class="ti ti-loader-2"></i> Sube para ver mensajes anteriores</div>' : '') +
       bdItems().map(it => `<div class="bd-m" data-id="${esc(it.id)}" data-k="${esc(it.k)}">${it.html}</div>`).join('');
   }
@@ -581,45 +674,81 @@
     }
     toast('warn', 'No se encontró el mensaje citado');
   }
+  function bdConvSel() { return BD.convs.find(x => String(x.id) === String(BD.sel)); }
+  function bdCanalDe(c) { return c ? BD.canales.find(x => String(x.id) === String(c.canal_id)) : null; }
+  function bdFirmaCab(c) { if (!c) return ''; const op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null; return [c.id, bdNombre(c), c.telefono_e164, c.contacto_usuario, c.cliente_id, c.crm_id, op ? op.etapa : '', c.asignado_id, c.asignado_nombre, c.archivada, S.usuarios.length].join('|'); }
+  function bdFirmaPie(c) { if (!c) return ''; const k = bdCanalDe(c); return [c.id, !!(k && k.activo), bdVentana(c)].join('|'); }
   function bdChatHTML() {
-    const c = BD.convs.find(x => String(x.id) === String(BD.sel));
+    const c = bdConvSel();
     if (!c) return '<div class="wa-chat-empty">Selecciona una conversación de la lista.</div>';
+    BD.firmaCab = bdFirmaCab(c); BD.firmaPie = bdFirmaPie(c);
+    return `<div id="bdCab" class="bd-parte">${bdCabHTML(c)}</div>
+      <div id="bdMsgs" class="wa-msgs">${bdMsgsHTML()}</div>
+      <button type="button" id="bdAbajo" class="bd-abajo" onclick="window.nxCRM.bdAbajo()" aria-label="Ir a los últimos mensajes"><i class="ti ti-chevron-down"></i></button>
+      <div id="bdPie" class="bd-parte">${bdPieHTML(c)}</div>`;
+  }
+  function bdCabHTML(c) {
     const cli = cliDe(c.cliente_id), op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null;
-    const canal = BD.canales.find(x => String(x.id) === String(c.canal_id)), me = yo(), nom = bdNombre(c);
+    const me = yo(), nom = bdNombre(c);
     const usrOpts = `<option value="">Sin asignar</option>` + S.usuarios.map(u => `<option value="${u.id}"${String(c.asignado_id || '') === String(u.id) ? ' selected' : ''}>${esc(u.nom)}</option>`).join('');
     const asig = esAdmin() ? `<span class="crm-asig"><i class="ti ti-user-check"></i><select onchange="window.nxCRM.bdAsignar('${c.id}', this.value || null)">${usrOpts}</select></span>`
-      : !c.asignado_id ? `<button class="btn-mini" onclick="window.nxCRM.bdAsignar('${c.id}','${me}')"><i class="ti ti-hand-grab"></i> Atender yo</button>`
+      : !c.asignado_id ? (me ? `<button class="btn-mini" onclick="window.nxCRM.bdAsignar('${c.id}','${me}')"><i class="ti ti-hand-grab"></i> Atender yo</button>` : '')
       : `<span class="crm-asig"><i class="ti ti-user-check"></i> ${esc(c.asignado_nombre || '')}${String(c.asignado_id) === String(me) ? ` <button class="btn-mini" onclick="window.nxCRM.bdAsignar('${c.id}', null)">Soltar</button>` : ''}</span>`;
     const sub = c.plataforma === 'whatsapp' ? `<i class="ti ti-phone"></i> ${esc(c.telefono_e164 || (String(c.contacto_id).startsWith('bsid:') ? 'Contacto desde anuncio' : ''))}` : `<i class="ti ${(PLAT[c.plataforma] || PLAT.whatsapp)[1]}"></i> ${c.contacto_usuario ? '@' + esc(c.contacto_usuario) : (PLAT[c.plataforma] || PLAT.whatsapp)[0]}`;
     const tel = c.telefono_e164 && !String(c.contacto_id).startsWith('bsid:') ? c.telefono_e164 : '';
-    const puede = canal && canal.activo, abierta = bdVentana(c);
     return `<div class="wa-chat-head"><button class="wa-back" onclick="window.nxCRM.bdCerrar()" aria-label="Volver a la lista"><i class="ti ti-arrow-left"></i></button>
         <div class="wa-avatar">${esc(ini(nom))}</div>
         <div style="flex:1;min-width:0"><div class="hn">${esc(nom)}</div><div class="hs">${sub}</div></div>
         ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
         ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
-        <button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button></div>
-      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>`}</div>
-      <div id="bdMsgs" class="wa-msgs">${bdMsgsHTML()}</div>
-      <button type="button" id="bdAbajo" class="bd-abajo" onclick="window.nxCRM.bdAbajo()" aria-label="Ir a los últimos mensajes"><i class="ti ti-chevron-down"></i></button>
-      ${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
+        ${c.archivada ? `<button class="wa-icon-btn" onclick="window.nxCRM.bdDesarchivar('${c.id}')" title="Devolver a la bandeja" aria-label="Devolver a la bandeja"><i class="ti ti-archive-off"></i></button>` : `<button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button>`}</div>
+      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>`}</div>`;
+  }
+  function bdPieHTML(c) {
+    const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
+    return `${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
         : abierta ? `<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><label class="wa-clip" title="Adjuntar" aria-label="Adjuntar"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
-          <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>760){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
+          <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>860){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
           <button class="wa-send-btn" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
         : `<div class="wa-aviso bd-aviso-24"><span><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas.</span><button type="button" class="bd-btn-plant" onclick="window.nxCRM.bdPlantillas()"><i class="ti ti-template"></i> Enviar plantilla</button></div>`}`;
   }
+  // Abrir o cerrar un chat ya no redibuja todo el POS: solo cambia la columna del chat y la fila marcada (la lista
+  // conserva su posición y un audio que suena en otra parte no se corta).
+  function bdModoChat() {
+    const root = document.querySelector('.nxCrm.crmB'), sh = root && root.querySelector('.wa-shell'), ch = document.getElementById('bdChat');
+    if (!root || !sh || !ch) { repintar(); return; }
+    const abierto = !!BD.sel;
+    root.classList.toggle('chat-abierto', abierto && (S.vista === 'mensajes' || S.vista === 'redes'));
+    sh.classList.toggle('con-chat', abierto);
+    ch.innerHTML = bdChatHTML();
+    bdPintarLista();
+    const m = document.getElementById('bdMsgs'); if (m) { bdEnganchar(m); m.scrollTop = m.scrollHeight; }
+    bdAltoVisual();
+  }
+  function bdPintarCabPie(forzar) {
+    const c = bdConvSel(), cab = document.getElementById('bdCab'), pie = document.getElementById('bdPie');
+    if (!c || !cab || !pie) return;
+    const fc = bdFirmaCab(c); if (forzar || fc !== BD.firmaCab) { cab.innerHTML = bdCabHTML(c); BD.firmaCab = fc; }
+    const fp = bdFirmaPie(c);
+    if (fp !== BD.firmaPie) {   // p. ej. el cliente escribió y se abrió la ventana de 24 h: aparece la barra de escribir
+      const tx = document.getElementById('bdTx'); if (tx) BD.borr[c.id] = tx.value;
+      pie.innerHTML = bdPieHTML(c); BD.firmaPie = fp; bdAltoVisual();
+    }
+  }
   function bdShellHTML() {
-    return `<div class="wa-shell${BD.sel ? ' con-chat' : ''}"><div class="wa-list-col"><div class="wa-list-scroll" id="bdList">${bdListaHTML()}</div></div><div class="wa-chat-col" id="bdChat">${bdChatHTML()}</div></div>`;
+    const lista = bdListaHTML(); BD.listaHTML = lista;
+    return `<div class="wa-shell${BD.sel ? ' con-chat' : ''}"><div class="wa-list-col"><div class="wa-list-scroll" id="bdList">${lista}</div></div><div class="wa-chat-col" id="bdChat">${bdChatHTML()}</div></div>`;
   }
   function vistaMensajes() {
-    if (BD.error) return `<div class="crm-vacio">No se pudieron cargar los mensajes: ${esc(BD.error)}</div>`;
+    if (BD.error && !BD.convs.length) return `<div class="crm-vacio">No se pudieron cargar los mensajes: ${esc(BD.error)}<br><button type="button" class="btn-mini" style="margin-top:10px" onclick="window.nxCRM.actualizar()"><i class="ti ti-refresh"></i> Reintentar</button></div>`;
     if (!BD.cargado) return '<div class="crm-vacio">Cargando mensajes…</div>';
     bdTimer();
-    const base = BD.convs.filter(c => c.plataforma === 'whatsapp' && (!BD.linea || String(c.canal_id) === String(BD.linea)));
-    const def = [['todos', 'Todos', base.length], ['no_leidos', 'No leídos', base.filter(c => c.no_leidos > 0).length], ['pendientes', 'Pendientes', base.filter(bdPendiente).length]];
+    const base = BD.convs.filter(c => c.plataforma === 'whatsapp' && !c.archivada && (!BD.linea || String(c.canal_id) === String(BD.linea)));
+    const arch = bdArch();
+    const def = [['todos', 'Todos', arch ? 0 : base.length], ['no_leidos', 'No leídos', arch ? 0 : base.filter(c => c.no_leidos > 0).length], ['pendientes', 'Pendientes', arch ? 0 : base.filter(bdPendiente).length], ['archivadas', 'Archivadas', 0]];
     const chips = def.map(d => `<button class="crm-chip pill-elevado${BD.filtro === d[0] ? ' on pill-hundido' : ''}" onclick="window.nxCRM.bdFiltro('${d[0]}')">${d[1]}${d[2] ? ` <span class="cuenta">${d[2]}</span>` : ''}</button>`).join('');
     return `<div class="crm-ocultar-en-chat"><div class="crm-busq-row">
-        ${BD.buscando || BD.q ? `<input type="text" id="crmBuscarInput" class="crm-buscar-input" value="${esc(BD.q)}" placeholder="Buscar nombre o número..." oninput="window.nxCRM.bdBuscar(this.value)" onblur="window.nxCRM.bdBuscarBlur()">` : `<button class="crm-buscar pill-elevado" onclick="window.nxCRM.bdBuscarAbrir()"><i class="ti ti-search"></i> <span>Buscar</span></button>`}
+        ${BD.buscando || BD.q ? `<input type="text" id="crmBuscarInput" class="crm-buscar-input" value="${esc(BD.q)}" placeholder="Buscar nombre o número..." oninput="window.nxCRM.bdBuscar(this.value)" onblur="window.nxCRM.bdBuscarBlur()">` : `<button class="crm-buscar pill-elevado" onclick="window.nxCRM.bdBuscarAbrir(this)"><i class="ti ti-search"></i> <span>Buscar</span></button>`}
         <button class="crm-filtros-btn pill-elevado${BD.asig !== 'todas' ? ' activo' : ''}" onclick="window.nxCRM.filtrosMenu(event)"><i class="ti ti-adjustments-horizontal"></i> <span>Filtros</span></button></div>
       <div class="crm-chips-row">${chips}</div></div>
       ${bdShellHTML()}`;
@@ -636,24 +765,40 @@
     document.body.appendChild(ov);
   }
   function bdPintarParcial() {
-    const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML();
+    bdPintarLista();
+    bdPintarCabPie();
     bdSyncMsgs();
     bdFirmar();
   }
   function bdAlFondo() { const m = document.getElementById('bdMsgs'); if (m) { m.scrollTop = m.scrollHeight; BD.pegadoAbajo = true; } }
   const bdFirmando = new Set();
+  const FIRMA_S = 6 * 3600;   // los enlaces de fotos/audios duran 6 h y se renuevan 5 min antes de vencer
   async function bdFirmar() {
-    const b = apiBase(); const faltan = [...new Set(BD.msgs.filter(m => m.media_path && !BD.urls[m.media_path] && !bdFirmando.has(m.media_path)).map(m => m.media_path))];
+    const b = apiBase(), ahora = Date.now();
+    const faltan = [...new Set(BD.msgs.filter(m => m.media_path).map(m => m.media_path))].filter(p => !bdFirmando.has(p) && !(BD.urls[p] && BD.urls[p].vence - ahora > 5 * 60e3));
+    if (!faltan.length) return;
     faltan.forEach(x => bdFirmando.add(x));
-    for (const path of faltan) {
-      try {
-        const r = await fetch(`${b.url}/storage/v1/object/sign/crm-media/${path.split('/').map(encodeURIComponent).join('/')}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 3600 }) });
-        const j = await r.json(); if (j && (j.signedURL || j.signedUrl)) BD.urls[path] = `${b.url}/storage/v1${j.signedURL || j.signedUrl}`;
-      } catch (e) {}
-      bdFirmando.delete(path);
-    }
+    const hdr = { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' };
+    const guardar = (path, su) => { if (path && su) BD.urls[path] = { u: `${b.url}/storage/v1${su}`, vence: Date.now() + (FIRMA_S - 60) * 1000 }; };
+    try {
+      for (let i = 0; i < faltan.length; i += 50) {
+        const lote = faltan.slice(i, i + 50);
+        let ok = false;
+        try {   // una sola petición para todo el lote
+          const r = await fetch(`${b.url}/storage/v1/object/sign/crm-media`, { method: 'POST', headers: hdr, body: JSON.stringify({ expiresIn: FIRMA_S, paths: lote }) });
+          const j = await r.json().catch(() => null);
+          if (r.ok && Array.isArray(j)) { j.forEach(x => x && guardar(x.path, x.signedURL || x.signedUrl)); ok = true; }
+        } catch (e) {}
+        if (!ok) await Promise.all(lote.map(async path => {   // respaldo: de una en una, en paralelo
+          try {
+            const r = await fetch(`${b.url}/storage/v1/object/sign/crm-media/${path.split('/').map(encodeURIComponent).join('/')}`, { method: 'POST', headers: hdr, body: JSON.stringify({ expiresIn: FIRMA_S }) });
+            const j = await r.json(); if (j) guardar(path, j.signedURL || j.signedUrl);
+          } catch (e) {}
+        }));
+      }
+    } finally { faltan.forEach(x => bdFirmando.delete(x)); }
     // Solo se completan los bloques con adjunto; no se mueve el scroll (si el usuario está leyendo arriba, se queda ahí).
-    if (faltan.length) bdSyncMsgs();
+    bdSyncMsgs();
   }
   // Respaldo por consulta: cada 10 s si el tiempo real no está conectado; cada 60 s si lo está (por si se perdió un evento).
   let bdUltimaConsulta = 0;
@@ -679,12 +824,12 @@
   // (✓ enviado, ✓✓ entregado, ✓✓ azul leído) aparecen al instante, igual que en WhatsApp. Mismo patrón probado del inbox
   // de NEXUS PRO: SDK supabase-js (UMD) y setAuth con el token del usuario ANTES de suscribirse, para que la RLS se
   // aplique como «authenticated» (sin eso cada evento llega 401). Solo LEE: nada se envía solo.
-  BD.rt = { sb: null, canal: null, vivo: false, token: '', reintento: null, pintar: null };
+  BD.rt = { sb: null, canal: null, vivo: false, token: '', reintento: null, pintar: null, n: 0, fallos: 0 };
   function bdCargarSDK() {
     return new Promise((resolve) => {
       if (window.supabase && window.supabase.createClient) return resolve();
       const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
       s.onload = resolve; s.onerror = resolve;
       document.head.appendChild(s);
     });
@@ -695,7 +840,9 @@
     const n = ev.new || {};
     if (!n.id) return;
     const i = BD.convs.findIndex(x => String(x.id) === String(n.id));
-    if (n.archivada) { if (i >= 0) BD.convs.splice(i, 1); }
+    // Solo se guarda si pertenece a la lista que se está viendo (plataforma y archivadas / no archivadas).
+    const encaja = n.plataforma === bdPlat() && !!n.archivada === bdArch();
+    if (!encaja) { if (i >= 0 && String(n.id) !== String(BD.sel)) BD.convs.splice(i, 1); else if (i >= 0) BD.convs[i] = Object.assign({}, BD.convs[i], n); }
     else if (i >= 0) BD.convs[i] = Object.assign({}, BD.convs[i], n);
     else BD.convs.push(n);
     bdOrdenar();
@@ -707,13 +854,22 @@
     bdPintarPronto();
   }
   function bdEvMensaje(ev) {
+    if (ev.eventType === 'DELETE') {   // p. ej. la copia del eco que el servidor borra: desaparece también en pantalla
+      const o = ev.old || {}, j = o.id ? BD.msgs.findIndex(x => String(x.id) === String(o.id)) : -1;
+      if (j >= 0) { BD.msgs.splice(j, 1); bdPintarPronto(); }
+      return;
+    }
     const n = ev.new || {};
     if (!n.id || String(n.conversacion_id) !== String(BD.sel)) return;
     const i = BD.msgs.findIndex(x => String(x.id) === String(n.id));
     if (i >= 0) BD.msgs[i] = Object.assign({}, BD.msgs[i], n);
     else {
-      // Reemplaza la burbuja provisional («enviando…») del mismo texto en vez de duplicarla.
-      const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && x.cuerpo === n.cuerpo) : -1;
+      // Un mensaje más viejo que la página cargada (historial que se importa, un acuse de un mensaje antiguo) no se
+      // mete en medio: aparecerá en su lugar al subir. Así «cargar anteriores» no se salta ningún tramo.
+      const primero = BD.msgs.find(m => !String(m.id).startsWith('tmp-'));
+      if (BD.hayMas && primero && Date.parse(n.created_at) < Date.parse(primero.created_at)) return;
+      // Reemplaza la burbuja provisional («enviando…») por su clave de envío (o, de respaldo, por el mismo texto).
+      const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && ((n.idempotency_key && x.id === 'tmp-' + n.idempotency_key) || x.cuerpo === n.cuerpo)) : -1;
       if (t >= 0) BD.msgs[t] = n; else BD.msgs.push(n);
       BD.msgs.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
@@ -737,44 +893,58 @@
       bdSuscribir();
     } catch (e) { console.error('[CRM bandeja] tiempo real', e); BD.rt.sb = null; }
   }
+  // Cada suscripción usa un canal con nombre propio (el SDK devuelve el MISMO objeto si el nombre se repite, aunque se
+  // esté cerrando) y su callback se ignora en cuanto deja de ser el canal vigente: un «CLOSED» del canal viejo ya no
+  // derriba al nuevo ni deja la bandeja reconectando en bucle. Reintentos con espera creciente (5 s → 60 s).
   function bdSuscribir() {
     const sb = BD.rt.sb; if (!sb) return;
-    if (BD.rt.canal) { try { sb.removeChannel(BD.rt.canal); } catch (e) {} }
-    BD.rt.canal = sb.channel('studio-crm-bandeja')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversaciones' }, bdEvConversacion)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_mensajes' }, bdEvMensaje)
-      .subscribe((estado) => {
-        const antes = BD.rt.vivo;
-        BD.rt.vivo = estado === 'SUBSCRIBED';
-        // Al (re)conectar se recarga una vez por si llegó algo mientras estaba desconectado.
-        if (BD.rt.vivo && !antes) bdRefrescar();
-        if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT' || estado === 'CLOSED') {
-          clearTimeout(BD.rt.reintento);
-          if (document.querySelector('.crmB .wa-shell')) BD.rt.reintento = setTimeout(async () => { const A = api() || {}; if (A.token && BD.rt.sb) { BD.rt.token = A.token; try { await BD.rt.sb.realtime.setAuth(A.token); } catch (e) {} } bdSuscribir(); }, 5000);
-        }
-      });
+    clearTimeout(BD.rt.reintento);
+    const viejo = BD.rt.canal; BD.rt.canal = null; BD.rt.vivo = false;
+    if (viejo) { try { sb.removeChannel(viejo); } catch (e) {} }
+    const canal = sb.channel('studio-crm-bandeja-' + (++BD.rt.n))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversaciones' }, ev => { if (BD.rt.canal === canal) bdEvConversacion(ev); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_mensajes' }, ev => { if (BD.rt.canal === canal) bdEvMensaje(ev); });
+    BD.rt.canal = canal;
+    canal.subscribe((estado) => {
+      if (BD.rt.canal !== canal) return;
+      const antes = BD.rt.vivo;
+      BD.rt.vivo = estado === 'SUBSCRIBED';
+      // Al (re)conectar se recarga una vez por si llegó algo mientras estaba desconectado.
+      if (BD.rt.vivo) { BD.rt.fallos = 0; if (!antes) bdRefrescar(); }
+      if (estado === 'CHANNEL_ERROR' || estado === 'TIMED_OUT' || estado === 'CLOSED') {
+        clearTimeout(BD.rt.reintento);
+        const espera = Math.min(60000, 5000 * Math.pow(2, BD.rt.fallos++));
+        if (document.querySelector('.crmB .wa-shell')) BD.rt.reintento = setTimeout(async () => {
+          if (BD.rt.canal !== canal) return;
+          const A = api() || {}; if (A.token && BD.rt.sb) { BD.rt.token = A.token; try { await BD.rt.sb.realtime.setAuth(A.token); } catch (e) {} }
+          bdSuscribir();
+        }, espera);
+      }
+    });
   }
   function bdRealtimeCerrar() {
     clearTimeout(BD.rt.reintento);
-    if (BD.rt.sb && BD.rt.canal) { try { BD.rt.sb.removeChannel(BD.rt.canal); } catch (e) {} }
-    BD.rt.canal = null; BD.rt.vivo = false;
+    const c = BD.rt.canal; BD.rt.canal = null; BD.rt.vivo = false;
+    if (BD.rt.sb && c) { try { BD.rt.sb.removeChannel(c); } catch (e) {} }
   }
   // Al volver a la pestaña (iPhone suspende el socket en segundo plano): reconectar y ponerse al día.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || !document.querySelector('.crmB .wa-shell')) return;
-    if (BD.rt.sb && !BD.rt.vivo) bdSuscribir(); else bdRealtime();
+    if (BD.rt.sb && !BD.rt.vivo) { BD.rt.fallos = 0; bdSuscribir(); } else bdRealtime();
     bdRefrescar();
   });
   async function bdAbrir(id) {
+    if (String(BD.sel) === String(id) && BD.msgs.length) return;
     if (!BD.cita || String(BD.cita.conv) !== String(id)) BD.cita = null;
-    BD.sel = id; BD.msgs = []; BD.hayMas = false; BD.pegadoAbajo = true; repintar();
+    const l0 = document.getElementById('bdList'); if (l0 && !BD.sel) BD.listaScroll = l0.scrollTop;
+    BD.sel = id; BD.msgs = []; BD.hayMas = false; BD.pegadoAbajo = true; BD.msgsEstado = 'cargando'; bdModoChat();
     await bdCargarMsgs(id);
     if (String(BD.sel) !== String(id)) return;
     const c = BD.convs.find(x => String(x.id) === String(id));
     if (c && c.no_leidos > 0) { c.no_leidos = 0; api().patch('crm_conversaciones', 'id=eq.' + id, { no_leidos: 0 }).catch(() => {}); }
-    const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML();
+    bdPintarLista();
     bdSyncMsgs(); bdAlFondo(); bdFirmar(); bdAltoVisual();
-    const t = document.getElementById('bdTx'); if (t && window.innerWidth > 760) t.focus();
+    const t = document.getElementById('bdTx'); if (t && window.innerWidth > 860) t.focus();
   }
   function uuid() { try { return crypto.randomUUID(); } catch (e) { return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)); } }
   async function bdEnviarCuerpo(body) {
@@ -797,7 +967,7 @@
       if (tx && !tx.value.trim() && String(BD.sel) === String(conv)) { tx.value = texto; BD.borr[conv] = texto; }
       toast('err', 'No se envió', msg);
     }
-    if (String(BD.sel) === String(conv)) { await Promise.all([bdCargarMsgs(conv), bdCargar()]); bdPintarParcial(); }
+    if (String(BD.sel) === String(conv)) { await Promise.all([bdCargarMsgs(conv), BD.rt.vivo ? null : bdCargar()]); bdPintarParcial(); }
   }
   async function bdEnviar() {
     if (BD.enviando) return;
@@ -831,7 +1001,7 @@
       if (t) t.value = ''; BD.borr[conv] = '';
     } catch (e) { toast('err', 'No se envió el archivo', String(e.message || e)); }
     inp.value = '';
-    if (String(BD.sel) === String(conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(conv), bdCargar()]); bdPintarParcial(); bdAlFondo(); }
+    if (String(BD.sel) === String(conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(conv), BD.rt.vivo ? null : bdCargar()]); bdPintarParcial(); bdAlFondo(); }
   }
 
   // ── Sincronizar conversaciones (28-sep-2026): trae de Zernio los chats y mensajes que ya existían antes de conectar la
@@ -839,10 +1009,10 @@
   async function bdSincronizar() {
     if (BD.sincronizando) return;
     if (!confirm('¿Sincronizar las conversaciones de WhatsApp e Instagram? Se traen los chats y mensajes anteriores que guarda Zernio. No se envía nada a los clientes.')) return;
-    BD.sincronizando = true;
+    BD.sincronizando = true; BD.sincParar = false;
     cerrar('bdSincM');
     const ov = document.createElement('div'); ov.id = 'bdSincM'; ov.className = 'overlay open';
-    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:440px"><div class="mt"><span><i class="ti ti-cloud-download"></i> Sincronizar conversaciones</span></div><div id="bdSincTx" class="bd-sinc">Preparando…</div><div class="bd-sinc-barra"><i id="bdSincBar"></i></div><p class="crm-nota">No cierres esta ventana. Puede tardar unos minutos si hay muchos chats.</p></div>`;
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:440px"><div class="mt"><span><i class="ti ti-cloud-download"></i> Sincronizar conversaciones</span></div><div id="bdSincTx" class="bd-sinc">Preparando…</div><div class="bd-sinc-barra"><i id="bdSincBar"></i></div><p class="crm-nota">No cierres esta ventana. Puede tardar unos minutos si hay muchos chats.</p><button type="button" id="bdSincParar" class="btn-mini" style="align-self:flex-end" onclick="window.nxCRM.bdSincParar(this)"><i class="ti ti-player-stop"></i> Detener</button></div>`;
     document.body.appendChild(ov);
     const tx = t => { const e = document.getElementById('bdSincTx'); if (e) e.innerHTML = t; };
     const b = apiBase();
@@ -863,15 +1033,17 @@
           const j = await llamar({ canal_id: cn.id, cursor: cursor, limit: 8 });
           tot.chats += j.chats || 0; tot.nuevos += j.mensajes_nuevos || 0; tot.leidos += j.mensajes_leidos || 0;
           cursor = j.siguiente_cursor || null; vueltas++;
-        } while (cursor && vueltas < 60 && document.getElementById('bdSincM'));
+        } while (cursor && vueltas < 500 && document.getElementById('bdSincM') && !BD.sincParar);
+        if (BD.sincParar) break;
       }
       const bar = document.getElementById('bdSincBar'); if (bar) bar.style.width = '100%';
-      tx(`<b>Listo.</b><br>${tot.chats} chats revisados · <b>${tot.nuevos}</b> mensajes nuevos traídos.`);
+      tx(`<b>${BD.sincParar ? 'Detenido.' : 'Listo.'}</b><br>${tot.chats} chats revisados · <b>${tot.nuevos}</b> mensajes nuevos traídos.`);
       toast('ok', 'Conversaciones sincronizadas', tot.nuevos + ' mensajes nuevos');
     } catch (e) { tx(`<b>No se pudo terminar:</b> ${esc(String(e.message || e))}<br>Lo que ya se trajo queda guardado; puedes volver a intentarlo.`); }
     BD.sincronizando = false;
+    const pr = document.getElementById('bdSincParar'); if (pr) pr.remove();
     const m = document.querySelector('#bdSincM .modal'); if (m) m.insertAdjacentHTML('beforeend', `<button type="button" class="bd-btn-plant" style="align-self:flex-end" onclick="document.getElementById('bdSincM').remove()">Cerrar</button>`);
-    await bdCargar(); if (BD.sel) await bdCargarMsgs(BD.sel); repintar();
+    await bdCargar(); if (BD.sel) await bdCargarMsgs(BD.sel); bdPintarParcial();
   }
 
   // ── Plantillas (ventana de 24 h cerrada): lista las APROBADAS de la línea, rellena variables con vista previa y envía.
@@ -908,7 +1080,7 @@
     }
     const t = P.lista[P.sel];
     if (!P.vals) { P.vals = {}; t.variables.forEach((v, i) => { P.vals[v] = i === 0 && c ? bdNombre(c) : ''; }); }
-    const campos = t.variables.map((v, i) => `<label class="nxCrmF"><span>${/^\d+$/.test(v) ? 'Variable ' + v : esc(v.replace(/_/g, ' '))}${t.ejemplos && t.ejemplos[i] ? ' · ej.: ' + esc(t.ejemplos[i]) : ''}</span><input type="text" value="${esc(P.vals[v] || '')}" oninput="window.nxCRM.bdPlantVar('${esc(v)}', this.value)"></label>`).join('');
+    const campos = t.variables.map((v, i) => `<label class="nxCrmF"><span>${/^\d+$/.test(v) ? 'Variable ' + v : esc(v.replace(/_/g, ' '))}${t.ejemplos && t.ejemplos[i] ? ' · ej.: ' + esc(t.ejemplos[i]) : ''}</span><input type="text" value="${esc(P.vals[v] || '')}" oninput="window.nxCRM.bdPlantVar(${i}, this.value)"></label>`).join('');
     cu.innerHTML = `<button type="button" class="btn-mini" onclick="window.nxCRM.bdPlantElegir(null)"><i class="ti ti-arrow-left"></i> Otras plantillas</button>
       <div class="bd-plant-sel"><b>${esc(String(t.nombre).replace(/_/g, ' '))}</b></div>${campos}
       <div class="bd-plant-prev"><small>Así la verá el cliente</small><div id="bdPlantPrev" class="tx">${esc(bdPlantTexto(t, P.vals))}</div></div>
@@ -927,13 +1099,13 @@
       await bdEnviarCuerpo({ conversacion_id: P.conv, idempotency_key: uuid(), texto: bdPlantTexto(t, P.vals).slice(0, 3900), plantilla: plantilla });
       cerrar('bdPlantM'); BD.plant = null; toast('ok', 'Plantilla enviada');
     } catch (e) { toast('err', 'No se envió la plantilla', String(e.message || e)); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Enviar plantilla'; } return; }
-    if (String(BD.sel) === String(P.conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(P.conv), bdCargar()]); bdPintarParcial(); bdAlFondo(); }
+    if (String(BD.sel) === String(P.conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(P.conv), BD.rt.vivo ? null : bdCargar()]); bdPintarParcial(); bdAlFondo(); }
   }
 
   // ── iPhone: el chat ocupa exactamente el alto visible, también con el teclado abierto (visualViewport), como en Bayol.
   function bdAltoVisual() {
     const sh = document.querySelector('.crmB .wa-shell'); if (!sh) return;
-    const movil = window.innerWidth <= 760 && sh.classList.contains('con-chat');
+    const movil = window.innerWidth <= 860 && sh.classList.contains('con-chat');
     if (!movil) { sh.style.removeProperty('height'); return; }
     const vv = window.visualViewport, top = sh.getBoundingClientRect().top;
     const visible = vv ? vv.offsetTop + vv.height : window.innerHeight;
@@ -945,8 +1117,13 @@
   window.addEventListener('resize', bdAltoVisual);
   window.addEventListener('orientationchange', () => setTimeout(bdAltoVisual, 300));
   async function bdPatch(id, body, ok) {
-    try { const r = await api().patch('crm_conversaciones', 'id=eq.' + id, body); const fila = Array.isArray(r) ? r[0] : r; const c = BD.convs.find(x => String(x.id) === String(id)); if (c) Object.assign(c, fila && fila.id ? fila : body); if (ok) toast('ok', ok); repintar(); bdAlFondo(); }
-    catch (e) { toast('err', 'No se pudo', errTxt(e)); }
+    try {
+      const r = await api().patch('crm_conversaciones', 'id=eq.' + id, body); const fila = Array.isArray(r) ? r[0] : r;
+      const c = BD.convs.find(x => String(x.id) === String(id)); if (c) Object.assign(c, fila && fila.id ? fila : body);
+      if (ok) toast('ok', ok);
+      bdPintarLista(); bdPintarCabPie(true);
+      return true;
+    } catch (e) { toast('err', 'No se pudo', errTxt(e)); return false; }
   }
 
   // ── Estilos ────────────────────────────────────────────────────────
@@ -954,23 +1131,23 @@
     if (document.getElementById('nxCrmCSS')) return;
     const st = document.createElement('style'); st.id = 'nxCrmCSS';
     st.textContent = `
-.nxCrmBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font:600 13px/1 inherit;cursor:pointer;white-space:nowrap}
+.nxCrmBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font-weight:600;font-size:13px;line-height:1;font-family:inherit;cursor:pointer;white-space:nowrap}
 .nxCrmBtn.p{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}.nxCrmBtn.sm{min-height:30px;padding:0 10px;font-size:12px}.nxCrmBtn.del{color:#b91c1c;width:42px;padding:0}
 .nxCrmBtn:focus-visible,.nxCrmChip:focus-visible,.nxCrmCard:focus-visible,.nxCrmEt:focus-visible{outline:2px solid var(--c-gold);outline-offset:2px}
-.nxCrmChip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--c-line);background:#fff;font:600 12.5px inherit;color:var(--c-ink);cursor:pointer;white-space:nowrap}.nxCrmChip.on{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}
+.nxCrmChip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--c-line);background:#fff;font-weight:600;font-size:12.5px;font-family:inherit;color:var(--c-ink);cursor:pointer;white-space:nowrap}.nxCrmChip.on{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}
 .nxCrm .chk,.nxCrmFicha .chk{border:0;background:none;font-size:20px;cursor:pointer;color:var(--c-ink,#111);padding:0 4px 0 0;line-height:1;vertical-align:middle}
 .nxCrmModal{--c-ink:var(--studio-ink,#111);--c-mute:var(--studio-steel,#5b5951);--c-line:var(--studio-hair,rgba(0,0,0,.1));--c-gold:var(--studio-gold,#c9a227);color:var(--c-ink)}
 .nxCrmFicha{max-width:720px;width:100%;max-height:92vh;display:flex;flex-direction:column}.nxCrmFicha .mt small{font-size:11px;color:var(--c-mute);font-weight:600}.nxCrmFB{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px;padding-bottom:6px}
-.nxCrmEts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.nxCrmEt{flex:1;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 10px;border:1px solid var(--c-line);border-radius:10px;background:#fff;font:600 12px inherit;color:var(--c-ink);cursor:pointer}
+.nxCrmEts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.nxCrmEt{flex:1;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:5px;height:36px;padding:0 10px;border:1px solid var(--c-line);border-radius:10px;background:#fff;font-weight:600;font-size:12px;font-family:inherit;color:var(--c-ink);cursor:pointer}
 .nxCrmEt.on{background:var(--c-ink);color:#fff;border-color:var(--c-ink)}.nxCrmEt.e-ganado.on{background:#15803d;border-color:#15803d}.nxCrmEt.e-perdido.on{background:#b91c1c;border-color:#b91c1c}
 .nxCrmLost{font-size:12.5px;color:#b91c1c;background:rgba(185,28,28,.07);border-radius:10px;padding:8px 10px}
 .nxCrmSec{border:1px solid var(--c-line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}.nxCrmSec h4{font-size:13px}
 .nxCrmSec .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .nxCrmF{display:flex;flex-direction:column;gap:4px;min-width:0}.nxCrmF>span{font-size:11px;font-weight:600;color:var(--c-mute)}
-.nxCrmF input,.nxCrmF select,.nxCrmF textarea,.nxCrmComp textarea,.nxCrmDocs select,.nxCrmComp .venc input,.nxCrmComp .venc select{width:100%;box-sizing:border-box;min-height:38px;border:1px solid var(--c-line);border-radius:10px;padding:8px 10px;font:14px inherit;background:#fff;color:var(--c-ink);text-transform:none}
+.nxCrmF input,.nxCrmF select,.nxCrmF textarea,.nxCrmComp textarea,.nxCrmDocs select,.nxCrmComp .venc input,.nxCrmComp .venc select{width:100%;box-sizing:border-box;min-height:38px;border:1px solid var(--c-line);border-radius:10px;padding:8px 10px;font-size:14px;font-family:inherit;background:#fff;color:var(--c-ink);text-transform:none}
 .nxCrmF textarea,.nxCrmComp textarea{resize:vertical}
 .nxCrmF .tel{display:flex;gap:6px}.nxCrmF .tel .wa{flex:none;width:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid var(--c-line);color:#15803d;font-size:18px;text-decoration:none}
-.nxCrmPick{min-height:38px;border:1px solid var(--c-line);border-radius:10px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 10px;font:14px inherit;color:var(--c-ink);cursor:pointer;text-align:left;overflow:hidden}.nxCrmPick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nxCrmPick{min-height:38px;border:1px solid var(--c-line);border-radius:10px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:14px;font-family:inherit;color:var(--c-ink);cursor:pointer;text-align:left;overflow:hidden}.nxCrmPick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nxCrmF .asig{min-height:38px;display:flex;align-items:center;gap:8px;font-size:13.5px;flex-wrap:wrap}
 .nxCrmChk{display:flex;gap:8px;align-items:center;font-size:12.5px}.nxCrmChk small{color:var(--c-mute)}
 .nxCrmSec .acts{display:flex;justify-content:flex-end;gap:8px}
@@ -996,7 +1173,7 @@
 .crmB .crm-pill-select .chev{color:#94a3b8;font-size:14px;transition:transform .18s}.crmB .crm-pill-select.abierto .chev{transform:rotate(180deg);color:#dc2626}
 .crmB .crm-selector-menu{display:none;position:absolute;z-index:1000;top:calc(100% + 7px);left:0;width:100%;min-width:180px;padding:5px;border:1px solid #dce6f4;border-radius:14px;background:#fff;box-shadow:0 16px 30px -16px rgba(15,23,42,.38)}
 .crmB .crm-selector-menu.abierto{display:block}
-.crmB .crm-selector-option{width:100%;display:flex;align-items:center;gap:8px;border:0;border-radius:9px;padding:9px 10px;background:transparent;color:#334155;font:600 12.5px inherit;text-align:left;cursor:pointer}
+.crmB .crm-selector-option{width:100%;display:flex;align-items:center;gap:8px;border:0;border-radius:9px;padding:9px 10px;background:transparent;color:#334155;font-weight:600;font-size:12.5px;font-family:inherit;text-align:left;cursor:pointer}
 .crmB .crm-selector-option:hover{background:#eef5ff;color:#1d4ed8}.crmB .crm-selector-option.activa{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
 .crmB .crm-selector-option i{margin-left:auto;opacity:0}.crmB .crm-selector-option.activa i{opacity:1}
 .crmB .crm-tabs-row{display:flex;gap:10px;margin-bottom:12px}.crmB .crm-tabs-track{flex:1;display:flex;overflow:hidden}
@@ -1058,13 +1235,13 @@
 .crmB .wa-bubble-wrap .ld{font-size:12px;color:#667781}.crmB .wa-bubble-wrap .err{font-size:11px;color:#b91c1c;margin-top:2px}
 .crmB .wa-tick-line{text-align:right;font-size:10px;color:#8696a0;margin-top:2px;display:flex;justify-content:flex-end;gap:3px;align-items:center}
 .crmB .wa-input-bar{padding:10px 14px;background:#f0f2f5;display:flex;gap:4px;align-items:flex-end;border-top:1px solid #e2e5e7;padding-bottom:max(10px,env(safe-area-inset-bottom))}
-.crmB .wa-input-bar textarea{flex:1;border:1px solid transparent;border-radius:22px;padding:10px 16px;font:13.5px/1.35 inherit;min-width:0;margin:0 6px;background:#fff;color:#111b21;box-shadow:0 1px 2px rgba(11,20,26,.08);outline:none;resize:none;min-height:40px;max-height:120px}
+.crmB .wa-input-bar textarea{flex:1;border:1px solid transparent;border-radius:22px;padding:10px 16px;font-size:13.5px;line-height:1.35;font-family:inherit;min-width:0;margin:0 6px;background:#fff;color:#111b21;box-shadow:0 1px 2px rgba(11,20,26,.08);outline:none;resize:none;min-height:40px;max-height:120px}
 .crmB .wa-input-bar textarea:focus{border-color:#128C7E;box-shadow:0 0 0 3px rgba(18,140,126,.13)}
 .crmB .wa-clip{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#54656f;flex:none}.crmB .wa-clip input{display:none}
 .crmB .wa-send-btn{width:40px;height:40px;border-radius:50%;background:#128C7E;border:none;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(7,94,84,.35)}.crmB .wa-send-btn:hover{background:#0e7c6f}
 .crmB .wa-aviso{padding:12px 16px;background:#fffbeb;color:#92400e;font-size:12.5px;border-top:1px solid #fde68a}
 .crmB .bd-aviso-24{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-bottom:max(12px,env(safe-area-inset-bottom))}
-.bd-btn-plant{display:inline-flex;align-items:center;gap:6px;background:#128C7E;color:#fff;border:0;border-radius:999px;padding:8px 14px;font:700 12.5px inherit;cursor:pointer;white-space:nowrap}.bd-btn-plant:disabled{opacity:.6}
+.bd-btn-plant{display:inline-flex;align-items:center;gap:6px;background:#128C7E;color:#fff;border:0;border-radius:999px;padding:8px 14px;font-weight:700;font-size:12.5px;font-family:inherit;cursor:pointer;white-space:nowrap}.bd-btn-plant:disabled{opacity:.6}
 .crmB .wa-chat-col{position:relative}
 .crmB .bd-m{display:flex;flex-direction:column;gap:6px}
 .crmB .bd-m.bd-flash .wa-bubble-wrap{animation:bdFlash 1.2s ease}
@@ -1076,7 +1253,7 @@
 .crmB .bd-resp{position:absolute;top:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(255,255,255,.95);box-shadow:0 1px 3px rgba(0,0,0,.2);color:#54656f;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:15px}
 .crmB .wa-brow.in .bd-resp{right:-32px}.crmB .wa-brow.out .bd-resp{left:-32px}
 @media(hover:hover){.crmB .wa-brow:hover .bd-resp{display:inline-flex}}
-.crmB .bd-reint{border:0;background:#b91c1c;color:#fff;border-radius:999px;padding:3px 9px;font:700 11px inherit;cursor:pointer;margin-left:4px;display:inline-flex;align-items:center;gap:3px}
+.crmB .bd-reint{border:0;background:#b91c1c;color:#fff;border-radius:999px;padding:3px 9px;font-weight:700;font-size:11px;font-family:inherit;cursor:pointer;margin-left:4px;display:inline-flex;align-items:center;gap:3px}
 .crmB .bd-citabar{display:flex;align-items:center;gap:10px;background:#f0f2f5;padding:8px 14px 0}.crmB .bd-citabar>i{color:#128C7E;font-size:18px}
 .crmB .bd-citabar>div{flex:1;min-width:0;border-left:4px solid #128C7E;background:#fff;border-radius:6px;padding:5px 9px}
 .crmB .bd-citabar b{display:block;font-size:11.5px;color:#128C7E}.crmB .bd-citabar span{display:block;font-size:12.5px;color:#54656f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1109,7 +1286,7 @@
 .crmB .rs-canales{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.crmB .rs-canal{display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer}.crmB .rs-canal.on{background:#0f172a;color:#fff;border-color:#0f172a}
 .crm-can{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eef2f7}.crm-can>i{font-size:24px}.crm-can>div{flex:1;min-width:0;display:flex;flex-direction:column}.crm-can b{font-size:13px}.crm-can small{font-size:11px;color:#64748b}
 .crm-sw{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;cursor:pointer}.crm-nota{font-size:12.5px;color:#64748b;margin:10px 0 0}
-@media(max-width:760px){
+@media(max-width:860px){
   .crmB .crm-tab-seg{font-size:11px;gap:3px;padding:8px 2px;flex-direction:column}.crmB .crm-tab-seg i{font-size:17px}.crmB .crm-badge{position:absolute;top:4px;right:8px}
   .crmB .crm-tabs-row{gap:6px}.crmB .crm-acciones-rapidas{gap:6px}.crmB .crm-icon-btn{width:40px;height:40px}
   .crmB .crm-chips-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px}.crmB .crm-chip{padding:8px 14px;flex:none}
@@ -1118,6 +1295,14 @@
   .crmB .wa-list-col{width:100%;border-right:0}.crmB .wa-shell.con-chat .wa-list-col{display:none}.crmB .wa-shell:not(.con-chat) .wa-chat-col{display:none}
   .crmB.chat-abierto .crm-ocultar-en-chat{display:none}.crmB .wa-back{display:inline-flex}
   .crmB .wa-chat-head{padding:8px 12px;gap:8px}.crmB .wa-chat-sub{padding:6px 12px 8px}.crmB .wa-bubble-wrap{max-width:84%}.crmB .wa-msgs{padding:12px}
+}
+/* 02-oct-2026: partes del chat que se repintan por separado; aviso de red; «Cargar más»; 16 px en iPhone (sin zoom). */
+.crmB .bd-parte{display:contents}
+.crmB .bd-aviso-red{display:flex;align-items:center;gap:6px;margin:8px 10px 4px;padding:7px 10px;border-radius:10px;background:#fffbeb;color:#92400e;font-size:12px;border:1px solid #fde68a}
+.crmB .bd-mas-convs{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 20px);margin:10px;padding:10px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#334155;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.crmB .bd-mas-convs:disabled{opacity:.7;cursor:default}
+@media(max-width:860px){
+  .crmB .wa-input-bar textarea,.crmB .rs-hub-buscar input,.crmB .crm-asig select,.crmB .crm-lead .a select,.nxCrmF input,.nxCrmF select,.nxCrmF textarea,.nxCrmComp textarea,.nxCrmComp .venc input,.nxCrmComp .venc select,.nxCrmDocs select,#nxCrmMotTx,.bd-plant-cuerpo input{font-size:16px}
 }
 @media(prefers-reduced-motion:reduce){.crmB .pill-elevado,.crmB .crm-tab-seg{transition:none}.crmB .crm-girando{animation:none}}
 `;
@@ -1131,12 +1316,29 @@
     bdBorrador: function (v) { if (BD.sel) BD.borr[BD.sel] = v; },
     bdMediaLista: function () { if (BD.pegadoAbajo) bdAlFondo(); },
     bdPlantElegir: function (i) { if (!BD.plant) return; BD.plant.sel = i; BD.plant.vals = null; bdPlantPintar(); },
-    bdPlantVar: function (v, val) { const P = BD.plant; if (!P || P.sel === null) return; P.vals[v] = val; const pv = document.getElementById('bdPlantPrev'); if (pv) pv.textContent = bdPlantTexto(P.lista[P.sel], P.vals); },
-    bdCerrar: function () { BD.sel = null; BD.msgs = []; repintar(); },
-    bdFiltro: function (k) { BD.filtro = k; repintar(); },
-    bdBuscar: function (q) { BD.q = q || ''; const l = document.getElementById('bdList'); if (l) l.innerHTML = bdListaHTML(); },
-    bdBuscarAbrir: function () { BD.buscando = true; repintar(); setTimeout(() => { const i = document.getElementById('crmBuscarInput'); if (i) i.focus(); }, 30); },
-    bdBuscarBlur: function () { if (BD.q.trim()) return; BD.buscando = false; repintar(); },
+    bdPlantVar: function (i, val) { const P = BD.plant; if (!P || P.sel === null) return; const v = P.lista[P.sel].variables[i]; if (v === undefined) return; P.vals[v] = val; const pv = document.getElementById('bdPlantPrev'); if (pv) pv.textContent = bdPlantTexto(P.lista[P.sel], P.vals); },
+    bdCerrar: function () { BD.sel = null; BD.msgs = []; BD.msgsEstado = ''; bdModoChat(); const l = document.getElementById('bdList'); if (l && BD.listaScroll) l.scrollTop = BD.listaScroll; },
+    bdFiltro: function (k) {
+      const antes = bdArch(); BD.filtro = k;
+      if (antes !== bdArch()) { BD.sel = null; BD.msgs = []; BD.cargandoLista = true; repintar(); bdCargar().then(() => { BD.listaHTML = ''; repintar(); }); }
+      else repintar();
+    },
+    bdBuscar: function (q) { BD.q = q || ''; bdPintarLista(); bdBuscarServidor(); },
+    bdBuscarAbrir: function (btn) {
+      BD.buscando = true;
+      const b = btn || document.querySelector('.crmB .crm-buscar');
+      if (!b) { repintar(); }
+      else b.outerHTML = `<input type="text" id="crmBuscarInput" class="crm-buscar-input" value="${esc(BD.q)}" placeholder="Buscar nombre o número..." oninput="window.nxCRM.bdBuscar(this.value)" onblur="window.nxCRM.bdBuscarBlur()">`;
+      setTimeout(() => { const i = document.getElementById('crmBuscarInput'); if (i) i.focus(); }, 30);
+    },
+    // Salir del buscador vacío ya no redibuja la pantalla (en iPhone eso «se tragaba» el toque sobre una conversación).
+    bdBuscarBlur: function () {
+      if (BD.q.trim()) return; BD.buscando = false;
+      setTimeout(() => { const i = document.getElementById('crmBuscarInput'); if (i && !BD.buscando && !BD.q.trim() && document.activeElement !== i) i.outerHTML = `<button class="crm-buscar pill-elevado" onclick="window.nxCRM.bdBuscarAbrir(this)"><i class="ti ti-search"></i> <span>Buscar</span></button>`; }, 200);
+    },
+    bdCargarMas: bdCargarMas,
+    bdReintentarCarga: async function () { if (!BD.sel) return; const id = BD.sel; BD.msgsEstado = 'cargando'; bdSyncMsgs(); await bdCargarMsgs(id); bdSyncMsgs(); bdAlFondo(); bdFirmar(); },
+    bdSincParar: function (b) { BD.sincParar = true; if (b) { b.disabled = true; b.innerHTML = '<i class="ti ti-loader-2"></i> Deteniendo…'; } },
     filtrosMenu: function (ev) {
       ev.stopPropagation();
       let m = document.getElementById('crmFiltrosMenu');
@@ -1149,16 +1351,40 @@
       m.style.top = top + 'px'; m.style.left = Math.max(8, r.right - 200) + 'px';
     },
     asig: function (k) { BD.asig = k; const m = document.getElementById('crmFiltrosMenu'); if (m) m.style.display = 'none'; repintar(); },
-    tab: function (k) { S.vista = k; BD.sel = null; BD.msgs = []; BD.q = ''; BD.buscando = false; BD.filtro = 'todos'; BD.asig = 'todas'; try { localStorage.setItem('studio_crm_vista', k); } catch (e) {} repintar(); },
-    red: function (k) { BD.red = k; BD.sel = null; BD.msgs = []; BD.filtro = 'todos'; BD.asig = 'todas'; repintar(); },
-    linea: function (id) { BD.linea = id || ''; BD.sel = null; BD.msgs = []; repintar(); },
+    tab: function (k) {
+      const antes = bdPlat() + '|' + bdArch();
+      S.vista = k; BD.sel = null; BD.msgs = []; BD.q = ''; BD.buscando = false; BD.filtro = 'todos'; BD.asig = 'todas'; try { localStorage.setItem('studio_crm_vista', k); } catch (e) {}
+      const otra = (k === 'mensajes' || k === 'redes') && antes !== bdPlat() + '|' + bdArch();
+      if (otra) BD.cargandoLista = true;
+      repintar();
+      if (otra) bdCargar().then(() => { BD.listaHTML = ''; bdPintarParcial(); });
+    },
+    red: function (k) { if (BD.red === k && BD.clave === k + '|' + bdArch()) return; BD.red = k; BD.sel = null; BD.msgs = []; BD.filtro = 'todos'; BD.asig = 'todas'; BD.cargandoLista = true; repintar(); bdCargar().then(() => { BD.listaHTML = ''; repintar(); }); },
+    linea: function (id) { BD.linea = id || ''; BD.sel = null; BD.msgs = []; BD.listaHTML = ''; repintar(); },
     lineaMenu: function (ev) { ev.stopPropagation(); const m = document.getElementById('crmLineaMenu'); if (!m) return; const ab = m.classList.toggle('abierto'); ev.currentTarget.classList.toggle('abierto', ab); if (ab) setTimeout(() => document.addEventListener('click', function f() { m.classList.remove('abierto'); document.removeEventListener('click', f); }), 0); },
     leadsFiltro: function (k) { S.leadsF = k; repintar(); },
     leadEtapa: function (id, el) { const o = S.ops.find(x => String(x.id) === String(id)); const v = el.value; if (o && v === 'perdido') el.value = o.etapa; mover(id, v); },
     leadCliente: function (id) { try { ctx().elegirCliente(function (c) { if (c && c.id) guardarCampo(id, 'cliente_id', c.id); }); } catch (e) {} },
     canalesModal: canalesModal,
-    actualizar: async function (b) { const i = b && b.querySelector('i'); if (i) i.classList.add('crm-girando'); await Promise.all([cargar(), bdCargar()]); if (BD.sel) await bdCargarMsgs(BD.sel); repintar(); },
-    bdArchivar: function (id) { if (!confirm('¿Archivar esta conversación? Vuelve sola a la bandeja si el cliente escribe de nuevo.')) return; BD.sel = null; bdPatch(id, { archivada: true }, 'Conversación archivada').then(() => { BD.convs = BD.convs.filter(c => String(c.id) !== String(id)); repintar(); }); },
+    actualizar: async function (b) {
+      const i = b && b.querySelector('i'); if (i) i.classList.add('crm-girando');
+      if (BD.error) { BD.error = ''; BD.cargado = false; }
+      await Promise.all([cargar(), bdCargar()]); if (BD.sel) await bdCargarMsgs(BD.sel);
+      if (i) i.classList.remove('crm-girando');
+      if (BD.avisoRed || BD.error) toast('err', 'No se pudo actualizar', BD.avisoRed || BD.error);
+      repintar();
+    },
+    bdArchivar: async function (id) {
+      if (!confirm('¿Archivar esta conversación? Vuelve sola a la bandeja si el cliente escribe de nuevo.')) return;
+      if (!(await bdPatch(id, { archivada: true }, 'Conversación archivada'))) return;
+      BD.convs = BD.convs.filter(c => String(c.id) !== String(id));
+      if (String(BD.sel) === String(id)) { BD.sel = null; BD.msgs = []; bdModoChat(); } else bdPintarLista();
+    },
+    bdDesarchivar: async function (id) {
+      if (!(await bdPatch(id, { archivada: false }, 'Conversación devuelta a la bandeja'))) return;
+      BD.convs = BD.convs.filter(c => String(c.id) !== String(id));
+      if (String(BD.sel) === String(id)) { BD.sel = null; BD.msgs = []; bdModoChat(); } else bdPintarLista();
+    },
     bdAsignar: function (id, u) { bdPatch(id, { asignado_id: u || null }, u ? 'Conversación asignada' : 'Conversación liberada'); },
     bdCliente: function (id) { try { ctx().elegirCliente(function (c) { if (c && c.id) bdPatch(id, { cliente_id: c.id }, 'Cliente vinculado'); }); } catch (e) {} },
     bdOportunidad: async function (id) {
@@ -1168,10 +1394,10 @@
         const b = { nombre: (f + ' · ' + bdNombre(c)).slice(0, 120), cliente_id: c.cliente_id || null, contacto: c.contacto_nombre || null, telefono: c.telefono_e164 || null, fuente: f, etapa: 'nuevo', asignado_id: c.asignado_id || (esAdmin() ? null : yo()) };
         try { if (ctx().nextSeq) b.numero = await ctx().nextSeq('crm'); } catch (e) {}
         const r = await api().post('pos_crm', b); const op = Array.isArray(r) ? r[0] : r;
-        if (op && op.id) { await bdPatch(id, { crm_id: op.id }, 'Oportunidad creada'); await cargar(); repintar(); }
+        if (op && op.id) { await cargar(); await bdPatch(id, { crm_id: op.id }, 'Oportunidad creada'); }
       } catch (e) { toast('err', 'No se pudo crear la oportunidad', errTxt(e)); }
     },
-    bdCanal: async function (id, on) { try { await api().patch('crm_canales', 'id=eq.' + id, { activo: !!on }); toast('ok', on ? 'Canal activado' : 'Canal apagado'); await bdCargar(); repintar(); } catch (e) { toast('err', 'No se pudo', errTxt(e)); } },
+    bdCanal: async function (id, on) { try { await api().patch('crm_canales', 'id=eq.' + id, { activo: !!on }); toast('ok', on ? 'Canal activado' : 'Canal apagado'); await bdCargar(); bdPintarParcial(); } catch (e) { toast('err', 'No se pudo', errTxt(e)); } },
     cargar, render, recargar, avisosHTML, docGuardado, ventaCreada, abrir, nueva, guardar, guardarCampo, agregarAct, tareaHecha, consentimiento, cotizar, facturar,
     mover: function (id, etapa) { mover(id, etapa); },
     motivo: function (id, m) { m = String(m || '').trim(); if (!m) { toast('warn', 'Escribe o elige el motivo'); return; } cerrar('nxCrmMot'); mover(id, 'perdido', m); },

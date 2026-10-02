@@ -38,7 +38,7 @@ window.API = { url: 'https://qa.local', key: 'anon', token: 'tok',
   async del(t, filtro) { LLAMADAS.push(['del', t, filtro]); return []; }
 };
 window.toast = (t, m, s) => { (window.TOASTS = window.TOASTS || []).push([t, m, s]); };
-window.nxPosCtx = { renderPOS() { CUENTA.renderPOS++; document.getElementById('view').innerHTML = window.nxCRM.render(); }, sesion: () => ({ id: 'u1', nom: 'Admin' }), rolEfectivo: () => 'admin', clientes: () => [], elegirCliente() {}, nextSeq: async () => 'CRM-1', cotizar() {}, facturar() {} };
+window.nxPosCtx = { renderPOS() { CUENTA.renderPOS++; document.getElementById('view').innerHTML = window.nxCRM.render(); }, sesion: () => ({ id: 'u1', nom: 'Admin' }), rolEfectivo: () => 'admin', crmPermisos: () => { const q = new URLSearchParams(location.search).get('perm'); return { crm: !q || q === 'crm', bandeja: !q || q === 'bandeja' }; }, clientes: () => [], elegirCliente() {}, nextSeq: async () => 'CRM-1', cotizar() {}, facturar() {} };
 // tiempo real simulado
 window.RT = { handlers: {}, subs: 0, removed: 0, canales: [] };
 window.supabase = { createClient: () => ({ realtime: { setAuth: async () => {} },

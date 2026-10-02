@@ -1,7 +1,27 @@
 {
-  "version": "59.71",
+  "version": "59.73",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.73",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Configuración nueva: buscador, avisos de lo que falta (RNC, NCF por acabarse o por vencer, datos legales, permisos) y secciones que se abren por separado.",
+        "Empresa: nombre, RNC o cédula (verificados con la regla de la DGII), teléfono, dirección, correo y mensaje al pie; ya salen en facturas, tickets y contratos.",
+        "Equipo: lista de usuarios para cambiar rol (también los roles propios), almacén y clave, o desactivar y reactivar.",
+        "Contrato de financiamiento editable (título, texto y horas del enlace de firma), con revisión de las palabras automáticas.",
+        "Arreglo: los datos legales del contrato ya no se borran al guardarlos después de recargar."
+      ]
+    },
+    {
+      "version": "59.72",
+      "fecha": "2026-10-02",
+      "notas": [
+        "CRM por rol: en Ajustes → Permisos por rol, «CRM» (Leads y Campañas) y «Bandeja de mensajes» (WhatsApp, Instagram, Facebook) se activan por separado.",
+        "Al inicio: administrador y gerente tienen todo; el vendedor tiene CRM y Bandeja; el cajero no ve ninguno hasta que se lo actives.",
+        "El servidor también lo exige: un rol sin permiso no puede leer los chats ni sus fotos aunque entre por otro lado."
+      ]
+    },
     {
       "version": "59.71",
       "fecha": "2026-10-02",

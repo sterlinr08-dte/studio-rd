@@ -26,8 +26,14 @@
   function parseMoney(v) { try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return Number(String(v == null ? '' : v).replace(/,/g, '')) || 0; }
   function nomAdmin() { try { return (window.sesion && window.sesion.nom) || 'Admin'; } catch (e) { return 'Admin'; } }
   function scanMoney(el) { try { if (window.nxMoney && window.nxMoney.scan) window.nxMoney.scan(el); } catch (e) {} }
-  function empNom() { try { return (window.CFG && CFG.empNom) || (window.CFG && CFG.empresa_nom) || 'Studio'; } catch (e) { return 'Studio'; } }
-  function empInfo() { try { const c = window.CFG || {}; return { nom: c.empNom || 'Studio', rnc: c.empRNC || '', tel: c.empTel || '', dir: c.empDir || '' }; } catch (e) { return { nom: 'NEXUS PRO', rnc: '', tel: '', dir: '' }; } }
+  // Datos de la empresa: Configuración → Empresa (pos_config.emp_*, migración 43). Antes salían de window.CFG, que en
+  // STUDIO no existe (facturas sin RNC; auditoría 02-oct-2026, H2). Respaldo: nombre de la organización.
+  function orgNombre() { try { const s = (typeof sesion !== 'undefined') ? sesion : window.sesion; return (s && s.org && s.org.nombre) || ''; } catch (e) { return ''; } }
+  function empInfo() {
+    const c = _posCfg || {};
+    return { nom: (c.emp_nombre || '').trim() || orgNombre() || 'STUDIO', rnc: (c.emp_rnc || '').trim(), tel: (c.emp_telefono || '').trim(), dir: (c.emp_direccion || '').trim(), email: (c.emp_email || '').trim(), pie: (c.emp_pie_factura || '').trim() };
+  }
+  function empNom() { return empInfo().nom; }
   function authUidPOS() {
     try {
       const p = String(getAPI().token || '').split('.')[1]; if (!p) return null;
@@ -63,15 +69,18 @@
   // Permisos especiales por rol (no son módulos del menú). Se guardan en pos_acceso.modulos junto a los módulos.
   // fin_cobrar (dueño 30-sep-2026): el vendedor (u otro rol) cobra cuotas solo si su rol lo tiene activado.
   // Admin, gerente y cajero cobran siempre. El servidor lo vuelve a comprobar (migración 36).
-  const CAPACIDADES = [['fin_cobrar', 'Cobrar cuotas de financiamiento']];
+  // crm_bandeja (dueño 02-oct-2026, «por rol»): leer y responder WhatsApp/Instagram/Facebook en el CRM es un permiso aparte
+  // del módulo CRM (leads, campañas, tareas). El servidor lo vuelve a comprobar (crm_permiso, migración 41).
+  // Tercer campo: roles que lo tienen SIEMPRE (no se muestra la casilla para ellos).
   const FIN_COBRA_SIEMPRE = ['admin', 'gerente', 'cajero'];
+  const CAPACIDADES = [['fin_cobrar', 'Cobrar cuotas de financiamiento', FIN_COBRA_SIEMPRE], ['crm_bandeja', 'Bandeja de mensajes del CRM (WhatsApp, Instagram, Facebook)', ['admin', 'gerente']]];
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
     ['gerente', 'Gerente', _MODKEYS.filter(k => k !== 'ajustes')],
     // «Financiamiento fácil» (29-sep-2026): cajero y vendedor entran a Financiamiento (cuotas) para crear
     // solicitudes y cobrar; aprobar, planes y datos legales siguen siendo solo de admin/gerente (puedeVerMin).
     ['cajero', 'Cajero', ['inicio', 'vender', 'caja', 'clientes', 'ventas', 'cuotas']],
-    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades', 'reacond', 'cuotas']]
+    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'crm_bandeja', 'clientes', 'entidades', 'reacond', 'cuotas']]
   ];
   // Lee un campo de dinero (formato RD: punto=miles). FALTABA en este módulo: sin esto,
   // Reparaciones/Apartados/Cuotas reventaban en silencio al guardar (ReferenceError).
@@ -83,7 +92,12 @@
   // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
   // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
   function puedeVerCosto360() { return puedeVerMin(); }
-  function puedeVer(mod) {
+  // Permiso especial (CAPACIDADES): siempre para los roles de su lista; si no, según pos_acceso / los roles por defecto.
+  function puedeCap(cap) { const r = rolEfectivo(); const c = CAPACIDADES.find(x => x[0] === cap); return r === 'admin' || !!(c && c[2].indexOf(r) >= 0) || puedeVerBase(cap); }
+  // El menú muestra «CRM» a quien tenga el módulo o solo la Bandeja; adentro, cada parte se muestra según su permiso.
+  function puedeVer(mod) { return mod === 'crm' ? (puedeVerBase('crm') || puedeCap('crm_bandeja')) : puedeVerBase(mod); }
+  function crmPermisos() { return { crm: puedeVerBase('crm'), bandeja: puedeCap('crm_bandeja') }; }
+  function puedeVerBase(mod) {
     const r = rolEfectivo();
     if (mod === 'reacond' && _posCfg.reacondicionado !== true) return false;
     // STUDIO: el módulo «IA NEXUS» se retiró por decisión del dueño (2026-09-23). Oculto en menú, Inicio,
@@ -99,7 +113,7 @@
   function reacondOn() { return _posCfg.reacondicionado === true; }
   window.nxPosCtx = {
     renderPOS: function () { const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
-    rolEfectivo: rolEfectivo, puedeVer: puedeVer,
+    rolEfectivo: rolEfectivo, puedeVer: puedeVer, crmPermisos: crmPermisos,
     sesion: function () { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return window.sesion; } },
     // CRM (parches-pos-crm.js): clientes cargados, selector de cliente de Factura y atajos a Factura / Cotización.
     clientes: function () { return _clientes || []; },
@@ -214,7 +228,9 @@
     _cats = cats || []; _prods = prods || []; _clientes = cli || []; _proveedores = prov || [];
     _niveles = niveles || []; _prodNiveles = prodNiveles || [];
     _caja = (cj && cj[0]) || null;
-    if (cf && cf[0]) { _posCfg = { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, whatsapp_inbox: cf[0].whatsapp_inbox === true, reacondicionado: cf[0].reacondicionado === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }; }
+    // Todas las columnas de pos_config (antes una lista fija: los datos legales del contrato no se cargaban y al guardar
+    // se ponían en blanco — auditoría 02-oct-2026, H1); encima, los valores normalizados de siempre.
+    if (cf && cf[0]) { _posCfg = Object.assign({}, cf[0], { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, whatsapp_inbox: cf[0].whatsapp_inbox === true, reacondicionado: cf[0].reacondicionado === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }); }
     window.nxPosCfgListo = true;
     _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
@@ -466,6 +482,8 @@
   };
 
   window.nxPosTab = async function (t) {
+    // Configuración: entrar desde el menú abre el inicio del módulo (no la última sección que quedó abierta).
+    if (t === 'ajustes' && _posTab !== 'ajustes' && !window.__nxAjMantener) { _ajSec = ''; _ajQ = ''; }
     // Carritos SEPARADOS: Prefactura y Factura no se mezclan
     try {
       const prev = _posTab;
@@ -1969,36 +1987,289 @@
   function ajCard(ico, color, titulo, desc) {
     return `<div class="card"><h4><i class="ti ${ico}" style="color:var(--pf-${color})"></i> ${titulo}</h4>${desc ? `<div class="ajd">${desc}</div>` : ''}`;
   }
+  // ══════════ CONFIGURACIÓN — módulo completo por secciones (dueño 02-oct-2026: «que sea un módulo completo de
+  // configuraciones… y que sea inteligente»). Inicio: buscador + avisos que dicen qué falta + lista de secciones;
+  // cada sección se abre sola (en el iPhone ya no es un scroll larguísimo). Las tarjetas de siempre se reutilizan.
+  let _ajSec = '', _ajQ = '', _ajUsuarios = null, _ajUsuariosErr = '', _ajUsuariosCargando = false;
+  const AJ_SECS = [
+    ['empresa', 'ti-building-store', 'blue', 'Empresa', 'Nombre, RNC, dirección y pie de factura', 'empresa negocio nombre rnc cedula telefono direccion correo email pie factura ticket encabezado'],
+    ['facturacion', 'ti-receipt-tax', 'blue', 'Facturación y comprobantes', 'Prefijos de factura y NCF', 'factura ncf comprobante fiscal dgii b01 b02 b04 b14 b15 prefijo contado credito'],
+    ['numeracion', 'ti-list-numbers', 'blue', 'Numeración de documentos', 'Cotizaciones, recibos, notas de crédito…', 'numeracion secuencia numero consecutivo cotizacion recibo nota credito transferencia nomina asiento oportunidad'],
+    ['financiamiento', 'ti-calendar-dollar', 'orange', 'Financiamiento y cobros', 'Mora, datos legales y contrato', 'financiamiento cuotas mora recargo gracia contrato plantilla abogado notario testigo acreedor firma legal'],
+    ['taller', 'ti-tool', 'green', 'Taller', 'Garantía de reparación', 'taller reparacion garantia dias'],
+    ['equipo', 'ti-users', 'blue', 'Equipo', 'Usuarios, roles, permisos y vendedores', 'equipo usuario usuarios empleado staff clave contraseña rol roles permiso permisos acceso vendedor vendedores comision cajero gerente desactivar crm bandeja'],
+    ['datos', 'ti-database', 'red', 'Datos', 'Borrar datos de prueba', 'datos borrar prueba limpiar peligro reiniciar']
+  ];
+  function ajNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function ajRepintar() { const v = document.getElementById('v-pos'); if (v) renderPOS(v); }
+  function ajFecha(f) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : String(f || ''); }
+  function ajDiasHasta(f) { if (!f) return null; const d = new Date(String(f).slice(0, 10) + 'T12:00:00'); if (isNaN(d)) return null; return Math.round((d - new Date(hoyISOPos() + 'T12:00:00')) / 86400000); }
+  // RNC (9 dígitos, dígito verificador de la DGII) o cédula (11 dígitos, Luhn).
+  function ajDocInfo(txt) {
+    const d = String(txt || '').replace(/\D/g, '');
+    if (!d) return { ok: false, vacio: true, fmt: '' };
+    if (d.length === 9) {
+      const w = [7, 9, 8, 6, 5, 4, 3, 2]; let s = 0; for (let i = 0; i < 8; i++) s += Number(d[i]) * w[i];
+      const r = s % 11, dv = r === 0 ? 2 : r === 1 ? 1 : 11 - r;
+      return { ok: dv === Number(d[8]), tipo: 'RNC', fmt: d[0] + '-' + d.slice(1, 3) + '-' + d.slice(3, 8) + '-' + d[8] };
+    }
+    if (d.length === 11) {
+      let s = 0; for (let i = 0; i < 10; i++) { let x = Number(d[i]) * (i % 2 ? 2 : 1); if (x > 9) x -= 9; s += x; }
+      return { ok: (10 - s % 10) % 10 === Number(d[10]), tipo: 'Cédula', fmt: d.slice(0, 3) + '-' + d.slice(3, 10) + '-' + d[10] };
+    }
+    return { ok: false, tipo: '', fmt: txt, largo: d.length };
+  }
+  // Avisos inteligentes: qué falta o está por vencerse, con un botón que lleva directo a arreglarlo.
+  function ajAvisos() {
+    const a = [], c = _posCfg || {};
+    if (!(c.emp_rnc || '').trim()) a.push(['empresa', 'orange', 'ti-id', 'Falta el RNC de la empresa', 'Las facturas con comprobante fiscal (NCF) deben llevar el RNC de quien vende.']);
+    else if (!ajDocInfo(c.emp_rnc).ok) a.push(['empresa', 'orange', 'ti-id', 'Revisa el RNC de la empresa', 'El número guardado no pasa la verificación de la DGII.']);
+    if (!(c.emp_direccion || '').trim() || !(c.emp_telefono || '').trim()) a.push(['empresa', 'blue', 'ti-map-pin', 'Completa la dirección y el teléfono', 'Salen en el encabezado de facturas, recibos y contratos.']);
+    const ncfAct = (_ncfSecs || []).filter(x => x.activo !== false);
+    if (!ncfAct.length) a.push(['facturacion', 'orange', 'ti-receipt-tax', 'No hay comprobantes fiscales (NCF) configurados', 'Sin NCF las facturas salen sin comprobante fiscal.']);
+    ncfAct.forEach(x => {
+      const quedan = Number(x.hasta || 0) - Number(x.actual || 0), dias = ajDiasHasta(x.vencimiento), t = x.tipo + ' ' + (NCF_DESC[x.tipo] || '');
+      if (x.hasta && quedan <= 0) a.push(['facturacion', 'red', 'ti-alert-octagon', 'Se acabaron los ' + t, 'Pide un nuevo rango a la DGII y agrégalo.']);
+      else if (x.hasta && quedan <= 100) a.push(['facturacion', 'orange', 'ti-alert-triangle', 'Quedan ' + quedan + ' comprobantes ' + t, 'Pide el próximo rango a la DGII antes de que se acaben.']);
+      if (dias !== null && dias < 0) a.push(['facturacion', 'red', 'ti-calendar-x', 'Los ' + t + ' vencieron', 'Venció el ' + ajFecha(x.vencimiento) + '. Pide uno nuevo a la DGII.']);
+      else if (dias !== null && dias <= 30) a.push(['facturacion', 'orange', 'ti-calendar-time', 'Los ' + t + ' vencen en ' + dias + ' día(s)', 'Vencen el ' + ajFecha(x.vencimiento) + '.']);
+    });
+    if (cv2fin() && !(c.fin_acreedor_nombre || '').trim()) a.push(['financiamiento', 'orange', 'ti-file-certificate', 'Los contratos salen sin los datos del acreedor', 'Completa los datos legales (quién vende a crédito, notario y testigos).']);
+    if (!(_acceso || []).length) a.push(['equipo', 'orange', 'ti-shield-lock', 'Los permisos por rol no están guardados', 'La pantalla usa los permisos de fábrica, pero el servidor no los conoce: por eso el vendedor no puede cobrar cuotas aunque las vea.', 'Guardar permisos', 'window.nxAccesoInit()']);
+    return a;
+  }
+  function ajSecVisible(k) { return k === 'datos' ? esAdmin() : true; }
   function renderAjustes() {
     if (typeof window.nxPfEnsureCSS === 'function') window.nxPfEnsureCSS();
+    if (_ajSec) return `<div class="nxPf nxAjWrap">${ajSeccionHTML(_ajSec)}</div>`;
+    const av = ajAvisos(), q = ajNorm(_ajQ).trim();
+    const porSec = {}; av.forEach(x => { porSec[x[0]] = (porSec[x[0]] || 0) + 1; });
+    const secs = AJ_SECS.filter(s => ajSecVisible(s[0]) && (!q || q.split(/\s+/).every(p => ajNorm(s[3] + ' ' + s[4] + ' ' + s[5]).indexOf(p) >= 0)));
+    const avisos = !av.length ? `<div class="ajOk"><i class="ti ti-circle-check"></i> Todo en orden: no falta nada importante por configurar.</div>`
+      : `<div class="ajAvisos"><div class="ajAvT"><i class="ti ti-bulb"></i> ${av.length === 1 ? '1 cosa por revisar' : av.length + ' cosas por revisar'}</div>${av.map(x => `<button type="button" class="ajAv ${x[1]}" onclick="${x[6] ? x[6] : `window.nxAjSec('${x[0]}')`}"><i class="ti ${x[2]}"></i><span><b>${esc(x[3])}</b><small>${esc(x[4])}</small></span><em>${x[5] ? esc(x[5]) : 'Arreglar'} <i class="ti ti-chevron-right"></i></em></button>`).join('')}</div>`;
     return `<div class="nxPf nxAjWrap">
-        ${ajCard('ti-receipt', 'blue', 'Numeración de facturas', `Define el prefijo del número de factura según el tipo de venta. El consecutivo es automático por empresa.<br>Ejemplo: contado <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_credito)}000001</b>.`)}
-          <div class="g2">
-            <div class="fld"><label>Prefijo CONTADO</label><div class="inw"><i class="ti ti-cash"></i><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div></div>
-            <div class="fld"><label>Prefijo CRÉDITO</label><div class="inw"><i class="ti ti-credit-card"></i><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div></div>
-          </div>
-          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar ajustes</button>
-        </div>
-        ${ajCard('ti-percentage', 'orange', 'Recargo por mora (Cuotas)', `Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:var(--pf-red)">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:var(--pf-txt3)">Mora desactivada</b> — no se le cobra recargo a nadie.'}`)}
-          <div class="g2">
-            <div class="fld"><label>% de mora</label><div class="inw"><i class="ti ti-percentage"></i><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div></div>
-            <div class="fld"><label>Días de gracia</label><div class="inw"><i class="ti ti-calendar-clock"></i><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div></div>
-          </div>
-          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
-        </div>
-        ${ajCard('ti-shield-check', 'green', 'Garantía de reparación', `Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:var(--pf-green)">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:var(--pf-txt3)">Garantía desactivada</b> — no se le promete garantía a nadie.'}`)}
-          <div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
-          <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
-        </div>
-        ${ajustesSecuencias()}
-        ${ajustesRoles()}
-        ${ajustesNCF()}
-        ${ajustesVendedores()}
-        ${ajCard('ti-alert-triangle', 'red', 'Zona de peligro', 'Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.')}
-          <button class="ab g4 sm" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button>
-        </div>
+      <div class="ajHead"><h2>Configuración</h2><div class="ajBus"><i class="ti ti-search"></i><input id="ajBusq" value="${esc(_ajQ)}" placeholder="¿Qué quieres configurar? Ej: RNC, clave, mora" autocomplete="off" oninput="window.nxAjBuscar(this.value)">${_ajQ ? `<button type="button" aria-label="Borrar búsqueda" onclick="window.nxAjBuscar('');document.getElementById('ajBusq').value=''"><i class="ti ti-x"></i></button>` : ''}</div></div>
+      ${q ? '' : avisos}
+      <div class="ajLista" id="ajLista">${ajListaHTML(secs, porSec)}</div>
+    </div>`;
+  }
+  function ajListaHTML(secs, porSec) {
+    if (!secs.length) return `<div class="ajVacio">No encontré «${esc(_ajQ)}» en la configuración.</div>`;
+    return secs.map(s => `<button type="button" class="ajSecBtn" onclick="window.nxAjSec('${s[0]}')"><span class="ic ${s[2]}"><i class="ti ${s[1]}"></i></span><span class="tx"><b>${s[3]}</b><small>${s[4]}</small></span>${porSec[s[0]] ? `<span class="bdg">${porSec[s[0]]}</span>` : ''}<i class="ti ti-chevron-right ch"></i></button>`).join('');
+  }
+  window.nxAjSec = function (k) { _ajSec = k || ''; if (k === 'equipo' && !_ajUsuarios) ajCargarUsuarios(); ajRepintar(); try { window.scrollTo(0, 0); const m = document.querySelector('.nxPfMain, .pos-main'); if (m) m.scrollTop = 0; } catch (e) {} };
+  // Buscar sin redibujar toda la pantalla (no se pierde el foco ni se cierra el teclado del iPhone).
+  window.nxAjBuscar = function (t) {
+    _ajQ = t || ''; const q = ajNorm(_ajQ).trim();
+    const l = document.getElementById('ajLista'); if (!l) { ajRepintar(); return; }
+    const porSec = {}; ajAvisos().forEach(x => { porSec[x[0]] = (porSec[x[0]] || 0) + 1; });
+    l.innerHTML = ajListaHTML(AJ_SECS.filter(s => ajSecVisible(s[0]) && (!q || q.split(/\s+/).every(p => ajNorm(s[3] + ' ' + s[4] + ' ' + s[5]).indexOf(p) >= 0))), porSec);
+    const av = document.querySelector('.nxAjWrap .ajAvisos, .nxAjWrap .ajOk'); if (av) av.style.display = q ? 'none' : '';
+  };
+  function ajSeccionHTML(k) {
+    const s = AJ_SECS.find(x => x[0] === k) || AJ_SECS[0];
+    const av = ajAvisos().filter(x => x[0] === k);
+    const cab = `<div class="ajSecCab"><button type="button" class="ajVolver" onclick="window.nxAjSec('')"><i class="ti ti-chevron-left"></i> Configuración</button><h2><span class="ic ${s[2]}"><i class="ti ${s[1]}"></i></span>${s[3]}</h2></div>
+      ${av.length ? `<div class="ajAvisos">${av.map(x => `<div class="ajAv ${x[1]} est"><i class="ti ${x[2]}"></i><span><b>${esc(x[3])}</b><small>${esc(x[4])}</small></span>${x[6] ? `<em role="button" tabindex="0" onclick="${x[6]}">${esc(x[5])} <i class="ti ti-chevron-right"></i></em>` : ''}</div>`).join('')}</div>` : ''}`;
+    let body = '';
+    if (k === 'empresa') body = ajEmpresaHTML();
+    else if (k === 'facturacion') body = ajPrefijosHTML() + ajustesNCF();
+    else if (k === 'numeracion') body = ajustesSecuencias();
+    else if (k === 'financiamiento') body = ajMoraHTML() + (cv2fin() ? finLegalCardHTML().replace('class="nxF2Card"', 'class="nxF2Card card"') + ajContratoHTML() : '');
+    else if (k === 'taller') body = ajGarantiaHTML();
+    else if (k === 'equipo') body = ajUsuariosHTML() + ajustesRoles() + ajustesVendedores();
+    else if (k === 'datos') body = ajCard('ti-alert-triangle', 'red', 'Zona de peligro', 'Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.')
+      + `<button class="ab g4 sm" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button></div>`;
+    return cab + body;
+  }
+  // ── Empresa ──
+  const AJ_EMP = [['emp_nombre', 'Nombre legal o comercial', 'ti-building-store', 'Ej: STUDIO, SRL'], ['emp_rnc', 'RNC o cédula', 'ti-id', '1-01-12345-6'], ['emp_telefono', 'Teléfono', 'ti-phone', '809-000-0000'], ['emp_email', 'Correo', 'ti-mail', 'ventas@studiord.net'], ['emp_direccion', 'Dirección', 'ti-map-pin', 'Calle, sector, ciudad']];
+  function ajEmpresaHTML() {
+    const c = _posCfg || {}, e = empInfo(), doc = ajDocInfo(c.emp_rnc);
+    return ajCard('ti-building-store', 'blue', 'Datos de la empresa', 'Salen en el encabezado de facturas, tickets, recibos, cotizaciones y contratos.')
+      + `<div class="g2">${AJ_EMP.map(f => `<div class="fld${f[0] === 'emp_direccion' ? ' full' : ''}"><label for="aj_${f[0]}">${f[1]}</label><div class="inw"><i class="ti ${f[2]}"></i><input id="aj_${f[0]}" class="no-upper" value="${esc(c[f[0]] || '')}" placeholder="${esc(f[0] === 'emp_nombre' ? (orgNombre() || f[3]) : f[3])}"${f[0] === 'emp_email' ? ' type="email" inputmode="email" autocapitalize="none"' : f[0] === 'emp_telefono' ? ' inputmode="tel"' : ''} oninput="window.nxAjEmpVista()"></div>${f[0] === 'emp_rnc' ? `<div class="ajHint" id="ajRncHint">${ajRncHint(doc)}</div>` : ''}</div>`).join('')}</div>
+        <div class="fld"><label for="aj_emp_pie_factura">Mensaje al pie de la factura y el ticket</label><textarea id="aj_emp_pie_factura" class="no-upper" rows="2" maxlength="300" placeholder="Gracias por su compra. Conserve esta factura para cambios y garantía." oninput="window.nxAjEmpVista()">${esc(c.emp_pie_factura || '')}</textarea></div>
+        <div class="ajVista"><div class="ajVistaT">Así sale en tus documentos</div><div id="ajEmpVista">${ajEmpVistaHTML(e)}</div></div>
+        <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxAjEmpGuardar()"><i class="ti ti-device-floppy"></i> Guardar datos de la empresa</button>
       </div>`;
   }
+  function ajRncHint(doc) {
+    if (doc.vacio) return 'Escribe el RNC (9 dígitos) o la cédula (11 dígitos).';
+    if (doc.tipo && doc.ok) return `<span class="ok"><i class="ti ti-circle-check"></i> ${doc.tipo} válido · ${esc(doc.fmt)}</span>`;
+    if (doc.tipo) return `<span class="bad"><i class="ti ti-alert-circle"></i> ${doc.tipo === 'RNC' ? 'Este RNC' : 'Esta cédula'} no pasa la verificación de la DGII. Revisa los números.</span>`;
+    return `<span class="bad"><i class="ti ti-alert-circle"></i> Tiene ${doc.largo} dígitos: el RNC lleva 9 y la cédula 11.</span>`;
+  }
+  function ajEmpVistaHTML(e) {
+    return `<div class="emp">${esc(e.nom)}</div><div class="sub">${[e.rnc ? 'RNC ' + esc(e.rnc) : '', e.dir ? esc(e.dir) : '', e.tel ? esc(e.tel) : '', e.email ? esc(e.email) : ''].filter(Boolean).join(' · ') || '<i>Sin RNC, dirección ni teléfono</i>'}</div><div class="pie">${esc(e.pie || 'Gracias por su compra. Conserve esta factura para cambios y garantía.')}</div>`;
+  }
+  function ajEmpLeer() { const b = {}; AJ_EMP.concat([['emp_pie_factura']]).forEach(f => { b[f[0]] = (val('aj_' + f[0]) || '').trim() || null; }); return b; }
+  window.nxAjEmpVista = function () {
+    const b = ajEmpLeer(), doc = ajDocInfo(b.emp_rnc);
+    const h = document.getElementById('ajRncHint'); if (h) h.innerHTML = ajRncHint(doc);
+    const v = document.getElementById('ajEmpVista'); if (v) v.innerHTML = ajEmpVistaHTML({ nom: b.emp_nombre || orgNombre() || 'STUDIO', rnc: b.emp_rnc ? (doc.ok ? doc.fmt : b.emp_rnc) : '', dir: b.emp_direccion || '', tel: b.emp_telefono || '', email: b.emp_email || '', pie: b.emp_pie_factura || '' });
+  };
+  async function ajGuardarCfg(body) {
+    const ex = await getAPI().get('pos_config', 'select=organizacion_id&limit=1');
+    if (!(ex && ex.length)) throw new Error('No se encontró la configuración del POS');
+    const r = await getAPI().patch('pos_config', 'organizacion_id=eq.' + ex[0].organizacion_id, body);
+    // Sin permiso la base no da error: simplemente no cambia nada. Se avisa en vez de decir «guardado».
+    if (Array.isArray(r) && !r.length) throw new Error('Tu usuario no tiene permiso para cambiar la configuración');
+    Object.assign(_posCfg, body);
+  }
+  window.nxAjEmpGuardar = async function () {
+    if (!puedeVerMin()) { toast('err', 'Solo el administrador o el gerente'); return; }
+    const b = ajEmpLeer(), doc = ajDocInfo(b.emp_rnc);
+    if (b.emp_rnc && doc.tipo && doc.ok) b.emp_rnc = doc.fmt;
+    if (b.emp_rnc && !doc.tipo) { toast('err', 'Revisa el RNC', 'El RNC lleva 9 dígitos y la cédula 11'); return; }
+    if (b.emp_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.emp_email)) { toast('err', 'Revisa el correo', 'Ej: ventas@studiord.net'); return; }
+    try {
+      await ajGuardarCfg(b);
+      toast('ok', 'Datos de la empresa guardados', b.emp_rnc && !doc.ok ? 'Ojo: el RNC no pasa la verificación de la DGII' : 'Ya salen en tus documentos');
+      ajRepintar();
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  // ── Tarjetas de siempre (prefijos, mora, garantía) ──
+  function ajPrefijosHTML() {
+    return ajCard('ti-receipt', 'blue', 'Prefijo del número de factura', `Letras al inicio del número de factura según el tipo de venta. El consecutivo es automático.<br>Ejemplo: contado <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_contado)}000001</b> · crédito <b style="color:var(--pf-blue)">${esc(_posCfg.prefijo_credito)}000001</b>.`)
+      + `<div class="g2">
+          <div class="fld"><label>Prefijo CONTADO</label><div class="inw"><i class="ti ti-cash"></i><input id="cfgPrefCo" value="${esc(_posCfg.prefijo_contado)}" maxlength="6" placeholder="CO" style="text-transform:uppercase"></div></div>
+          <div class="fld"><label>Prefijo CRÉDITO</label><div class="inw"><i class="ti ti-credit-card"></i><input id="cfgPrefCr" value="${esc(_posCfg.prefijo_credito)}" maxlength="6" placeholder="CR" style="text-transform:uppercase"></div></div>
+        </div>
+        <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarCfg()"><i class="ti ti-device-floppy"></i> Guardar prefijos</button>
+      </div>`;
+  }
+  function ajMoraHTML() {
+    return ajCard('ti-percentage', 'orange', 'Recargo por mora (Cuotas)', `Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${cv2fin() ? ' Cada plan de financiamiento puede tener su propia mora; esta se usa cuando el plan no dice nada.' : ''}${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:var(--pf-red)">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:var(--pf-txt3)">Mora desactivada</b> — no se le cobra recargo a nadie.'}`)
+      + `<div class="g2">
+          <div class="fld"><label>% de mora</label><div class="inw"><i class="ti ti-percentage"></i><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div></div>
+          <div class="fld"><label>Días de gracia</label><div class="inw"><i class="ti ti-calendar-clock"></i><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div></div>
+        </div>
+        <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarMora()"><i class="ti ti-device-floppy"></i> Guardar mora</button>
+      </div>`;
+  }
+  function ajGarantiaHTML() {
+    return ajCard('ti-shield-check', 'green', 'Garantía de reparación', `Días de garantía que se le da al cliente sobre el trabajo de reparación (no sobre el equipo en sí). Se calcula sola desde la fecha de entrega. Déjalo en 0 para no ofrecer garantía.${_posCfg.garantia_rep_dias > 0 ? `<br>Hoy: <b style="color:var(--pf-green)">${_posCfg.garantia_rep_dias} día(s)</b> desde que se entrega el equipo.` : '<br><b style="color:var(--pf-txt3)">Garantía desactivada</b> — no se le promete garantía a nadie.'}`)
+      + `<div class="fld"><label>Días de garantía</label><div class="inw"><i class="ti ti-calendar-check"></i><input id="cfgGarantiaRepDias" inputmode="numeric" value="${_posCfg.garantia_rep_dias}" placeholder="0"></div></div>
+        <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxPosGuardarGarantiaRep()"><i class="ti ti-device-floppy"></i> Guardar garantía</button>
+      </div>`;
+  }
+  // ── Contrato de financiamiento (antes solo se cambiaba con SQL) ──
+  const AJ_VARS_CONTRATO = ['empresa', 'codigo', 'factura', 'fecha', 'cliente', 'cedula', 'telefono', 'direccion', 'articulo', 'precio', 'inicial', 'capital', 'interes_total', 'total', 'plan', 'cuotas', 'frecuencia', 'cuota_1', 'primera_fecha', 'tasa1', 'tasa2', 'cuotas_fase1', 'metodo_interes', 'mora'];
+  function ajContratoHTML() {
+    const c = _posCfg || {};
+    return ajCard('ti-file-text', 'orange', 'Contrato de venta a crédito', 'El texto que se imprime y firma en cada financiamiento nuevo. Los datos del cliente y del plan se llenan solos donde pongas una <b>{{palabra}}</b>. Los contratos ya creados no cambian.')
+      + `<div class="g2">
+          <div class="fld"><label for="ajCtTit">Título del contrato</label><div class="inw"><i class="ti ti-heading"></i><input id="ajCtTit" class="no-upper" value="${esc(c.fin_contrato_titulo || '')}" placeholder="Contrato de venta a crédito"></div></div>
+          <div class="fld"><label for="ajCtHoras">El enlace para firmar dura (horas)</label><div class="inw"><i class="ti ti-clock"></i><input id="ajCtHoras" inputmode="numeric" value="${Number(c.fin_firma_vigencia_horas || 72)}" placeholder="72"></div></div>
+        </div>
+        <div class="fld"><label for="ajCtTxt">Texto del contrato</label><textarea id="ajCtTxt" class="no-upper ajCtTxt" rows="10" oninput="window.nxAjCtRevisar()">${esc(c.fin_contrato_plantilla || '')}</textarea><div class="ajHint" id="ajCtHint">${ajCtHint(c.fin_contrato_plantilla || '')}</div></div>
+        <details class="ajVars"><summary>Palabras que se llenan solas</summary><div>${AJ_VARS_CONTRATO.map(v => `<button type="button" onclick="window.nxAjCtVar('${v}')">{{${v}}}</button>`).join('')}</div></details>
+        <button class="ab g2 sm" type="button" style="margin-top:12px" onclick="window.nxAjCtGuardar()"><i class="ti ti-device-floppy"></i> Guardar contrato</button>
+      </div>`;
+  }
+  function ajCtHint(t) {
+    if (!String(t || '').trim()) return '<span class="bad"><i class="ti ti-alert-circle"></i> Sin texto, el contrato sale con el modelo de fábrica.</span>';
+    const malas = Array.from(new Set((String(t).match(/\{\{\s*([^}]*?)\s*\}\}/g) || []).map(x => x.replace(/[{}\s]/g, '')).filter(x => AJ_VARS_CONTRATO.indexOf(x) < 0)));
+    if (malas.length) return `<span class="bad"><i class="ti ti-alert-circle"></i> No conozco ${malas.map(m => '{{' + esc(m) + '}}').join(', ')}: saldría en blanco. Revisa cómo está escrito.</span>`;
+    const usadas = AJ_VARS_CONTRATO.filter(v => String(t).indexOf('{{' + v + '}}') >= 0).length;
+    return `<span class="ok"><i class="ti ti-circle-check"></i> Bien escrito · usa ${usadas} dato(s) automáticos · ${String(t).length} caracteres</span>`;
+  }
+  window.nxAjCtRevisar = function () { const h = document.getElementById('ajCtHint'); if (h) h.innerHTML = ajCtHint(val('ajCtTxt')); };
+  window.nxAjCtVar = function (v) {
+    const t = document.getElementById('ajCtTxt'); if (!t) return;
+    const i = t.selectionStart || t.value.length, ins = '{{' + v + '}}';
+    t.value = t.value.slice(0, i) + ins + t.value.slice(t.selectionEnd || i); t.focus(); t.selectionStart = t.selectionEnd = i + ins.length; window.nxAjCtRevisar();
+  };
+  window.nxAjCtGuardar = async function () {
+    if (!puedeVerMin()) { toast('err', 'Solo el administrador o el gerente'); return; }
+    const horas = Math.round(Number(val('ajCtHoras')) || 0);
+    if (horas < 1 || horas > 720) { toast('err', 'Revisa las horas', 'Entre 1 y 720 horas (30 días)'); return; }
+    const txt = val('ajCtTxt');
+    if (/\{\{\s*([^}]*?)\s*\}\}/.test(txt) && ajCtHint(txt).indexOf('class="bad"') >= 0 && !confirm('El contrato tiene palabras que no se llenan solas y saldrían en blanco. ¿Guardar igual?')) return;
+    try { await ajGuardarCfg({ fin_contrato_titulo: val('ajCtTit').trim() || null, fin_firma_vigencia_horas: horas, fin_contrato_plantilla: txt.trim() ? txt : null }); toast('ok', 'Contrato guardado', 'Se usará en los financiamientos nuevos'); }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
+  // ── Equipo: usuarios (lista, editar, desactivar, clave). Lo sensible lo hace el servidor (crear-usuario-staff). ──
+  async function ajCargarUsuarios() {
+    if (_ajUsuariosCargando) return; _ajUsuariosCargando = true; _ajUsuariosErr = '';
+    try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login&order=activo.desc,nom.asc') || []; }
+    catch (e) { _ajUsuarios = null; _ajUsuariosErr = String(e && e.message || e); }
+    _ajUsuariosCargando = false;
+    if (_ajSec === 'equipo') ajRepintar();
+  }
+  function ajYoId() { try { const s = curSesPOS(); return s && s.id; } catch (e) { return null; } }
+  function ajUsuariosHTML() {
+    if (!esAdmin()) return '';
+    const head = ajCard('ti-users', 'blue', 'Usuarios', 'Quién entra al sistema, con qué rol y desde qué almacén factura. Desactivar no borra nada: el usuario ya no puede entrar y su historial se conserva.');
+    if (_ajUsuariosErr) return head + `<div class="ajVacio">No se pudieron cargar los usuarios: ${esc(_ajUsuariosErr)} <button class="ab g3 sm" type="button" onclick="window.nxAjUsrRecargar()">Reintentar</button></div></div>`;
+    if (!_ajUsuarios) return head + '<div class="ajVacio">Cargando usuarios…</div></div>';
+    const yo = ajYoId(), alm = id => { const a = (_almacenes || []).find(x => String(x.id) === String(id)); return a ? a.nombre : ''; };
+    const act = _ajUsuarios.filter(u => u.activo !== false).length;
+    const filas = _ajUsuarios.map(u => {
+      const esYo = String(u.id) === String(yo), inac = u.activo === false;
+      return `<div class="ajUsr${inac ? ' inac' : ''}">
+        <span class="av">${esc(String(u.nom || u.login || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="tx"><b>${esc(u.nom || '')}${esYo ? ' <small>(tú)</small>' : ''}</b><small>@${esc(u.login || '')}${alm(u.almacen_id) ? ' · ' + esc(alm(u.almacen_id)) : ''}${inac ? ' · desactivado' : ''}</small></span>
+        <span class="rol">${esc(rolLabel(u.rol))}</span>
+        <button type="button" class="ab g3 sm" aria-label="Opciones de ${esc(u.nom || '')}" onclick="window.nxAjUsr('${u.id}')"><i class="ti ti-dots"></i></button>
+      </div>`;
+    }).join('');
+    return head + `<div class="ajUsrRes">${act} activo(s) de ${_ajUsuarios.length}</div><div class="ajUsrs">${filas || '<div class="ajVacio">No hay usuarios.</div>'}</div>
+      <div class="ajbtns"><button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Nuevo usuario</button></div></div>`;
+  }
+  window.nxAjUsrRecargar = function () { _ajUsuarios = null; ajCargarUsuarios(); ajRepintar(); };
+  async function ajStaff(body) {
+    const api = getAPI();
+    const resp = await fetch((api.url || '') + '/functions/v1/crear-usuario-staff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) }, body: JSON.stringify(body) });
+    const j = await resp.json().catch(() => ({}));
+    if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
+    return j;
+  }
+  window.nxAjUsr = function (id) {
+    const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)); if (!u) return;
+    const esYo = String(u.id) === String(ajYoId()), inac = u.activo === false;
+    const roles = rolesLista();
+    const rolOpts = roles.map(r => `<option value="${esc(r.rol)}"${r.rol === u.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('');
+    const almOpts = '<option value="">— Sin almacén fijo —</option>' + (_almacenes || []).map(a => `<option value="${a.id}"${String(a.id) === String(u.almacen_id || '') ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
+    cerrarModal('nxAjUsrM');
+    const ov = document.createElement('div'); ov.id = 'nxAjUsrM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px" role="dialog" aria-labelledby="nxAjUsrT">
+      <div class="mt"><span id="nxAjUsrT"><i class="ti ti-user-cog"></i> ${esc(u.nom || u.login)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="fr"><label for="ajUNom">Nombre</label><input id="ajUNom" class="no-upper" value="${esc(u.nom || '')}"></div>
+      <div class="fr-row"><div class="fr"><label for="ajURol">Rol</label><select id="ajURol"${esYo ? ' disabled' : ''}>${rolOpts}</select></div>
+      <div class="fr"><label for="ajUAlm">Almacén</label><select id="ajUAlm">${almOpts}</select></div></div>
+      ${esYo ? '<div class="ajHint">No puedes cambiar tu propio rol ni desactivarte.</div>' : ''}
+      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="ajUBtn" onclick="window.nxAjUsrGuardar('${u.id}')"><i class="ti ti-device-floppy"></i> Guardar cambios</button></div>
+      <div class="ajSep">Clave</div>
+      <div class="fr-row"><div class="fr"><label for="ajUClave">Nueva clave (mín. 6)</label><input id="ajUClave" class="no-upper" autocomplete="new-password" placeholder="••••••"></div>
+      <div class="fr" style="display:flex;align-items:flex-end"><label class="ajChk"><input type="checkbox" id="ajUPedir" checked> Que la cambie al entrar</label></div></div>
+      <div class="fe"><button class="btn bghost" type="button" onclick="window.nxAjUsrClave('${u.id}')"><i class="ti ti-key"></i> Cambiar clave</button></div>
+      ${esYo ? '' : `<div class="ajSep">Acceso</div><div class="fe"><button class="btn ${inac ? 'bc1' : 'bc3'}" type="button" onclick="window.nxAjUsrActivo('${u.id}', ${inac ? 'true' : 'false'})"><i class="ti ${inac ? 'ti-user-check' : 'ti-user-off'}"></i> ${inac ? 'Reactivar usuario' : 'Desactivar usuario'}</button></div>`}
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxAjUsrGuardar = async function (id) {
+    const nombre = val('ajUNom').trim(); if (!nombre) { toast('err', 'Pon el nombre'); return; }
+    const b = document.getElementById('ajUBtn'); if (b) b.disabled = true;
+    try {
+      const sel = document.getElementById('ajURol');
+      await ajStaff({ accion: 'actualizar', usuario_id: id, nombre: nombre, rol: sel && !sel.disabled ? sel.value : undefined, almacen_id: val('ajUAlm') || null });
+      cerrarModal('nxAjUsrM'); toast('ok', 'Usuario actualizado', 'El cambio de rol aplica en su próxima acción'); window.nxAjUsrRecargar();
+    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); if (b) b.disabled = false; }
+  };
+  window.nxAjUsrClave = async function (id) {
+    const clave = val('ajUClave'); if (clave.length < 6) { toast('err', 'Clave muy corta', 'Mínimo 6 caracteres'); return; }
+    const pedir = !!(document.getElementById('ajUPedir') || {}).checked;
+    try { await ajStaff({ accion: 'clave', usuario_id: id, clave: clave, pedir_cambio: pedir }); cerrarModal('nxAjUsrM'); toast('ok', 'Clave cambiada', pedir ? 'Al entrar tendrá que poner una nueva' : 'Ya puede entrar con la nueva clave'); }
+    catch (e) { toast('err', 'No se pudo cambiar la clave', String(e && e.message || e)); }
+  };
+  window.nxAjUsrActivo = async function (id, activar) {
+    const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)) || {};
+    if (!activar && !confirm('¿Desactivar a ' + (u.nom || 'este usuario') + '? No podrá entrar al sistema. Su historial se conserva y lo puedes reactivar cuando quieras.')) return;
+    try { await ajStaff({ accion: activar ? 'reactivar' : 'desactivar', usuario_id: id }); cerrarModal('nxAjUsrM'); toast('ok', activar ? 'Usuario reactivado' : 'Usuario desactivado', activar ? 'Ya puede entrar otra vez' : 'Ya no puede entrar'); window.nxAjUsrRecargar(); }
+    catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+  };
   // ── Limpieza de datos de PRUEBA (solo transaccional; catálogos intactos) ──
   window.nxLimpiarPruebas = function () {
     if (!esAdmin()) { toast('err', 'Solo el administrador'); return; }
@@ -2193,15 +2464,14 @@
     const verComo = `<div class="fld" style="margin-top:12px"><label>Probar: ver el sistema como…</label><div class="inw"><i class="ti ti-eye"></i><select onchange="window.nxRolPreview(this.value)"><option value="">— Yo (Dueño, todo) —</option>${lista.map(r => `<option value="${r.rol}"${_rolPreview === r.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>`;
     const filas = lista.map(r => `<tr>
         <td><b>${esc(r.label)}</b>${r.preset ? '' : ' <span class="nxEntRol">propio</span>'}</td>
-        <td style="text-align:center;font-size:11px">${r.modulos.length} módulo(s)</td>
+        <td style="text-align:center;font-size:11px">${r.modulos.filter(m => !CAPACIDADES.some(c => c[0] === m)).length} módulo(s)</td>
         <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar rol" onclick="window.nxAccesoEdit('${r.rol}')"><i class="ti ti-edit"></i></button></td>
       </tr>`).join('');
-    return ajCard('ti-shield-lock', 'blue', 'Roles y accesos', 'Qué módulos ve cada rol. <b>El Dueño siempre ve todo.</b> Puedes crear los roles que quieras. (El ingreso de cada empleado con su clave se activa en el paso supervisado.)') +
-      `${!_acceso.length ? `<button class="ab g2 sm" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-sparkles"></i> Crear roles base</button>` : ''}
+    return ajCard('ti-shield-lock', 'blue', 'Roles y accesos', 'Qué módulos ve cada rol y qué permisos especiales tiene. <b>El Dueño siempre ve todo.</b> Puedes crear los roles que quieras y asignarlos en Usuarios.') +
+      `${!_acceso.length ? `<button class="ab g2 sm" type="button" style="margin-bottom:10px" onclick="window.nxAccesoInit()"><i class="ti ti-cloud-upload"></i> Guardar permisos en el servidor</button>` : ''}
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Rol</th><th style="text-align:center">Acceso</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       <div class="ajbtns">
         <button class="ab g3 sm" type="button" onclick="window.nxRolNuevo()"><i class="ti ti-plus"></i> Nuevo rol</button>
-        <button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Crear usuario de staff</button>
       </div>
       ${verComo}</div>`;
   }
@@ -2222,7 +2492,8 @@
     const mods = isNew ? ['inicio'] : accesoRol(rol);
     cerrarModal('nxAccForm');
     const chks = MODULOS.map(m => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${m[0]}"${mods.indexOf(m[0]) >= 0 ? ' checked' : ''}${m[0] === 'inicio' ? ' checked disabled' : ''}> ${m[1]}</label>`).join('');
-    const caps = FIN_COBRA_SIEMPRE.indexOf(rol) >= 0 ? '' : `<div style="font-size:11.5px;color:#475569;margin:12px 0 6px;font-weight:600">Permisos especiales</div><div class="nxEntAfines" style="grid-template-columns:1fr">${CAPACIDADES.map(c => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${c[0]}"${mods.indexOf(c[0]) >= 0 ? ' checked' : ''}> ${c[1]}</label>`).join('')}</div>`;
+    const capsRol = CAPACIDADES.filter(c => c[2].indexOf(rol) < 0);
+    const caps = !capsRol.length ? '' : `<div style="font-size:11.5px;color:#475569;margin:12px 0 6px;font-weight:600">Permisos especiales</div><div class="nxEntAfines" style="grid-template-columns:1fr">${capsRol.map(c => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${c[0]}"${mods.indexOf(c[0]) >= 0 ? ' checked' : ''}> ${c[1]}</label>`).join('')}</div>`;
     const ov = document.createElement('div'); ov.id = 'nxAccForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">
@@ -3250,7 +3521,7 @@
     const nItems = (v._items || []).length;
     if (window.nxReciboAnimado) {
       window.nxReciboAnimado({
-        empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'Studio', titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
+        empresa: empNom(), titulo: 'Venta cobrada', cliente: v.cliente_nombre || 'Consumidor final', monto: v.total,
         filas: [{ label: 'Artículos', valor: nItems }, { label: 'Factura', valor: v.numero_factura || ('No. ' + (v.numero || '')) }],
         folio: 'VTA-' + String(v.numero_factura || v.numero || '').toUpperCase()
       }, [
@@ -3837,7 +4108,7 @@
         ${Number(v.credito_monto || 0) > 0 ? `<div class="tot"><b>Pendiente (crédito)</b><b>${fmt(v.credito_monto)}</b></div>` : ''}
         ${qrSvg ? `<div class="hr"></div><div class="qr">${qrSvg}</div><div class="c sm"><b>Verifica tu factura</b><br>Escanea el código con tu teléfono</div>` : ''}
         <div class="hr"></div>
-        <div class="c sm"><b>¡Gracias por su compra!</b><br>Conserve este ticket para cambios y garantía.</div>
+        <div class="c sm">${empInfo().pie ? esc(empInfo().pie).replace(/\n/g, '<br>') : '<b>¡Gracias por su compra!</b><br>Conserve este ticket para cambios y garantía.'}</div>
       </div>
       <script>
         document.getElementById('bX').addEventListener('click',function(){window.close()});
@@ -3913,7 +4184,7 @@
       subtotal: v.subtotal, descuento: v.descuento, itbis: v.itbis, total: v.total,
       pagos: pagos, devuelta: v.devuelta, credito: v.credito_monto,
       qr: { tipo: 'factura', id: v.id },
-      legal: anulada ? 'DOCUMENTO ANULADO — no tiene validez.' : 'Gracias por su compra. Conserve esta factura para cambios y garantía.'
+      legal: anulada ? 'DOCUMENTO ANULADO — no tiene validez.' : (empInfo().pie || 'Gracias por su compra. Conserve esta factura para cambios y garantía.')
     });
   };
 
@@ -4262,6 +4533,67 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxAjWrap .tw table tbody td{color:var(--pf-txt2);padding:9px 10px;border-top:1px solid var(--pf-line);vertical-align:middle}
 .nxAjWrap .tw table tbody tr:hover td{background:var(--pf-bg)}
 .nxAjWrap .tw table tbody td b{color:var(--pf-txt)}
+.nxAjWrap .ajHead{display:flex;flex-direction:column;gap:10px}
+.nxAjWrap h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.3px;color:var(--pf-txt);display:flex;align-items:center;gap:10px}
+.nxAjWrap .ajBus{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border:1px solid var(--pf-line);border-radius:12px;background:var(--pf-panel)}
+.nxAjWrap .ajBus>i{color:var(--pf-txt3);font-size:18px}
+.nxAjWrap .ajBus input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:15px;color:var(--pf-txt)}
+.nxAjWrap .ajBus button{border:0;background:transparent;color:var(--pf-txt3);font-size:18px;cursor:pointer;padding:4px}
+.nxAjWrap .ajBus:focus-within{border-color:var(--pf-blue);box-shadow:0 0 0 3px var(--pf-blue-l)}
+.nxAjWrap .ajOk{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;background:var(--pf-green-l);color:var(--pf-green);font-size:13px;font-weight:600}
+.nxAjWrap .ajAvisos{display:flex;flex-direction:column;gap:8px}
+.nxAjWrap .ajAvT{font-size:12px;font-weight:800;color:var(--pf-txt2);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px}
+.nxAjWrap .ajAv{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid var(--pf-line);border-left-width:4px;background:var(--pf-panel);font:inherit;color:var(--pf-txt);cursor:pointer}
+.nxAjWrap .ajAv.est{cursor:default}
+.nxAjWrap .ajAv>i{font-size:20px;flex:none}
+.nxAjWrap .ajAv.red{border-left-color:var(--pf-red)}.nxAjWrap .ajAv.red>i{color:var(--pf-red)}
+.nxAjWrap .ajAv.orange{border-left-color:var(--pf-orange)}.nxAjWrap .ajAv.orange>i{color:var(--pf-orange)}
+.nxAjWrap .ajAv.blue{border-left-color:var(--pf-blue)}.nxAjWrap .ajAv.blue>i{color:var(--pf-blue)}
+.nxAjWrap .ajAv span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.nxAjWrap .ajAv b{font-size:13.5px}.nxAjWrap .ajAv small{font-size:12px;color:var(--pf-txt2);line-height:1.4}
+.nxAjWrap .ajAv em{font-style:normal;font-size:12px;font-weight:700;color:var(--pf-blue);white-space:nowrap;display:flex;align-items:center;gap:2px;cursor:pointer}
+.nxAjWrap .ajLista{display:flex;flex-direction:column;border:1px solid var(--pf-line);border-radius:14px;background:var(--pf-panel);overflow:hidden}
+.nxAjWrap .ajSecBtn{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 14px;border:0;border-top:1px solid var(--pf-line);background:transparent;font:inherit;color:var(--pf-txt);text-align:left;cursor:pointer}
+.nxAjWrap .ajSecBtn:first-child{border-top:0}
+.nxAjWrap .ajSecBtn:hover{background:var(--pf-bg)}
+.nxAjWrap .ajSecBtn:focus-visible,.nxAjWrap .ajAv:focus-visible,.nxAjWrap .ajVolver:focus-visible{outline:2px solid var(--pf-blue);outline-offset:-2px}
+.nxAjWrap .ic{width:34px;height:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:18px}
+.nxAjWrap .ic.blue{background:var(--pf-blue-l);color:var(--pf-blue)}.nxAjWrap .ic.orange{background:var(--pf-orange-l);color:var(--pf-orange)}.nxAjWrap .ic.green{background:var(--pf-green-l);color:var(--pf-green)}.nxAjWrap .ic.red{background:var(--pf-red-l);color:var(--pf-red)}
+.nxAjWrap .ajSecBtn .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.nxAjWrap .ajSecBtn .tx b{font-size:14.5px}.nxAjWrap .ajSecBtn .tx small{font-size:12px;color:var(--pf-txt2)}
+.nxAjWrap .ajSecBtn .bdg{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--pf-orange);color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.nxAjWrap .ajSecBtn .ch{color:var(--pf-txt3);font-size:18px}
+.nxAjWrap .ajVacio{padding:16px;color:var(--pf-txt2);font-size:13px;text-align:center}
+.nxAjWrap .ajSecCab{display:flex;flex-direction:column;gap:6px}
+.nxAjWrap .ajVolver{align-self:flex-start;display:inline-flex;align-items:center;gap:2px;border:0;background:transparent;color:var(--pf-blue);font:inherit;font-size:14px;font-weight:600;padding:6px 4px 6px 0;cursor:pointer;min-height:36px}
+.nxAjWrap .g2 .fld.full{grid-column:1/-1}
+.nxAjWrap textarea{width:100%;box-sizing:border-box;border:1px solid var(--pf-line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;line-height:1.5;color:var(--pf-txt);background:var(--pf-panel);resize:vertical}
+.nxAjWrap textarea:focus{outline:0;border-color:var(--pf-blue);box-shadow:0 0 0 3px var(--pf-blue-l)}
+.nxAjWrap .ajCtTxt{min-height:220px;font-size:13px}
+.nxAjWrap .ajHint{font-size:11.5px;color:var(--pf-txt2);margin-top:5px;line-height:1.4}
+.nxAjWrap .ajHint .ok{color:var(--pf-green)}.nxAjWrap .ajHint .bad{color:var(--pf-red)}
+.nxAjWrap .ajVista{margin-top:12px;border:1px dashed var(--pf-line);border-radius:12px;padding:12px 14px;background:var(--pf-bg)}
+.nxAjWrap .ajVistaT{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--pf-txt3);margin-bottom:6px}
+.nxAjWrap .ajVista .emp{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+.nxAjWrap .ajVista .sub{font-size:12px;color:var(--pf-txt2);margin-top:2px}
+.nxAjWrap .ajVista .pie{font-size:11.5px;color:var(--pf-txt2);margin-top:10px;padding-top:8px;border-top:1px solid var(--pf-line);font-style:italic}
+.nxAjWrap .ajVars{margin-top:8px;font-size:12.5px}.nxAjWrap .ajVars summary{cursor:pointer;color:var(--pf-blue);font-weight:600}
+.nxAjWrap .ajVars div{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.nxAjWrap .ajVars button{border:1px solid var(--pf-line);background:var(--pf-bg);border-radius:8px;padding:4px 8px;font:inherit;font-size:12px;color:var(--pf-txt);cursor:pointer}
+.nxAjWrap .ajUsrRes{font-size:12px;color:var(--pf-txt2);margin:-4px 0 8px}
+.nxAjWrap .ajUsrs{display:flex;flex-direction:column;border:1px solid var(--pf-line);border-radius:12px;overflow:hidden}
+.nxAjWrap .ajUsr{display:flex;align-items:center;gap:10px;padding:9px 10px;border-top:1px solid var(--pf-line)}
+.nxAjWrap .ajUsr:first-child{border-top:0}
+.nxAjWrap .ajUsr.inac{opacity:.55}
+.nxAjWrap .ajUsr .av{width:34px;height:34px;border-radius:50%;background:var(--pf-blue-l);color:var(--pf-blue);font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.nxAjWrap .ajUsr .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.nxAjWrap .ajUsr .tx b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxAjWrap .ajUsr .tx small{font-size:11.5px;color:var(--pf-txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxAjWrap .ajUsr .rol{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--pf-bg);color:var(--pf-txt2);white-space:nowrap}
+.nxAjWrap .ajUsr .ab{flex:none;width:36px;height:36px;padding:0;justify-content:center}
+.ajSep{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin:16px 0 6px;padding-top:12px;border-top:1px solid #e8ebf0}
+.ajChk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
+@media (max-width:540px){.nxAjWrap .ajUsr .rol{display:none}.nxAjWrap h2{font-size:20px}}
 .nxCajaWrap .cajaCard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;padding:14px 16px;box-shadow:var(--pf-shadow)}
 .nxCajaWrap .cajaEsp{background:var(--pf-green-l);border:1px solid var(--pf-green);border-radius:12px;padding:10px 14px;color:var(--pf-green)}
 .nxPf .nxRepFlow{display:flex;gap:0;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
@@ -10726,7 +11058,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxFinCobranza = function () { window.nxFinFiltro('vencidos'); const el = document.getElementById('finListHead'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   window.nxFinConfig = function () {
-    window.nxPosTab('ajustes');
+    _ajQ = ''; window.__nxAjMantener = true; _ajSec = 'financiamiento';
+    Promise.resolve(window.nxPosTab('ajustes')).finally(() => { window.__nxAjMantener = false; });
     setTimeout(function () { const el = document.getElementById('cfgMoraPct'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 200);
   };
   window.nxFinExportCSV = function () {
@@ -11023,7 +11356,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (r && r[0] && window.nxReciboAnimado) {
         const prefId = r[0].id;
         window.nxReciboAnimado({
-          empresa: (typeof CFG !== 'undefined' && CFG.empNom) || 'Studio', titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
+          empresa: empNom(), titulo: 'Prefactura guardada', cliente: cli ? cli.nombre : 'Consumidor final', monto: t.total,
           filas: [{ label: 'Artículos', valor: nItemsPref }, { label: 'Válida hasta', valor: 'Facturar cuando toque' }],
           folio: numero
         }, [
@@ -11820,6 +12153,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="fr"><label>Clave * (mín. 6)</label><input id="stfClave" class="no-upper" placeholder="••••••"></div></div>
       <div class="fr"><label>Rol</label><select id="stfRol">${rolOpts}</select></div>
       ${almOpts}
+      <label class="ajChk" style="margin:4px 0 6px"><input type="checkbox" id="stfPedir" checked> Que cambie la clave la primera vez que entre</label>
       <div style="font-size:10.5px;color:#475569;margin-top:2px">El empleado entra en <b>studiord.net</b> con su usuario y clave, y ve SOLO los módulos de su rol. Sus datos son los de ESTA empresa.</div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="stfBtn" onclick="window.nxStaffCrear()"><i class="ti ti-check"></i> Crear usuario</button></div>
     </div>`;
@@ -11835,13 +12169,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const resp = await fetch((api.url || '') + '/functions/v1/crear-usuario-staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) },
-        body: JSON.stringify({ nombre: nombre, login: login, clave: clave, rol: val('stfRol') || 'cajero', almacen_id: val('stfAlm') || null })
+        body: JSON.stringify({ nombre: nombre, login: login, clave: clave, rol: val('stfRol') || 'cajero', almacen_id: val('stfAlm') || null, pedir_cambio: !!(document.getElementById('stfPedir') || {}).checked })
       });
       const j = await resp.json().catch(() => ({}));
       if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
       try { window.logAudit && window.logAudit('STAFF_CREADO', nombre.toUpperCase() + ' · usuario ' + j.login + ' · rol ' + j.rol, 'Usuarios'); } catch (e) {}
       cerrarModal('nxStaffM');
-      toast('ok', 'Usuario creado', j.login + ' (' + j.rol + ') — ya puede entrar con su clave');
+      toast('ok', 'Usuario creado', j.login + ' (' + rolLabel(j.rol) + ') — ya puede entrar con su clave');
+      if (_ajSec === 'equipo') window.nxAjUsrRecargar();
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear usuario'; }
   };

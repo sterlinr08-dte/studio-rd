@@ -31,6 +31,10 @@
   function hora(ts) { try { return new Date(ts).toLocaleTimeString('es-DO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Santo_Domingo' }); } catch (e) { return ''; } }
   function ini(nom) { const t = String(nom || '').trim(); if (!/[a-záéíóúñ]/i.test(t)) return t.replace(/\D/g, '').slice(-2) || '?'; const p = t.split(/\s+/).filter(Boolean); return ((p[0] || '?')[0] + (p[1] ? p[1][0] : '')).toUpperCase(); }
   function yo() { try { const s = ctx().sesion ? ctx().sesion() : window.sesion; return (s && s.id) || null; } catch (e) { return null; } }
+  // Permisos por rol (dueño 02-oct-2026): «crm» = Leads y Campañas; «bandeja» = Mensajes y Redes. El servidor los vuelve a
+  // comprobar (crm_permiso, migración 41); aquí solo se decide qué pestañas se muestran y qué se carga.
+  function perm() { try { const p = ctx().crmPermisos ? ctx().crmPermisos() : null; if (p) return p; } catch (e) {} return { crm: true, bandeja: true }; }
+  function vistasPermitidas() { const p = perm(); return (p.bandeja ? ['mensajes', 'redes'] : []).concat(p.crm ? ['leads', 'campanas'] : []); }
   function esAdmin() { try { const r = ctx().rolEfectivo ? ctx().rolEfectivo() : 'admin'; return r === 'admin' || r === 'gerente'; } catch (e) { return false; } }
   function clientes() { try { return ctx().clientes ? ctx().clientes() : []; } catch (e) { return []; } }
   function cliDe(id) { return id ? clientes().find(c => String(c.id) === String(id)) : null; }
@@ -89,8 +93,11 @@
   // selector de línea, pestañas Mensajes · Redes · Leads · Campañas (Redes junto a WhatsApp, pedido del dueño 28-sep-2026), Buscar + Filtros, chips Todos/No leídos/Pendientes.
   function render() {
     ensureCSS();
+    const P = perm(), vistas = vistasPermitidas();
+    if (!vistas.length) return '<div class="nxCrm crmB"><div class="crm-vacio">Tu rol no tiene acceso al CRM. Pídele al administrador que lo active en Permisos por rol.</div></div>';
+    if (vistas.indexOf(S.vista) < 0) { S.vista = vistas[0]; BD.sel = null; BD.msgs = []; }
     if (!S.cargado && !S.error) { cargar().then(repintar); }
-    if (!BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); }
+    if (P.bandeja && !BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); }
     const leadsAb = S.ops.filter(abierta).length;
     const tab = (k, l, ic, extra) => `<button class="crm-tab-seg${S.vista === k ? ' on pill-hundido' : ''}" onclick="window.nxCRM.tab('${k}')"><i class="ti ${ic}"${k === 'campanas' ? ' style="color:#e31e24"' : ''}></i> ${l}${extra || ''}</button>`;
     const lineas = BD.canales.filter(c => c.plataforma === 'whatsapp');
@@ -107,7 +114,7 @@
     return `<div class="nxCrm crmB${BD.sel && (S.vista === 'mensajes' || S.vista === 'redes') ? ' chat-abierto' : ''}">
       <div class="crm-ocultar-en-chat">${S.vista === 'mensajes' ? selector : ''}
       <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
-        ${tab('mensajes', 'Mensajes', 'ti-brand-whatsapp')}${tab('redes', 'Redes', 'ti-share')}${tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '')}${tab('campanas', 'Campañas', 'ti-speakerphone')}
+        ${P.bandeja ? tab('mensajes', 'Mensajes', 'ti-brand-whatsapp') + tab('redes', 'Redes', 'ti-share') : ''}${P.crm ? tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '') + tab('campanas', 'Campañas', 'ti-speakerphone') : ''}
       </div>
       <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.bdSincronizar()" title="Sincronizar conversaciones" aria-label="Sincronizar conversaciones"><i class="ti ti-cloud-download"></i></button><button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}
@@ -702,7 +709,7 @@
         ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
         ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
         ${c.archivada ? `<button class="wa-icon-btn" onclick="window.nxCRM.bdDesarchivar('${c.id}')" title="Devolver a la bandeja" aria-label="Devolver a la bandeja"><i class="ti ti-archive-off"></i></button>` : `<button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button>`}</div>
-      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>`}</div>`;
+      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : perm().crm ? `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>` : ''}</div>`;
   }
   function bdPieHTML(c) {
     const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
@@ -1352,6 +1359,7 @@
     },
     asig: function (k) { BD.asig = k; const m = document.getElementById('crmFiltrosMenu'); if (m) m.style.display = 'none'; repintar(); },
     tab: function (k) {
+      if (vistasPermitidas().indexOf(k) < 0) return;
       const antes = bdPlat() + '|' + bdArch();
       S.vista = k; BD.sel = null; BD.msgs = []; BD.q = ''; BD.buscando = false; BD.filtro = 'todos'; BD.asig = 'todas'; try { localStorage.setItem('studio_crm_vista', k); } catch (e) {}
       const otra = (k === 'mensajes' || k === 'redes') && antes !== bdPlat() + '|' + bdArch();

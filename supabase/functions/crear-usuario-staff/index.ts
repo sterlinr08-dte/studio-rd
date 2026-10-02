@@ -5,10 +5,15 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// STUDIO · Crea un usuario de STAFF del POS (cajero/vendedor/gerente) en la MISMA organización
-// del que llama. Solo un ADMIN logueado puede llamar (verify_jwt + chequeo de rol).
-// Copia fiel de la función de NEXUS PRO (v7); en STUDIO faltaba y «Crear usuario» daba 404.
-// Desplegada en edbknlkjnlfmkkiizdbe el 2026-09-23 (verify_jwt = true).
+// STUDIO · Usuarios de STAFF del POS en la MISMA organización del que llama. Solo un ADMIN logueado puede llamar
+// (verify_jwt + chequeo de rol). Desplegada en edbknlkjnlfmkkiizdbe el 2026-09-23 (verify_jwt = true).
+// 02-oct-2026 (Configuración → Equipo): además de crear, ahora edita (nombre, rol, almacén), desactiva/reactiva y
+// cambia la clave. Acepta los roles personalizados de Permisos por rol (antes los convertía en «cajero»).
+// Reglas: nadie se cambia su propio rol ni se desactiva; nunca se queda la empresa sin un administrador activo;
+// solo usuarios de la misma empresa; cada acción queda en auditoría.
+const PRESET = ["admin", "gerente", "cajero", "vendedor"];
+const json = (o: unknown, status = 200) => Response.json(o, { status, headers: CORS });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
@@ -19,38 +24,119 @@ Deno.serve(async (req) => {
     const auth = req.headers.get("Authorization") || "";
     const jwt = auth.replace("Bearer ", "");
     const { data: caller } = await admin.auth.getUser(jwt);
-    if (!caller?.user) return Response.json({ error: "No autorizado" }, { status: 401, headers: CORS });
+    if (!caller?.user) return json({ error: "No autorizado" }, 401);
 
-    const { data: perfil } = await admin.from("profiles").select("rol, usuario_sistema_id").eq("id", caller.user.id).single();
-    if (!perfil || perfil.rol !== "admin") return Response.json({ error: "Solo el administrador puede crear usuarios" }, { status: 403, headers: CORS });
+    const { data: perfil } = await admin.from("profiles").select("rol, usuario_sistema_id, nom, activo").eq("id", caller.user.id).single();
+    if (!perfil || perfil.rol !== "admin" || perfil.activo === false) return json({ error: "Solo el administrador puede manejar usuarios" }, 403);
     const { data: us } = await admin.from("usuarios_sistema").select("organizacion_id").eq("id", perfil.usuario_sistema_id).single();
     const orgId = us?.organizacion_id;
-    if (!orgId) return Response.json({ error: "El administrador no tiene organización" }, { status: 400, headers: CORS });
+    if (!orgId) return json({ error: "El administrador no tiene organización" }, 400);
 
-    const { nombre, login, clave, rol, almacen_id } = await req.json();
-    const lg = String(login || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
-    if (!nombre || !lg || !clave) return Response.json({ error: "Faltan nombre, usuario o clave" }, { status: 400, headers: CORS });
-    if (String(clave).length < 6) return Response.json({ error: "La clave debe tener al menos 6 caracteres" }, { status: 400, headers: CORS });
-    const rolStaff = ["gerente", "cajero", "vendedor", "admin"].includes(rol) ? rol : "cajero";
+    const body = await req.json();
+    const accion = String(body.accion || "crear");
 
-    const { data: existe } = await admin.from("usuarios_sistema").select("id").eq("login", lg).limit(1);
-    if (existe && existe.length) return Response.json({ error: "Ese usuario ya existe, elige otro" }, { status: 409, headers: CORS });
+    const rolValido = async (rol: string) => {
+      if (PRESET.includes(rol)) return true;
+      const { data } = await admin.from("pos_acceso").select("rol").eq("organizacion_id", orgId).eq("rol", rol).limit(1);
+      return !!(data && data.length);
+    };
+    const auditar = async (accionAud: string, detalle: string, entidad: string | null, antes: unknown = null, despues: unknown = null) => {
+      await admin.from("auditoria").insert({
+        ts: new Date().toISOString(), usuario: perfil.nom || "admin", rol: "admin", accion: accionAud, detalle, modulo: "Usuarios",
+        user_id: caller.user.id, entity_table: "usuarios_sistema", entity_id: entidad, organizacion_id: orgId, origen: "servidor",
+        old_data: antes ? JSON.stringify(antes) : null, new_data: despues ? JSON.stringify(despues) : null,
+      });
+    };
 
-    const email = lg + "@nexus-pro.local";
-    const { data: nuevo, error: eAuth } = await admin.auth.admin.createUser({ email, password: String(clave), email_confirm: true });
-    if (eAuth || !nuevo?.user) return Response.json({ error: "Auth: " + (eAuth?.message || "no se pudo crear") }, { status: 500, headers: CORS });
+    if (accion === "crear") {
+      const { nombre, login, clave, rol, almacen_id, pedir_cambio } = body;
+      const lg = String(login || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
+      if (!nombre || !lg || !clave) return json({ error: "Faltan nombre, usuario o clave" }, 400);
+      if (String(clave).length < 6) return json({ error: "La clave debe tener al menos 6 caracteres" }, 400);
+      const rolStaff = rol && await rolValido(String(rol)) ? String(rol) : "cajero";
 
-    const { data: usNuevo, error: eUs } = await admin.from("usuarios_sistema")
-      .insert({ nom: String(nombre).toUpperCase(), cargo: rolStaff, login: lg, rol: rolStaff, activo: true, organizacion_id: orgId, almacen_id: almacen_id || null })
-      .select().single();
-    if (eUs) { await admin.auth.admin.deleteUser(nuevo.user.id); return Response.json({ error: "usuarios_sistema: " + eUs.message }, { status: 500, headers: CORS }); }
+      const { data: existe } = await admin.from("usuarios_sistema").select("id").eq("login", lg).limit(1);
+      if (existe && existe.length) return json({ error: "Ese usuario ya existe, elige otro" }, 409);
 
-    const { error: eProf } = await admin.from("profiles")
-      .insert({ id: nuevo.user.id, usuario_sistema_id: usNuevo.id, login: lg, nom: String(nombre).toUpperCase(), rol: rolStaff, activo: true, must_change_password: false });
-    if (eProf) { await admin.auth.admin.deleteUser(nuevo.user.id); await admin.from("usuarios_sistema").delete().eq("id", usNuevo.id); return Response.json({ error: "profiles: " + eProf.message }, { status: 500, headers: CORS }); }
+      const email = lg + "@nexus-pro.local";
+      const { data: nuevo, error: eAuth } = await admin.auth.admin.createUser({ email, password: String(clave), email_confirm: true });
+      if (eAuth || !nuevo?.user) return json({ error: "Auth: " + (eAuth?.message || "no se pudo crear") }, 500);
 
-    return Response.json({ ok: true, login: lg, rol: rolStaff }, { headers: CORS });
+      const { data: usNuevo, error: eUs } = await admin.from("usuarios_sistema")
+        .insert({ nom: String(nombre).toUpperCase(), cargo: rolStaff, login: lg, rol: rolStaff, activo: true, organizacion_id: orgId, almacen_id: almacen_id || null })
+        .select().single();
+      if (eUs) { await admin.auth.admin.deleteUser(nuevo.user.id); return json({ error: "usuarios_sistema: " + eUs.message }, 500); }
+
+      const { error: eProf } = await admin.from("profiles")
+        .insert({ id: nuevo.user.id, usuario_sistema_id: usNuevo.id, login: lg, nom: String(nombre).toUpperCase(), rol: rolStaff, activo: true, must_change_password: pedir_cambio === true });
+      if (eProf) { await admin.auth.admin.deleteUser(nuevo.user.id); await admin.from("usuarios_sistema").delete().eq("id", usNuevo.id); return json({ error: "profiles: " + eProf.message }, 500); }
+
+      await auditar("USUARIO_CREADO", `${String(nombre).toUpperCase()} · usuario ${lg} · rol ${rolStaff}`, usNuevo.id, null, { rol: rolStaff, almacen_id: almacen_id || null });
+      return json({ ok: true, login: lg, rol: rolStaff });
+    }
+
+    // Acciones sobre un usuario existente de la MISMA empresa.
+    const usuarioId = String(body.usuario_id || "");
+    const { data: obj } = await admin.from("usuarios_sistema").select("id, nom, login, rol, activo, almacen_id, organizacion_id").eq("id", usuarioId).maybeSingle();
+    if (!obj || obj.organizacion_id !== orgId) return json({ error: "Ese usuario no es de tu empresa" }, 404);
+    const { data: prof } = await admin.from("profiles").select("id").eq("usuario_sistema_id", obj.id).maybeSingle();
+    const esYo = obj.id === perfil.usuario_sistema_id;
+    const otrosAdminsActivos = async () => {
+      const { data } = await admin.from("usuarios_sistema").select("id").eq("organizacion_id", orgId).eq("rol", "admin").eq("activo", true).neq("id", obj.id);
+      return (data || []).length;
+    };
+
+    if (accion === "actualizar") {
+      const cambios: Record<string, unknown> = {};
+      if (body.nombre !== undefined) { const n = String(body.nombre || "").trim(); if (!n) return json({ error: "Pon el nombre" }, 400); cambios.nom = n.toUpperCase(); }
+      if (body.almacen_id !== undefined) cambios.almacen_id = body.almacen_id || null;
+      if (body.rol !== undefined && body.rol !== obj.rol) {
+        if (esYo) return json({ error: "No puedes cambiar tu propio rol" }, 400);
+        if (!(await rolValido(String(body.rol)))) return json({ error: "Ese rol no existe" }, 400);
+        if (obj.rol === "admin" && obj.activo !== false && (await otrosAdminsActivos()) === 0) return json({ error: "Es el único administrador: la empresa se quedaría sin administrador" }, 400);
+        cambios.rol = String(body.rol); cambios.cargo = String(body.rol);
+      }
+      if (!Object.keys(cambios).length) return json({ ok: true, sin_cambios: true });
+      const { error: e1 } = await admin.from("usuarios_sistema").update({ ...cambios, actualizado_por: perfil.nom || "admin", updated_at: new Date().toISOString() }).eq("id", obj.id);
+      if (e1) return json({ error: "usuarios_sistema: " + e1.message }, 500);
+      if (prof) {
+        const pc: Record<string, unknown> = {}; if (cambios.nom) pc.nom = cambios.nom; if (cambios.rol) pc.rol = cambios.rol;
+        if (Object.keys(pc).length) { const { error: e2 } = await admin.from("profiles").update(pc).eq("id", prof.id); if (e2) return json({ error: "profiles: " + e2.message }, 500); }
+      }
+      await auditar("USUARIO_EDITADO", `${obj.nom} (@${obj.login})`, obj.id, { nom: obj.nom, rol: obj.rol, almacen_id: obj.almacen_id }, cambios);
+      return json({ ok: true });
+    }
+
+    if (accion === "desactivar" || accion === "reactivar") {
+      const activar = accion === "reactivar";
+      if (esYo) return json({ error: "No puedes desactivarte a ti mismo" }, 400);
+      if (!activar && obj.rol === "admin" && (await otrosAdminsActivos()) === 0) return json({ error: "Es el único administrador activo" }, 400);
+      const { error: e1 } = await admin.from("usuarios_sistema").update({ activo: activar, actualizado_por: perfil.nom || "admin", updated_at: new Date().toISOString() }).eq("id", obj.id);
+      if (e1) return json({ error: "usuarios_sistema: " + e1.message }, 500);
+      if (prof) {
+        const { error: e2 } = await admin.from("profiles").update({ activo: activar }).eq("id", prof.id);
+        if (e2) return json({ error: "profiles: " + e2.message }, 500);
+        // Bloquea también la entrada (y las sesiones nuevas). La base ya no le da rol aunque tenga una sesión abierta.
+        const { error: e3 } = await admin.auth.admin.updateUserById(prof.id, { ban_duration: activar ? "none" : "876000h" });
+        if (e3) console.error("ban:", e3.message);
+      }
+      await auditar(activar ? "USUARIO_REACTIVADO" : "USUARIO_DESACTIVADO", `${obj.nom} (@${obj.login})`, obj.id, { activo: obj.activo }, { activo: activar });
+      return json({ ok: true });
+    }
+
+    if (accion === "clave") {
+      const clave = String(body.clave || "");
+      if (clave.length < 6) return json({ error: "La clave debe tener al menos 6 caracteres" }, 400);
+      if (!prof) return json({ error: "Ese usuario no tiene acceso creado" }, 400);
+      const { error: e1 } = await admin.auth.admin.updateUserById(prof.id, { password: clave });
+      if (e1) return json({ error: "Auth: " + e1.message }, 500);
+      await admin.from("profiles").update({ must_change_password: body.pedir_cambio === true && !esYo }).eq("id", prof.id);
+      await auditar("USUARIO_CLAVE", `Clave cambiada a ${obj.nom} (@${obj.login})${body.pedir_cambio === true && !esYo ? " · deberá cambiarla al entrar" : ""}`, obj.id);
+      return json({ ok: true });
+    }
+
+    return json({ error: "Acción desconocida" }, 400);
   } catch (e) {
-    return Response.json({ error: String(e?.message || e) }, { status: 500, headers: CORS });
+    return json({ error: String((e as Error)?.message || e) }, 500);
   }
 });

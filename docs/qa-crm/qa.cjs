@@ -110,7 +110,7 @@ const URL = process.env.QA_URL || 'http://localhost:8790/docs/qa-crm/index.html'
     ok(subs1 === subs0 + 1, `reconecta una vez tras un error (${subs0} → ${subs1})`);
     await p.waitForTimeout(6000);
     ok(await p.evaluate(() => RT.subs) === subs1, `no queda reconectando en bucle (${await p.evaluate(() => RT.subs)})`);
-    await p.screenshot({ path: `crm-${w}.png` });
+    await p.screenshot({ path: (process.env.QA_OUT || require('os').tmpdir()) + `/crm-${w}.png` });
     ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
     await p.close();
   }

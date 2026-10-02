@@ -63,15 +63,18 @@
   // Permisos especiales por rol (no son módulos del menú). Se guardan en pos_acceso.modulos junto a los módulos.
   // fin_cobrar (dueño 30-sep-2026): el vendedor (u otro rol) cobra cuotas solo si su rol lo tiene activado.
   // Admin, gerente y cajero cobran siempre. El servidor lo vuelve a comprobar (migración 36).
-  const CAPACIDADES = [['fin_cobrar', 'Cobrar cuotas de financiamiento']];
+  // crm_bandeja (dueño 02-oct-2026, «por rol»): leer y responder WhatsApp/Instagram/Facebook en el CRM es un permiso aparte
+  // del módulo CRM (leads, campañas, tareas). El servidor lo vuelve a comprobar (crm_permiso, migración 41).
+  // Tercer campo: roles que lo tienen SIEMPRE (no se muestra la casilla para ellos).
   const FIN_COBRA_SIEMPRE = ['admin', 'gerente', 'cajero'];
+  const CAPACIDADES = [['fin_cobrar', 'Cobrar cuotas de financiamiento', FIN_COBRA_SIEMPRE], ['crm_bandeja', 'Bandeja de mensajes del CRM (WhatsApp, Instagram, Facebook)', ['admin', 'gerente']]];
   const ROLES_DEF = [
     ['admin', 'Dueño / Administrador', _MODKEYS.slice()],
     ['gerente', 'Gerente', _MODKEYS.filter(k => k !== 'ajustes')],
     // «Financiamiento fácil» (29-sep-2026): cajero y vendedor entran a Financiamiento (cuotas) para crear
     // solicitudes y cobrar; aprobar, planes y datos legales siguen siendo solo de admin/gerente (puedeVerMin).
     ['cajero', 'Cajero', ['inicio', 'vender', 'caja', 'clientes', 'ventas', 'cuotas']],
-    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'clientes', 'entidades', 'reacond', 'cuotas']]
+    ['vendedor', 'Vendedor', ['inicio', 'vender', 'factura', 'cotizaciones', 'crm', 'crm_bandeja', 'clientes', 'entidades', 'reacond', 'cuotas']]
   ];
   // Lee un campo de dinero (formato RD: punto=miles). FALTABA en este módulo: sin esto,
   // Reparaciones/Apartados/Cuotas reventaban en silencio al guardar (ReferenceError).
@@ -83,7 +86,12 @@
   // criterio de rol que puedeVerMin() sin ampliar su semántica global — si mañana el criterio de
   // "quién ve datos sensibles de costo" cambia, se toca aquí sin afectar renderProductos/abrirProd.
   function puedeVerCosto360() { return puedeVerMin(); }
-  function puedeVer(mod) {
+  // Permiso especial (CAPACIDADES): siempre para los roles de su lista; si no, según pos_acceso / los roles por defecto.
+  function puedeCap(cap) { const r = rolEfectivo(); const c = CAPACIDADES.find(x => x[0] === cap); return r === 'admin' || !!(c && c[2].indexOf(r) >= 0) || puedeVerBase(cap); }
+  // El menú muestra «CRM» a quien tenga el módulo o solo la Bandeja; adentro, cada parte se muestra según su permiso.
+  function puedeVer(mod) { return mod === 'crm' ? (puedeVerBase('crm') || puedeCap('crm_bandeja')) : puedeVerBase(mod); }
+  function crmPermisos() { return { crm: puedeVerBase('crm'), bandeja: puedeCap('crm_bandeja') }; }
+  function puedeVerBase(mod) {
     const r = rolEfectivo();
     if (mod === 'reacond' && _posCfg.reacondicionado !== true) return false;
     // STUDIO: el módulo «IA NEXUS» se retiró por decisión del dueño (2026-09-23). Oculto en menú, Inicio,
@@ -99,7 +107,7 @@
   function reacondOn() { return _posCfg.reacondicionado === true; }
   window.nxPosCtx = {
     renderPOS: function () { const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
-    rolEfectivo: rolEfectivo, puedeVer: puedeVer,
+    rolEfectivo: rolEfectivo, puedeVer: puedeVer, crmPermisos: crmPermisos,
     sesion: function () { try { return (typeof sesion !== 'undefined') ? sesion : window.sesion; } catch (e) { return window.sesion; } },
     // CRM (parches-pos-crm.js): clientes cargados, selector de cliente de Factura y atajos a Factura / Cotización.
     clientes: function () { return _clientes || []; },
@@ -2222,7 +2230,8 @@
     const mods = isNew ? ['inicio'] : accesoRol(rol);
     cerrarModal('nxAccForm');
     const chks = MODULOS.map(m => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${m[0]}"${mods.indexOf(m[0]) >= 0 ? ' checked' : ''}${m[0] === 'inicio' ? ' checked disabled' : ''}> ${m[1]}</label>`).join('');
-    const caps = FIN_COBRA_SIEMPRE.indexOf(rol) >= 0 ? '' : `<div style="font-size:11.5px;color:#475569;margin:12px 0 6px;font-weight:600">Permisos especiales</div><div class="nxEntAfines" style="grid-template-columns:1fr">${CAPACIDADES.map(c => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${c[0]}"${mods.indexOf(c[0]) >= 0 ? ' checked' : ''}> ${c[1]}</label>`).join('')}</div>`;
+    const capsRol = CAPACIDADES.filter(c => c[2].indexOf(rol) < 0);
+    const caps = !capsRol.length ? '' : `<div style="font-size:11.5px;color:#475569;margin:12px 0 6px;font-weight:600">Permisos especiales</div><div class="nxEntAfines" style="grid-template-columns:1fr">${capsRol.map(c => `<label class="nxEntAfin" style="font-size:12px"><input type="checkbox" id="acc_${c[0]}"${mods.indexOf(c[0]) >= 0 ? ' checked' : ''}> ${c[1]}</label>`).join('')}</div>`;
     const ov = document.createElement('div'); ov.id = 'nxAccForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:460px;max-height:92vh;display:flex;flex-direction:column">

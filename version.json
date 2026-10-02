@@ -1,7 +1,16 @@
 {
-  "version": "59.71",
+  "version": "59.72",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.72",
+      "fecha": "2026-10-02",
+      "notas": [
+        "CRM por rol: en Ajustes → Permisos por rol, «CRM» (Leads y Campañas) y «Bandeja de mensajes» (WhatsApp, Instagram, Facebook) se activan por separado.",
+        "Al inicio: administrador y gerente tienen todo; el vendedor tiene CRM y Bandeja; el cajero no ve ninguno hasta que se lo actives.",
+        "El servidor también lo exige: un rol sin permiso no puede leer los chats ni sus fotos aunque entre por otro lado."
+      ]
+    },
     {
       "version": "59.71",
       "fecha": "2026-10-02",

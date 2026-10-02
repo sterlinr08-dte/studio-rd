@@ -114,6 +114,21 @@ const URL = process.env.QA_URL || 'http://localhost:8790/docs/qa-crm/index.html'
     ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
     await p.close();
   }
+  // Permisos por rol (02-oct-2026): cada parte del CRM según su permiso; sin permiso no se piden los datos de la Bandeja.
+  console.log('\n--- permisos por rol');
+  for (const [perm, tabs, bandeja] of [['crm', ['Leads', 'Campañas'], false], ['bandeja', ['Mensajes', 'Redes'], true], ['ninguno', [], false]]) {
+    const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
+    const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.goto(URL + '?perm=' + perm); await p.waitForTimeout(800);
+    const vis = await p.$$eval('.crm-tab-seg', x => x.map(t => t.textContent.trim().replace(/\d+$/, '').trim()));
+    ok(JSON.stringify(vis) === JSON.stringify(tabs), `${perm}: pestañas ${JSON.stringify(vis)}`);
+    const pidio = await p.evaluate(() => LLAMADAS.some(l => l[1] === 'crm_conversaciones'));
+    ok(pidio === bandeja, `${perm}: ${bandeja ? 'carga' : 'no pide'} las conversaciones`);
+    if (perm === 'bandeja') { await p.click('#bdList .wa-row'); await p.waitForTimeout(400); ok(!(await p.$('text=Crear lead')), 'bandeja sin CRM: no ofrece «Crear lead»'); }
+    if (perm === 'ninguno') ok(!!(await p.$('text=Tu rol no tiene acceso al CRM')), 'sin permisos: aviso claro');
+    ok(errs.length === 0, `${perm}: sin errores de página` + (errs.length ? ': ' + errs.join(' | ') : ''));
+    await p.close();
+  }
   await b.close();
   console.log(`\n${fallos ? 'FALLAS: ' + fallos : 'TODO OK'}`); process.exitCode = fallos ? 1 : 0;
 })();

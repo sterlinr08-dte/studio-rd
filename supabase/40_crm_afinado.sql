@@ -7,70 +7,57 @@
 
 begin;
 
--- ── 1. RLS: mismas condiciones, calculadas una vez por consulta ─────────────────────────────────────────────────
-drop policy if exists crm_canales_sel on public.crm_canales;
-create policy crm_canales_sel on public.crm_canales for select
+-- ── 1. RLS: mismas condiciones, calculadas una vez por consulta (ALTER POLICY: sin ventana sin permisos) ─────────────────────────────────────────────────
+alter policy crm_canales_sel on public.crm_canales
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion()));
-drop policy if exists crm_canales_upd on public.crm_canales;
-create policy crm_canales_upd on public.crm_canales for update
+alter policy crm_canales_upd on public.crm_canales
   using ((select public.mi_rol()) in ('admin','gerente') and organizacion_id = (select public.mi_organizacion()))
   with check (organizacion_id = (select public.mi_organizacion()));
 
-drop policy if exists crm_conv_sel on public.crm_conversaciones;
-create policy crm_conv_sel on public.crm_conversaciones for select
+alter policy crm_conv_sel on public.crm_conversaciones
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())));
-drop policy if exists crm_conv_upd on public.crm_conversaciones;
-create policy crm_conv_upd on public.crm_conversaciones for update
+alter policy crm_conv_upd on public.crm_conversaciones
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())))
   with check (organizacion_id = (select public.mi_organizacion()));
 
-drop policy if exists crm_msg_sel on public.crm_mensajes;
-create policy crm_msg_sel on public.crm_mensajes for select
+alter policy crm_msg_sel on public.crm_mensajes
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and exists (select 1 from public.crm_conversaciones c where c.id = crm_mensajes.conversacion_id));
 
-drop policy if exists pos_crm_sel on public.pos_crm;
-create policy pos_crm_sel on public.pos_crm for select
+alter policy pos_crm_sel on public.pos_crm
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())));
-drop policy if exists pos_crm_upd on public.pos_crm;
-create policy pos_crm_upd on public.pos_crm for update
+alter policy pos_crm_upd on public.pos_crm
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())))
   with check (organizacion_id = (select public.mi_organizacion()));
-drop policy if exists pos_crm_ins on public.pos_crm;
-create policy pos_crm_ins on public.pos_crm for insert
+alter policy pos_crm_ins on public.pos_crm
   with check ((select public.mi_rol()) is not null and (organizacion_id is null or organizacion_id = (select public.mi_organizacion())));
-drop policy if exists pos_crm_del on public.pos_crm;
-create policy pos_crm_del on public.pos_crm for delete
+alter policy pos_crm_del on public.pos_crm
   using ((select public.mi_rol()) in ('admin','gerente') and organizacion_id = (select public.mi_organizacion()));
 
-drop policy if exists pos_crm_act_sel on public.pos_crm_actividades;
-create policy pos_crm_act_sel on public.pos_crm_actividades for select
+alter policy pos_crm_act_sel on public.pos_crm_actividades
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((crm_id is null and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())))
               or exists (select 1 from public.pos_crm c where c.id = pos_crm_actividades.crm_id)));
-drop policy if exists pos_crm_act_upd on public.pos_crm_actividades;
-create policy pos_crm_act_upd on public.pos_crm_actividades for update
+alter policy pos_crm_act_upd on public.pos_crm_actividades
   using ((select public.mi_rol()) is not null and organizacion_id = (select public.mi_organizacion())
          and ((crm_id is null and ((select public.mi_rol()) in ('admin','gerente') or asignado_id is null or asignado_id = (select public.mi_usuario_id())))
               or exists (select 1 from public.pos_crm c where c.id = pos_crm_actividades.crm_id)));
-drop policy if exists pos_crm_act_ins on public.pos_crm_actividades;
-create policy pos_crm_act_ins on public.pos_crm_actividades for insert
+alter policy pos_crm_act_ins on public.pos_crm_actividades
   with check ((select public.mi_rol()) is not null and (organizacion_id is null or organizacion_id = (select public.mi_organizacion()))
               and tipo <> all (array['etapa','sistema'])
               and (crm_id is null or exists (select 1 from public.pos_crm c where c.id = pos_crm_actividades.crm_id)));
-drop policy if exists pos_crm_act_del on public.pos_crm_actividades;
-create policy pos_crm_act_del on public.pos_crm_actividades for delete
+alter policy pos_crm_act_del on public.pos_crm_actividades
   using (organizacion_id = (select public.mi_organizacion()) and tipo <> all (array['etapa','sistema'])
          and ((select public.mi_rol()) in ('admin','gerente') or creado_por = (select auth.uid())));
 
 -- ── 2. Índices ───────────────────────────────────────────────────────────────────────────────────────────────────
 -- La lista pide archivada=false ordenada por ultimo_mensaje_at desc NULLS LAST: este índice la sirve sin ordenar.
 create index if not exists crm_conv_lista_idx on public.crm_conversaciones (organizacion_id, archivada, ultimo_mensaje_at desc nulls last);
-drop index if exists public.crm_conv_org_ult_idx;   -- reemplazado por el anterior
+-- crm_conv_org_ult_idx queda redundante con el anterior; se retira aparte (el MCP pide confirmación para DROP).
 -- Llaves foráneas sin índice (advisor).
 create index if not exists crm_conv_asignado_idx on public.crm_conversaciones (asignado_id) where asignado_id is not null;
 create index if not exists crm_conv_crm_idx on public.crm_conversaciones (crm_id) where crm_id is not null;

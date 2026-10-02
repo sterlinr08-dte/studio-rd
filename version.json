@@ -1,7 +1,18 @@
 {
-  "version": "59.72",
+  "version": "59.73",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.73",
+      "fecha": "2026-10-02",
+      "notas": [
+        "Configuración nueva: buscador, avisos de lo que falta (RNC, NCF por acabarse o por vencer, datos legales, permisos) y secciones que se abren por separado.",
+        "Empresa: nombre, RNC o cédula (verificados con la regla de la DGII), teléfono, dirección, correo y mensaje al pie; ya salen en facturas, tickets y contratos.",
+        "Equipo: lista de usuarios para cambiar rol (también los roles propios), almacén y clave, o desactivar y reactivar.",
+        "Contrato de financiamiento editable (título, texto y horas del enlace de firma), con revisión de las palabras automáticas.",
+        "Arreglo: los datos legales del contrato ya no se borran al guardarlos después de recargar."
+      ]
+    },
     {
       "version": "59.72",
       "fecha": "2026-10-02",

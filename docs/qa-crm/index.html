@@ -1,0 +1,71 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f6}#view{padding:12px}</style></head><body><div id="view"></div>
+<script>
+// ── Servidor simulado (PostgREST + funciones + storage + realtime) para probar parches-pos-crm.js tal cual ──
+window.LLAMADAS = []; window.CUENTA = { renderPOS: 0, get: {}, firmas: 0, firmasLote: 0 }; window.ENVIO_FALLA = false; window.CARGA_FALLA = false;
+const ISO = ms => new Date(ms).toISOString();
+const ahora = Date.now();
+const DB = { crm_canales: [ { id: 'c1', plataforma: 'whatsapp', nombre: 'STUDIO WhatsApp', identificador: '+18296247623', activo: true }, { id: 'c2', plataforma: 'instagram', nombre: 'STUDIO Instagram', identificador: 'studio__rd', activo: true } ],
+  crm_conversaciones: [], crm_mensajes: [], pos_crm: [], pos_crm_actividades: [] };
+const C1 = '11111111-1111-4111-8111-111111111111', VIEJO = '22222222-2222-4222-8222-222222222222';
+DB.crm_conversaciones.push({ id: C1, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+18095550001', telefono_e164: '+18095550001', contacto_nombre: 'Ana Gómez', ultimo_mensaje_at: ISO(ahora - 60e3), ultimo_mensaje_preview: 'msg 120', ultimo_inbound_at: ISO(ahora - 60e3), ultima_respuesta_at: ISO(ahora - 120e3), no_leidos: 2, archivada: false });
+DB.crm_conversaciones.push({ id: VIEJO, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+18095550002', telefono_e164: '+18095550002', contacto_nombre: 'Cliente Viejo', ultimo_mensaje_at: ISO(ahora - 90e3), ultimo_mensaje_preview: 'hace días', ultimo_inbound_at: ISO(ahora - 3 * 864e5), ultima_respuesta_at: ISO(ahora - 90e3), no_leidos: 0, archivada: false });
+for (let i = 3; i <= 450; i++) DB.crm_conversaciones.push({ id: 'w' + i, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+1809' + String(5550000 + i), telefono_e164: '+1809' + String(5550000 + i), contacto_nombre: 'Contacto ' + i, ultimo_mensaje_at: ISO(ahora - i * 3600e3), ultimo_mensaje_preview: 'hola ' + i, ultimo_inbound_at: ISO(ahora - i * 3600e3), no_leidos: 0, archivada: false });
+for (let i = 1; i <= 30; i++) DB.crm_conversaciones.push({ id: 'ig' + i, canal_id: 'c2', plataforma: 'instagram', contacto_id: 'ig' + i, contacto_usuario: 'usuario_ig_' + i, contacto_nombre: 'IG ' + i, ultimo_mensaje_at: ISO(ahora - i * 7200e3), ultimo_mensaje_preview: 'dm ' + i, ultimo_inbound_at: ISO(ahora - i * 7200e3), no_leidos: 0, archivada: false });
+for (let i = 1; i <= 5; i++) DB.crm_conversaciones.push({ id: 'ar' + i, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+1829000000' + i, telefono_e164: '+1829000000' + i, contacto_nombre: 'Archivado ' + i, ultimo_mensaje_at: ISO(ahora - (500 + i) * 3600e3), ultimo_mensaje_preview: 'viejo', archivada: true, no_leidos: 0 });
+for (let i = 1; i <= 120; i++) DB.crm_mensajes.push({ id: 'm' + i, conversacion_id: C1, direccion: i % 3 ? 'in' : 'out', tipo: i === 110 ? 'imagen' : 'texto', cuerpo: 'msg ' + i, media_path: i === 110 ? 'entrantes/whatsapp/imagen/foto.jpg' : null, estado: i % 3 ? 'recibido' : 'leido', created_at: ISO(ahora - (121 - i) * 60e3) });
+DB.crm_mensajes.push({ id: 'v1', conversacion_id: VIEJO, direccion: 'in', tipo: 'texto', cuerpo: 'hace días', estado: 'recibido', created_at: ISO(ahora - 3 * 864e5) });
+// filtros PostgREST mínimos
+function filtrar(tabla, qs) {
+  const p = new URLSearchParams(qs); let filas = DB[tabla].slice(); let orden = null, lim = null;
+  for (const [k, v] of p) {
+    if (k === 'select') continue;
+    if (k === 'order') { orden = v; continue; }
+    if (k === 'limit') { lim = +v; continue; }
+    if (k === 'or') { const conds = v.replace(/^\(|\)$/g, '').split(','); filas = filas.filter(f => conds.some(c => { const [col, op, ...r] = c.split('.'); const pat = r.join('.').replace(/\*/g, ''); return op === 'ilike' && String(f[col] || '').toLowerCase().includes(pat.toLowerCase()); })); continue; }
+    const [op, ...r] = v.split('.'); const val = r.join('.');
+    filas = filas.filter(f => op === 'eq' ? String(f[k]) === val : op === 'lt' ? Date.parse(f[k]) < Date.parse(val) : op === 'neq' ? String(f[k]) !== val : true);
+  }
+  if (orden) { const [col, dir] = orden.split('.'); filas.sort((a, b) => { const x = a[col] ? Date.parse(a[col]) || a[col] : -Infinity, y = b[col] ? Date.parse(b[col]) || b[col] : -Infinity; return (x < y ? -1 : x > y ? 1 : 0) * (dir === 'desc' ? -1 : 1); }); }
+  if (lim) filas = filas.slice(0, lim);
+  return JSON.parse(JSON.stringify(filas));
+}
+const espera = ms => new Promise(r => setTimeout(r, ms));
+window.API = { url: 'https://qa.local', key: 'anon', token: 'tok',
+  async get(t, qs) { await espera(15); LLAMADAS.push(['get', t, qs]); CUENTA.get[t] = (CUENTA.get[t] || 0) + 1; if (window.CARGA_FALLA) throw new Error('Failed to fetch'); if (!DB[t]) return []; return filtrar(t, qs); },
+  async post(t, b) { await espera(10); LLAMADAS.push(['post', t, b]); if (t.startsWith('rpc/')) return [{ id: 'u1', nom: 'Admin' }]; const f = Object.assign({ id: 'x' + Math.random().toString(36).slice(2) }, b); (DB[t] = DB[t] || []).push(f); return [f]; },
+  async patch(t, filtro, b) { await espera(10); LLAMADAS.push(['patch', t, filtro, b]); const id = filtro.split('eq.')[1]; const f = (DB[t] || []).find(x => String(x.id) === id); if (f) Object.assign(f, b); return f ? [JSON.parse(JSON.stringify(f))] : []; },
+  async del(t, filtro) { LLAMADAS.push(['del', t, filtro]); return []; }
+};
+window.toast = (t, m, s) => { (window.TOASTS = window.TOASTS || []).push([t, m, s]); };
+window.nxPosCtx = { renderPOS() { CUENTA.renderPOS++; document.getElementById('view').innerHTML = window.nxCRM.render(); }, sesion: () => ({ id: 'u1', nom: 'Admin' }), rolEfectivo: () => 'admin', clientes: () => [], elegirCliente() {}, nextSeq: async () => 'CRM-1', cotizar() {}, facturar() {} };
+// tiempo real simulado
+window.RT = { handlers: {}, subs: 0, removed: 0, canales: [] };
+window.supabase = { createClient: () => ({ realtime: { setAuth: async () => {} },
+  channel(topic) { const ch = { topic, h: {}, cb: null, on(type, cfg, fn) { ch.h[cfg.table] = fn; RT.handlers[cfg.table] = fn; return ch; }, subscribe(cb) { ch.cb = cb; RT.subs++; RT.canales.push(ch); setTimeout(() => cb('SUBSCRIBED'), 10); return ch; } }; return ch; },
+  removeChannel(ch) { RT.removed++; setTimeout(() => ch.cb && ch.cb('CLOSED'), 5); } }) };
+// funciones y storage
+const fetchReal = window.fetch;
+window.fetch = async (url, opt) => {
+  url = String(url); const body = opt && opt.body && typeof opt.body === 'string' ? JSON.parse(opt.body) : null;
+  const res = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: { 'Content-Type': 'application/json' } });
+  if (url.includes('/storage/v1/object/sign/crm-media')) {
+    if (body && body.paths) { CUENTA.firmasLote++; return res(body.paths.map(p => ({ path: p, signedURL: '/object/sign/crm-media/' + p + '?token=t' + Date.now(), error: null }))); }
+    CUENTA.firmas++; return res({ signedURL: '/object/sign/crm-media/x?token=t' });
+  }
+  if (url.includes('/functions/v1/crm-enviar')) {
+    LLAMADAS.push(['enviar', body]); await espera(30);
+    if (body.accion === 'plantillas') return res({ ok: true, plantillas: [{ nombre: 'seguimiento_cliente', idioma: 'es', categoria: 'UTILITY', cuerpo: 'Hola {{1}}, ¿seguimos?', variables: ['1'] }] });
+    if (window.ENVIO_FALLA) return res({ ok: false, error: 'zernio_error' }, 502);
+    // el servidor guarda con su propia hora (reloj del servidor 3 s ATRÁS del teléfono, para probar la burbuja provisional)
+    const m = { id: 'srv' + Math.random().toString(36).slice(2), conversacion_id: body.conversacion_id, direccion: 'out', tipo: body.plantilla ? 'plantilla' : 'texto', cuerpo: body.texto, estado: 'enviado', idempotency_key: body.idempotency_key, responde_a_id: body.responde_a_id || null, created_at: ISO(Date.now() - 3000) };
+    DB.crm_mensajes.push(m);
+    if (window.RT_EVENTOS !== false) setTimeout(() => RT.handlers.crm_mensajes && RT.handlers.crm_mensajes({ eventType: 'INSERT', new: JSON.parse(JSON.stringify(m)) }), 40);
+    return res({ ok: true, id: m.id });
+  }
+  return fetchReal(url, opt);
+};
+</script>
+<script src="../../parches-pos-crm.js"></script>
+<script>window.nxPosCtx.renderPOS();</script>
+</body></html>

@@ -7,6 +7,9 @@
 //     queda con el mensaje más reciente (el trigger crm_msg_resumen los toca al insertar);
 //   · los adjuntos viejos no se descargan: quedan como «[Foto del historial]», igual que en Bayol.
 // Nunca envía nada. Paginado: el navegador llama de nuevo con `cursor` hasta que no haya más.
+// 02-oct-2026 (CRM afinado): la red de «mismo texto ±2 min» ya no se aplica a los marcadores de adjuntos viejos
+// («[Foto del historial]»…) ni a textos repetidos idénticos de una ráfaga (antes descartaba fotos/audios reales); inserción
+// por lotes; y la restauración de «no leídos»/archivada/vista previa ocurre SIEMPRE (también si algo falla a mitad).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -88,6 +91,7 @@ async function importarChat(canal: Any, conv: Any, canales: Any[]) {
   if (!c) throw new Error("conversacion no disponible");
 
   let cursor: string | undefined, paginas = 0, vistos = 0, nuevos = 0;
+  try {
   do {
     const r = await zget(`/inbox/conversations/${encodeURIComponent(conv.id)}/messages`, { accountId: canal.zernio_account_id, limit: 100, sortOrder: "desc", cursor });
     const msgs: Any[] = Array.isArray(r?.messages) ? r.messages : Array.isArray(r?.data) ? r.data : [];
@@ -109,24 +113,37 @@ async function importarChat(canal: Any, conv: Any, canales: Any[]) {
       const tiempos = filas.map((f) => new Date(f.created_at).getTime());
       const { data: cerca } = await db.from("crm_mensajes").select("direccion, cuerpo, created_at").eq("conversacion_id", c!.id)
         .gte("created_at", new Date(Math.min(...tiempos) - 120000).toISOString()).lte("created_at", new Date(Math.max(...tiempos) + 120000).toISOString());
-      const igual = (f: Any) => (cerca ?? []).some((x: Any) => x.direccion === f.direccion && String(x.cuerpo ?? "") === String(f.cuerpo ?? "") && Math.abs(new Date(x.created_at).getTime() - new Date(f.created_at).getTime()) < 120000);
+      // Solo para texto real: un marcador de adjunto viejo o un texto repetido en la misma página no son «el mismo mensaje».
+      const repetidos = new Map<string, number>();
+      filas.forEach((f) => { const k = f.direccion + "|" + f.cuerpo; repetidos.set(k, (repetidos.get(k) ?? 0) + 1); });
+      const marcador = (t: unknown) => /^\[[^\]]*\]$/.test(String(t ?? "").trim());
+      const igual = (f: Any) => f.tipo === "texto" && !marcador(f.cuerpo) && (repetidos.get(f.direccion + "|" + f.cuerpo) ?? 0) === 1 &&
+        (cerca ?? []).some((x: Any) => x.direccion === f.direccion && String(x.cuerpo ?? "") === String(f.cuerpo ?? "") && Math.abs(new Date(x.created_at).getTime() - new Date(f.created_at).getTime()) < 120000);
       const nuevas = filas.filter((f) => !hay.has(f.proveedor_msg_id) && !(f._alt && hay.has(f._alt)) && !igual(f)).map(({ _alt, ...f }) => f);
-      for (const f of nuevas) {
-        const ins = await db.from("crm_mensajes").insert(f);
-        if (!ins.error) nuevos++; else if (ins.error.code !== "23505") throw new Error("mensaje: " + ins.error.message);
+      if (nuevas.length) {
+        const lote = await db.from("crm_mensajes").insert(nuevas);
+        if (!lote.error) nuevos += nuevas.length;
+        else if (lote.error.code === "23505") {   // alguno ya entró por el webhook mientras tanto: de uno en uno
+          for (const f of nuevas) {
+            const ins = await db.from("crm_mensajes").insert(f);
+            if (!ins.error) nuevos++; else if (ins.error.code !== "23505") throw new Error("mensaje: " + ins.error.message);
+          }
+        } else throw new Error("mensaje: " + lote.error.message);
       }
     }
     paginas++;
     cursor = r?.pagination?.hasMore && r?.pagination?.nextCursor ? String(r.pagination.nextCursor) : undefined;
   } while (cursor && paginas < 20);
-
-  // El trigger de resumen sumó «no leídos», desarchivó y dejó de vista previa el último INSERTADO (no el más reciente).
-  const { data: ult } = await db.from("crm_mensajes").select("cuerpo, tipo").eq("conversacion_id", c.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  await db.from("crm_conversaciones").update({
-    no_leidos: previo.no_leidos, archivada: previo.archivada,
-    ...(ult ? { ultimo_mensaje_preview: String(ult.cuerpo || `[${ult.tipo}]`).slice(0, 200) } : {}),
-    ...(conv.participantName ? { contacto_nombre: conv.participantName } : {}),
-  }).eq("id", c.id);
+  } finally {
+    // El trigger de resumen pudo sumar «no leídos», desarchivar o dejar de vista previa un mensaje viejo: se restaura
+    // siempre, aunque la importación de este chat se haya cortado a mitad.
+    const { data: ult } = await db.from("crm_mensajes").select("cuerpo, tipo").eq("conversacion_id", c.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    await db.from("crm_conversaciones").update({
+      no_leidos: previo.no_leidos, archivada: previo.archivada,
+      ...(ult ? { ultimo_mensaje_preview: Array.from(String(ult.cuerpo || `[${ult.tipo}]`)).slice(0, 200).join("") } : {}),
+      ...(conv.participantName ? { contacto_nombre: conv.participantName } : {}),
+    }).eq("id", c.id);
+  }
   return { ok: true, vistos, nuevos, truncado: !!cursor };
 }
 

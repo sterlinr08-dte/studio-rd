@@ -1,7 +1,18 @@
 {
-  "version": "59.70",
+  "version": "59.71",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.71",
+      "fecha": "2026-10-02",
+      "notas": [
+        "CRM sin lag: abrir o cerrar un chat ya no redibuja toda la pantalla; la lista se queda donde estaba.",
+        "Bandeja: se ven todas las conversaciones (Cargar más), el buscador encuentra chats viejos y hay filtro Archivadas con «Devolver a la bandeja».",
+        "Tiempo real más estable al volver a la app en el iPhone; fotos y audios ya no se rompen después de una hora.",
+        "Si se cae la conexión, la lista se queda con un aviso; un chat que no carga ofrece «Reintentar».",
+        "iPhone: escribir en el chat ya no hace zoom."
+      ]
+    },
     {
       "version": "59.70",
       "fecha": "2026-09-30",

@@ -1,7 +1,8 @@
 // QA del CRM afinado (02-oct-2026): parches-pos-crm.js real contra un servidor simulado (index.html).
+// Uso: desde la raíz del repo, python3 -m http.server 8790 y cambiar URL a http://localhost:8790/docs/qa-crm/index.html; luego node docs/qa-crm/qa.cjs
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 let fallos = 0; const ok = (c, m) => { console.log((c ? 'OK    ' : 'FALLA ') + m); if (!c) fallos++; };
-const URL = 'http://localhost:8790/index.html';
+const URL = process.env.QA_URL || 'http://localhost:8790/docs/qa-crm/index.html';
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   for (const [w, h] of [[1280, 800], [390, 844]]) {

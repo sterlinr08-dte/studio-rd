@@ -1,5 +1,7 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f6}#view{padding:12px}</style></head><body><div id="view"></div>
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f6}#view{padding:12px}
+/* Ventanas como en la app (overlay fijo centrado), para que las pruebas toquen los botones donde los ve el usuario */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:999}.overlay .modal{background:#fff;padding:14px;border-radius:16px;max-height:90vh;overflow:auto;width:calc(100% - 24px);box-sizing:border-box}.overlay .mt{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:8px}</style></head><body><div id="view"></div>
 <script>
 // ── Servidor simulado (PostgREST + funciones + storage + realtime) para probar parches-pos-crm.js tal cual ──
 window.LLAMADAS = []; window.CUENTA = { renderPOS: 0, get: {}, firmas: 0, firmasLote: 0 }; window.ENVIO_FALLA = false; window.CARGA_FALLA = false;
@@ -62,6 +64,7 @@ const fetchReal = window.fetch;
 window.fetch = async (url, opt) => {
   url = String(url); const body = opt && opt.body && typeof opt.body === 'string' ? JSON.parse(opt.body) : null;
   const res = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: { 'Content-Type': 'application/json' } });
+  if (/\/storage\/v1\/object\/crm-media\//.test(url) && opt && opt.method === 'POST') { LLAMADAS.push(['subir', url.split('/crm-media/')[1]]); await espera(60); return res({ Key: 'crm-media/x' }); }
   if (url.includes('/storage/v1/object/sign/crm-media')) {
     if (window.FIRMA_FALLA) return res({ error: 'no' }, 500);
     if (body && body.paths) { CUENTA.firmasLote++; return res(body.paths.map(p => ({ path: p, signedURL: '/object/sign/crm-media/' + p + '?token=t' + Date.now(), error: null }))); }
@@ -72,7 +75,7 @@ window.fetch = async (url, opt) => {
     if (body.accion === 'plantillas') return res({ ok: true, plantillas: [{ nombre: 'seguimiento_cliente', idioma: 'es', categoria: 'UTILITY', cuerpo: 'Hola {{1}}, ¿seguimos?', variables: ['1'] }] });
     if (window.ENVIO_FALLA) return res({ ok: false, error: 'zernio_error' }, 502);
     // el servidor guarda con su propia hora (reloj del servidor 3 s ATRÁS del teléfono, para probar la burbuja provisional)
-    const m = { id: 'srv' + Math.random().toString(36).slice(2), conversacion_id: body.conversacion_id, direccion: 'out', tipo: body.plantilla ? 'plantilla' : 'texto', cuerpo: body.texto, estado: 'enviado', idempotency_key: body.idempotency_key, responde_a_id: body.responde_a_id || null, created_at: ISO(Date.now() - 3000) };
+    const m = { id: 'srv' + Math.random().toString(36).slice(2), conversacion_id: body.conversacion_id, direccion: 'out', tipo: body.plantilla ? 'plantilla' : body.adjunto_path ? body.adjunto_tipo : body.ubicacion ? 'ubicacion' : body.contacto ? 'contacto' : 'texto', cuerpo: body.ubicacion ? JSON.stringify(body.ubicacion) : body.contacto ? JSON.stringify(body.contacto) : (body.texto || null), media_path: body.adjunto_path || null, estado: 'enviado', idempotency_key: body.idempotency_key, responde_a_id: body.responde_a_id || null, created_at: ISO(Date.now() - 3000) };
     DB.crm_mensajes.push(m);
     if (window.RT_EVENTOS !== false) setTimeout(() => RT.handlers.crm_mensajes && RT.handlers.crm_mensajes({ eventType: 'INSERT', new: JSON.parse(JSON.stringify(m)) }), 40);
     return res({ ok: true, id: m.id });

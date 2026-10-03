@@ -13,6 +13,11 @@
 //     24 h esté cerrada (es justo para eso); se registra tipo «plantilla» con el texto ya rellenado;
 //   · responde_a_id → cita el mensaje (replyTo a Zernio); si Zernio lo rechaza con 4xx se reintenta sin cita;
 //   · si el eco del teléfono (message.sent) ya guardó ese mismo id de WhatsApp, se borra la copia y no se queda «pendiente».
+// 03-oct-2026 (paridad con Bayol Cell, fase 2):
+//   · nota_voz:true con adjunto de audio → en WhatsApp se manda como NOTA DE VOZ por multipart (voiceNote:"true"); Zernio
+//     la convierte a ogg/Opus, así sirve también lo que graba el iPhone (audio/mp4). Igual que whatsapp-enviar de Bayol;
+//   · ubicacion:{lat,lng,nombre?} y contacto:{nombre,telefono} (solo WhatsApp) → location / contacts de Zernio; se guardan
+//     como tipo «ubicacion» / «contacto» con el dato en JSON en el cuerpo.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -41,6 +46,21 @@ async function zernio(convId: string, accountId: string, campos: Record<string, 
     return { ok: r.ok && !!data?.success, status: r.status, data };
   }
   return { ok: false, status: 404, data: { code: "CONVERSATION_NOT_FOUND" } };
+}
+
+// Nota de voz: se descarga lo que el navegador subió (URL firmada) y se reenvía a Zernio como form-data con voiceNote.
+async function zernioNotaVoz(convId: string, accountId: string, audioUrl: string, idem: string, replyTo: string | null = null) {
+  const a = await fetch(audioUrl, { signal: AbortSignal.timeout(20000) });
+  if (!a.ok) throw new Error("no se pudo leer el audio subido (" + a.status + ")");
+  const blob = await a.blob();
+  const form = new FormData();
+  form.append("accountId", accountId); form.append("attachment", blob, "nota-voz"); form.append("voiceNote", "true");
+  if (replyTo) form.append("replyTo", replyTo);
+  const r = await fetch(`https://zernio.com/api/v1/inbox/conversations/${encodeURIComponent(convId)}/messages`, {
+    method: "POST", headers: { Authorization: `Bearer ${ZERNIO_API_KEY}`, "Idempotency-Key": idem }, body: form, signal: AbortSignal.timeout(25000),
+  });
+  const data = await r.json().catch(() => null);
+  return { ok: r.ok && !!data?.success, status: r.status, data };
 }
 
 // Placeholders del cuerpo de una plantilla: {{1}}, {{2}}… (posicionales) o {{nombre}} (nombrados).
@@ -83,6 +103,12 @@ Deno.serve(async (req) => {
   const adjPath = b.adjunto_path ? String(b.adjunto_path) : null, adjTipo = String(b.adjunto_tipo ?? "documento"), adjNombre = b.adjunto_nombre ? String(b.adjunto_nombre) : null;
   const respondeA = b.responde_a_id && UUID.test(String(b.responde_a_id)) ? String(b.responde_a_id) : null;
   const pl = b.plantilla && typeof b.plantilla === "object" ? b.plantilla as Record<string, unknown> : null;
+  const notaVoz = b.nota_voz === true;
+  const ub = b.ubicacion && typeof b.ubicacion === "object" ? b.ubicacion as Record<string, unknown> : null;
+  const ubic = ub && isFinite(Number(ub.lat)) && isFinite(Number(ub.lng)) && Math.abs(Number(ub.lat)) <= 90 && Math.abs(Number(ub.lng)) <= 180
+    ? { lat: Number(ub.lat), lng: Number(ub.lng), nombre: ub.nombre ? String(ub.nombre).slice(0, 120) : null } : null;
+  const ct = b.contacto && typeof b.contacto === "object" ? b.contacto as Record<string, unknown> : null;
+  const cont = ct && String(ct.nombre ?? "").trim() ? { nombre: String(ct.nombre).trim().slice(0, 120), telefono: String(ct.telefono ?? "").replace(/[^\d+]/g, "").slice(0, 20) || null } : null;
 
   // Lista de plantillas aprobadas de la línea de esta conversación (solo lectura).
   if (b.accion === "plantillas") {
@@ -100,7 +126,9 @@ Deno.serve(async (req) => {
 
   if (!UUID.test(convId) || !UUID.test(idem)) return json({ ok: false, error: "datos_invalidos" }, 400);
   if (pl && (!pl.nombre || !pl.idioma)) return json({ ok: false, error: "plantilla_invalida" }, 400);
-  if (!texto && !adjPath && !pl) return json({ ok: false, error: "mensaje_vacio" }, 400);
+  if (!texto && !adjPath && !pl && !ubic && !cont) return json({ ok: false, error: "mensaje_vacio" }, 400);
+  if (b.ubicacion && !ubic) return json({ ok: false, error: "ubicacion_invalida" }, 400);
+  if (b.contacto && !cont) return json({ ok: false, error: "contacto_invalido" }, 400);
   if (texto.length > 4000) return json({ ok: false, error: "mensaje_largo" }, 400);
   if (adjPath && !adjPath.startsWith("salientes/")) return json({ ok: false, error: "adjunto_invalido" }, 400);
 
@@ -117,6 +145,7 @@ Deno.serve(async (req) => {
   if (!ZERNIO_API_KEY) return json({ ok: false, error: "sin_configurar", mensaje: "Falta configurar la conexión con Zernio en el servidor." }, 503);
   if (!conv.zernio_conversation_id) return json({ ok: false, error: "sin_conversacion", mensaje: "Esta conversación todavía no tiene id en Zernio." }, 409);
   if (pl && conv.plataforma !== "whatsapp") return json({ ok: false, error: "plantilla_invalida", mensaje: "Las plantillas son solo para WhatsApp." }, 400);
+  if ((ubic || cont) && conv.plataforma !== "whatsapp") return json({ ok: false, error: "solo_whatsapp", mensaje: "La ubicación y los contactos solo se pueden enviar por WhatsApp." }, 400);
   if (conv.plataforma === "whatsapp" && !pl) {
     const h = conv.ultimo_inbound_at ? (Date.now() - new Date(conv.ultimo_inbound_at).getTime()) / 36e5 : Infinity;
     if (h > 24) return json({ ok: false, error: "ventana_cerrada", mensaje: "Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas." }, 409);
@@ -125,7 +154,7 @@ Deno.serve(async (req) => {
   const { data: yo } = await db.from("profiles").select("usuario_sistema_id").eq("id", u.user.id).maybeSingle();
   const { data: us } = yo?.usuario_sistema_id ? await db.from("usuarios_sistema").select("nom").eq("id", yo.usuario_sistema_id).maybeSingle() : { data: null };
   const nom = us?.nom ?? null;
-  const tipo = pl ? "plantilla" : adjPath ? adjTipo : "texto";
+  const tipo = pl ? "plantilla" : adjPath ? adjTipo : ubic ? "ubicacion" : cont ? "contacto" : "texto";
   // Mensaje citado: debe ser de ESTA conversación; su id de WhatsApp va como replyTo (Instagram/Facebook no lo admiten).
   let replyTo: string | null = null, respondeOk: string | null = null;
   if (respondeA && !pl) {
@@ -133,7 +162,7 @@ Deno.serve(async (req) => {
     if (orig && orig.conversacion_id === conv.id) { respondeOk = orig.id; if (conv.plataforma === "whatsapp") replyTo = orig.proveedor_msg_id ?? null; }
   }
   const reg = await db.from("crm_mensajes").insert({
-    organizacion_id: conv.organizacion_id, conversacion_id: conv.id, direccion: "out", tipo, cuerpo: texto || (pl ? String(pl.nombre) : null), media_path: adjPath,
+    organizacion_id: conv.organizacion_id, conversacion_id: conv.id, direccion: "out", tipo, cuerpo: ubic ? JSON.stringify(ubic) : cont ? JSON.stringify(cont) : texto || (pl ? String(pl.nombre) : null), media_path: adjPath,
     estado: "pendiente", idempotency_key: idem, enviado_por: yo?.usuario_sistema_id ?? null, enviado_por_nombre: nom, responde_a_id: respondeOk,
   }).select("id").single();
   if (reg.error) {
@@ -156,13 +185,21 @@ Deno.serve(async (req) => {
     campos.attachmentUrl = s.data.signedUrl; campos.attachmentType = ATT[adjTipo] ?? "file";
     if (adjNombre && adjTipo === "documento") campos.attachmentName = adjNombre;
     if (texto) campos.message = texto;
+  } else if (ubic) {
+    campos.location = { latitude: ubic.lat, longitude: ubic.lng };
+  } else if (cont) {
+    campos.contacts = [{ name: { formatted_name: cont.nombre }, ...(cont.telefono ? { phones: [{ phone: cont.telefono }] } : {}) }];
   } else campos.message = texto;
 
   let r;
   try {
+    if (notaVoz && adjPath && adjTipo === "audio" && conv.plataforma === "whatsapp") {
+      r = await zernioNotaVoz(conv.zernio_conversation_id, canal.zernio_account_id, String(campos.attachmentUrl), idem, replyTo);
+      if (!r.ok && replyTo && r.status >= 400 && r.status < 500) r = await zernioNotaVoz(conv.zernio_conversation_id, canal.zernio_account_id, String(campos.attachmentUrl), idem + ":sin-cita");
+    } else
     r = await zernio(conv.zernio_conversation_id, canal.zernio_account_id, campos, idem, replyTo);
     // Un 4xx con cita pudo ser por el replyTo: se reintenta sin citar (un 5xx no, podría haberse enviado ya).
-    if (!r.ok && replyTo && r.status >= 400 && r.status < 500 && r.data?.code !== "CONVERSATION_NOT_FOUND") {
+    if (!r.ok && replyTo && !notaVoz && r.status >= 400 && r.status < 500 && r.data?.code !== "CONVERSATION_NOT_FOUND") {
       console.error("envío con cita rechazado, reintento sin cita:", r.status);
       r = await zernio(conv.zernio_conversation_id, canal.zernio_account_id, campos, idem + ":sin-cita");
     }

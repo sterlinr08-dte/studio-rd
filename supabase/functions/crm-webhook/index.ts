@@ -134,7 +134,14 @@ async function procesarMensaje(p: Any, canal: Any, canales: Any[]) {
   let tipo = "texto", mediaPath: string | null = null;
   const adj = Array.isArray(msg.attachments) ? msg.attachments : [];
   if (adj.length) tipo = tipoAdjunto(adj[0].type || adj[0].originalType);
-  const cuerpo: string = msg.text ?? msg.body ?? (p.metadata?.unsupported ? "[mensaje no soportado]" : "");
+  // Mensajes que WhatsApp no entrega a sistemas externos (contacto compartido, borrado por el cliente…): se guarda un
+  // texto que dice qué pasó y qué hacer, igual que Bayol (antes «[mensaje no soportado]», que parecía una falla).
+  const sinSop = p.metadata?.unsupported ?? null, codSop = Number(sinSop?.code) || 0;
+  const textoSop = codSop === 131060 ? "⚠️ Mensaje no disponible: el cliente lo eliminó o WhatsApp ya no lo entrega."
+    : codSop === 131051 ? "📇 WhatsApp no envía este tipo de mensaje (por ejemplo un contacto compartido) a sistemas externos. Ábrelo desde el celular."
+    : "⚠️ WhatsApp no entregó el contenido de este mensaje. Ábrelo desde el celular para verlo.";
+  const crudo = typeof (msg.text ?? msg.body) === "string" ? String(msg.text ?? msg.body).trim() : "";
+  const cuerpo: string = crudo && crudo !== "[Unsupported message]" ? crudo : (sinSop || crudo === "[Unsupported message]") && !adj.length ? textoSop : crudo;
   const pid: string | null = msg.platformMessageId ?? msg.id ?? null;
   // La hora del MENSAJE manda: en un reintento tardío la hora del evento es posterior y desordenaba el chat.
   const cuando = msg.timestamp ?? msg.createdAt ?? p.timestamp ?? new Date().toISOString();

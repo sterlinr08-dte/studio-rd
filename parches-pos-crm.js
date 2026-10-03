@@ -428,7 +428,7 @@
   // 24 h de WhatsApp, canal activo). Nada se envía solo: únicamente cuando el empleado pulsa Enviar.
   const PLAT = { whatsapp: ['WhatsApp', 'ti-brand-whatsapp', '#15803d'], instagram: ['Instagram', 'ti-brand-instagram', '#c13584'], facebook: ['Facebook', 'ti-brand-messenger', '#1877f2'] };
   const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todos', asig: 'todas', linea: '', red: 'instagram', buscando: false, q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '',
-    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null, firmaFallo: {},
+    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null, firmaFallo: {}, nuevos: 0, bq: '', bqI: 0, grab: null, reenv: null,
     // 02-oct-2026 (CRM afinado): lista paginada por plataforma, búsqueda en el servidor, archivadas, estado de carga del
     // chat y repintado por partes (cabecera, lista y pie) en vez de redibujar todo el POS.
     clave: '', convsMas: false, cargandoMas: false, cargandoLista: false, avisoRed: '', listaHTML: '', listaScroll: 0, msgsEstado: '', firmaCab: '', firmaPie: '' };
@@ -591,11 +591,21 @@
   }
   function bdIcono(e) { return ({ pendiente: '<i class="ti ti-clock"></i>', enviado: '<i class="ti ti-check"></i>', entregado: '<i class="ti ti-checks"></i>', leido: '<i class="ti ti-checks" style="color:#53bdeb"></i>', fallido: '<i class="ti ti-alert-circle" style="color:#dc2626"></i>' })[e] || ''; }
   function bdQuien(m, nombre) { return m.direccion === 'out' ? 'Tú' : (nombre || 'Cliente'); }
-  function bdResumen(m) { if (!m) return ''; if (m.cuerpo) return String(m.cuerpo); return ({ imagen: '📷 Foto', video: '🎥 Video', audio: '🎤 Audio', documento: '📄 Documento', plantilla: '📋 Plantilla' })[m.tipo] || 'Mensaje'; }
+  function bdResumen(m) { if (!m) return ''; if (m.tipo === 'ubicacion') return '📍 Ubicación'; if (m.tipo === 'contacto') { const j = bdJson(m.cuerpo); return '👤 ' + ((j && j.nombre) || 'Contacto'); } if (m.cuerpo) return String(m.cuerpo); return ({ imagen: '📷 Foto', video: '🎥 Video', audio: '🎤 Audio', documento: '📄 Documento', plantilla: '📋 Plantilla' })[m.tipo] || 'Mensaje'; }
+  function bdJson(t) { try { const j = JSON.parse(t); return j && typeof j === 'object' ? j : null; } catch (e) { return null; } }
+  // Ubicación y contacto (paridad Bayol): tarjetas en vez del JSON crudo.
+  function bdTarjeta(m) {
+    const j = bdJson(m.cuerpo);
+    if (m.tipo === 'ubicacion' && j && isFinite(+j.lat) && isFinite(+j.lng)) return `<a class="bd-card" href="https://www.google.com/maps?q=${+j.lat},${+j.lng}" target="_blank" rel="noopener"><i class="ti ti-map-pin"></i><span><b>${esc(j.nombre || 'Ubicación')}</b><small>Abrir en Google Maps</small></span></a>`;
+    if (m.tipo === 'contacto' && j) return `<div class="bd-card"><i class="ti ti-user-circle"></i><span><b>${esc(j.nombre || 'Contacto')}</b>${j.telefono ? `<a href="tel:${esc(j.telefono)}">${esc(j.telefono)}</a>` : ''}</span></div>`;
+    return '';
+  }
   function bdPuedeCitar(c) { return !!c && c.plataforma === 'whatsapp'; }
   function bdBurbuja(m, nombre) {
     const out = m.direccion === 'out', u = bdUrl(m.media_path), tmp = String(m.id).startsWith('tmp-');
-    const media = m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen" onload="window.nxCRM.bdMediaLista()" onerror="window.nxCRM.bdMediaFallo('${esc(m.media_path)}')"></a>` : m.tipo === 'audio' ? `<audio controls preload="metadata" src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls preload="metadata" src="${esc(u)}" onloadedmetadata="window.nxCRM.bdMediaLista()"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : ((BD.firmaFallo[m.media_path] || 0) >= 2 ? `<div class="ld bd-nodisp"><i class="ti ti-photo-off"></i> Adjunto no disponible <button type="button" class="btn-mini" onclick="window.nxCRM.bdMediaReintentar('${esc(m.media_path)}')">Reintentar</button></div>` : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`)) : '';
+    const local = !m.media_path && m._local ? (m.tipo === 'imagen' ? `<img src="${esc(m._local)}" alt="Imagen">` : m.tipo === 'video' ? `<video src="${esc(m._local)}" muted></video>` : m.tipo === 'audio' ? `<audio controls src="${esc(m._local)}"></audio>` : `<div class="ld"><i class="ti ti-file"></i> ${esc(m._nombre || 'Archivo')}</div>`) + (m.estado === 'pendiente' ? '<div class="bd-subiendo"><i class="ti ti-loader-2 crm-girando"></i> Enviando…</div>' : '') : '';
+    const tarjeta = (m.tipo === 'ubicacion' || m.tipo === 'contacto') ? bdTarjeta(m) : '';
+    const media = local || (m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen" onload="window.nxCRM.bdMediaLista()" onerror="window.nxCRM.bdMediaFallo('${esc(m.media_path)}')"></a>` : m.tipo === 'audio' ? `<audio controls preload="metadata" src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls preload="metadata" src="${esc(u)}" onloadedmetadata="window.nxCRM.bdMediaLista()"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : ((BD.firmaFallo[m.media_path] || 0) >= 2 ? `<div class="ld bd-nodisp"><i class="ti ti-photo-off"></i> Adjunto no disponible <button type="button" class="btn-mini" onclick="window.nxCRM.bdMediaReintentar('${esc(m.media_path)}')">Reintentar</button></div>` : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`)) : '');
     let cita = '';
     if (m.responde_a_id) {
       const o = BD.msgs.find(x => String(x.id) === String(m.responde_a_id));
@@ -607,7 +617,8 @@
     const fallo = m.estado === 'fallido' ? `<div class="err">No se envió.${m.error ? ' ' + esc(bdErrorLegible(m.error)) : ''}${out && (m.cuerpo || tmp) && m.tipo !== 'plantilla' ? ` <button type="button" class="bd-reint" onclick="window.nxCRM.bdReintentar('${m.id}')"><i class="ti ti-refresh"></i> Reintentar</button>` : ''}</div>` : '';
     return `<div class="wa-brow ${out ? 'out' : 'in'}"><div class="wa-bubble-wrap" style="background:${m.estado === 'fallido' ? '#fee2e2' : out ? '#dcf8c6' : '#fff'}">${resp}
       <div class="who" style="color:${out ? '#166534' : '#128C7E'}">${out ? 'Tú (STUDIO)' + (m.enviado_por_nombre ? ' · ' + esc(m.enviado_por_nombre) : m.desde_telefono ? ' · desde el teléfono' : '') : esc(nombre)}</div>
-      ${cita}${plant}${media}${m.cuerpo ? `<div class="tx">${bdTexto(m.cuerpo)}</div>` : ''}
+      ${!tmp ? `<button type="button" class="bd-mmenu" onclick="window.nxCRM.bdMsgMenu(event,'${esc(m.id)}')" title="Opciones" aria-label="Opciones del mensaje"><i class="ti ti-chevron-down"></i></button>` : ''}
+      ${cita}${plant}${media}${tarjeta}${m.cuerpo && !tarjeta ? `<div class="tx">${bdTexto(m.cuerpo)}</div>` : ''}
       <div class="wa-tick-line">${hora(m.created_at)} ${out ? bdIcono(m.estado) : ''}</div>
       ${fallo}</div></div>`;
   }
@@ -628,7 +639,7 @@
     return BD.msgs.map(m => {
       const d = diaRD(m.created_at), sep = d !== dia; dia = d;
       const o = m.responde_a_id ? BD.msgs.find(x => String(x.id) === String(m.responde_a_id)) : null;
-      const k = [m.estado, m.cuerpo, m.media_path ? (bdUrl(m.media_path) || ((BD.firmaFallo[m.media_path] || 0) >= 2 ? 'f' : 'p')) : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
+      const k = [m.estado, m.cuerpo, m._local ? 'l' : '', m.media_path ? (bdUrl(m.media_path) || ((BD.firmaFallo[m.media_path] || 0) >= 2 ? 'f' : 'p')) : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
       return { id: String(m.id), k: k, html: (sep ? `<div class="wa-dia">${bdDiaTxt(d, m.created_at)}</div>` : '') + bdBurbuja(m, nom) };
     });
   }
@@ -710,6 +721,7 @@
       const dist = box.scrollHeight - box.scrollTop - box.clientHeight;
       BD.pegadoAbajo = dist < 80;
       const b = document.getElementById('bdAbajo'); if (b) b.classList.toggle('on', dist > 300);
+      if (BD.pegadoAbajo && BD.nuevos) bdNuevos(0);
       if (box.scrollTop < 150) bdCargarViejos();
     }, { passive: true });
     // Deslizar a la derecha sobre un mensaje = responderlo (como en WhatsApp).
@@ -759,8 +771,9 @@
     if (!c) return '<div class="wa-chat-empty">Selecciona una conversación de la lista.</div>';
     BD.firmaCab = bdFirmaCab(c); BD.firmaPie = bdFirmaPie(c);
     return `<div id="bdCab" class="bd-parte">${bdCabHTML(c)}</div>
+      <div id="bdBusqChat" class="bd-busq-chat" hidden></div>
       <div id="bdMsgs" class="wa-msgs">${bdMsgsHTML()}</div>
-      <button type="button" id="bdAbajo" class="bd-abajo" onclick="window.nxCRM.bdAbajo()" aria-label="Ir a los últimos mensajes"><i class="ti ti-chevron-down"></i></button>
+      <button type="button" id="bdAbajo" class="bd-abajo" onclick="window.nxCRM.bdAbajo()" aria-label="Ir a los últimos mensajes"><i class="ti ti-chevron-down"></i><span class="bd-nuevos" hidden></span></button>
       <div id="bdPie" class="bd-parte">${bdPieHTML(c)}</div>`;
   }
   function bdCabHTML(c) {
@@ -775,6 +788,7 @@
     return `<div class="wa-chat-head"><button class="wa-back" onclick="window.nxCRM.bdCerrar()" aria-label="Volver a la lista"><i class="ti ti-arrow-left"></i></button>
         <div class="wa-avatar">${esc(ini(nom))}</div>
         <div style="flex:1;min-width:0"><div class="hn">${esc(nom)}</div><div class="hs">${sub}</div></div>
+        <button type="button" class="wa-icon-btn" onclick="window.nxCRM.bdBuscarChat()" title="Buscar en este chat" aria-label="Buscar en este chat"><i class="ti ti-search"></i></button>
         ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
         ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
         ${c.archivada ? `<button class="wa-icon-btn" onclick="window.nxCRM.bdDesarchivar('${c.id}')" title="Devolver a la bandeja" aria-label="Devolver a la bandeja"><i class="ti ti-archive-off"></i></button>` : `<button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button>`}</div>
@@ -783,8 +797,9 @@
   function bdPieHTML(c) {
     const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
     return `${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
-        : abierta ? `${bdRed24(c) ? `<div class="wa-aviso bd-aviso-red24"><i class="ti ti-clock-exclamation"></i> Pasaron más de 24 horas desde el último mensaje del cliente: ${c.plataforma === 'instagram' ? 'Instagram' : 'Facebook'} puede rechazar la respuesta hasta que el cliente vuelva a escribir.</div>` : ''}<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><button type="button" class="wa-clip bd-emoji-btn" title="Emojis" aria-label="Emojis" onclick="window.nxCRM.bdEmojis(event)"><i class="ti ti-mood-smile"></i></button><label class="wa-clip" title="Adjuntar" aria-label="Adjuntar"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
+        : abierta ? `${bdRed24(c) ? `<div class="wa-aviso bd-aviso-red24"><i class="ti ti-clock-exclamation"></i> Pasaron más de 24 horas desde el último mensaje del cliente: ${c.plataforma === 'instagram' ? 'Instagram' : 'Facebook'} puede rechazar la respuesta hasta que el cliente vuelva a escribir.</div>` : ''}<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><button type="button" class="wa-clip bd-emoji-btn" title="Emojis" aria-label="Emojis" onclick="window.nxCRM.bdEmojis(event)"><i class="ti ti-mood-smile"></i></button><button type="button" class="wa-clip bd-clip" title="Adjuntar" aria-label="Adjuntar" onclick="window.nxCRM.bdAdjMenu(event)"><i class="ti ti-paperclip"></i></button><input type="file" id="bdFile" hidden accept="image/*,video/*" onchange="window.nxCRM.bdAdjuntar(this)"><input type="file" id="bdFileDoc" hidden accept="application/pdf,.doc,.docx,.xls,.xlsx,.txt,audio/*" onchange="window.nxCRM.bdAdjuntar(this)">
           <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>860){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
+          <button type="button" class="wa-clip bd-mic" onclick="window.nxCRM.bdGrabar()" title="Nota de voz" aria-label="Grabar nota de voz"><i class="ti ti-microphone"></i></button>
           <button class="wa-send-btn" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
         : `<div class="wa-aviso bd-aviso-24"><span><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas.</span><button type="button" class="bd-btn-plant" onclick="window.nxCRM.bdPlantillas()"><i class="ti ti-template"></i> Enviar plantilla</button></div>`}`;
   }
@@ -848,6 +863,7 @@
   }
   function bdPintarParcial() {
     bdPintarChips();
+    if (BD.bq) setTimeout(bdBqMarcar, 0);
     bdPintarLista();
     bdPintarCabPie();
     bdSyncMsgs();
@@ -970,7 +986,7 @@
       if (BD.hayMas && primero && Date.parse(n.created_at) < Date.parse(primero.created_at)) return;
       // Reemplaza la burbuja provisional («enviando…») por su clave de envío (o, de respaldo, por el mismo texto).
       const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && (n.idempotency_key ? x.id === 'tmp-' + n.idempotency_key : x.cuerpo === n.cuerpo)) : -1;
-      if (t >= 0) BD.msgs[t] = n; else BD.msgs.push(n);
+      if (t >= 0) BD.msgs[t] = n; else { BD.msgs.push(n); if (n.direccion === 'in' && !BD.pegadoAbajo) bdNuevos(BD.nuevos + 1); }
       BD.msgs.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
     bdPintarPronto();
@@ -1044,7 +1060,7 @@
     if (String(BD.sel) === String(id) && BD.msgs.length) return;
     if (!BD.cita || String(BD.cita.conv) !== String(id)) BD.cita = null;
     const l0 = document.getElementById('bdList'); if (l0 && !BD.sel) BD.listaScroll = l0.scrollTop;
-    BD.sel = id; BD.msgs = []; BD.hayMas = false; BD.pegadoAbajo = true; BD.msgsEstado = 'cargando'; bdModoChat();
+    BD.sel = id; BD.msgs = []; BD.hayMas = false; BD.pegadoAbajo = true; BD.msgsEstado = 'cargando'; BD.nuevos = 0; BD.bq = ''; if (BD.grab) bdGrabFin(false); bdModoChat();
     await bdCargarMsgs(id);
     if (String(BD.sel) !== String(id)) return;
     const c = BD.convs.find(x => String(x.id) === String(id));
@@ -1093,22 +1109,250 @@
     BD.enviando = true;
     try { await bdMandar(m.cuerpo, m.responde_a_id || null); } finally { BD.enviando = false; }
   }
+  // ── Paridad Bayol, fase 2 (03-oct-2026) ─────────────────────────────────────────────────────────────────────────
+  // Adjuntar: menú (foto/video, documento y, en WhatsApp, ubicación y contacto) → vista previa con pie de foto → burbuja
+  // «Enviando…» al instante mientras sube; un toque doble no lo manda dos veces (clave de envío única).
+  const LIM_MB = { imagen: 5, video: 16, audio: 16, documento: 20 };   // límites de WhatsApp (MB), iguales a Bayol
+  function bdTipoArchivo(f) { return /^image\//.test(f.type) ? 'imagen' : /^video\//.test(f.type) ? 'video' : /^audio\//.test(f.type) ? 'audio' : 'documento'; }
+  function bdAdjMenu(ev) {
+    if (ev) ev.stopPropagation();
+    let m = document.getElementById('bdAdjM'); if (m) { m.remove(); return; }
+    const c = bdConvSel(), wa = c && c.plataforma === 'whatsapp';
+    m = document.createElement('div'); m.id = 'bdAdjM'; m.className = 'bd-adj-menu'; m.setAttribute('role', 'menu');
+    const it = (ic, col, tx, fn) => `<button type="button" role="menuitem" onclick="document.getElementById('bdAdjM').remove();${fn}"><span style="background:${col}"><i class="ti ${ic}"></i></span>${tx}</button>`;
+    m.innerHTML = it('ti-photo', '#7c3aed', 'Foto o video', "document.getElementById('bdFile').click()") + it('ti-file-text', '#2563eb', 'Documento', "document.getElementById('bdFileDoc').click()")
+      + (wa ? it('ti-map-pin', '#16a34a', 'Ubicación', 'window.nxCRM.bdUbicacion()') + it('ti-user-circle', '#0891b2', 'Contacto', 'window.nxCRM.bdContacto()') : '');
+    document.body.appendChild(m);
+    const b = (ev && ev.currentTarget) || document.querySelector('.bd-clip'), r = b ? b.getBoundingClientRect() : { left: 10, top: innerHeight - 60 };
+    m.style.left = Math.max(8, Math.min(r.left, innerWidth - 220)) + 'px'; m.style.bottom = Math.max(8, innerHeight - r.top + 8) + 'px';
+    setTimeout(() => document.addEventListener('pointerdown', function f(e) { if (!m.contains(e.target)) { m.remove(); document.removeEventListener('pointerdown', f, true); } }, true), 0);
+  }
   async function bdAdjuntar(inp) {
-    const f = inp && inp.files && inp.files[0]; if (!f || !BD.sel) return;
-    const tipo = /^image\//.test(f.type) ? 'imagen' : /^video\//.test(f.type) ? 'video' : /^audio\//.test(f.type) ? 'audio' : 'documento';
-    const lim = { imagen: 5, video: 16, audio: 16, documento: 20 }[tipo];   // límites de WhatsApp (MB), iguales a Bayol
-    if (f.size > lim * 1024 * 1024) { toast('warn', 'Archivo muy grande', 'Máximo ' + lim + ' MB para ' + tipo); inp.value = ''; return; }
-    const ext = (f.name.split('.').pop() || 'bin').replace(/[^a-z0-9]/gi, '').toLowerCase();
-    const path = `salientes/${uuid()}.${ext}`; const b = apiBase(), conv = BD.sel;
-    const t = document.getElementById('bdTx'); const texto = t ? t.value.trim() : '';
+    const f = inp && inp.files && inp.files[0]; if (inp) inp.value = '';
+    if (f) bdAdjPrevia(f);
+  }
+  function bdAdjPrevia(f) {
+    if (!f || !BD.sel) return;
+    const tipo = bdTipoArchivo(f), lim = LIM_MB[tipo];
+    if (f.size > lim * 1024 * 1024) { toast('warn', 'Archivo muy grande', 'Máximo ' + lim + ' MB para ' + tipo); return; }
+    const url = URL.createObjectURL(f), t = document.getElementById('bdTx');
+    cerrar('bdAdjP');
+    const ov = document.createElement('div'); ov.id = 'bdAdjP'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) { URL.revokeObjectURL(url); ov.remove(); } });
+    const prev = tipo === 'imagen' ? `<img src="${url}" alt="Vista previa">` : tipo === 'video' ? `<video src="${url}" controls muted></video>` : tipo === 'audio' ? `<audio src="${url}" controls></audio>` : `<div class="bd-adj-doc"><i class="ti ti-file-text"></i><b>${esc(f.name)}</b><small>${(f.size / 1024 / 1024).toFixed(2)} MB</small></div>`;
+    ov.innerHTML = `<div class="modal nxCrmModal bd-adj-modal" style="max-width:460px" role="dialog" aria-labelledby="bdAdjT"><div class="mt"><span id="bdAdjT"><i class="ti ti-paperclip"></i> Enviar ${tipo === 'imagen' ? 'foto' : tipo}</span><button class="nxBack" type="button" onclick="document.getElementById('bdAdjP').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="bd-adj-prev">${prev}</div>
+      ${tipo === 'audio' ? '' : `<label class="nxCrmF"><span>${tipo === 'documento' ? 'Mensaje (opcional)' : 'Pie de foto (opcional)'}</span><textarea id="bdAdjTx" rows="2" maxlength="1000">${esc(t ? t.value : '')}</textarea></label>`}
+      <button type="button" id="bdAdjOk" class="nxCrmBtn p" style="width:100%;margin-top:10px"><i class="ti ti-send"></i> Enviar</button></div>`;
+    document.body.appendChild(ov);
+    const ok = document.getElementById('bdAdjOk');
+    ok.onclick = () => { if (ok.disabled) return; ok.disabled = true; const pie = (document.getElementById('bdAdjTx') || {}).value || ''; ov.remove(); bdSubirYEnviar(f, tipo, pie.trim(), url, false); };
+  }
+  async function bdSubirYEnviar(f, tipo, pie, urlLocal, notaVoz) {
+    const conv = BD.sel; if (!conv) return;
+    const key = uuid(), ext = ((f.name || '').split('.').pop() || (f.type.split('/')[1] || 'bin').split(';')[0]).replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
+    const path = `salientes/${uuid()}.${ext}`, b = apiBase();
+    const temp = { id: 'tmp-' + key, _conv: conv, direccion: 'out', tipo: tipo, cuerpo: pie || null, estado: 'pendiente', created_at: new Date().toISOString(), _local: urlLocal || URL.createObjectURL(f), _nombre: f.name };
+    BD.msgs.push(temp); BD.pegadoAbajo = true; bdSyncMsgs(); bdAlFondo();
+    const t = document.getElementById('bdTx'); if (pie && t && t.value.trim() === pie) { t.value = ''; BD.borr[conv] = ''; bdGuardarBorr(); }
     try {
-      const up = await fetch(`${b.url}/storage/v1/object/crm-media/${path}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': f.type || 'application/octet-stream' }, body: f });
+      const up = await fetch(`${b.url}/storage/v1/object/crm-media/${path}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': (f.type || 'application/octet-stream').split(';')[0] }, body: f });
       if (!up.ok) throw new Error('No se pudo subir el archivo');
-      await bdEnviarCuerpo({ conversacion_id: conv, texto: texto, adjunto_path: path, adjunto_tipo: tipo, adjunto_nombre: f.name, idempotency_key: uuid() });
-      if (t) t.value = ''; BD.borr[conv] = ''; bdGuardarBorr();
-    } catch (e) { toast('err', 'No se envió el archivo', String(e.message || e)); }
-    inp.value = '';
-    if (String(BD.sel) === String(conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(conv), BD.rt.vivo ? null : bdCargar()]); bdPintarParcial(); bdAlFondo(); }
+      await bdEnviarCuerpo({ conversacion_id: conv, texto: pie, adjunto_path: path, adjunto_tipo: tipo, adjunto_nombre: f.name || null, nota_voz: !!notaVoz, idempotency_key: key });
+      temp.media_path = path; temp.estado = 'enviado';
+    } catch (e) {
+      temp.estado = 'fallido'; temp.error = String(e.message || e); toast('err', notaVoz ? 'No se envió la nota de voz' : 'No se envió el archivo', temp.error);
+    }
+    if (String(BD.sel) === String(conv)) { bdSyncMsgs(); if (!BD.rt.vivo) { await bdCargarMsgs(conv); bdPintarParcial(); } }
+  }
+  // Arrastrar y soltar un archivo sobre el chat abierto = adjuntarlo (con vista previa).
+  document.addEventListener('dragover', e => { if (BD.sel && e.target.closest && e.target.closest('.crmB #bdChat')) { e.preventDefault(); } });
+  document.addEventListener('drop', e => {
+    if (!BD.sel || !e.target.closest || !e.target.closest('.crmB #bdChat')) return;
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
+    e.preventDefault(); const c = bdConvSel(), k = bdCanalDe(c);
+    if (!k || !k.activo || !bdVentana(c)) { toast('warn', 'No se puede enviar ahora', 'El canal está apagado o pasaron 24 horas'); return; }
+    bdAdjPrevia(f);
+  });
+
+  // ── Notas de voz (paridad Bayol): se graba en el navegador y WhatsApp la recibe como nota de voz (crm-enviar la manda
+  // con voiceNote; Zernio la convierte, así también funciona lo que graba el iPhone).
+  async function bdGrabar() {
+    if (BD.grab) return;
+    if (!navigator.mediaDevices || !window.MediaRecorder) { toast('err', 'Este navegador no puede grabar audio'); return; }
+    let st;
+    try { st = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (e) { toast('err', 'Sin acceso al micrófono', 'Permite el micrófono para este sitio'); return; }
+    const tipo = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/mp4', 'audio/webm'].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
+    const rec = new MediaRecorder(st, tipo ? { mimeType: tipo } : undefined), partes = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) partes.push(e.data); };
+    const g = BD.grab = { rec, st, partes, t0: Date.now(), enviar: false, conv: BD.sel, tim: null };
+    rec.onstop = () => {
+      st.getTracks().forEach(x => x.stop()); clearInterval(g.tim);
+      const bar = document.getElementById('bdGrab'); if (bar) bar.remove();
+      const ib = document.querySelector('#bdPie .wa-input-bar'); if (ib) ib.hidden = false;
+      BD.grab = null;
+      if (!g.enviar || !partes.length) return;
+      const mime = (rec.mimeType || tipo || 'audio/webm').split(';')[0];
+      const ext = /ogg/.test(mime) ? 'ogg' : /mp4|aac|m4a/.test(mime) ? 'm4a' : 'webm';
+      const f = new File(partes, 'nota-voz.' + ext, { type: mime });
+      if ((Date.now() - g.t0) < 800) { toast('warn', 'Nota muy corta', 'Mantén la grabación al menos 1 segundo'); return; }
+      if (String(BD.sel) === String(g.conv)) bdSubirYEnviar(f, 'audio', '', null, true);
+    };
+    rec.start(250);
+    const ib = document.querySelector('#bdPie .wa-input-bar'); if (ib) ib.hidden = true;
+    const bar = document.createElement('div'); bar.id = 'bdGrab'; bar.className = 'bd-grab';
+    bar.innerHTML = `<button type="button" class="bd-grab-x" onclick="window.nxCRM.bdGrabFin(false)" aria-label="Cancelar grabación"><i class="ti ti-trash"></i></button><span class="bd-grab-pt"></span><span id="bdGrabT">0:00</span><span class="bd-grab-tx">Grabando…</span><button type="button" class="wa-send-btn" onclick="window.nxCRM.bdGrabFin(true)" aria-label="Enviar nota de voz"><i class="ti ti-send"></i></button>`;
+    const pie = document.getElementById('bdPie'); if (pie) pie.appendChild(bar);
+    g.tim = setInterval(() => { const s2 = Math.floor((Date.now() - g.t0) / 1000), e = document.getElementById('bdGrabT'); if (e) e.textContent = Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0'); if (s2 >= 300) bdGrabFin(true); }, 250);
+  }
+  function bdGrabFin(enviar) { const g = BD.grab; if (!g) return; g.enviar = !!enviar; try { g.rec.stop(); } catch (e) {} }
+
+  // ── Ubicación y contacto (solo WhatsApp) ──
+  function bdUbicacion() {
+    cerrar('bdUbM');
+    let tienda = null; try { tienda = JSON.parse(localStorage.getItem('studio_crm_ubic_tienda') || 'null'); } catch (e) {}
+    const ov = document.createElement('div'); ov.id = 'bdUbM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:420px" role="dialog" aria-labelledby="bdUbT"><div class="mt"><span id="bdUbT"><i class="ti ti-map-pin"></i> Enviar ubicación</span><button class="nxBack" type="button" onclick="document.getElementById('bdUbM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      ${tienda ? `<button type="button" class="nxCrmBtn p" style="width:100%;margin-bottom:10px" onclick="window.nxCRM.bdUbEnviar(${+tienda.lat},${+tienda.lng},${JSON.stringify(tienda.nombre || 'STUDIO').replace(/"/g, '&quot;')})"><i class="ti ti-building-store"></i> Enviar ubicación de ${esc(tienda.nombre || 'la tienda')}</button>` : ''}
+      <button type="button" class="nxCrmBtn" style="width:100%" onclick="window.nxCRM.bdUbAqui(this)"><i class="ti ti-current-location"></i> Usar mi ubicación actual</button>
+      <div class="bd-ub-g"><label class="nxCrmF"><span>Latitud</span><input id="bdUbLat" inputmode="decimal" placeholder="18.4861"></label><label class="nxCrmF"><span>Longitud</span><input id="bdUbLng" inputmode="decimal" placeholder="-69.9312"></label></div>
+      <label class="nxCrmF"><span>Nombre del lugar (opcional)</span><input id="bdUbNom" maxlength="120" placeholder="STUDIO RD"></label>
+      <label class="crm-nota" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="bdUbGuardar"> Guardar como ubicación de la tienda (en este equipo)</label>
+      <button type="button" class="nxCrmBtn p" style="width:100%;margin-top:10px" onclick="window.nxCRM.bdUbEnviar()"><i class="ti ti-send"></i> Enviar</button></div>`;
+    document.body.appendChild(ov);
+  }
+  function bdUbAqui(btn) {
+    if (!navigator.geolocation) { toast('err', 'Este equipo no comparte su ubicación'); return; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 crm-girando"></i> Buscando…'; }
+    navigator.geolocation.getCurrentPosition(p => {
+      const a = document.getElementById('bdUbLat'), o = document.getElementById('bdUbLng');
+      if (a) a.value = p.coords.latitude.toFixed(6); if (o) o.value = p.coords.longitude.toFixed(6);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-current-location"></i> Usar mi ubicación actual'; }
+    }, () => { toast('err', 'No se pudo obtener la ubicación', 'Permite la ubicación o escribe las coordenadas'); if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-current-location"></i> Usar mi ubicación actual'; } }, { enableHighAccuracy: true, timeout: 12000 });
+  }
+  async function bdUbEnviar(lat, lng, nombre) {
+    if (lat === undefined) {
+      lat = parseFloat(((document.getElementById('bdUbLat') || {}).value || '').replace(',', '.'));
+      lng = parseFloat(((document.getElementById('bdUbLng') || {}).value || '').replace(',', '.'));
+      nombre = ((document.getElementById('bdUbNom') || {}).value || '').trim();
+      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { toast('warn', 'Coordenadas no válidas'); return; }
+      if ((document.getElementById('bdUbGuardar') || {}).checked) { try { localStorage.setItem('studio_crm_ubic_tienda', JSON.stringify({ lat, lng, nombre: nombre || 'STUDIO' })); } catch (e) {} }
+    }
+    cerrar('bdUbM');
+    await bdEnviarEspecial('ubicacion', { lat: lat, lng: lng, nombre: nombre || null });
+  }
+  function bdContacto() {
+    cerrar('bdCtM');
+    const ov = document.createElement('div'); ov.id = 'bdCtM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:420px" role="dialog" aria-labelledby="bdCtT"><div class="mt"><span id="bdCtT"><i class="ti ti-user-circle"></i> Enviar contacto</span><button class="nxBack" type="button" onclick="document.getElementById('bdCtM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <label class="nxCrmF"><span>Buscar cliente</span><input id="bdCtQ" placeholder="Nombre o teléfono…" oninput="window.nxCRM.bdCtBuscar(this.value)"></label>
+      <div id="bdCtL" class="crm-tr-lista"></div>
+      <div class="bd-ub-g"><label class="nxCrmF"><span>Nombre</span><input id="bdCtNom" maxlength="120"></label><label class="nxCrmF"><span>Teléfono</span><input id="bdCtTel" inputmode="tel" maxlength="20"></label></div>
+      <button type="button" class="nxCrmBtn p" style="width:100%;margin-top:10px" onclick="window.nxCRM.bdCtEnviar()"><i class="ti ti-send"></i> Enviar</button></div>`;
+    document.body.appendChild(ov);
+  }
+  function bdCtBuscar(q) {
+    const l = document.getElementById('bdCtL'); if (!l) return;
+    q = String(q || '').trim().toLowerCase();
+    if (q.length < 2) { l.innerHTML = ''; return; }
+    const r = clientes().filter(c => [c.nombre, c.telefono, c.celular, c.whatsapp].join(' ').toLowerCase().indexOf(q) >= 0).slice(0, 8);
+    l.innerHTML = r.length ? r.map(c => { const tel = c.whatsapp || c.celular || c.telefono || ''; return `<button type="button" class="crm-tr-emp" onclick="document.getElementById('bdCtNom').value=${JSON.stringify(c.nombre || '').replace(/"/g, '&quot;')};document.getElementById('bdCtTel').value=${JSON.stringify(tel).replace(/"/g, '&quot;')}"><span class="av">${esc(ini(c.nombre))}</span><span class="tx"><b>${esc(c.nombre || '')}</b><small>${esc(tel)}</small></span></button>`; }).join('') : '<div class="crm-nota">Ningún cliente coincide.</div>';
+  }
+  async function bdCtEnviar() {
+    const nombre = ((document.getElementById('bdCtNom') || {}).value || '').trim(), tel = ((document.getElementById('bdCtTel') || {}).value || '').trim();
+    if (!nombre) { toast('warn', 'Pon el nombre del contacto'); return; }
+    cerrar('bdCtM');
+    await bdEnviarEspecial('contacto', { nombre: nombre, telefono: tel || null });
+  }
+  async function bdEnviarEspecial(tipo, dato) {
+    const conv = BD.sel; if (!conv) return;
+    const key = uuid();
+    const temp = { id: 'tmp-' + key, _conv: conv, direccion: 'out', tipo: tipo, cuerpo: JSON.stringify(dato), estado: 'pendiente', created_at: new Date().toISOString() };
+    BD.msgs.push(temp); BD.pegadoAbajo = true; bdSyncMsgs(); bdAlFondo();
+    try { await bdEnviarCuerpo(Object.assign({ conversacion_id: conv, idempotency_key: key }, tipo === 'ubicacion' ? { ubicacion: dato } : { contacto: dato })); temp.estado = 'enviado'; }
+    catch (e) { temp.estado = 'fallido'; temp.error = String(e.message || e); toast('err', 'No se envió', temp.error); }
+    if (String(BD.sel) === String(conv)) bdSyncMsgs();
+  }
+
+  // ── Menú de cada mensaje: responder, copiar, reenviar ──
+  function bdMsgMenu(ev, id) {
+    if (ev) ev.stopPropagation();
+    const m = BD.msgs.find(x => String(x.id) === String(id)); if (!m) return;
+    cerrar('bdMsgM');
+    const c = bdConvSel(), texto = m.tipo === 'ubicacion' || m.tipo === 'contacto' ? '' : (m.cuerpo || '');
+    const reenv = (texto || (m.media_path && String(m.media_path).startsWith('salientes/')));
+    const mm = document.createElement('div'); mm.id = 'bdMsgM'; mm.className = 'bd-adj-menu bd-msg-menu'; mm.setAttribute('role', 'menu');
+    const it = (ic, tx, fn) => `<button type="button" role="menuitem" onclick="document.getElementById('bdMsgM').remove();${fn}"><i class="ti ${ic}"></i>${tx}</button>`;
+    mm.innerHTML = (bdPuedeCitar(c) ? it('ti-arrow-back-up', 'Responder', `window.nxCRM.bdCitar('${esc(m.id)}')`) : '')
+      + (texto ? it('ti-copy', 'Copiar', `window.nxCRM.bdCopiar('${esc(m.id)}')`) : '')
+      + (reenv ? it('ti-share-3', 'Reenviar', `window.nxCRM.bdReenviar('${esc(m.id)}')`) : '')
+      + (m.media_path && bdUrl(m.media_path) ? it('ti-download', 'Abrir / descargar', `window.open(${JSON.stringify(bdUrl(m.media_path)).replace(/"/g, '&quot;')},'_blank','noopener')`) : '');
+    if (!mm.innerHTML) return;
+    document.body.appendChild(mm);
+    const b = ev && ev.currentTarget, r = b ? b.getBoundingClientRect() : { left: innerWidth / 2, bottom: innerHeight / 2, top: innerHeight / 2 };
+    mm.style.left = Math.max(8, Math.min(r.left - 150, innerWidth - 210)) + 'px';
+    if (r.bottom + 180 < innerHeight) mm.style.top = (r.bottom + 4) + 'px'; else mm.style.bottom = (innerHeight - r.top + 4) + 'px';
+    setTimeout(() => document.addEventListener('pointerdown', function f(e) { if (!mm.contains(e.target)) { mm.remove(); document.removeEventListener('pointerdown', f, true); } }, true), 0);
+  }
+  async function bdCopiar(id) {
+    const m = BD.msgs.find(x => String(x.id) === String(id)); if (!m || !m.cuerpo) return;
+    try { await navigator.clipboard.writeText(m.cuerpo); toast('ok', 'Copiado'); }
+    catch (e) { const t = document.createElement('textarea'); t.value = m.cuerpo; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); toast('ok', 'Copiado'); } catch (e2) {} t.remove(); }
+  }
+  function bdReenviar(id) {
+    const m = BD.msgs.find(x => String(x.id) === String(id)); if (!m) return;
+    BD.reenv = m; cerrar('bdReM');
+    const ov = document.createElement('div'); ov.id = 'bdReM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:420px" role="dialog" aria-labelledby="bdReT"><div class="mt"><span id="bdReT"><i class="ti ti-share-3"></i> Reenviar a…</span><button class="nxBack" type="button" onclick="document.getElementById('bdReM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="crm-nota">${esc(bdResumen(m).slice(0, 120))}</div>
+      <label class="nxCrmF"><span>Buscar conversación</span><input id="bdReQ" placeholder="Nombre o número…" oninput="window.nxCRM.bdReFiltrar(this.value)"></label>
+      <div id="bdReL" class="crm-tr-lista"></div></div>`;
+    document.body.appendChild(ov); bdReFiltrar('');
+  }
+  function bdReFiltrar(q) {
+    const l = document.getElementById('bdReL'); if (!l) return;
+    q = String(q || '').trim().toLowerCase();
+    const r = BD.convs.filter(c => String(c.id) !== String(BD.sel) && bdVentana(c) && (!q || [bdNombre(c), c.telefono_e164, c.contacto_usuario].join(' ').toLowerCase().indexOf(q) >= 0)).slice(0, 30);
+    l.innerHTML = r.length ? r.map(c => `<button type="button" class="crm-tr-emp" onclick="window.nxCRM.bdReEnviarA('${esc(c.id)}')"><span class="av">${esc(ini(bdNombre(c)))}</span><span class="tx"><b>${esc(bdNombre(c))}</b><small>${esc(c.telefono_e164 || (c.contacto_usuario ? '@' + c.contacto_usuario : ''))}</small></span><i class="ti ti-send"></i></button>`).join('') : '<div class="crm-nota">No hay conversaciones abiertas (dentro de las 24 h) que coincidan.</div>';
+  }
+  async function bdReEnviarA(convId) {
+    const m = BD.reenv; if (!m) return; cerrar('bdReM');
+    const body = { conversacion_id: convId, idempotency_key: uuid(), texto: m.tipo === 'ubicacion' || m.tipo === 'contacto' ? '' : (m.cuerpo || '') };
+    if (m.media_path && String(m.media_path).startsWith('salientes/')) { body.adjunto_path = m.media_path; body.adjunto_tipo = m.tipo; }
+    try { await bdEnviarCuerpo(body); toast('ok', 'Mensaje reenviado'); } catch (e) { toast('err', 'No se pudo reenviar', String(e.message || e)); }
+  }
+
+  // ── Buscar dentro del chat (mensajes cargados; «Cargar anteriores» amplía la búsqueda) ──
+  function bdBuscarChat() {
+    const bx = document.getElementById('bdBusqChat'); if (!bx) return;
+    if (!bx.hidden) { BD.bq = ''; bx.hidden = true; bx.innerHTML = ''; bdBqMarcar(); return; }
+    bx.hidden = false;
+    bx.innerHTML = `<i class="ti ti-search"></i><input id="bdBqIn" placeholder="Buscar en este chat…" oninput="window.nxCRM.bdBq(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCRM.bdBqIr(event.shiftKey?-1:1)}if(event.key==='Escape')window.nxCRM.bdBuscarChat()"><span id="bdBqN"></span><button type="button" onclick="window.nxCRM.bdBqIr(-1)" aria-label="Anterior"><i class="ti ti-chevron-up"></i></button><button type="button" onclick="window.nxCRM.bdBqIr(1)" aria-label="Siguiente"><i class="ti ti-chevron-down"></i></button><button type="button" onclick="window.nxCRM.bdBuscarChat()" aria-label="Cerrar búsqueda"><i class="ti ti-x"></i></button>`;
+    setTimeout(() => { const i = document.getElementById('bdBqIn'); if (i) i.focus(); }, 30);
+  }
+  function bdBqHits() {
+    const q = BD.bq.trim().toLowerCase(); if (!q) return [];
+    return BD.msgs.filter(m => !String(m.id).startsWith('tmp-') && String(bdResumen(m)).toLowerCase().indexOf(q) >= 0).map(m => String(m.id));
+  }
+  function bdBqMarcar() {
+    const box = document.getElementById('bdMsgs'); if (!box) return;
+    const hits = bdBqHits(), set = new Set(hits), cur = hits.length ? hits[Math.max(0, Math.min(BD.bqI, hits.length - 1))] : null;
+    box.querySelectorAll(':scope > .bd-m').forEach(n => { n.classList.toggle('bd-hit', set.has(n.dataset.id)); n.classList.toggle('bd-hit-on', n.dataset.id === cur); });
+    const nn = document.getElementById('bdBqN'); if (nn) nn.textContent = BD.bq.trim() ? (hits.length ? (Math.min(BD.bqI, hits.length - 1) + 1) + '/' + hits.length : '0') : '';
+  }
+  function bdBq(v) { BD.bq = v || ''; const h = bdBqHits(); BD.bqI = Math.max(0, h.length - 1); bdBqMarcar(); bdBqIr(0); }
+  function bdBqIr(d) {
+    const h = bdBqHits(); if (!h.length) { bdBqMarcar(); return; }
+    BD.bqI = (BD.bqI + d + h.length) % h.length; bdBqMarcar();
+    const n = document.querySelector(`#bdMsgs .bd-m[data-id="${CSS.escape(h[BD.bqI])}"]`); if (n) n.scrollIntoView({ block: 'center' });
+  }
+  function bdNuevos(n) {
+    BD.nuevos = Math.max(0, n | 0);
+    const e = document.querySelector('#bdAbajo .bd-nuevos'); if (e) { e.textContent = BD.nuevos > 99 ? '99+' : BD.nuevos || ''; e.hidden = !BD.nuevos; }
   }
 
   // ── Sincronizar conversaciones (28-sep-2026): trae de Zernio los chats y mensajes que ya existían antes de conectar la
@@ -1367,6 +1611,20 @@
 .bd-emoji-g button{border:0;background:none;font-size:22px;line-height:1;padding:6px 0;border-radius:8px;cursor:pointer}.bd-emoji-g button:hover{background:#f1f5f9}
 .fila-borr{color:#16a34a;font-weight:700}.bd-nodisp{color:#64748b}.bd-aviso-red24{display:flex;gap:6px;align-items:flex-start;font-size:12.5px}
 .rs-filtros{margin-left:auto}.wa-bubble-wrap .tx a{color:#0b6bcb;text-decoration:underline;overflow-wrap:anywhere}
+.bd-adj-menu{position:fixed;z-index:9999;min-width:200px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:14px;box-shadow:0 12px 32px rgba(15,23,42,.22);padding:6px;display:flex;flex-direction:column}
+.bd-adj-menu button{display:flex;align-items:center;gap:10px;border:0;background:none;padding:9px 10px;border-radius:10px;font:inherit;font-size:14px;color:#0f172a;cursor:pointer;text-align:left}.bd-adj-menu button:hover{background:#f1f5f9}
+.bd-adj-menu button span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff}.bd-msg-menu button i{font-size:18px;color:#475569}
+.bd-adj-prev{display:grid;place-items:center;background:#0f172a0d;border-radius:12px;margin:8px 0;min-height:120px;overflow:hidden}.bd-adj-prev img,.bd-adj-prev video{max-width:100%;max-height:46vh;display:block}
+.bd-adj-doc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px}.bd-adj-doc i{font-size:40px;color:#2563eb}.bd-adj-modal textarea{resize:vertical;min-height:50px;font:inherit;font-size:14px;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.15)}
+.bd-subiendo{font-size:11.5px;color:#64748b;margin-top:4px}.bd-card{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.05);color:inherit;text-decoration:none;min-width:200px}.bd-card>i{font-size:26px;color:#16a34a}.bd-card span{display:flex;flex-direction:column}.bd-card small,.bd-card a{font-size:12px;color:#0b6bcb}
+.bd-grab{display:flex;align-items:center;gap:10px;padding:8px 10px}.bd-grab-x{border:0;background:none;font-size:20px;color:#dc2626;cursor:pointer}.bd-grab-pt{width:10px;height:10px;border-radius:50%;background:#dc2626;animation:bdLate 1s infinite}.bd-grab-tx{flex:1;color:#64748b;font-size:13px}#bdGrabT{font-variant-numeric:tabular-nums;font-weight:600}
+@keyframes bdLate{50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.bd-grab-pt{animation:none}}
+.bd-ub-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.wa-bubble-wrap{position:relative}.bd-mmenu{position:absolute;top:2px;right:2px;border:0;background:rgba(255,255,255,.85);border-radius:50%;width:24px;height:24px;display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity .15s;z-index:2}
+.wa-bubble-wrap:hover .bd-mmenu,.bd-mmenu:focus-visible{opacity:1}@media (hover:none){.bd-mmenu{opacity:.55}}
+.bd-busq-chat{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid rgba(0,0,0,.08);background:#fff}.bd-busq-chat[hidden]{display:none}.bd-busq-chat input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;background:transparent}.bd-busq-chat button{border:0;background:none;font-size:18px;cursor:pointer;color:#475569}#bdBqN{font-size:12px;color:#64748b;font-variant-numeric:tabular-nums}
+.bd-m.bd-hit .wa-bubble-wrap{box-shadow:0 0 0 2px rgba(250,204,21,.6)}.bd-m.bd-hit-on .wa-bubble-wrap{box-shadow:0 0 0 3px #f59e0b}
+.bd-abajo{position:relative}.bd-nuevos{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:999px;background:#16a34a;color:#fff;font-size:10.5px;font-weight:800;line-height:18px;padding:0 4px}.bd-nuevos[hidden]{display:none}
 .crm-tr-btn{position:relative}.crm-tr-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e31e24;color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center}.crm-tr-badge[hidden]{display:none}
 .crm-tr-lista{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow-y:auto;margin:8px 0;overscroll-behavior:contain}
 .crm-tr-emp,.crm-tr-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font-family:inherit;cursor:pointer}
@@ -1529,11 +1787,12 @@
 
   window.nxCRM = {
     trAbrir, trConfirmar, trBandeja, trIr,
+    bdAdjMenu, bdGrabar, bdGrabFin, bdUbicacion, bdUbAqui, bdUbEnviar, bdContacto, bdCtBuscar, bdCtEnviar, bdMsgMenu, bdCopiar, bdReenviar, bdReFiltrar, bdReEnviarA, bdBuscarChat, bdBq, bdBqIr,
     trBuscar: function (q) { TR.q = q || ''; trPintar(); },
     trElegir: function (id) { TR.elegido = id; trPintar(); },
     bdAbrir, bdEnviar, bdAdjuntar, bdReintentar, bdSincronizar, bdCitar, bdIrA, bdPlantillas, bdPlantEnviar, bdTeclado,
     bdCitaQuitar: function () { BD.cita = null; const cb = document.getElementById('bdCitaBar'); if (cb) cb.innerHTML = ''; },
-    bdAbajo: function () { const m = document.getElementById('bdMsgs'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); BD.pegadoAbajo = true; const b = document.getElementById('bdAbajo'); if (b) b.classList.remove('on'); },
+    bdAbajo: function () { bdNuevos(0); const m = document.getElementById('bdMsgs'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); BD.pegadoAbajo = true; const b = document.getElementById('bdAbajo'); if (b) b.classList.remove('on'); },
     bdBorrador: function (v) { if (BD.sel) { BD.borr[BD.sel] = v; bdGuardarBorr(); } },
     bdMediaLista: function () { if (BD.pegadoAbajo) bdAlFondo(); },
     bdMediaFallo: function (path) { if (!path || !BD.urls[path]) return; delete BD.urls[path]; BD.firmaFallo[path] = (BD.firmaFallo[path] || 0) + 1; bdFirmar(); },

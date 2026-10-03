@@ -575,7 +575,7 @@
     return aviso + l.map(c => { const p = PLAT[c.plataforma] || PLAT.whatsapp, nl = c.no_leidos > 0, pend = bdPendiente(c);
       return `<div class="wa-row${String(BD.sel) === String(c.id) ? ' active' : ''}${nl ? ' no-leido' : ''}${pend ? ' pendiente' : ''}" data-id="${esc(c.id)}" onclick="window.nxCRM.bdAbrir('${c.id}')">
         <div class="wa-avatar-wrap"><div class="wa-avatar">${esc(ini(bdNombre(c)))}</div><span class="wa-wa-badge p-${c.plataforma}"><i class="ti ${p[1]}"></i></span></div>
-        <div style="min-width:0;flex:1"><div class="r1"><span class="fila-nombre">${esc(bdNombre(c))}</span><span class="fila-hora">${bdHoraRel(c.ultimo_mensaje_at)}</span></div>
+        <div style="min-width:0;flex:1"><div class="r1"><span class="fila-nombre">${esc(bdNombre(c))}</span><span class="fila-hora">${c.fijado_at ? '<i class="ti ti-pin fila-ic" title="Fijada"></i>' : ''}${bdSilenciada(c) ? '<i class="ti ti-bell-off fila-ic" title="Silenciada"></i>' : ''}${bdHoraRel(c.ultimo_mensaje_at)}</span></div>${(c.etiquetas || []).length ? `<div class="fila-etq">${c.etiquetas.slice(0, 3).map(t => `<em>${esc(t)}</em>`).join('')}${c.etiquetas.length > 3 ? `<em>+${c.etiquetas.length - 3}</em>` : ''}</div>` : ''}
           <div class="r2"><span class="fila-preview">${String(BD.sel) !== String(c.id) && BD.borr[c.id] && String(BD.borr[c.id]).trim() ? `<b class="fila-borr">Borrador:</b> ${esc(String(BD.borr[c.id]).trim().slice(0, 80))}` : esc(c.ultimo_mensaje_preview || '')}</span><span class="r2b">${pend ? '<span class="fila-pendiente"><i class="ti ti-user-exclamation"></i> Atender</span>' : ''}${nl ? `<span class="fila-badge">${c.no_leidos}</span>` : ''}${c.asignado_nombre ? `<span class="fila-asignado">${esc(c.asignado_nombre)}</span>` : ''}</span></div></div>
       </div>`; }).join('') + mas;
   }
@@ -789,6 +789,7 @@
         <div class="wa-avatar">${esc(ini(nom))}</div>
         <div style="flex:1;min-width:0"><div class="hn">${esc(nom)}</div><div class="hs">${sub}</div></div>
         <button type="button" class="wa-icon-btn" onclick="window.nxCRM.bdBuscarChat()" title="Buscar en este chat" aria-label="Buscar en este chat"><i class="ti ti-search"></i></button>
+        <button type="button" class="wa-icon-btn" onclick="window.nxCRM.bdChatMenu(event)" title="Más opciones" aria-label="Más opciones del chat"><i class="ti ti-dots-vertical"></i></button>
         ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
         ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
         ${c.archivada ? `<button class="wa-icon-btn" onclick="window.nxCRM.bdDesarchivar('${c.id}')" title="Devolver a la bandeja" aria-label="Devolver a la bandeja"><i class="ti ti-archive-off"></i></button>` : `<button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button>`}</div>
@@ -798,7 +799,7 @@
     const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
     return `${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
         : abierta ? `${bdRed24(c) ? `<div class="wa-aviso bd-aviso-red24"><i class="ti ti-clock-exclamation"></i> Pasaron más de 24 horas desde el último mensaje del cliente: ${c.plataforma === 'instagram' ? 'Instagram' : 'Facebook'} puede rechazar la respuesta hasta que el cliente vuelva a escribir.</div>` : ''}<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><button type="button" class="wa-clip bd-emoji-btn" title="Emojis" aria-label="Emojis" onclick="window.nxCRM.bdEmojis(event)"><i class="ti ti-mood-smile"></i></button><button type="button" class="wa-clip bd-clip" title="Adjuntar" aria-label="Adjuntar" onclick="window.nxCRM.bdAdjMenu(event)"><i class="ti ti-paperclip"></i></button><input type="file" id="bdFile" hidden accept="image/*,video/*" onchange="window.nxCRM.bdAdjuntar(this)"><input type="file" id="bdFileDoc" hidden accept="application/pdf,.doc,.docx,.xls,.xlsx,.txt,audio/*" onchange="window.nxCRM.bdAdjuntar(this)">
-          <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>860){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
+          <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje o / para respuestas rápidas" onkeydown="if(window.nxCRM.bdRRKey(event))return;if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>860){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value);window.nxCRM.bdRR(this)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
           <button type="button" class="wa-clip bd-mic" onclick="window.nxCRM.bdGrabar()" title="Nota de voz" aria-label="Grabar nota de voz"><i class="ti ti-microphone"></i></button>
           <button class="wa-send-btn" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
         : `<div class="wa-aviso bd-aviso-24"><span><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas.</span><button type="button" class="bd-btn-plant" onclick="window.nxCRM.bdPlantillas()"><i class="ti ti-template"></i> Enviar plantilla</button></div>`}`;
@@ -934,7 +935,7 @@
     });
   }
   function bdPintarPronto() { clearTimeout(BD.rt.pintar); BD.rt.pintar = setTimeout(bdPintarParcial, 60); }
-  function bdOrdenar() { BD.convs.sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || ''))); }
+  function bdOrdenar() { BD.convs.sort((a, b) => (b.fijado_at ? 1 : 0) - (a.fijado_at ? 1 : 0) || String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || ''))); }
   let bdTonoUlt = 0, bdAudio = null;
   function bdTono() {
     const t = Date.now(); if (t - bdTonoUlt < 2500) return; bdTonoUlt = t;
@@ -955,7 +956,7 @@
     const i = BD.convs.findIndex(x => String(x.id) === String(n.id));
     const ant = i >= 0 ? BD.convs[i] : null;
     const entrante = n.ultimo_inbound_at && (ev.eventType === 'INSERT' || (ant ? ant.ultimo_inbound_at !== n.ultimo_inbound_at : (ev.old && ev.old.ultimo_inbound_at !== n.ultimo_inbound_at)));
-    if (entrante && !(String(n.id) === String(BD.sel) && !document.hidden) && Date.now() - Date.parse(n.ultimo_inbound_at) < 120000) bdTono();
+    if (entrante && !bdSilenciada(n) && !(String(n.id) === String(BD.sel) && !document.hidden) && Date.now() - Date.parse(n.ultimo_inbound_at) < 120000) bdTono();
     // Solo se guarda si pertenece a la lista que se está viendo (plataforma y archivadas / no archivadas).
     const encaja = n.plataforma === bdPlat() && !!n.archivada === bdArch();
     if (!encaja) { if (i >= 0 && String(n.id) !== String(BD.sel)) BD.convs.splice(i, 1); else if (i >= 0) BD.convs[i] = Object.assign({}, BD.convs[i], n); }
@@ -1355,6 +1356,172 @@
     const e = document.querySelector('#bdAbajo .bd-nuevos'); if (e) { e.textContent = BD.nuevos > 99 ? '99+' : BD.nuevos || ''; e.hidden = !BD.nuevos; }
   }
 
+  // ── Paridad Bayol, fase 3 (03-oct-2026): menú del chat, etiquetas, ficha del contacto, respuestas rápidas «/» ──────
+  const ETIQ_SUG = ['Interesado', 'Cotizado', 'Financiamiento', 'Reparación', 'Garantía', 'Seguimiento', 'Vendido'];
+  function bdSilenciada(c) { return !!(c && c.silenciado_hasta && Date.parse(c.silenciado_hasta) > Date.now()); }
+  function bdConvPorId(id) { return BD.convs.find(x => String(x.id) === String(id)); }
+  function bdChatMenu(ev, id) {
+    if (ev) { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); }
+    const c = bdConvPorId(id || BD.sel); if (!c) return;
+    cerrar('bdChM');
+    const sil = bdSilenciada(c);
+    const mm = document.createElement('div'); mm.id = 'bdChM'; mm.className = 'bd-adj-menu bd-msg-menu'; mm.setAttribute('role', 'menu');
+    const it = (ic, tx, fn) => `<button type="button" role="menuitem" onclick="document.getElementById('bdChM').remove();${fn}"><i class="ti ${ic}"></i>${tx}</button>`;
+    mm.innerHTML = it('ti-id-badge-2', 'Ficha del contacto', `window.nxCRM.bdFicha('${c.id}')`)
+      + (c.no_leidos > 0 ? '' : it('ti-mail', 'Marcar como no leído', `window.nxCRM.bdNoLeido('${c.id}')`))
+      + it(c.fijado_at ? 'ti-pinned-off' : 'ti-pin', c.fijado_at ? 'Quitar fijado' : 'Fijar arriba', `window.nxCRM.bdFijar('${c.id}')`)
+      + (sil ? it('ti-bell', 'Quitar silencio', `window.nxCRM.bdSilenciar('${c.id}',0)`)
+        : it('ti-bell-off', 'Silenciar 8 horas', `window.nxCRM.bdSilenciar('${c.id}',8)`) + it('ti-bell-off', 'Silenciar 1 semana', `window.nxCRM.bdSilenciar('${c.id}',168)`) + it('ti-bell-off', 'Silenciar siempre', `window.nxCRM.bdSilenciar('${c.id}',-1)`))
+      + it('ti-tags', 'Etiquetas', `window.nxCRM.bdEtiquetas('${c.id}')`)
+      + (c.archivada ? it('ti-archive-off', 'Devolver a la bandeja', `window.nxCRM.bdDesarchivar('${c.id}')`) : it('ti-archive', 'Archivar', `window.nxCRM.bdArchivar('${c.id}')`));
+    document.body.appendChild(mm);
+    const x = ev && (ev.clientX || (ev.touches && ev.touches[0] && ev.touches[0].clientX)), y = ev && (ev.clientY || (ev.touches && ev.touches[0] && ev.touches[0].clientY));
+    const b = ev && ev.currentTarget && ev.currentTarget.getBoundingClientRect ? ev.currentTarget.getBoundingClientRect() : null;
+    const px = x || (b ? b.right - 200 : innerWidth / 2 - 100), py = y || (b ? b.bottom + 4 : innerHeight / 3);
+    mm.style.left = Math.max(8, Math.min(px, innerWidth - 220)) + 'px'; mm.style.top = Math.max(8, Math.min(py, innerHeight - mm.offsetHeight - 8)) + 'px';
+    setTimeout(() => document.addEventListener('pointerdown', function f(e) { if (!mm.contains(e.target)) { mm.remove(); document.removeEventListener('pointerdown', f, true); } }, true), 0);
+  }
+  async function bdNoLeido(id) {
+    if (!(await bdPatch(id, { no_leidos: 1 }, 'Marcada como no leída'))) return;
+    if (String(BD.sel) === String(id)) window.nxCRM.bdCerrar();
+  }
+  async function bdFijar(id) { const c = bdConvPorId(id); if (!c) return; if (await bdPatch(id, { fijado_at: c.fijado_at ? null : new Date().toISOString() }, c.fijado_at ? 'Ya no está fijada' : 'Conversación fijada')) { bdOrdenar(); bdPintarLista(); } }
+  async function bdSilenciar(id, horas) {
+    const v = horas === 0 ? null : horas < 0 ? '2999-12-31T00:00:00Z' : new Date(Date.now() + horas * 3600e3).toISOString();
+    if (await bdPatch(id, { silenciado_hasta: v }, v ? 'Conversación silenciada' : 'Silencio quitado')) bdPintarLista();
+  }
+  function bdEtiquetas(id) {
+    const c = bdConvPorId(id); if (!c) return;
+    BD.etqSel = new Set(c.etiquetas || []); BD.etqConv = id;
+    cerrar('bdEtM');
+    const todas = [...new Set(ETIQ_SUG.concat(...BD.convs.map(x => x.etiquetas || [])))];
+    const ov = document.createElement('div'); ov.id = 'bdEtM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:420px" role="dialog" aria-labelledby="bdEtT"><div class="mt"><span id="bdEtT"><i class="ti ti-tags"></i> Etiquetas de ${esc(bdNombre(c))}</span><button class="nxBack" type="button" onclick="document.getElementById('bdEtM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div id="bdEtL" class="bd-etq-l">${todas.map(t => `<button type="button" class="nxCrmChip${BD.etqSel.has(t) ? ' on' : ''}" onclick="window.nxCRM.bdEtqTog(this,${JSON.stringify(t).replace(/"/g, '&quot;')})">${esc(t)}</button>`).join('')}</div>
+      <label class="nxCrmF"><span>Nueva etiqueta</span><input id="bdEtN" maxlength="30" placeholder="Escribe y pulsa Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();window.nxCRM.bdEtqNueva(this)}"></label>
+      <button type="button" class="nxCrmBtn p" style="width:100%;margin-top:10px" onclick="window.nxCRM.bdEtqGuardar()"><i class="ti ti-check"></i> Guardar</button></div>`;
+    document.body.appendChild(ov);
+  }
+  function bdEtqTog(b, t) { if (BD.etqSel.has(t)) BD.etqSel.delete(t); else BD.etqSel.add(t); b.classList.toggle('on', BD.etqSel.has(t)); }
+  function bdEtqNueva(inp) {
+    const t = String(inp.value || '').trim().slice(0, 30); if (!t) return; inp.value = '';
+    const ex = [...BD.etqSel].concat(ETIQ_SUG).find(x => x.toLowerCase() === t.toLowerCase());
+    if (ex) { BD.etqSel.add(ex); } else BD.etqSel.add(t);
+    const l = document.getElementById('bdEtL'); if (!l) return;
+    if (!ex || ![...l.children].some(x => x.textContent === ex)) { const nb = document.createElement('button'); nb.type = 'button'; nb.className = 'nxCrmChip on'; nb.textContent = ex || t; nb.onclick = () => bdEtqTog(nb, ex || t); l.appendChild(nb); }
+    else [...l.children].forEach(x => { if (x.textContent === ex) x.classList.add('on'); });
+  }
+  async function bdEtqGuardar() {
+    const id = BD.etqConv; cerrar('bdEtM');
+    if (await bdPatch(id, { etiquetas: [...BD.etqSel].slice(0, 12) }, 'Etiquetas guardadas')) bdPintarLista();
+  }
+  // Ficha del contacto: datos, cliente (vincular o crear), etiquetas, archivos y enlaces del chat.
+  function bdFicha(id) {
+    const c = bdConvPorId(id); if (!c) return;
+    const p = PLAT[c.plataforma] || PLAT.whatsapp, cli = cliDe(c.cliente_id), abierto = String(BD.sel) === String(id);
+    const tel = c.telefono_e164 && !String(c.contacto_id).startsWith('bsid:') ? c.telefono_e164 : '';
+    const media = abierto ? BD.msgs.filter(m => m.media_path && !String(m.id).startsWith('tmp-')) : [];
+    const fotos = media.filter(m => m.tipo === 'imagen' && bdUrl(m.media_path)).slice(-12).reverse();
+    const docs = media.filter(m => m.tipo !== 'imagen').slice(-10).reverse();
+    const links = abierto ? [...new Set(BD.msgs.flatMap(m => String(m.cuerpo || '').match(/\bhttps?:\/\/[^\s<]+/gi) || []))].slice(-8).reverse() : [];
+    cerrar('bdFiM');
+    const ov = document.createElement('div'); ov.id = 'bdFiM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal bd-ficha" style="max-width:440px" role="dialog" aria-labelledby="bdFiT"><div class="mt"><span id="bdFiT"><i class="ti ti-id-badge-2"></i> Ficha del contacto</span><button class="nxBack" type="button" onclick="document.getElementById('bdFiM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="bd-fi-cab"><div class="wa-avatar">${esc(ini(bdNombre(c)))}</div><div><b>${esc(bdNombre(c))}</b><small><i class="ti ${p[1]}" style="color:${p[2]}"></i> ${p[0]}${c.contacto_usuario ? ' · @' + esc(c.contacto_usuario) : ''}</small></div></div>
+      ${tel ? `<div class="bd-fi-f"><span>Teléfono</span><b>${esc(tel)}</b><button type="button" class="btn-mini" onclick="navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(tel).replace(/"/g, '&quot;')});window.nxCRM.bdToast('Número copiado')"><i class="ti ti-copy"></i> Copiar</button></div>` : ''}
+      <div class="bd-fi-f"><span>Cliente</span>${cli ? `<b>${esc(cli.nombre)}</b>` : `<i>Sin vincular</i><button type="button" class="btn-mini" onclick="document.getElementById('bdFiM').remove();window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-link"></i> Vincular</button><button type="button" class="btn-mini" onclick="window.nxCRM.bdCrearCliente('${c.id}')"><i class="ti ti-user-plus"></i> Crear cliente</button>`}</div>
+      <div class="bd-fi-f"><span>Atiende</span><b>${esc(c.asignado_nombre || 'Sin asignar')}</b></div>
+      <div class="bd-fi-f"><span>Etiquetas</span><span class="bd-fi-etq">${(c.etiquetas || []).map(t => `<em>${esc(t)}</em>`).join('') || '<i>Ninguna</i>'}</span><button type="button" class="btn-mini" onclick="document.getElementById('bdFiM').remove();window.nxCRM.bdEtiquetas('${c.id}')"><i class="ti ti-tags"></i> Editar</button></div>
+      ${abierto ? `<div class="ajSep bd-fi-sep">Archivos del chat</div>${fotos.length ? `<div class="bd-fi-fotos">${fotos.map(m => `<a href="${esc(bdUrl(m.media_path))}" target="_blank" rel="noopener"><img src="${esc(bdUrl(m.media_path))}" alt="Foto"></a>`).join('')}</div>` : ''}${docs.length ? docs.map(m => `<div class="bd-fi-doc"><i class="ti ${m.tipo === 'audio' ? 'ti-microphone' : m.tipo === 'video' ? 'ti-video' : 'ti-file-text'}"></i>${bdUrl(m.media_path) ? `<a href="${esc(bdUrl(m.media_path))}" target="_blank" rel="noopener">${esc(bdResumen(m).slice(0, 60))}</a>` : esc(bdResumen(m).slice(0, 60))}<small>${dmy(m.created_at)}</small></div>`).join('') : ''}${!fotos.length && !docs.length ? '<div class="crm-nota">Sin archivos en los mensajes cargados.</div>' : ''}
+        ${links.length ? `<div class="ajSep bd-fi-sep">Enlaces</div>${links.map(u => `<div class="bd-fi-doc"><i class="ti ti-link"></i><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.slice(0, 60))}</a></div>`).join('')}` : ''}` : ''}
+    </div>`;
+    document.body.appendChild(ov);
+  }
+  async function bdCrearCliente(id) {
+    const c = bdConvPorId(id); if (!c) return;
+    const cr = ctx().crearCliente; if (!cr) { toast('err', 'No disponible', 'Actualiza la página'); return; }
+    const sug = c.contacto_nombre || '';
+    const nombre = (window.prompt('Nombre completo del cliente:', sug) || '').trim(); if (!nombre) return;
+    let tel = String(c.telefono_e164 || '').replace(/\D/g, ''); if (tel.length === 11 && tel[0] === '1') tel = tel.slice(1);
+    try {
+      const cli = await cr({ nombre: nombre, telefono: tel.length === 10 ? tel : null });
+      if (!cli || !cli.id) throw new Error('sin id');
+      cerrar('bdFiM');
+      await bdPatch(id, { cliente_id: cli.id }, cli._existia ? 'Vinculado al cliente que ya existía: ' + cli.nombre : 'Cliente creado y vinculado');
+    } catch (e) { toast('err', 'No se pudo crear el cliente', String((e && e.message) || e)); }
+  }
+  // Respuestas rápidas: escribe «/» y el atajo. {nombre} se cambia por el nombre del cliente.
+  async function bdRRCargar(forzar) {
+    if (BD.rr && !forzar) return BD.rr;
+    try { BD.rr = await api().get('crm_respuestas_rapidas', 'select=*&order=atajo.asc') || []; } catch (e) { BD.rr = BD.rr || []; }
+    return BD.rr;
+  }
+  function bdRRCerrar() { const p = document.getElementById('bdRRP'); if (p) p.remove(); BD.rrSel = 0; }
+  async function bdRR(t) {
+    const v = String(t.value || '');
+    if (!/^\/[a-z0-9_-]*$/i.test(v)) { bdRRCerrar(); return; }
+    const lista = await bdRRCargar(), q = v.slice(1).toLowerCase();
+    const r = lista.filter(x => !q || x.atajo.indexOf(q) === 0 || x.texto.toLowerCase().indexOf(q) >= 0).slice(0, 8);
+    let p = document.getElementById('bdRRP');
+    if (!p) { p = document.createElement('div'); p.id = 'bdRRP'; p.className = 'bd-adj-menu bd-rr'; p.setAttribute('role', 'listbox'); document.body.appendChild(p); }
+    BD.rrVis = r; BD.rrSel = Math.min(BD.rrSel || 0, Math.max(0, r.length - 1));
+    p.innerHTML = (r.length ? r.map((x, i) => `<button type="button" role="option" class="${i === BD.rrSel ? 'on' : ''}" onmousedown="event.preventDefault()" onclick="window.nxCRM.bdRRUsar(${i})"><b>/${esc(x.atajo)}</b><span>${esc(x.texto.slice(0, 90))}</span></button>`).join('') : '<div class="crm-nota" style="padding:6px 10px">No hay respuestas con ese atajo.</div>')
+      + '<button type="button" class="bd-rr-adm" onmousedown="event.preventDefault()" onclick="window.nxCRM.bdRRAdmin()"><i class="ti ti-settings"></i> Administrar respuestas rápidas</button>';
+    const rc = t.getBoundingClientRect(), w = Math.min(380, innerWidth - 16);
+    p.style.width = w + 'px'; p.style.left = Math.max(8, Math.min(rc.left, innerWidth - w - 8)) + 'px'; p.style.bottom = Math.max(8, innerHeight - rc.top + 8) + 'px';
+  }
+  function bdRRKey(ev) {
+    const p = document.getElementById('bdRRP'); if (!p || !BD.rrVis) return false;
+    if (ev.key === 'Escape') { bdRRCerrar(); return true; }
+    if (!BD.rrVis.length) return false;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') { ev.preventDefault(); BD.rrSel = (BD.rrSel + (ev.key === 'ArrowDown' ? 1 : -1) + BD.rrVis.length) % BD.rrVis.length; const t = document.getElementById('bdTx'); if (t) bdRR(t); return true; }
+    if (ev.key === 'Enter' || ev.key === 'Tab') { ev.preventDefault(); bdRRUsar(BD.rrSel); return true; }
+    return false;
+  }
+  function bdRRUsar(i) {
+    const x = (BD.rrVis || [])[i], t = document.getElementById('bdTx'); if (!x || !t) return;
+    const c = bdConvSel(), nom = c ? String(bdNombre(c)).split(/\s+/)[0] : '';
+    t.value = x.texto.replace(/\{nombre\}/gi, /^[\d+]/.test(nom) ? '' : nom).replace(/\s{2,}/g, ' ');
+    bdRRCerrar(); if (BD.sel) { BD.borr[BD.sel] = t.value; bdGuardarBorr(); }
+    t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; t.focus();
+  }
+  async function bdRRAdmin() {
+    bdRRCerrar(); cerrar('bdRRM');
+    const lista = await bdRRCargar(true);
+    const ov = document.createElement('div'); ov.id = 'bdRRM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:460px" role="dialog" aria-labelledby="bdRRT"><div class="mt"><span id="bdRRT"><i class="ti ti-bolt"></i> Respuestas rápidas</span><button class="nxBack" type="button" onclick="document.getElementById('bdRRM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <p class="crm-nota">En el chat escribe <b>/</b> y el atajo. <b>{nombre}</b> se cambia por el nombre del cliente.</p>
+      <div class="crm-tr-lista">${lista.length ? lista.map(x => `<div class="bd-rr-fila"><b>/${esc(x.atajo)}</b><span>${esc(x.texto)}</span><button type="button" class="btn-mini" onclick="window.nxCRM.bdRRBorrar('${x.id}')" aria-label="Borrar /${esc(x.atajo)}"><i class="ti ti-trash"></i></button></div>`).join('') : '<div class="crm-nota">Todavía no hay respuestas rápidas.</div>'}</div>
+      <div class="bd-ub-g"><label class="nxCrmF"><span>Atajo</span><input id="bdRRA" maxlength="24" placeholder="precio" autocapitalize="none"></label><label class="nxCrmF" style="grid-column:span 1"><span>&nbsp;</span><span class="crm-nota" style="margin:0">minúsculas, sin espacios</span></label></div>
+      <label class="nxCrmF"><span>Texto</span><textarea id="bdRRX" rows="3" maxlength="1000" placeholder="Hola {nombre}, …"></textarea></label>
+      <button type="button" class="nxCrmBtn p" style="width:100%;margin-top:10px" onclick="window.nxCRM.bdRRGuardar()"><i class="ti ti-plus"></i> Agregar</button></div>`;
+    document.body.appendChild(ov);
+  }
+  async function bdRRGuardar() {
+    const a = String((document.getElementById('bdRRA') || {}).value || '').trim().toLowerCase().replace(/^\//, ''), x = String((document.getElementById('bdRRX') || {}).value || '').trim();
+    if (!/^[a-z0-9_-]{1,24}$/.test(a)) { toast('warn', 'Atajo no válido', 'Solo minúsculas, números, - o _ (sin espacios)'); return; }
+    if (!x) { toast('warn', 'Escribe el texto'); return; }
+    try { await api().post('crm_respuestas_rapidas', { atajo: a, texto: x }); toast('ok', 'Respuesta rápida guardada', '/' + a); bdRRAdmin(); }
+    catch (e) { toast('err', 'No se pudo guardar', /duplicate|23505|unique/i.test(String(e && e.message)) ? 'Ese atajo ya existe' : errTxt(e)); }
+  }
+  async function bdRRBorrar(id) {
+    if (!confirm('¿Borrar esta respuesta rápida?')) return;
+    try { await api().del('crm_respuestas_rapidas', 'id=eq.' + id); bdRRAdmin(); } catch (e) { toast('err', 'No se pudo borrar', errTxt(e)); }
+  }
+  // Mantener pulsada una conversación de la lista (iPhone) o clic derecho (computadora) = su menú.
+  (function () {
+    let tm = null, ini0 = null;
+    document.addEventListener('contextmenu', e => { const r = e.target.closest && e.target.closest('#bdList .wa-row'); if (!r) return; bdChatMenu(e, r.dataset.id); });
+    document.addEventListener('touchstart', e => { const r = e.target.closest && e.target.closest('#bdList .wa-row'); if (!r || e.touches.length !== 1) return; ini0 = { x: e.touches[0].clientX, y: e.touches[0].clientY }; clearTimeout(tm); tm = setTimeout(() => { tm = null; r._lp = Date.now(); bdChatMenu({ clientX: ini0.x, clientY: ini0.y }, r.dataset.id); }, 520); }, { passive: true });
+    document.addEventListener('touchmove', e => { if (!tm || !ini0) return; const t = e.touches[0]; if (Math.abs(t.clientX - ini0.x) > 10 || Math.abs(t.clientY - ini0.y) > 10) { clearTimeout(tm); tm = null; } }, { passive: true });
+    document.addEventListener('touchend', () => { clearTimeout(tm); tm = null; }, { passive: true });
+    // El toque que suelta una pulsación larga no abre el chat.
+    document.addEventListener('click', e => { const r = e.target.closest && e.target.closest('#bdList .wa-row'); if (r && r._lp && Date.now() - r._lp < 700) { e.stopPropagation(); e.preventDefault(); r._lp = 0; } }, true);
+  })();
+
   // ── Sincronizar conversaciones (28-sep-2026): trae de Zernio los chats y mensajes que ya existían antes de conectar la
   // bandeja (historial del WhatsApp Business del teléfono e Instagram). No duplica, no crea leads, no marca no leídos.
   async function bdSincronizar() {
@@ -1625,6 +1792,14 @@
 .bd-busq-chat{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid rgba(0,0,0,.08);background:#fff}.bd-busq-chat[hidden]{display:none}.bd-busq-chat input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;background:transparent}.bd-busq-chat button{border:0;background:none;font-size:18px;cursor:pointer;color:#475569}#bdBqN{font-size:12px;color:#64748b;font-variant-numeric:tabular-nums}
 .bd-m.bd-hit .wa-bubble-wrap{box-shadow:0 0 0 2px rgba(250,204,21,.6)}.bd-m.bd-hit-on .wa-bubble-wrap{box-shadow:0 0 0 3px #f59e0b}
 .bd-abajo{position:relative}.bd-nuevos{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:999px;background:#16a34a;color:#fff;font-size:10.5px;font-weight:800;line-height:18px;padding:0 4px}.bd-nuevos[hidden]{display:none}
+.fila-ic{font-size:13px;color:#64748b;margin-right:4px;vertical-align:-1px}.fila-etq{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}.fila-etq em,.bd-fi-etq em{font-style:normal;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:#fef3c7;color:#92400e}
+.bd-etq-l{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.bd-etq-l .nxCrmChip.on{background:#111;color:#fff}
+.bd-fi-cab{display:flex;gap:12px;align-items:center;margin-bottom:10px}.bd-fi-cab b{display:block;font-size:16px}.bd-fi-cab small{color:#64748b}
+.bd-fi-f{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:13.5px}.bd-fi-f>span:first-child{width:76px;color:#64748b;font-size:12px}.bd-fi-etq{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.bd-fi-sep{margin-top:14px}.bd-fi-fotos{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.bd-fi-fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block}
+.bd-fi-doc{display:flex;gap:8px;align-items:center;padding:6px 0;font-size:13px}.bd-fi-doc a{color:#0b6bcb;overflow-wrap:anywhere;flex:1}.bd-fi-doc small{color:#64748b}
+.bd-rr button{flex-direction:column;align-items:flex-start;gap:1px}.bd-rr button.on{background:#f1f5f9}.bd-rr button span{font-size:12.5px;color:#475569}.bd-rr .bd-rr-adm{flex-direction:row;color:#2563eb;font-size:13px;border-top:1px solid rgba(0,0,0,.06);border-radius:0 0 10px 10px}
+.bd-rr-fila{display:flex;gap:8px;align-items:flex-start;padding:8px;border:1px solid rgba(0,0,0,.08);border-radius:10px}.bd-rr-fila span{flex:1;font-size:13px;white-space:pre-wrap}
 .crm-tr-btn{position:relative}.crm-tr-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e31e24;color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center}.crm-tr-badge[hidden]{display:none}
 .crm-tr-lista{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow-y:auto;margin:8px 0;overscroll-behavior:contain}
 .crm-tr-emp,.crm-tr-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font-family:inherit;cursor:pointer}
@@ -1787,6 +1962,8 @@
 
   window.nxCRM = {
     trAbrir, trConfirmar, trBandeja, trIr,
+    bdChatMenu, bdNoLeido, bdFijar, bdSilenciar, bdEtiquetas, bdEtqTog, bdEtqNueva, bdEtqGuardar, bdFicha, bdCrearCliente, bdRR, bdRRKey, bdRRUsar, bdRRAdmin, bdRRGuardar, bdRRBorrar,
+    bdToast: function (m) { toast('ok', m); },
     bdAdjMenu, bdGrabar, bdGrabFin, bdUbicacion, bdUbAqui, bdUbEnviar, bdContacto, bdCtBuscar, bdCtEnviar, bdMsgMenu, bdCopiar, bdReenviar, bdReFiltrar, bdReEnviarA, bdBuscarChat, bdBq, bdBqIr,
     trBuscar: function (q) { TR.q = q || ''; trPintar(); },
     trElegir: function (id) { TR.elegido = id; trPintar(); },

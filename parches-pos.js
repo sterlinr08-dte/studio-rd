@@ -119,6 +119,21 @@
     clientes: function () { return _clientes || []; },
     nextSeq: function (t) { return nextSeq(t); },
     elegirCliente: function (cb) { nxPosClienteAbrir('nxCrmCliM', cb); },
+    // CRM (03-oct-2026): crear cliente desde un chat. Mismo insert de Clientes (código automático) y misma revisión de
+    // duplicados por teléfono: si ya existe, devuelve ese (con _existia) en vez de crear otro.
+    crearCliente: async function (d) {
+      const nombre = String((d && d.nombre) || '').trim(), tel = String((d && d.telefono) || '').replace(/\D/g, '');
+      if (nombre.length < 3) throw new Error('Escribe el nombre completo');
+      const dup = tel ? (_clientes || []).find(x => String(x.telefono || '').replace(/\D/g, '').slice(-10) === tel.slice(-10)) : null;
+      if (dup) return Object.assign({ _existia: true }, dup);
+      const body = { nombre: nombre, tipo_persona: 'fisica', telefono: tel || null, es_cliente: true, es_proveedor: false, es_empleado: false, es_banco: false, nivel_precio: 'final', acepta_whatsapp: false };
+      body.codigo = entCodigoAuto(body);
+      const r = await getAPI().post('pos_clientes', body); const nuevo = r && r[0];
+      if (!nuevo || !nuevo.id) throw new Error('sin id');
+      try { window.logAudit && window.logAudit('POS_CLIENTE_CREADO', (nuevo.codigo || '') + ' · ' + nuevo.nombre + ' · desde el CRM', 'CRM'); } catch (e) {}
+      _clientes.push(nuevo); _clientes.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+      return nuevo;
+    },
     facturar: function (cliId) { _cart = []; _factCli = cliId || ''; _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
     cotizar: function (c) { _cotEdit = { id: null, cliente_id: (c && c.id) || '', cliente_nombre: (c && c.nombre) || '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); }
   };

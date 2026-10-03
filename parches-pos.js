@@ -2189,10 +2189,35 @@
     try { await ajGuardarCfg({ fin_contrato_titulo: val('ajCtTit').trim() || null, fin_firma_vigencia_horas: horas, fin_contrato_plantilla: txt.trim() ? txt : null }); toast('ok', 'Contrato guardado', 'Se usará en los financiamientos nuevos'); }
     catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
+  // ── Funciones del CRM POR EMPLEADO (dueño 03-oct-2026, «solo por empleado»): qué canales atiende (WhatsApp, Instagram,
+  // Facebook) y si puede transferir clientes. Se guarda con crm_guardar_funciones (solo admin; el servidor lo aplica en la
+  // RLS y al transferir — migración 44). null = como siempre: todos los canales y puede transferir.
+  const CRM_CANALES = [['whatsapp', 'WhatsApp', 'ti-brand-whatsapp', '#15803d'], ['instagram', 'Instagram', 'ti-brand-instagram', '#c13584'], ['facebook', 'Facebook', 'ti-brand-messenger', '#1877f2']];
+  function crmFnDe(u) {
+    const f = (u && u.crm_funciones) || null;
+    return { canales: f && Array.isArray(f.canales) ? f.canales : CRM_CANALES.map(c => c[0]), transferir: !f || f.transferir !== false };
+  }
+  function crmFnHTML(pfx, f) {
+    return `<div class="ajSep">CRM · Mensajes</div>
+      <div class="ajHint" style="margin-bottom:6px">Canales que atiende este empleado en el CRM. Solo ve y responde los chats de los canales marcados (necesita además «Bandeja de mensajes» en su rol).</div>
+      <div class="ajCrmCan">${CRM_CANALES.map(c => `<label class="ajChk ajCrmChk"><input type="checkbox" id="${pfx}Can_${c[0]}"${f.canales.indexOf(c[0]) >= 0 ? ' checked' : ''}><i class="ti ${c[2]}" style="color:${c[3]}"></i> ${c[1]}</label>`).join('')}</div>
+      <label class="ajChk" style="margin:8px 0 2px"><input type="checkbox" id="${pfx}Transf"${f.transferir ? ' checked' : ''}> Puede transferir clientes a otro empleado</label>`;
+  }
+  function crmFnLeer(pfx) {
+    return { canales: CRM_CANALES.map(c => c[0]).filter(k => !!(document.getElementById(pfx + 'Can_' + k) || {}).checked), transferir: !!(document.getElementById(pfx + 'Transf') || {}).checked };
+  }
+  function crmFnIgual(a, b) { return a.transferir === b.transferir && a.canales.slice().sort().join() === b.canales.slice().sort().join(); }
+  async function crmFnGuardar(usuarioId, f) {
+    await getAPI().post('rpc/crm_guardar_funciones', { p_usuario: usuarioId, p_canales: f.canales, p_transferir: f.transferir });
+    try { window.logAudit && window.logAudit('CRM_FUNCIONES', 'usuario ' + usuarioId + ' · canales ' + (f.canales.join(', ') || 'ninguno') + ' · transferir ' + (f.transferir ? 'sí' : 'no'), 'Usuarios'); } catch (e) {}
+  }
   // ── Equipo: usuarios (lista, editar, desactivar, clave). Lo sensible lo hace el servidor (crear-usuario-staff). ──
   async function ajCargarUsuarios() {
     if (_ajUsuariosCargando) return; _ajUsuariosCargando = true; _ajUsuariosErr = '';
-    try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login&order=activo.desc,nom.asc') || []; }
+    try {
+      try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login,crm_funciones&order=activo.desc,nom.asc') || []; }
+      catch (e1) { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login&order=activo.desc,nom.asc') || []; }   // base sin la migración 44
+    }
     catch (e) { _ajUsuarios = null; _ajUsuariosErr = String(e && e.message || e); }
     _ajUsuariosCargando = false;
     if (_ajSec === 'equipo') ajRepintar();
@@ -2240,6 +2265,7 @@
       <div class="fr-row"><div class="fr"><label for="ajURol">Rol</label><select id="ajURol"${esYo ? ' disabled' : ''}>${rolOpts}</select></div>
       <div class="fr"><label for="ajUAlm">Almacén</label><select id="ajUAlm">${almOpts}</select></div></div>
       ${esYo ? '<div class="ajHint">No puedes cambiar tu propio rol ni desactivarte.</div>' : ''}
+      ${u.rol === 'admin' ? '' : crmFnHTML('ajU', crmFnDe(u))}
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="ajUBtn" onclick="window.nxAjUsrGuardar('${u.id}')"><i class="ti ti-device-floppy"></i> Guardar cambios</button></div>
       <div class="ajSep">Clave</div>
       <div class="fr-row"><div class="fr"><label for="ajUClave">Nueva clave (mín. 6)</label><input id="ajUClave" class="no-upper" autocomplete="new-password" placeholder="••••••"></div>
@@ -2255,6 +2281,14 @@
     try {
       const sel = document.getElementById('ajURol');
       await ajStaff({ accion: 'actualizar', usuario_id: id, nombre: nombre, rol: sel && !sel.disabled ? sel.value : undefined, almacen_id: val('ajUAlm') || null });
+      const u = (_ajUsuarios || []).find(x => String(x.id) === String(id));
+      if (document.getElementById('ajUTransf')) {
+        const f = crmFnLeer('ajU');
+        if (!crmFnIgual(f, crmFnDe(u))) {
+          try { await crmFnGuardar(id, f); }
+          catch (e) { toast('err', 'Se guardó el usuario, pero no sus funciones del CRM', String(e && e.message || e)); if (b) b.disabled = false; return; }
+        }
+      }
       cerrarModal('nxAjUsrM'); toast('ok', 'Usuario actualizado', 'El cambio de rol aplica en su próxima acción'); window.nxAjUsrRecargar();
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); if (b) b.disabled = false; }
   };
@@ -4593,6 +4627,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .nxAjWrap .ajUsr .ab{flex:none;width:36px;height:36px;padding:0;justify-content:center}
 .ajSep{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin:16px 0 6px;padding-top:12px;border-top:1px solid #e8ebf0}
 .ajChk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
+.ajCrmCan{display:flex;flex-wrap:wrap;gap:6px 14px}.ajCrmChk i{font-size:16px}
 @media (max-width:540px){.nxAjWrap .ajUsr .rol{display:none}.nxAjWrap h2{font-size:20px}}
 .nxCajaWrap .cajaCard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;padding:14px 16px;box-shadow:var(--pf-shadow)}
 .nxCajaWrap .cajaEsp{background:var(--pf-green-l);border:1px solid var(--pf-green);border-radius:12px;padding:10px 14px;color:var(--pf-green)}
@@ -12154,6 +12189,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="fr"><label>Rol</label><select id="stfRol">${rolOpts}</select></div>
       ${almOpts}
       <label class="ajChk" style="margin:4px 0 6px"><input type="checkbox" id="stfPedir" checked> Que cambie la clave la primera vez que entre</label>
+      ${crmFnHTML('stf', crmFnDe(null))}
       <div style="font-size:10.5px;color:#475569;margin-top:2px">El empleado entra en <b>studiord.net</b> con su usuario y clave, y ve SOLO los módulos de su rol. Sus datos son los de ESTA empresa.</div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="stfBtn" onclick="window.nxStaffCrear()"><i class="ti ti-check"></i> Crear usuario</button></div>
     </div>`;
@@ -12174,8 +12210,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const j = await resp.json().catch(() => ({}));
       if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
       try { window.logAudit && window.logAudit('STAFF_CREADO', nombre.toUpperCase() + ' · usuario ' + j.login + ' · rol ' + j.rol, 'Usuarios'); } catch (e) {}
+      // Funciones del CRM: solo si no son las de siempre (todos los canales + transferir).
+      const fn = crmFnLeer('stf'); let avisoFn = '';
+      if (!crmFnIgual(fn, crmFnDe(null))) {
+        try {
+          const r = await getAPI().get('usuarios_sistema', 'select=id&login=eq.' + encodeURIComponent(j.login || login) + '&limit=1');
+          if (!r || !r[0]) throw new Error('no se encontró el usuario recién creado');
+          await crmFnGuardar(r[0].id, fn);
+        } catch (e) { avisoFn = String(e && e.message || e); }
+      }
       cerrarModal('nxStaffM');
-      toast('ok', 'Usuario creado', j.login + ' (' + rolLabel(j.rol) + ') — ya puede entrar con su clave');
+      if (avisoFn) toast('err', 'Usuario creado, pero sin sus funciones del CRM', 'Ábrelo en Equipo y vuelve a marcarlas · ' + avisoFn);
+      else toast('ok', 'Usuario creado', j.login + ' (' + rolLabel(j.rol) + ') — ya puede entrar con su clave');
       if (_ajSec === 'equipo') window.nxAjUsrRecargar();
     } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear usuario'; }

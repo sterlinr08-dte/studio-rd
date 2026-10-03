@@ -34,7 +34,27 @@
   // Permisos por rol (dueño 02-oct-2026): «crm» = Leads y Campañas; «bandeja» = Mensajes y Redes. El servidor los vuelve a
   // comprobar (crm_permiso, migración 41); aquí solo se decide qué pestañas se muestran y qué se carga.
   function perm() { try { const p = ctx().crmPermisos ? ctx().crmPermisos() : null; if (p) return p; } catch (e) {} return { crm: true, bandeja: true }; }
-  function vistasPermitidas() { const p = perm(); return (p.bandeja ? ['mensajes', 'redes'] : []).concat(p.crm ? ['leads', 'campanas'] : []); }
+  // Funciones del CRM POR EMPLEADO (dueño 03-oct-2026, «solo por empleado»): canales que atiende y si puede transferir.
+  // Las marca el administrador en Ajustes → Equipo; el servidor las vuelve a comprobar (RLS + crm_transferir_conversacion,
+  // migración 44). Mientras no cargan (o si la migración no está), se asume lo de siempre: todos los canales.
+  const FN = { canales: ['whatsapp', 'instagram', 'facebook'], transferir: true, cargado: false, pidiendo: false, trPend: 0 };
+  function canalOk(p) { return FN.canales.indexOf(p) >= 0; }
+  function redesPermitidas() { return ['instagram', 'facebook'].filter(canalOk); }
+  function vistasPermitidas() {
+    const p = perm();
+    const bd = p.bandeja ? (canalOk('whatsapp') ? ['mensajes'] : []).concat(redesPermitidas().length ? ['redes'] : []) : [];
+    return bd.concat(p.crm ? ['leads', 'campanas'] : []);
+  }
+  async function cargarFunciones() {
+    try {
+      const f = await api().post('rpc/crm_mis_funciones', {});
+      if (f && Array.isArray(f.canales)) { FN.canales = f.canales; FN.transferir = f.transferir !== false; }
+    } catch (e) {}
+    FN.cargado = true;
+    const rs = redesPermitidas();
+    if (rs.length && rs.indexOf(BD.red) < 0) { BD.red = rs[0]; if (S.vista === 'redes') { BD.sel = null; BD.msgs = []; BD.clave = ''; bdCargar().then(() => { BD.listaHTML = ''; repintar(); }); } }
+    trContar();
+  }
   function esAdmin() { try { const r = ctx().rolEfectivo ? ctx().rolEfectivo() : 'admin'; return r === 'admin' || r === 'gerente'; } catch (e) { return false; } }
   function clientes() { try { return ctx().clientes ? ctx().clientes() : []; } catch (e) { return []; } }
   function cliDe(id) { return id ? clientes().find(c => String(c.id) === String(id)) : null; }
@@ -96,6 +116,7 @@
     const P = perm(), vistas = vistasPermitidas();
     if (!vistas.length) return '<div class="nxCrm crmB"><div class="crm-vacio">Tu rol no tiene acceso al CRM. Pídele al administrador que lo active en Permisos por rol.</div></div>';
     if (vistas.indexOf(S.vista) < 0) { S.vista = vistas[0]; BD.sel = null; BD.msgs = []; }
+    if (!FN.cargado && !FN.pidiendo) { FN.pidiendo = true; cargarFunciones().then(repintar); }
     if (!S.cargado && !S.error) { cargar().then(repintar); }
     if (P.bandeja && !BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); }
     const leadsAb = S.ops.filter(abierta).length;
@@ -114,9 +135,9 @@
     return `<div class="nxCrm crmB${BD.sel && (S.vista === 'mensajes' || S.vista === 'redes') ? ' chat-abierto' : ''}">
       <div class="crm-ocultar-en-chat">${S.vista === 'mensajes' ? selector : ''}
       <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
-        ${P.bandeja ? tab('mensajes', 'Mensajes', 'ti-brand-whatsapp') + tab('redes', 'Redes', 'ti-share') : ''}${P.crm ? tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '') + tab('campanas', 'Campañas', 'ti-speakerphone') : ''}
+        ${vistas.indexOf('mensajes') >= 0 ? tab('mensajes', 'Mensajes', 'ti-brand-whatsapp') : ''}${vistas.indexOf('redes') >= 0 ? tab('redes', 'Redes', 'ti-share') : ''}${P.crm ? tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '') + tab('campanas', 'Campañas', 'ti-speakerphone') : ''}
       </div>
-      <div class="crm-acciones-rapidas">${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.bdSincronizar()" title="Sincronizar conversaciones" aria-label="Sincronizar conversaciones"><i class="ti ti-cloud-download"></i></button><button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
+      <div class="crm-acciones-rapidas">${P.bandeja ? `<button class="crm-icon-btn pill-elevado crm-tr-btn" onclick="window.nxCRM.trBandeja()" title="Clientes transferidos a mí" aria-label="Clientes transferidos a mí"><i class="ti ti-arrows-transfer-down"></i><span id="crmTrBadge" class="crm-tr-badge"${FN.trPend ? '' : ' hidden'}>${FN.trPend || ''}</span></button>` : ''}${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.bdSincronizar()" title="Sincronizar conversaciones" aria-label="Sincronizar conversaciones"><i class="ti ti-cloud-download"></i></button><button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}
     </div>`;
   }
@@ -163,7 +184,7 @@
     const pch = (k, l, ic, col) => `<button class="rs-canal${BD.red === k ? ' on' : ''}" onclick="window.nxCRM.red('${k}')"><i class="ti ${ic}" style="color:${col}"></i> ${l}</button>`;
     return `<div class="rs-hub crm-ocultar-en-chat"><div class="rs-hub-head"><div class="rs-hub-title"><div class="rs-hub-icon"><i class="ti ti-affiliate"></i></div><div><h3>Redes Sociales</h3><p>Gestiona tus mensajes desde un solo lugar</p></div></div>
         <div class="rs-hub-buscar"><i class="ti ti-search"></i><input type="text" value="${esc(BD.q)}" placeholder="Buscar conversaciones..." oninput="window.nxCRM.bdBuscar(this.value)"></div></div>
-      <div class="rs-canales">${pch('instagram', 'Instagram', 'ti-brand-instagram', '#c13584')}${pch('facebook', 'Facebook', 'ti-brand-messenger', '#1877f2')}</div></div>
+      <div class="rs-canales">${canalOk('instagram') ? pch('instagram', 'Instagram', 'ti-brand-instagram', '#c13584') : ''}${canalOk('facebook') ? pch('facebook', 'Facebook', 'ti-brand-messenger', '#1877f2') : ''}</div></div>
       ${bdShellHTML()}`;
   }
 
@@ -709,7 +730,7 @@
         ${tel ? `<a href="tel:${esc(tel)}" class="wa-icon-btn" title="Llamar"><i class="ti ti-phone-call"></i></a>` : ''}
         ${cli ? '<span class="vinc-chip"><i class="ti ti-user-check"></i> Cliente vinculado</span>' : `<button class="wa-vinc" onclick="window.nxCRM.bdCliente('${c.id}')"><i class="ti ti-user-plus"></i> Vincular</button>`}
         ${c.archivada ? `<button class="wa-icon-btn" onclick="window.nxCRM.bdDesarchivar('${c.id}')" title="Devolver a la bandeja" aria-label="Devolver a la bandeja"><i class="ti ti-archive-off"></i></button>` : `<button class="wa-icon-btn" onclick="window.nxCRM.bdArchivar('${c.id}')" title="Archivar" aria-label="Archivar"><i class="ti ti-archive"></i></button>`}</div>
-      <div class="wa-chat-sub">${asig}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : perm().crm ? `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>` : ''}</div>`;
+      <div class="wa-chat-sub">${asig}${FN.transferir && (esAdmin() || !c.asignado_id || String(c.asignado_id) === String(me)) ? `<button class="btn-mini" onclick="window.nxCRM.trAbrir('${c.id}')" title="Pasar este cliente a otro empleado"><i class="ti ti-arrows-exchange"></i> Transferir</button>` : ''}${op ? `<button class="btn-mini" onclick="window.nxCRM.abrir('${op.id}')"><i class="ti ti-user-plus"></i> Lead: ${etN(op.etapa)}</button>` : perm().crm ? `<button class="btn-mini" onclick="window.nxCRM.bdOportunidad('${c.id}')"><i class="ti ti-plus"></i> Crear lead</button>` : ''}</div>`;
   }
   function bdPieHTML(c) {
     const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
@@ -911,6 +932,8 @@
     const canal = sb.channel('studio-crm-bandeja-' + (++BD.rt.n))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_conversaciones' }, ev => { if (BD.rt.canal === canal) bdEvConversacion(ev); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_mensajes' }, ev => { if (BD.rt.canal === canal) bdEvMensaje(ev); });
+    // Aviso al instante cuando un compañero me transfiere un cliente (migración 44).
+    if (yo()) canal.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'crm_transferencias', filter: 'a_id=eq.' + yo() }, ev => { if (BD.rt.canal === canal) trAviso(ev); });
     BD.rt.canal = canal;
     canal.subscribe((estado) => {
       if (BD.rt.canal !== canal) return;
@@ -1133,6 +1156,103 @@
     } catch (e) { toast('err', 'No se pudo', errTxt(e)); return false; }
   }
 
+  // ── Transferir cliente (dueño 03-oct-2026): pasar la conversación a otro empleado con nota y aviso, sin que el cliente
+  // tenga que volver a escribir. Todo lo valida el servidor (crm_transferir_conversacion, migración 44): solo se ofrece a
+  // empleados activos con la Bandeja y ese canal; el que la recibe queda asignado y la ve aunque antes no la viera.
+  const TR = { conv: null, lista: [], elegido: null, q: '', cargando: false, mias: [] };
+  async function trContar() {
+    if (!perm().bandeja) return;
+    try { const l = await api().post('rpc/crm_mis_transferencias', {}); TR.mias = Array.isArray(l) ? l : []; } catch (e) { return; }
+    FN.trPend = TR.mias.filter(t => !t.visto_at && t.sigue_mia).length;
+    const b = document.getElementById('crmTrBadge'); if (b) { b.textContent = FN.trPend || ''; b.hidden = !FN.trPend; }
+  }
+  function trFilasHTML() {
+    if (TR.cargando) return '<div class="crm-nota">Cargando empleados…</div>';
+    const q = TR.q.trim().toLowerCase();
+    const l = TR.lista.filter(u => !q || String(u.nom || '').toLowerCase().indexOf(q) >= 0);
+    if (!l.length) return `<div class="crm-nota">${TR.lista.length ? 'Nadie coincide con la búsqueda.' : 'No hay otro empleado con este canal. El administrador lo activa en Ajustes → Equipo.'}</div>`;
+    return l.map(u => `<button type="button" class="crm-tr-emp${String(TR.elegido) === String(u.id) ? ' on' : ''}" onclick="window.nxCRM.trElegir('${u.id}')"><span class="av">${esc(ini(u.nom))}</span><span class="tx"><b>${esc(u.nom || '')}</b><small>${esc(u.rol || '')}</small></span><i class="ti ti-check"></i></button>`).join('');
+  }
+  async function trAbrir(id) {
+    const c = BD.convs.find(x => String(x.id) === String(id)); if (!c) return;
+    TR.conv = id; TR.lista = []; TR.elegido = null; TR.q = ''; TR.cargando = true;
+    cerrar('crmTrM');
+    const ov = document.createElement('div'); ov.id = 'crmTrM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal crm-tr-modal" style="max-width:420px" role="dialog" aria-labelledby="crmTrT">
+      <div class="mt"><span id="crmTrT"><i class="ti ti-arrows-exchange"></i> Transferir a ${esc(bdNombre(c))}</span><button class="nxBack" type="button" onclick="document.getElementById('crmTrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <p class="crm-nota">El empleado que elijas lo atiende desde el mismo ${esc((PLAT[c.plataforma] || PLAT.whatsapp)[0])}. El cliente no tiene que volver a escribir.</p>
+      <label class="nxCrmF"><span>Buscar empleado</span><input id="crmTrQ" placeholder="Nombre…" oninput="window.nxCRM.trBuscar(this.value)"></label>
+      <div id="crmTrL" class="crm-tr-lista">${trFilasHTML()}</div>
+      <label class="nxCrmF"><span>Nota para tu compañero (opcional)</span><textarea id="crmTrNota" rows="2" maxlength="500" placeholder="Ej.: quiere el iPhone 15 a crédito, ya le envié precios"></textarea></label>
+      <button type="button" id="crmTrOk" class="nxCrmBtn p" style="width:100%;margin-top:10px" disabled onclick="window.nxCRM.trConfirmar()"><i class="ti ti-send"></i> Transferir</button>
+    </div>`;
+    document.body.appendChild(ov);
+    try { const l = await api().post('rpc/crm_empleados_transferir', { p_conv: id }); TR.lista = Array.isArray(l) ? l : []; }
+    catch (e) { TR.lista = []; toast('err', 'No se pudieron cargar los empleados', errTxt(e)); }
+    TR.cargando = false; trPintar();
+  }
+  function trPintar() {
+    const l = document.getElementById('crmTrL'); if (l) l.innerHTML = trFilasHTML();
+    const b = document.getElementById('crmTrOk'); if (b) b.disabled = !TR.elegido;
+  }
+  async function trConfirmar() {
+    if (!TR.conv || !TR.elegido) return;
+    const b = document.getElementById('crmTrOk'); if (b) { b.disabled = true; b.innerHTML = '<i class="ti ti-loader-2 crm-girando"></i> Transfiriendo…'; }
+    const nota = (document.getElementById('crmTrNota') || {}).value || '';
+    try {
+      const r = await api().post('rpc/crm_transferir_conversacion', { p_conv: TR.conv, p_a: TR.elegido, p_nota: nota });
+      cerrar('crmTrM');
+      toast('ok', 'Cliente transferido', 'Ahora lo atiende ' + ((r && r.a_nombre) || 'tu compañero'));
+      const id = TR.conv, u = TR.lista.find(x => String(x.id) === String(TR.elegido));
+      const c = BD.convs.find(x => String(x.id) === String(id));
+      if (!esAdmin()) {   // ya no es suya: sale de su lista
+        BD.convs = BD.convs.filter(x => String(x.id) !== String(id));
+        if (String(BD.sel) === String(id)) { BD.sel = null; BD.msgs = []; bdModoChat(); }
+        bdPintarLista();
+      } else if (c) { c.asignado_id = TR.elegido; c.asignado_nombre = u ? u.nom : c.asignado_nombre; bdPintarLista(); bdPintarCabPie(true); }
+    } catch (e) {
+      const m = String((e && e.message) || e);
+      toast('err', 'No se pudo transferir', /CRM_SIN_TRANSFERIR/.test(m) ? 'Tu usuario no puede transferir clientes. Pídeselo al administrador.' : /CRM_EMPLEADO_NO_VALIDO/.test(m) ? 'Ese empleado no atiende este canal' : /CRM_SIN_PERMISO_CONVERSACION/.test(m) ? 'Esta conversación ya no es tuya' : errTxt(e));
+      if (b) { b.disabled = false; b.innerHTML = '<i class="ti ti-send"></i> Transferir'; }
+    }
+  }
+  async function trBandeja() {
+    cerrar('crmTrBM');
+    const ov = document.createElement('div'); ov.id = 'crmTrBM'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxCrmModal" style="max-width:440px" role="dialog" aria-labelledby="crmTrBT"><div class="mt"><span id="crmTrBT"><i class="ti ti-arrows-transfer-down"></i> Transferidos a mí</span><button class="nxBack" type="button" onclick="document.getElementById('crmTrBM').remove()"><i class="ti ti-arrow-left"></i> Cerrar</button></div><div id="crmTrBL" class="crm-tr-lista"><div class="crm-nota">Cargando…</div></div></div>`;
+    document.body.appendChild(ov);
+    await trContar();
+    const l = document.getElementById('crmTrBL'); if (!l) return;
+    l.innerHTML = TR.mias.length ? TR.mias.map((t, i) => {
+      const p = PLAT[t.plataforma] || PLAT.whatsapp;
+      return `<button type="button" class="crm-tr-item${t.visto_at ? '' : ' nuevo'}${t.sigue_mia ? '' : ' fuera'}" onclick="window.nxCRM.trIr(${i})"${t.sigue_mia ? '' : ' disabled'}>
+        <i class="ti ${p[1]}" style="color:${p[2]}"></i><span class="tx"><b>${esc(t.cliente || 'Cliente')}</b><small>De ${esc(t.de_nombre || 'un compañero')} · ${bdHora(t.created_at)}${t.sigue_mia ? '' : ' · ya no está asignado a ti'}</small>${t.nota ? `<em>“${esc(t.nota)}”</em>` : ''}</span>${t.visto_at ? '' : '<span class="pt" aria-label="Nuevo"></span>'}</button>`;
+    }).join('') : '<div class="crm-nota">No te han transferido clientes en los últimos 7 días.</div>';
+  }
+  async function trIr(i) {
+    const t = TR.mias[i]; if (!t || !t.sigue_mia) return;
+    cerrar('crmTrBM');
+    if (!t.visto_at) { t.visto_at = new Date().toISOString(); api().post('rpc/crm_transferencia_vista', { p_id: t.id }).catch(() => {}); FN.trPend = Math.max(0, FN.trPend - 1); }
+    const k = t.plataforma === 'whatsapp' ? 'mensajes' : 'redes';
+    if (k === 'redes') BD.red = t.plataforma;
+    S.vista = k; BD.linea = ''; BD.filtro = 'todos'; BD.asig = 'todas'; BD.q = ''; BD.sel = null; BD.msgs = []; BD.cargandoLista = true;
+    repintar();
+    await bdCargar();
+    if (!BD.convs.some(c => String(c.id) === String(t.conversacion_id))) {
+      try { const r = await api().get('crm_conversaciones', 'select=*&id=eq.' + t.conversacion_id); if (r && r[0]) { BD.convs.unshift(r[0]); bdOrdenar(); } } catch (e) {}
+    }
+    BD.listaHTML = ''; repintar();
+    if (BD.convs.some(c => String(c.id) === String(t.conversacion_id))) bdAbrir(t.conversacion_id);
+    else toast('err', 'No se pudo abrir la conversación', 'Puede que ya no esté asignada a ti');
+  }
+  function trAviso(ev) {
+    const t = ev && ev.new; if (!t) return;
+    toast('info', 'Te transfirieron un cliente', (t.de_nombre || 'Un compañero') + (t.nota ? ': ' + t.nota : ''));
+    trContar(); bdRefrescar();
+  }
+
   // ── Estilos ────────────────────────────────────────────────────────
   function ensureCSS() {
     if (document.getElementById('nxCrmCSS')) return;
@@ -1165,6 +1285,15 @@
 .nxCrmTL{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}.nxCrmTL li{display:flex;gap:10px;padding:8px 2px;border-bottom:1px solid var(--c-line)}.nxCrmTL li>i{font-size:16px;color:var(--c-mute);margin-top:2px;flex:none}
 .nxCrmTL li p{margin:0;font-size:13px;overflow-wrap:anywhere}.nxCrmTL li small{font-size:11px;color:var(--c-mute)}.nxCrmTL li.a-etapa p,.nxCrmTL li.a-sistema p{font-weight:600}.nxCrmTL li.a-tarea>i{color:var(--c-gold-d,#806515)}.nxCrmTL li.done p{text-decoration:line-through;color:var(--c-mute)}.nxCrmTL li.vac{color:var(--c-mute);font-size:12px}
 .nxCrmMotL{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.crm-tr-btn{position:relative}.crm-tr-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e31e24;color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center}.crm-tr-badge[hidden]{display:none}
+.crm-tr-lista{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow-y:auto;margin:8px 0;overscroll-behavior:contain}
+.crm-tr-emp,.crm-tr-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font-family:inherit;cursor:pointer}
+.crm-tr-emp .av{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#111;color:#fff;font-size:12px;font-weight:700}
+.crm-tr-emp .tx,.crm-tr-item .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.crm-tr-emp .tx b,.crm-tr-item .tx b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-tr-emp .tx small,.crm-tr-item .tx small{font-size:11.5px;color:var(--c-mute)}.crm-tr-item .tx em{font-size:12px;color:var(--c-ink);font-style:normal;opacity:.8;overflow-wrap:anywhere}
+.crm-tr-emp>i{color:var(--c-gold);opacity:0}.crm-tr-emp.on{border-color:var(--c-gold);box-shadow:0 0 0 2px rgba(201,162,39,.25)}.crm-tr-emp.on>i{opacity:1}
+.crm-tr-item>i{font-size:20px;flex:none}.crm-tr-item.nuevo{border-color:var(--c-gold)}.crm-tr-item .pt{flex:none;width:9px;height:9px;border-radius:50%;background:#e31e24}.crm-tr-item.fuera{opacity:.55;cursor:default}
+.crm-tr-modal textarea{resize:vertical;min-height:54px;font-family:inherit;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid var(--c-line)}
 .nxCrm *,.nxCrmModal *,.nxCrm ::placeholder,.nxCrmModal ::placeholder{text-transform:none!important}.nxCrm .nxCrmT th{text-transform:uppercase!important}
 .nxCrmFB>*{flex:none}
 .nxCrmFicha .nxCrmChip.on,.nxCrmMotL .nxCrmChip:hover{background:#111;color:#fff}
@@ -1317,6 +1446,9 @@
   }
 
   window.nxCRM = {
+    trAbrir, trConfirmar, trBandeja, trIr,
+    trBuscar: function (q) { TR.q = q || ''; trPintar(); },
+    trElegir: function (id) { TR.elegido = id; trPintar(); },
     bdAbrir, bdEnviar, bdAdjuntar, bdReintentar, bdSincronizar, bdCitar, bdIrA, bdPlantillas, bdPlantEnviar, bdTeclado,
     bdCitaQuitar: function () { BD.cita = null; const cb = document.getElementById('bdCitaBar'); if (cb) cb.innerHTML = ''; },
     bdAbajo: function () { const m = document.getElementById('bdMsgs'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); BD.pegadoAbajo = true; const b = document.getElementById('bdAbajo'); if (b) b.classList.remove('on'); },

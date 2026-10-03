@@ -33,12 +33,24 @@ function filtrar(tabla, qs) {
 const espera = ms => new Promise(r => setTimeout(r, ms));
 window.API = { url: 'https://qa.local', key: 'anon', token: 'tok',
   async get(t, qs) { await espera(15); LLAMADAS.push(['get', t, qs]); CUENTA.get[t] = (CUENTA.get[t] || 0) + 1; if (window.CARGA_FALLA) throw new Error('Failed to fetch'); if (!DB[t]) return []; return filtrar(t, qs); },
-  async post(t, b) { await espera(10); LLAMADAS.push(['post', t, b]); if (t.startsWith('rpc/')) return [{ id: 'u1', nom: 'Admin' }]; const f = Object.assign({ id: 'x' + Math.random().toString(36).slice(2) }, b); (DB[t] = DB[t] || []).push(f); return [f]; },
+  async post(t, b) { await espera(10); LLAMADAS.push(['post', t, b]); if (t.startsWith('rpc/')) return rpcSim(t.slice(4), b || {}); const f = Object.assign({ id: 'x' + Math.random().toString(36).slice(2) }, b); (DB[t] = DB[t] || []).push(f); return [f]; },
   async patch(t, filtro, b) { await espera(10); LLAMADAS.push(['patch', t, filtro, b]); const id = filtro.split('eq.')[1]; const f = (DB[t] || []).find(x => String(x.id) === id); if (f) Object.assign(f, b); return f ? [JSON.parse(JSON.stringify(f))] : []; },
   async del(t, filtro) { LLAMADAS.push(['del', t, filtro]); return []; }
 };
+// RPC simuladas — funciones del CRM por empleado y transferencias (migración 44). ?can=whatsapp,instagram&tr=0&rol=vendedor&trm=1
+const QP = new URLSearchParams(location.search);
+window.TRANSF = [];
+window.MIS_TR = QP.get('trm') ? [{ id: 't1', conversacion_id: 'ig3', plataforma: 'instagram', cliente: 'IG 3', de_nombre: 'MARIA VENDEDORA', nota: 'quiere el iPhone 15 a crédito', created_at: ISO(ahora - 600e3), visto_at: null, sigue_mia: true }] : [];
+function rpcSim(f, b) {
+  if (f === 'crm_mis_funciones') return { canales: (QP.get('can') || 'whatsapp,instagram,facebook').split(','), transferir: QP.get('tr') !== '0' };
+  if (f === 'crm_empleados_transferir') return [{ id: 'u2', nom: 'MARIA VENDEDORA', rol: 'vendedor' }, { id: 'u3', nom: 'PEDRO REDES', rol: 'vendedor' }];
+  if (f === 'crm_transferir_conversacion') { const c = DB.crm_conversaciones.find(x => x.id === b.p_conv); if (c) { c.asignado_id = b.p_a; c.asignado_nombre = b.p_a === 'u2' ? 'MARIA VENDEDORA' : 'PEDRO REDES'; } TRANSF.push(b); return { ok: true, a_nombre: c ? c.asignado_nombre : '' }; }
+  if (f === 'crm_mis_transferencias') return JSON.parse(JSON.stringify(MIS_TR));
+  if (f === 'crm_transferencia_vista') { const t = MIS_TR.find(x => x.id === b.p_id); if (t) t.visto_at = ISO(Date.now()); return null; }
+  return [{ id: 'u1', nom: 'Admin' }];
+}
 window.toast = (t, m, s) => { (window.TOASTS = window.TOASTS || []).push([t, m, s]); };
-window.nxPosCtx = { renderPOS() { CUENTA.renderPOS++; document.getElementById('view').innerHTML = window.nxCRM.render(); }, sesion: () => ({ id: 'u1', nom: 'Admin' }), rolEfectivo: () => 'admin', crmPermisos: () => { const q = new URLSearchParams(location.search).get('perm'); return { crm: !q || q === 'crm', bandeja: !q || q === 'bandeja' }; }, clientes: () => [], elegirCliente() {}, nextSeq: async () => 'CRM-1', cotizar() {}, facturar() {} };
+window.nxPosCtx = { renderPOS() { CUENTA.renderPOS++; document.getElementById('view').innerHTML = window.nxCRM.render(); }, sesion: () => ({ id: QP.get('yo') || 'u1', nom: 'Admin' }), rolEfectivo: () => QP.get('rol') || 'admin', crmPermisos: () => { const q = new URLSearchParams(location.search).get('perm'); return { crm: !q || q === 'crm', bandeja: !q || q === 'bandeja' }; }, clientes: () => [], elegirCliente() {}, nextSeq: async () => 'CRM-1', cotizar() {}, facturar() {} };
 // tiempo real simulado
 window.RT = { handlers: {}, subs: 0, removed: 0, canales: [] };
 window.supabase = { createClient: () => ({ realtime: { setAuth: async () => {} },

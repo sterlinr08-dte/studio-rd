@@ -12,6 +12,9 @@
 // 02-oct-2026 (CRM afinado): un reintento de Zernio de un mensaje ya guardado se descarta ANTES de descargar el adjunto
 // (antes dejaba archivos huérfanos en crm-media); la hora del mensaje manda sobre la del evento; los errores de la base al
 // actualizar estados o completar el eco ya no se tragan; el usuario de Instagram solo se reescribe si cambió.
+// 03-oct-2026 (dueño: «que lleguen los mensajes lo más pronto posible, sin lag»): menos viajes a la base antes de guardar
+// el mensaje — la lista de canales se guarda 15 s en memoria, la marca «último evento» del canal ya no hace esperar, y un
+// texto entrante no consulta antes si ya existe (el índice único de proveedor_msg_id descarta el duplicado).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -43,6 +46,15 @@ function e164(s: unknown): string { let d = soloDigitos(s); if (d.length === 10)
 // deno-lint-ignore no-explicit-any
 type Any = any;
 let orgCache: string | null = null;
+// Canales en memoria 15 s (antes: una consulta por cada evento). Un canal nuevo o desconocido fuerza recargar.
+let canalesCache: { data: Any[]; at: number } | null = null;
+async function cargarCanales(forzar = false): Promise<Any[]> {
+  if (!forzar && canalesCache && Date.now() - canalesCache.at < 15000) return canalesCache.data;
+  const { data, error } = await db.from("crm_canales").select("*");
+  if (error) throw new Error("canales: " + error.message);
+  canalesCache = { data: data ?? [], at: Date.now() };
+  return canalesCache.data;
+}
 async function organizacion(): Promise<string | null> {
   if (orgCache) return orgCache;
   const { data } = await db.from("pos_config").select("organizacion_id").limit(1).maybeSingle();
@@ -139,7 +151,8 @@ async function procesarMensaje(p: Any, canal: Any, canales: Any[]) {
   // La hora del MENSAJE manda: en un reintento tardío la hora del evento es posterior y desordenaba el chat.
   const cuando = msg.timestamp ?? msg.createdAt ?? p.timestamp ?? new Date().toISOString();
 
-  if (pid) {
+  if (pid && !(entrante && !adj.length)) {
+    // (Texto entrante: no hace falta preguntar; si ya estaba, el índice único lo descarta al insertar.)
     // Ya guardado (reintento de Zernio, o crm-enviar lo guardó primero): no se duplica ni se descarga otra vez el adjunto.
     const { data: ya } = await db.from("crm_mensajes").select("id").eq("proveedor_msg_id", pid).maybeSingle();
     if (ya) return;
@@ -220,8 +233,10 @@ Deno.serve(async (req) => {
 
   try {
     if (!accountId || !plataforma || !["whatsapp", "instagram", "facebook"].includes(plataforma)) { await cerrar("ignorado: plataforma o cuenta"); return json({ ok: true, ignored: true }); }
-    const { data: canales } = await db.from("crm_canales").select("*");
-    let canal = (canales ?? []).find((c: Any) => c.zernio_account_id === accountId);
+    let canales = await cargarCanales();
+    let canal = canales.find((c: Any) => c.zernio_account_id === accountId);
+    // Desconocido o apagado en la copia en memoria: se relee al momento (un canal recién activado no espera 15 s).
+    if (!canal || !canal.activo) { canales = await cargarCanales(true); canal = canales.find((c: Any) => c.zernio_account_id === accountId); }
     if (!canal) {
       const org = await organizacion();
       if (!org) throw new Error("sin organización");
@@ -235,14 +250,15 @@ Deno.serve(async (req) => {
       if (nuevo.error && nuevo.error.code !== "23505") throw new Error("canal: " + nuevo.error.message);
       await cerrar(gemelo ? `cuenta nueva de Zernio para el número de «${gemelo.nombre ?? gemelo.identificador}»: actualizar ese canal` : "canal nuevo registrado apagado"); return json({ ok: true, canal_nuevo: true });
     }
-    await db.from("crm_canales").update({ ultimo_evento_at: new Date().toISOString() }).eq("id", canal.id);
-    if (!canal.activo) { await cerrar("canal apagado"); return json({ ok: true, canal_apagado: true }); }
+    // La marca de «último evento» va en paralelo: no retrasa guardar el mensaje (se espera antes de responder).
+    const toque = db.from("crm_canales").update({ ultimo_evento_at: new Date().toISOString() }).eq("id", canal.id).then(() => {}, () => {});
+    if (!canal.activo) { await toque; await cerrar("canal apagado"); return json({ ok: true, canal_apagado: true }); }
 
     const evento = String(p.event ?? "");
-    if (evento === "message.received" || evento === "message.sent") await procesarMensaje(p, canal, canales ?? []);
+    if (evento === "message.received" || evento === "message.sent") await procesarMensaje(p, canal, canales);
     else if (evento === "message.delivered" || evento === "message.read" || evento === "message.failed") await procesarEstado(p);
-    else { await cerrar("evento no manejado: " + evento); return json({ ok: true, ignored: true }); }
-    await cerrar(null);
+    else { await toque; await cerrar("evento no manejado: " + evento); return json({ ok: true, ignored: true }); }
+    await Promise.all([toque, cerrar(null)]);
     return json({ ok: true });
   } catch (e) {
     const m = e instanceof Error ? e.message : String(e);

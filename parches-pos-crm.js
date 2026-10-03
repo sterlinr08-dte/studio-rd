@@ -184,7 +184,8 @@
     const pch = (k, l, ic, col) => `<button class="rs-canal${BD.red === k ? ' on' : ''}" onclick="window.nxCRM.red('${k}')"><i class="ti ${ic}" style="color:${col}"></i> ${l}</button>`;
     return `<div class="rs-hub crm-ocultar-en-chat"><div class="rs-hub-head"><div class="rs-hub-title"><div class="rs-hub-icon"><i class="ti ti-affiliate"></i></div><div><h3>Redes Sociales</h3><p>Gestiona tus mensajes desde un solo lugar</p></div></div>
         <div class="rs-hub-buscar"><i class="ti ti-search"></i><input type="text" value="${esc(BD.q)}" placeholder="Buscar conversaciones..." oninput="window.nxCRM.bdBuscar(this.value)"></div></div>
-      <div class="rs-canales">${canalOk('instagram') ? pch('instagram', 'Instagram', 'ti-brand-instagram', '#c13584') : ''}${canalOk('facebook') ? pch('facebook', 'Facebook', 'ti-brand-messenger', '#1877f2') : ''}</div></div>
+      <div class="rs-canales">${canalOk('instagram') ? pch('instagram', 'Instagram', 'ti-brand-instagram', '#c13584') : ''}${canalOk('facebook') ? pch('facebook', 'Facebook', 'ti-brand-messenger', '#1877f2') : ''}<button class="crm-filtros-btn pill-elevado rs-filtros${BD.asig !== 'todas' ? ' activo' : ''}" onclick="window.nxCRM.filtrosMenu(event)"><i class="ti ti-adjustments-horizontal"></i> <span>Filtros</span></button></div>
+      <div class="crm-chips-row" id="bdChips">${bdChipsHTML()}</div></div>
       ${bdShellHTML()}`;
   }
 
@@ -427,7 +428,7 @@
   // 24 h de WhatsApp, canal activo). Nada se envía solo: únicamente cuando el empleado pulsa Enviar.
   const PLAT = { whatsapp: ['WhatsApp', 'ti-brand-whatsapp', '#15803d'], instagram: ['Instagram', 'ti-brand-instagram', '#c13584'], facebook: ['Facebook', 'ti-brand-messenger', '#1877f2'] };
   const BD = { convs: [], canales: [], sel: null, msgs: [], filtro: 'todos', asig: 'todas', linea: '', red: 'instagram', buscando: false, q: '', urls: {}, timer: null, cargado: false, enviando: false, error: '',
-    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null,
+    hayMas: false, cargandoViejos: false, pegadoAbajo: true, borr: {}, cita: null, firmaFallo: {},
     // 02-oct-2026 (CRM afinado): lista paginada por plataforma, búsqueda en el servidor, archivadas, estado de carga del
     // chat y repintado por partes (cabecera, lista y pie) en vez de redibujar todo el POS.
     clave: '', convsMas: false, cargandoMas: false, cargandoLista: false, avisoRed: '', listaHTML: '', listaScroll: 0, msgsEstado: '', firmaCab: '', firmaPie: '' };
@@ -439,6 +440,10 @@
   function bdHora(ts) { if (!ts) return ''; const d = diaRD(ts), h = hoyISO(); return d === h ? hora(ts) : d === addDays(h, -1) ? 'ayer' : dmy(ts).slice(0, 5); }
   function bdNombre(c) { const cli = cliDe(c.cliente_id); return (cli && cli.nombre) || c.contacto_nombre || c.contacto_usuario || c.telefono_e164 || 'Contacto'; }
   function bdPlat() { return S.vista === 'redes' ? BD.red : 'whatsapp'; }
+  // Borradores por conversación guardados en este equipo (paridad Bayol): no se pierden al recargar la página.
+  try { const g = JSON.parse(localStorage.getItem('studio_crm_borr') || '{}'); if (g && typeof g === 'object') BD.borr = g; } catch (e) {}
+  let bdBorrT = null;
+  function bdGuardarBorr() { clearTimeout(bdBorrT); bdBorrT = setTimeout(() => { try { const o = {}; for (const k in BD.borr) if (BD.borr[k] && String(BD.borr[k]).trim()) o[k] = String(BD.borr[k]).slice(0, 2000); localStorage.setItem('studio_crm_borr', JSON.stringify(o)); } catch (e) {} }, 400); }
   function bdArch() { return BD.filtro === 'archivadas'; }
   function bdFiltroBase() { return 'plataforma=eq.' + bdPlat() + '&archivada=eq.' + bdArch(); }
   async function bdCargar() {
@@ -571,7 +576,7 @@
       return `<div class="wa-row${String(BD.sel) === String(c.id) ? ' active' : ''}${nl ? ' no-leido' : ''}${pend ? ' pendiente' : ''}" data-id="${esc(c.id)}" onclick="window.nxCRM.bdAbrir('${c.id}')">
         <div class="wa-avatar-wrap"><div class="wa-avatar">${esc(ini(bdNombre(c)))}</div><span class="wa-wa-badge p-${c.plataforma}"><i class="ti ${p[1]}"></i></span></div>
         <div style="min-width:0;flex:1"><div class="r1"><span class="fila-nombre">${esc(bdNombre(c))}</span><span class="fila-hora">${bdHoraRel(c.ultimo_mensaje_at)}</span></div>
-          <div class="r2"><span class="fila-preview">${esc(c.ultimo_mensaje_preview || '')}</span><span class="r2b">${pend ? '<span class="fila-pendiente"><i class="ti ti-user-exclamation"></i> Atender</span>' : ''}${nl ? `<span class="fila-badge">${c.no_leidos}</span>` : ''}${c.asignado_nombre ? `<span class="fila-asignado">${esc(c.asignado_nombre)}</span>` : ''}</span></div></div>
+          <div class="r2"><span class="fila-preview">${String(BD.sel) !== String(c.id) && BD.borr[c.id] && String(BD.borr[c.id]).trim() ? `<b class="fila-borr">Borrador:</b> ${esc(String(BD.borr[c.id]).trim().slice(0, 80))}` : esc(c.ultimo_mensaje_preview || '')}</span><span class="r2b">${pend ? '<span class="fila-pendiente"><i class="ti ti-user-exclamation"></i> Atender</span>' : ''}${nl ? `<span class="fila-badge">${c.no_leidos}</span>` : ''}${c.asignado_nombre ? `<span class="fila-asignado">${esc(c.asignado_nombre)}</span>` : ''}</span></div></div>
       </div>`; }).join('') + mas;
   }
   // La lista solo se toca si cambió lo que se ve (cada evento de tiempo real ya no la redibuja entera sin necesidad).
@@ -590,7 +595,7 @@
   function bdPuedeCitar(c) { return !!c && c.plataforma === 'whatsapp'; }
   function bdBurbuja(m, nombre) {
     const out = m.direccion === 'out', u = bdUrl(m.media_path), tmp = String(m.id).startsWith('tmp-');
-    const media = m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen" onload="window.nxCRM.bdMediaLista()"></a>` : m.tipo === 'audio' ? `<audio controls preload="metadata" src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls preload="metadata" src="${esc(u)}" onloadedmetadata="window.nxCRM.bdMediaLista()"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`) : '';
+    const media = m.media_path ? (u ? (m.tipo === 'imagen' ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Imagen" onload="window.nxCRM.bdMediaLista()" onerror="window.nxCRM.bdMediaFallo('${esc(m.media_path)}')"></a>` : m.tipo === 'audio' ? `<audio controls preload="metadata" src="${esc(u)}"></audio>` : m.tipo === 'video' ? `<video controls preload="metadata" src="${esc(u)}" onloadedmetadata="window.nxCRM.bdMediaLista()"></video>` : `<a href="${esc(u)}" target="_blank" rel="noopener"><i class="ti ti-file"></i> Abrir archivo</a>`) : ((BD.firmaFallo[m.media_path] || 0) >= 2 ? `<div class="ld bd-nodisp"><i class="ti ti-photo-off"></i> Adjunto no disponible <button type="button" class="btn-mini" onclick="window.nxCRM.bdMediaReintentar('${esc(m.media_path)}')">Reintentar</button></div>` : `<div class="ld"><i class="ti ti-paperclip"></i> ${esc(m.tipo)}…</div>`)) : '';
     let cita = '';
     if (m.responde_a_id) {
       const o = BD.msgs.find(x => String(x.id) === String(m.responde_a_id));
@@ -602,13 +607,15 @@
     const fallo = m.estado === 'fallido' ? `<div class="err">No se envió.${m.error ? ' ' + esc(bdErrorLegible(m.error)) : ''}${out && (m.cuerpo || tmp) && m.tipo !== 'plantilla' ? ` <button type="button" class="bd-reint" onclick="window.nxCRM.bdReintentar('${m.id}')"><i class="ti ti-refresh"></i> Reintentar</button>` : ''}</div>` : '';
     return `<div class="wa-brow ${out ? 'out' : 'in'}"><div class="wa-bubble-wrap" style="background:${m.estado === 'fallido' ? '#fee2e2' : out ? '#dcf8c6' : '#fff'}">${resp}
       <div class="who" style="color:${out ? '#166534' : '#128C7E'}">${out ? 'Tú (STUDIO)' + (m.enviado_por_nombre ? ' · ' + esc(m.enviado_por_nombre) : m.desde_telefono ? ' · desde el teléfono' : '') : esc(nombre)}</div>
-      ${cita}${plant}${media}${m.cuerpo ? `<div class="tx">${esc(m.cuerpo)}</div>` : ''}
+      ${cita}${plant}${media}${m.cuerpo ? `<div class="tx">${bdTexto(m.cuerpo)}</div>` : ''}
       <div class="wa-tick-line">${hora(m.created_at)} ${out ? bdIcono(m.estado) : ''}</div>
       ${fallo}</div></div>`;
   }
   function bdErrorLegible(e) {
     const t = String(e || '');
     if (/ventana|24 horas/i.test(t)) return 'Pasaron más de 24 horas: usa una plantilla.';
+    if (/outside of allowed window|2018278|10903|messaging window|24.?hour/i.test(t)) return 'Pasaron más de 24 horas desde el último mensaje del cliente: Instagram/Facebook no deja responder hasta que vuelva a escribir.';
+    if (/131031|account locked/i.test(t)) return 'Meta tiene bloqueada la cuenta de WhatsApp (en revisión).';
     if (/apagado/i.test(t)) return 'El canal está apagado.';
     if (/sin respuesta|timeout/i.test(t)) return 'Zernio no respondió; revisa en el teléfono si salió.';
     return t.replace(/[{}"\[\]]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
@@ -621,9 +628,48 @@
     return BD.msgs.map(m => {
       const d = diaRD(m.created_at), sep = d !== dia; dia = d;
       const o = m.responde_a_id ? BD.msgs.find(x => String(x.id) === String(m.responde_a_id)) : null;
-      const k = [m.estado, m.cuerpo, m.media_path ? (bdUrl(m.media_path) || 'p') : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
-      return { id: String(m.id), k: k, html: (sep ? `<div class="wa-dia">${d === hoyISO() ? 'Hoy' : dmy(m.created_at)}</div>` : '') + bdBurbuja(m, nom) };
+      const k = [m.estado, m.cuerpo, m.media_path ? (bdUrl(m.media_path) || ((BD.firmaFallo[m.media_path] || 0) >= 2 ? 'f' : 'p')) : '', sep ? d : '', m.responde_a_id ? (o ? 'o' : 'x') : '', m.error || '', m.enviado_por_nombre || ''].join('|');
+      return { id: String(m.id), k: k, html: (sep ? `<div class="wa-dia">${bdDiaTxt(d, m.created_at)}</div>` : '') + bdBurbuja(m, nom) };
     });
+  }
+  function bdDiaTxt(d, ts) {
+    const h = hoyISO(); if (d === h) return 'Hoy'; if (d === addDays(h, -1)) return 'Ayer';
+    const n = diasEntre(d, h);
+    if (n > 0 && n < 7) { try { const s = new Date(d + 'T12:00:00Z').toLocaleDateString('es-DO', { weekday: 'long', timeZone: 'UTC' }); return s.charAt(0).toUpperCase() + s.slice(1); } catch (e) {} }
+    return dmy(ts);
+  }
+  // Texto del mensaje con enlaces que se pueden tocar (se escapa primero: nunca se inserta HTML del cliente).
+  function bdTexto(t) {
+    return esc(t).replace(/(\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]|\bwww\.[^\s<]+[^\s<.,;:!?)\]'"])/gi, u => `<a href="${/^www\./i.test(u) ? 'https://' + u : u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+  }
+  // ── Emojis (paridad Bayol): panel con los más usados por categoría; se insertan donde está el cursor.
+  const EMOJIS = [
+    ['Caras', '😀 😃 😄 😁 😆 😅 😂 🤣 😊 😇 🙂 😉 😌 😍 🥰 😘 😗 😋 😛 😜 🤪 😎 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 😣 😖 😫 😩 🥺 😢 😭 😤 😠 😡 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🤭 🤫 🤥 😶 😐 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕'],
+    ['Manos', '👍 👎 👌 🤌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐️ 🖖 👋 🙌 👏 🤝 🙏 💪 ✍️ 🫶'],
+    ['Corazones', '❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 ✨ 🔥 ⭐ 🌟 💯'],
+    ['Tienda', '📱 💻 🖥️ ⌚ 🎧 📺 📷 🔋 🔌 💡 🛒 🛍️ 💳 💵 💰 🧾 📦 🚚 🏪 🎁 🏷️ ✅ ❌ ⚠️ ⏰ 📅 📍 📞 💬 📩 🔧 🛠️']
+  ];
+  function bdEmojiPanel(ev) {
+    if (ev) ev.stopPropagation();
+    let m = document.getElementById('bdEmojiP');
+    if (m) { m.remove(); return; }
+    m = document.createElement('div'); m.id = 'bdEmojiP'; m.className = 'bd-emoji-panel'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'Emojis');
+    m.innerHTML = EMOJIS.map(g => `<div class="bd-emoji-g"><b>${g[0]}</b><div>${g[1].split(' ').map(e => `<button type="button" onclick="window.nxCRM.bdEmoji('${e}')">${e}</button>`).join('')}</div></div>`).join('');
+    document.body.appendChild(m);
+    const b = (ev && ev.currentTarget) || document.querySelector('.bd-emoji-btn'), r = b ? b.getBoundingClientRect() : { left: 10, top: innerHeight - 60 };
+    const w = Math.min(320, innerWidth - 16); m.style.width = w + 'px';
+    m.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    m.style.bottom = Math.max(8, innerHeight - r.top + 8) + 'px';
+    setTimeout(() => document.addEventListener('pointerdown', function f(e) { if (!m.contains(e.target) && !(e.target.closest && e.target.closest('.bd-emoji-btn'))) { m.remove(); document.removeEventListener('pointerdown', f, true); } }, true), 0);
+  }
+  function bdEmojiInsertar(e) {
+    const t = document.getElementById('bdTx'); if (!t) return;
+    const a = t.selectionStart != null ? t.selectionStart : t.value.length, z = t.selectionEnd != null ? t.selectionEnd : t.value.length;
+    t.value = t.value.slice(0, a) + e + t.value.slice(z);
+    const pos = a + e.length; try { t.setSelectionRange(pos, pos); } catch (er) {}
+    if (BD.sel) { BD.borr[BD.sel] = t.value; bdGuardarBorr(); }
+    t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+    if (window.innerWidth > 860) t.focus();
   }
   function bdBloque(it) { const d = document.createElement('div'); d.className = 'bd-m'; d.dataset.id = it.id; d.dataset.k = it.k; d.innerHTML = it.html; return d; }
   function bdUrl(path) { const x = path ? BD.urls[path] : null; return x && x.vence > Date.now() ? x.u : null; }
@@ -705,7 +751,9 @@
   function bdConvSel() { return BD.convs.find(x => String(x.id) === String(BD.sel)); }
   function bdCanalDe(c) { return c ? BD.canales.find(x => String(x.id) === String(c.canal_id)) : null; }
   function bdFirmaCab(c) { if (!c) return ''; const op = c.crm_id ? S.ops.find(o => String(o.id) === String(c.crm_id)) : null; return [c.id, bdNombre(c), c.telefono_e164, c.contacto_usuario, c.cliente_id, c.crm_id, op ? op.etapa : '', c.asignado_id, c.asignado_nombre, c.archivada, S.usuarios.length].join('|'); }
-  function bdFirmaPie(c) { if (!c) return ''; const k = bdCanalDe(c); return [c.id, !!(k && k.activo), bdVentana(c)].join('|'); }
+  function bdFirmaPie(c) { if (!c) return ''; const k = bdCanalDe(c); return [c.id, !!(k && k.activo), bdVentana(c), bdRed24(c)].join('|'); }
+  // Instagram/Facebook: Meta solo deja responder dentro de las 24 h del último mensaje del cliente (no hay plantillas).
+  function bdRed24(c) { return !!c && c.plataforma !== 'whatsapp' && !!c.ultimo_inbound_at && (Date.now() - new Date(c.ultimo_inbound_at).getTime()) > 24 * 3600e3; }
   function bdChatHTML() {
     const c = bdConvSel();
     if (!c) return '<div class="wa-chat-empty">Selecciona una conversación de la lista.</div>';
@@ -735,7 +783,7 @@
   function bdPieHTML(c) {
     const canal = bdCanalDe(c), puede = canal && canal.activo, abierta = bdVentana(c);
     return `${!puede ? '<div class="wa-aviso">Este canal está apagado. El administrador lo activa en <i class="ti ti-plug-connected"></i> Canales.</div>'
-        : abierta ? `<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><label class="wa-clip" title="Adjuntar" aria-label="Adjuntar"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
+        : abierta ? `${bdRed24(c) ? `<div class="wa-aviso bd-aviso-red24"><i class="ti ti-clock-exclamation"></i> Pasaron más de 24 horas desde el último mensaje del cliente: ${c.plataforma === 'instagram' ? 'Instagram' : 'Facebook'} puede rechazar la respuesta hasta que el cliente vuelva a escribir.</div>` : ''}<div id="bdCitaBar">${bdCitaHTML()}</div><div class="wa-input-bar"><button type="button" class="wa-clip bd-emoji-btn" title="Emojis" aria-label="Emojis" onclick="window.nxCRM.bdEmojis(event)"><i class="ti ti-mood-smile"></i></button><label class="wa-clip" title="Adjuntar" aria-label="Adjuntar"><i class="ti ti-paperclip"></i><input type="file" id="bdFile" accept="image/*,video/*,audio/*,application/pdf" onchange="window.nxCRM.bdAdjuntar(this)"></label>
           <textarea id="bdTx" rows="1" placeholder="Escribe un mensaje" onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&window.innerWidth>860){event.preventDefault();window.nxCRM.bdEnviar()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';window.nxCRM.bdBorrador(this.value)" onfocus="window.nxCRM.bdTeclado()" onblur="window.nxCRM.bdTeclado()">${esc(BD.borr[c.id] || '')}</textarea>
           <button class="wa-send-btn" onclick="window.nxCRM.bdEnviar()" aria-label="Enviar"><i class="ti ti-send"></i></button></div>`
         : `<div class="wa-aviso bd-aviso-24"><span><i class="ti ti-clock-off"></i> Pasaron más de 24 horas desde el último mensaje del cliente. WhatsApp solo permite plantillas aprobadas.</span><button type="button" class="bd-btn-plant" onclick="window.nxCRM.bdPlantillas()"><i class="ti ti-template"></i> Enviar plantilla</button></div>`}`;
@@ -771,16 +819,22 @@
     if (BD.error && !BD.convs.length) return `<div class="crm-vacio">No se pudieron cargar los mensajes: ${esc(BD.error)}<br><button type="button" class="btn-mini" style="margin-top:10px" onclick="window.nxCRM.actualizar()"><i class="ti ti-refresh"></i> Reintentar</button></div>`;
     if (!BD.cargado) return '<div class="crm-vacio">Cargando mensajes…</div>';
     bdTimer();
-    const base = BD.convs.filter(c => c.plataforma === 'whatsapp' && !c.archivada && (!BD.linea || String(c.canal_id) === String(BD.linea)));
-    const arch = bdArch();
-    const def = [['todos', 'Todos', arch ? 0 : base.length], ['no_leidos', 'No leídos', arch ? 0 : base.filter(c => c.no_leidos > 0).length], ['pendientes', 'Pendientes', arch ? 0 : base.filter(bdPendiente).length], ['archivadas', 'Archivadas', 0]];
-    const chips = def.map(d => `<button class="crm-chip pill-elevado${BD.filtro === d[0] ? ' on pill-hundido' : ''}" onclick="window.nxCRM.bdFiltro('${d[0]}')">${d[1]}${d[2] ? ` <span class="cuenta">${d[2]}</span>` : ''}</button>`).join('');
+    const chips = bdChipsHTML();
     return `<div class="crm-ocultar-en-chat"><div class="crm-busq-row">
         ${BD.buscando || BD.q ? `<input type="text" id="crmBuscarInput" class="crm-buscar-input" value="${esc(BD.q)}" placeholder="Buscar nombre o número..." oninput="window.nxCRM.bdBuscar(this.value)" onblur="window.nxCRM.bdBuscarBlur()">` : `<button class="crm-buscar pill-elevado" onclick="window.nxCRM.bdBuscarAbrir(this)"><i class="ti ti-search"></i> <span>Buscar</span></button>`}
         <button class="crm-filtros-btn pill-elevado${BD.asig !== 'todas' ? ' activo' : ''}" onclick="window.nxCRM.filtrosMenu(event)"><i class="ti ti-adjustments-horizontal"></i> <span>Filtros</span></button></div>
-      <div class="crm-chips-row">${chips}</div></div>
+      <div class="crm-chips-row" id="bdChips">${chips}</div></div>
       ${bdShellHTML()}`;
   }
+  // Chips Todos / No leídos / Pendientes / Archivadas (WhatsApp y Redes). Paridad Bayol 03-oct-2026: también en Redes, y
+  // sus números se actualizan con cada evento en tiempo real (antes solo al redibujar todo).
+  function bdChipsHTML() {
+    const base = BD.convs.filter(c => c.plataforma === bdPlat() && !c.archivada && (S.vista === 'redes' || !BD.linea || String(c.canal_id) === String(BD.linea)));
+    const arch = bdArch();
+    const def = [['todos', 'Todos', arch ? 0 : base.length], ['no_leidos', 'No leídos', arch ? 0 : base.filter(c => c.no_leidos > 0).length], ['pendientes', 'Pendientes', arch ? 0 : base.filter(bdPendiente).length], ['archivadas', 'Archivadas', 0]];
+    return def.map(d => `<button class="crm-chip pill-elevado${BD.filtro === d[0] ? ' on pill-hundido' : ''}" onclick="window.nxCRM.bdFiltro('${d[0]}')">${d[1]}${d[2] ? ` <span class="cuenta">${d[2]}</span>` : ''}</button>`).join('');
+  }
+  function bdPintarChips() { const e = document.getElementById('bdChips'); if (!e) return; const h = bdChipsHTML(); if (e._h !== h) { e._h = h; e.innerHTML = h; } }
   function canalesModal() {
     cerrar('crmCanalesM');
     const ov = document.createElement('div'); ov.id = 'crmCanalesM'; ov.className = 'overlay open';
@@ -793,6 +847,7 @@
     document.body.appendChild(ov);
   }
   function bdPintarParcial() {
+    bdPintarChips();
     bdPintarLista();
     bdPintarCabPie();
     bdSyncMsgs();
@@ -803,7 +858,7 @@
   const FIRMA_S = 6 * 3600;   // los enlaces de fotos/audios duran 6 h y se renuevan 5 min antes de vencer
   async function bdFirmar() {
     const b = apiBase(), ahora = Date.now();
-    const faltan = [...new Set(BD.msgs.filter(m => m.media_path).map(m => m.media_path))].filter(p => !bdFirmando.has(p) && !(BD.urls[p] && BD.urls[p].vence - ahora > 5 * 60e3));
+    const faltan = [...new Set(BD.msgs.filter(m => m.media_path).map(m => m.media_path))].filter(p => !bdFirmando.has(p) && (BD.firmaFallo[p] || 0) < 2 && !(BD.urls[p] && BD.urls[p].vence - ahora > 5 * 60e3));
     if (!faltan.length) return;
     faltan.forEach(x => bdFirmando.add(x));
     const hdr = { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': 'application/json' };
@@ -824,7 +879,7 @@
           } catch (e) {}
         }));
       }
-    } finally { faltan.forEach(x => bdFirmando.delete(x)); }
+    } finally { faltan.forEach(x => { bdFirmando.delete(x); if (!BD.urls[x]) BD.firmaFallo[x] = (BD.firmaFallo[x] || 0) + 1; else delete BD.firmaFallo[x]; }); }
     // Solo se completan los bloques con adjunto; no se mueve el scroll (si el usuario está leyendo arriba, se queda ahí).
     bdSyncMsgs();
   }
@@ -864,10 +919,27 @@
   }
   function bdPintarPronto() { clearTimeout(BD.rt.pintar); BD.rt.pintar = setTimeout(bdPintarParcial, 60); }
   function bdOrdenar() { BD.convs.sort((a, b) => String(b.ultimo_mensaje_at || '').localeCompare(String(a.ultimo_mensaje_at || ''))); }
+  let bdTonoUlt = 0, bdAudio = null;
+  function bdTono() {
+    const t = Date.now(); if (t - bdTonoUlt < 2500) return; bdTonoUlt = t;
+    try { if (localStorage.getItem('studio_crm_sonido') === '0') return; } catch (e) {}
+    try {
+      bdAudio = bdAudio || new (window.AudioContext || window.webkitAudioContext)();
+      const a = bdAudio, o = a.createOscillator(), g = a.createGain(), n0 = a.currentTime;
+      o.type = 'sine'; o.frequency.setValueAtTime(880, n0); o.frequency.setValueAtTime(1175, n0 + 0.09);
+      g.gain.setValueAtTime(0.0001, n0); g.gain.exponentialRampToValueAtTime(0.16, n0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, n0 + 0.28);
+      o.connect(g); g.connect(a.destination); o.start(n0); o.stop(n0 + 0.3);
+    } catch (e) {}
+  }
+  // El navegador solo deja sonar después de que el usuario tocó la página: se «despierta» el audio en el primer toque.
+  document.addEventListener('pointerdown', () => { try { if (bdAudio && bdAudio.state === 'suspended') bdAudio.resume(); } catch (e) {} }, { passive: true });
   function bdEvConversacion(ev) {
     const n = ev.new || {};
     if (!n.id) return;
     const i = BD.convs.findIndex(x => String(x.id) === String(n.id));
+    const ant = i >= 0 ? BD.convs[i] : null;
+    const entrante = n.ultimo_inbound_at && (ev.eventType === 'INSERT' || (ant ? ant.ultimo_inbound_at !== n.ultimo_inbound_at : (ev.old && ev.old.ultimo_inbound_at !== n.ultimo_inbound_at)));
+    if (entrante && !(String(n.id) === String(BD.sel) && !document.hidden) && Date.now() - Date.parse(n.ultimo_inbound_at) < 120000) bdTono();
     // Solo se guarda si pertenece a la lista que se está viendo (plataforma y archivadas / no archivadas).
     const encaja = n.plataforma === bdPlat() && !!n.archivada === bdArch();
     if (!encaja) { if (i >= 0 && String(n.id) !== String(BD.sel)) BD.convs.splice(i, 1); else if (i >= 0) BD.convs[i] = Object.assign({}, BD.convs[i], n); }
@@ -897,7 +969,7 @@
       const primero = BD.msgs.find(m => !String(m.id).startsWith('tmp-'));
       if (BD.hayMas && primero && Date.parse(n.created_at) < Date.parse(primero.created_at)) return;
       // Reemplaza la burbuja provisional («enviando…») por su clave de envío (o, de respaldo, por el mismo texto).
-      const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && ((n.idempotency_key && x.id === 'tmp-' + n.idempotency_key) || x.cuerpo === n.cuerpo)) : -1;
+      const t = n.direccion === 'out' ? BD.msgs.findIndex(x => String(x.id).startsWith('tmp-') && (n.idempotency_key ? x.id === 'tmp-' + n.idempotency_key : x.cuerpo === n.cuerpo)) : -1;
       if (t >= 0) BD.msgs[t] = n; else BD.msgs.push(n);
       BD.msgs.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
@@ -963,6 +1035,11 @@
     if (BD.rt.sb && !BD.rt.vivo) { BD.rt.fallos = 0; bdSuscribir(); } else bdRealtime();
     bdRefrescar();
   });
+  window.addEventListener('online', () => {
+    if (!document.querySelector('.crmB .wa-shell')) return;
+    if (BD.rt.sb) { BD.rt.fallos = 0; bdSuscribir(); } else bdRealtime();
+    bdRefrescar();
+  });
   async function bdAbrir(id) {
     if (String(BD.sel) === String(id) && BD.msgs.length) return;
     if (!BD.cita || String(BD.cita.conv) !== String(id)) BD.cita = null;
@@ -1006,7 +1083,7 @@
     BD.enviando = true;
     const cita = BD.cita && String(BD.cita.conv) === String(BD.sel) ? BD.cita.id : null;
     BD.cita = null; const cb = document.getElementById('bdCitaBar'); if (cb) cb.innerHTML = '';
-    t.value = ''; t.style.height = 'auto'; BD.borr[BD.sel] = '';
+    t.value = ''; t.style.height = 'auto'; BD.borr[BD.sel] = ''; bdGuardarBorr();
     try { await bdMandar(texto, cita); } finally { BD.enviando = false; }
   }
   async function bdReintentar(id) {
@@ -1028,7 +1105,7 @@
       const up = await fetch(`${b.url}/storage/v1/object/crm-media/${path}`, { method: 'POST', headers: { apikey: b.key, Authorization: 'Bearer ' + b.tok, 'Content-Type': f.type || 'application/octet-stream' }, body: f });
       if (!up.ok) throw new Error('No se pudo subir el archivo');
       await bdEnviarCuerpo({ conversacion_id: conv, texto: texto, adjunto_path: path, adjunto_tipo: tipo, adjunto_nombre: f.name, idempotency_key: uuid() });
-      if (t) t.value = ''; BD.borr[conv] = '';
+      if (t) t.value = ''; BD.borr[conv] = ''; bdGuardarBorr();
     } catch (e) { toast('err', 'No se envió el archivo', String(e.message || e)); }
     inp.value = '';
     if (String(BD.sel) === String(conv)) { BD.pegadoAbajo = true; await Promise.all([bdCargarMsgs(conv), BD.rt.vivo ? null : bdCargar()]); bdPintarParcial(); bdAlFondo(); }
@@ -1285,6 +1362,11 @@
 .nxCrmTL{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}.nxCrmTL li{display:flex;gap:10px;padding:8px 2px;border-bottom:1px solid var(--c-line)}.nxCrmTL li>i{font-size:16px;color:var(--c-mute);margin-top:2px;flex:none}
 .nxCrmTL li p{margin:0;font-size:13px;overflow-wrap:anywhere}.nxCrmTL li small{font-size:11px;color:var(--c-mute)}.nxCrmTL li.a-etapa p,.nxCrmTL li.a-sistema p{font-weight:600}.nxCrmTL li.a-tarea>i{color:var(--c-gold-d,#806515)}.nxCrmTL li.done p{text-decoration:line-through;color:var(--c-mute)}.nxCrmTL li.vac{color:var(--c-mute);font-size:12px}
 .nxCrmMotL{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.bd-emoji-panel{position:fixed;z-index:9999;max-height:min(46vh,320px);overflow-y:auto;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:16px;box-shadow:0 12px 32px rgba(15,23,42,.22);padding:8px;overscroll-behavior:contain}
+.bd-emoji-g b{display:block;font-size:11px;font-weight:700;color:#64748b;margin:6px 4px 2px}.bd-emoji-g>div{display:grid;grid-template-columns:repeat(8,1fr)}
+.bd-emoji-g button{border:0;background:none;font-size:22px;line-height:1;padding:6px 0;border-radius:8px;cursor:pointer}.bd-emoji-g button:hover{background:#f1f5f9}
+.fila-borr{color:#16a34a;font-weight:700}.bd-nodisp{color:#64748b}.bd-aviso-red24{display:flex;gap:6px;align-items:flex-start;font-size:12.5px}
+.rs-filtros{margin-left:auto}.wa-bubble-wrap .tx a{color:#0b6bcb;text-decoration:underline;overflow-wrap:anywhere}
 .crm-tr-btn{position:relative}.crm-tr-badge{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#e31e24;color:#fff;font-size:10px;font-weight:800;line-height:17px;text-align:center}.crm-tr-badge[hidden]{display:none}
 .crm-tr-lista{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,340px);overflow-y:auto;margin:8px 0;overscroll-behavior:contain}
 .crm-tr-emp,.crm-tr-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;border:1px solid var(--c-line);background:#fff;color:var(--c-ink);font-family:inherit;cursor:pointer}
@@ -1452,8 +1534,12 @@
     bdAbrir, bdEnviar, bdAdjuntar, bdReintentar, bdSincronizar, bdCitar, bdIrA, bdPlantillas, bdPlantEnviar, bdTeclado,
     bdCitaQuitar: function () { BD.cita = null; const cb = document.getElementById('bdCitaBar'); if (cb) cb.innerHTML = ''; },
     bdAbajo: function () { const m = document.getElementById('bdMsgs'); if (m) m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' }); BD.pegadoAbajo = true; const b = document.getElementById('bdAbajo'); if (b) b.classList.remove('on'); },
-    bdBorrador: function (v) { if (BD.sel) BD.borr[BD.sel] = v; },
+    bdBorrador: function (v) { if (BD.sel) { BD.borr[BD.sel] = v; bdGuardarBorr(); } },
     bdMediaLista: function () { if (BD.pegadoAbajo) bdAlFondo(); },
+    bdMediaFallo: function (path) { if (!path || !BD.urls[path]) return; delete BD.urls[path]; BD.firmaFallo[path] = (BD.firmaFallo[path] || 0) + 1; bdFirmar(); },
+    bdMediaReintentar: function (path) { delete BD.firmaFallo[path]; delete BD.urls[path]; bdSyncMsgs(false); bdFirmar(); },
+    bdEmojis: function (ev) { bdEmojiPanel(ev); },
+    bdEmoji: function (e) { bdEmojiInsertar(e); },
     bdPlantElegir: function (i) { if (!BD.plant) return; BD.plant.sel = i; BD.plant.vals = null; bdPlantPintar(); },
     bdPlantVar: function (i, val) { const P = BD.plant; if (!P || P.sel === null) return; const v = P.lista[P.sel].variables[i]; if (v === undefined) return; P.vals[v] = val; const pv = document.getElementById('bdPlantPrev'); if (pv) pv.textContent = bdPlantTexto(P.lista[P.sel], P.vals); },
     bdCerrar: function () { BD.sel = null; BD.msgs = []; BD.msgsEstado = ''; bdModoChat(); const l = document.getElementById('bdList'); if (l && BD.listaScroll) l.scrollTop = BD.listaScroll; },

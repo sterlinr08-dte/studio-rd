@@ -12,6 +12,7 @@ DB.crm_conversaciones.push({ id: C1, canal_id: 'c1', plataforma: 'whatsapp', con
 DB.crm_conversaciones.push({ id: VIEJO, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+18095550002', telefono_e164: '+18095550002', contacto_nombre: 'Cliente Viejo', ultimo_mensaje_at: ISO(ahora - 90e3), ultimo_mensaje_preview: 'hace días', ultimo_inbound_at: ISO(ahora - 3 * 864e5), ultima_respuesta_at: ISO(ahora - 90e3), no_leidos: 0, archivada: false });
 for (let i = 3; i <= 450; i++) DB.crm_conversaciones.push({ id: 'w' + i, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+1809' + String(5550000 + i), telefono_e164: '+1809' + String(5550000 + i), contacto_nombre: 'Contacto ' + i, ultimo_mensaje_at: ISO(ahora - i * 3600e3), ultimo_mensaje_preview: 'hola ' + i, ultimo_inbound_at: ISO(ahora - i * 3600e3), no_leidos: 0, archivada: false });
 for (let i = 1; i <= 30; i++) DB.crm_conversaciones.push({ id: 'ig' + i, canal_id: 'c2', plataforma: 'instagram', contacto_id: 'ig' + i, contacto_usuario: 'usuario_ig_' + i, contacto_nombre: 'IG ' + i, ultimo_mensaje_at: ISO(ahora - i * 7200e3), ultimo_mensaje_preview: 'dm ' + i, ultimo_inbound_at: ISO(ahora - i * 7200e3), no_leidos: 0, archivada: false });
+DB.crm_conversaciones.push({ id: 'iga1', canal_id: 'c2', plataforma: 'instagram', contacto_id: 'iga1', contacto_usuario: 'archivada_ig', contacto_nombre: 'IG Archivada', ultimo_mensaje_at: ISO(ahora - 900 * 3600e3), ultimo_mensaje_preview: 'vieja', ultimo_inbound_at: ISO(ahora - 900 * 3600e3), no_leidos: 0, archivada: true });
 for (let i = 1; i <= 5; i++) DB.crm_conversaciones.push({ id: 'ar' + i, canal_id: 'c1', plataforma: 'whatsapp', contacto_id: '+1829000000' + i, telefono_e164: '+1829000000' + i, contacto_nombre: 'Archivado ' + i, ultimo_mensaje_at: ISO(ahora - (500 + i) * 3600e3), ultimo_mensaje_preview: 'viejo', archivada: true, no_leidos: 0 });
 for (let i = 1; i <= 120; i++) DB.crm_mensajes.push({ id: 'm' + i, conversacion_id: C1, direccion: i % 3 ? 'in' : 'out', tipo: i === 110 ? 'imagen' : 'texto', cuerpo: 'msg ' + i, media_path: i === 110 ? 'entrantes/whatsapp/imagen/foto.jpg' : null, estado: i % 3 ? 'recibido' : 'leido', created_at: ISO(ahora - (121 - i) * 60e3) });
 DB.crm_mensajes.push({ id: 'v1', conversacion_id: VIEJO, direccion: 'in', tipo: 'texto', cuerpo: 'hace días', estado: 'recibido', created_at: ISO(ahora - 3 * 864e5) });
@@ -62,6 +63,7 @@ window.fetch = async (url, opt) => {
   url = String(url); const body = opt && opt.body && typeof opt.body === 'string' ? JSON.parse(opt.body) : null;
   const res = (o, st) => new Response(JSON.stringify(o), { status: st || 200, headers: { 'Content-Type': 'application/json' } });
   if (url.includes('/storage/v1/object/sign/crm-media')) {
+    if (window.FIRMA_FALLA) return res({ error: 'no' }, 500);
     if (body && body.paths) { CUENTA.firmasLote++; return res(body.paths.map(p => ({ path: p, signedURL: '/object/sign/crm-media/' + p + '?token=t' + Date.now(), error: null }))); }
     CUENTA.firmas++; return res({ signedURL: '/object/sign/crm-media/x?token=t' });
   }

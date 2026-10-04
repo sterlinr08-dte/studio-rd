@@ -33,6 +33,8 @@
       return out;
     } catch (e) { return null; }
   }
+  // Fecha SIN hora (columnas date «AAAA-MM-DD»): no pasa por Date, así no se corre un día por la zona horaria.
+  function fechaSolaDMY(d) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
   function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
   function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
@@ -677,7 +679,7 @@
           </div>
         </aside>
         <div class="nxTMain">
-          <div class="nxTTop"><button aria-label="Abrir el menú" class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(biz)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
+          <div class="nxTTop"><button aria-label="Abrir el menú" class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(_posTab === 'inicio' ? biz : ((MODULOS.find(m => m[0] === _posTab) || [])[1] || biz).replace('Financiamiento / Cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas'))}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
           ${previewBar}
           ${body}
         </div>
@@ -735,11 +737,11 @@
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
           ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
           ${kpi('#7c3aed', 'ti-trending-up', 'Utilidad', k.utilidadHoy != null ? fmt(k.utilidadHoy) : '—', margenPct)}
-          ${kpi('#ea580c', 'ti-tool', 'Equipos pendientes', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día')}
+          ${kpi('#ea580c', 'ti-tool', 'Equipos en taller', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día')}
           ${kpi('#2563eb', 'ti-shield-check', 'Garantías', k.garantiasVigentes != null ? String(k.garantiasVigentes) : '—', 'Vigentes')}
           ${kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), criticos ? 'Revisar productos' : 'Todo en orden')}
-          ${kpi('#dc2626', 'ti-truck-delivery', 'Compras pendientes', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
-          ${kpi('#db2777', 'ti-clock', 'Clientes esperando', String(esperando), esperando ? fmt(esperandoVal) + ' por facturar' : 'Nadie esperando')}
+          ${kpi('#dc2626', 'ti-truck-delivery', 'Por pagar', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
+          ${kpi('#db2777', 'ti-clock', 'En espera', String(esperando), esperando ? fmt(esperandoVal) + ' por facturar' : 'Nadie esperando')}
         </div>`;
     }
     let ultVentas = '';
@@ -757,7 +759,7 @@
       ultVentas = `<div class="nxTPanel"><div class="nxTPanelH"><b>Últimas ventas</b><small>Movimiento del día</small></div>${rows}</div>`;
     }
     return `<div class="nxInicio">
-        <div class="nxIniHead"><div><div class="nxIniHi">${saludo} 👋</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
+        <div class="nxIniHead"><div><div class="nxIniHi">${saludo}</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
         ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + (reacondOn() ? tile('reacond', 'Reacondicionado', 'ti-recycle', '#0e7490') : '') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
         ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
@@ -939,8 +941,8 @@
     // Favoritos/Recientes van ANTES de las categorías reales — mismos chips `.vchip`, mismo helper
     // `window.nxPosCat`, solo que estos 2 valores son pseudo-categorías que `gridHTML()` interpreta
     // aparte (no hay una categoría real "favorito" en pos_categorias).
-    const chipsEsp = `<button type="button" class="vchip${_posCat === '__fav__' ? ' on' : ''}" onclick="window.nxPosCat('__fav__')">⭐ Favoritos</button>`
-      + `<button type="button" class="vchip${_posCat === '__recientes__' ? ' on' : ''}" onclick="window.nxPosCat('__recientes__')">🕒 Recientes</button>`;
+    const chipsEsp = `<button type="button" class="vchip${_posCat === '__fav__' ? ' on' : ''}" onclick="window.nxPosCat('__fav__')"><i class="ti ti-star"></i> Favoritos</button>`
+      + `<button type="button" class="vchip${_posCat === '__recientes__' ? ' on' : ''}" onclick="window.nxPosCat('__recientes__')"><i class="ti ti-clock"></i> Recientes</button>`;
     const chips = chipsEsp + ['todas'].concat(_cats.map(c => c.id)).map(cid => {
       const lbl = cid === 'todas' ? 'Todas' : esc(catNombre(cid));
       return `<button type="button" class="vchip${_posCat === String(cid) ? ' on' : ''}" onclick="window.nxPosCat('${cid}')">${lbl}</button>`;
@@ -959,7 +961,7 @@
             </div>
             <div id="facCliInfoWrap">${facCliInfoHTML(cliActual)}</div>
           </div>
-          ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto (toca la lupa para ver todos)...', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
+          ${posBuscador({ id: 'posBuscar', placeholder: 'Buscar producto por nombre o código', oninput: 'window.nxPosBuscar(this.value)', onLupa: "window.nxProdPicker('vender')" })}
           <div class="vchiprow">${chips}</div>
           <div id="posGrid" class="vlist">${gridHTML()}</div>
         </div>
@@ -970,7 +972,7 @@
     let lista, vacioMsg;
     if (_posCat === '__fav__') {
       lista = _prods.filter(p => p.favorito);
-      vacioMsg = 'Sin favoritos todavía. Toca la ☆ de un producto para agregarlo.';
+      vacioMsg = 'Aún no hay favoritos. Marque la estrella de un producto para agregarlo.';
     } else if (_posCat === '__recientes__') {
       const byId = new Map(_prods.map(p => [String(p.id), p]));
       lista = (_prodsRecientesIds || []).map(id => byId.get(String(id))).filter(Boolean);
@@ -1103,7 +1105,7 @@
         <div class="citqty"><button type="button" aria-label="Restar cantidad" onclick="window.nxPosQty(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="citqty-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxPosQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxPosQty(${i},1)">+</button></div>
         <div class="cittotal">${fmt(it.precio * it.cantidad)}</div>
         <button type="button" class="citdel" aria-label="Quitar ${esc(it.nombre)} del carrito" onclick="window.nxPosDel(${i})"><i class="ti ti-minus"></i></button>
-      </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>Carrito vacío.<br>Toca un producto para agregarlo.</div>';
+      </div>`).join('') : '<div class="cartempty"><i class="ti ti-shopping-cart"></i>El carrito está vacío.<br>Seleccione un producto para agregarlo.</div>';
     wrap.innerHTML = `<div class="cartcard">
         <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span><div style="display:flex;align-items:center"><button type="button" class="cartsuspbadge" onclick="window.nxVentaSuspLista()" title="Ventas suspendidas" aria-label="Ver ventas suspendidas"><i class="ti ti-player-pause"></i>${_ventasSusp.length ? `<b>${_ventasSusp.length}</b>` : ''}</button>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div></div>
         <div class="cartlist">${filas}</div>
@@ -1254,7 +1256,7 @@
       if ((_ventasSusp || []).length) { const v0 = _ventasSusp[0]; out.push({ ic: 'ti-player-pause', t: _ventasSusp.length + (_ventasSusp.length === 1 ? ' venta en espera' : ' ventas en espera'), s: esc(v0.cliente_nombre || 'Consumidor final') + ' · ' + fmt(v0.total), a: _ventasSusp.length === 1 ? 'Retomar' : 'Ver', fn: _ventasSusp.length === 1 ? `window.nxFacRetomar('${v0.id}')` : 'window.nxVentaSuspLista()' }); }
       if ((_prefs || []).length) out.push({ ic: 'ti-file-description', t: _prefs.length + (_prefs.length === 1 ? ' prefactura abierta' : ' prefacturas abiertas'), s: 'Por ' + fmt(_prefs.reduce((a, x) => a + Number(x.total || 0), 0)) + ' sin facturar', a: 'Ver', fn: "window.nxPosTab('prefhist')" });
       if (_facHoy === null) facHoyCargar();
-      else if (_facHoy.n) out.push({ ic: 'ti-chart-line', t: 'Hoy: ' + _facHoy.n + (_facHoy.n === 1 ? ' factura' : ' facturas') + ' · ' + fmt(_facHoy.total), s: 'Ticket promedio ' + fmt(_facHoy.total / _facHoy.n) + (_facHoy.anul ? ' · ' + _facHoy.anul + ' anulada(s)' : '') });
+      else if (_facHoy.n) out.push({ ic: 'ti-chart-line', t: 'Hoy: ' + _facHoy.n + (_facHoy.n === 1 ? ' factura' : ' facturas') + ' · ' + fmt(_facHoy.total), s: 'Ticket promedio ' + fmt(_facHoy.total / _facHoy.n) + (_facHoy.anul ? ' · ' + _facHoy.anul + (_facHoy.anul === 1 ? ' anulada' : ' anuladas') : '') });
     }
     return out.slice(0, 4);
   }
@@ -1363,7 +1365,7 @@
             <div class="facTot" id="facResumen"></div>
           </div>
         </div>
-        <div class="keys"><span><b>F2</b> Buscar producto</span>${esPreTab() ? "" : "<span><b>F4</b> Guardar</span><span><b>F6</b> Guardar+Imprimir</span><span><b>F7</b> Guardar+WhatsApp</span><span><b>F8</b> Imprimir</span>"}<span><b>F10</b> Limpiar carrito</span></div>
+        <div class="keys"><span><b>F2</b> Buscar producto</span>${esPreTab() ? "" : "<span><b>F4</b> Guardar</span><span><b>F6</b> Guardar e imprimir</span><span><b>F7</b> Guardar y enviar</span><span><b>F8</b> Imprimir</span>"}<span><b>F10</b> Limpiar carrito</span></div>
       </div>
     </div>`;
   }
@@ -1596,7 +1598,7 @@
   // ("ver catálogo completo") sobre una pantalla que YA tiene su propio buscador en vivo.
   function facSearchBoxHTML() {
     return '<button type="button" class="scan" id="facSearchBox" onclick="window.nxProdPicker(\'factura\')" aria-label="Buscar artículo">'
-      + '<i class="ti ti-scan"></i><span>Escanea o busca por nombre, código, IMEI o serial…</span><kbd>F2</kbd></button>';
+      + '<i class="ti ti-scan"></i><span>Buscar o escanear por nombre, código, IMEI o serial</span><kbd>F2</kbd></button>';
   }
   // Solicitud de financiamiento (24-sep-2026, pedido del dueño: «agregar artículo tiene que ser más parecido al de
   // facturar»): mismo botón, mismo panel en línea y misma lista; al elegir, el artículo va a la solicitud.
@@ -2054,18 +2056,18 @@
   function ajAvisos() {
     const a = [], c = _posCfg || {};
     if (!(c.emp_rnc || '').trim()) a.push(['empresa', 'orange', 'ti-id', 'Falta el RNC de la empresa', 'Las facturas con comprobante fiscal (NCF) deben llevar el RNC de quien vende.']);
-    else if (!ajDocInfo(c.emp_rnc).ok) a.push(['empresa', 'orange', 'ti-id', 'Revisa el RNC de la empresa', 'El número guardado no pasa la verificación de la DGII.']);
-    if (!(c.emp_direccion || '').trim() || !(c.emp_telefono || '').trim()) a.push(['empresa', 'blue', 'ti-map-pin', 'Completa la dirección y el teléfono', 'Salen en el encabezado de facturas, recibos y contratos.']);
+    else if (!ajDocInfo(c.emp_rnc).ok) a.push(['empresa', 'orange', 'ti-id', 'RNC de la empresa no válido', 'El número registrado no pasa la verificación de la DGII.']);
+    if (!(c.emp_direccion || '').trim() || !(c.emp_telefono || '').trim()) a.push(['empresa', 'blue', 'ti-map-pin', 'Faltan la dirección y el teléfono', 'Aparecen en el encabezado de facturas, recibos y contratos.']);
     const ncfAct = (_ncfSecs || []).filter(x => x.activo !== false);
     if (!ncfAct.length) a.push(['facturacion', 'orange', 'ti-receipt-tax', 'No hay comprobantes fiscales (NCF) configurados', 'Sin NCF las facturas salen sin comprobante fiscal.']);
     ncfAct.forEach(x => {
       const quedan = Number(x.hasta || 0) - Number(x.actual || 0), dias = ajDiasHasta(x.vencimiento), t = x.tipo + ' ' + (NCF_DESC[x.tipo] || '');
       if (x.hasta && quedan <= 0) a.push(['facturacion', 'red', 'ti-alert-octagon', 'Se acabaron los ' + t, 'Pide un nuevo rango a la DGII y agrégalo.']);
-      else if (x.hasta && quedan <= 100) a.push(['facturacion', 'orange', 'ti-alert-triangle', 'Quedan ' + quedan + ' comprobantes ' + t, 'Pide el próximo rango a la DGII antes de que se acaben.']);
+      else if (x.hasta && quedan <= 100) a.push(['facturacion', 'orange', 'ti-alert-triangle', 'Quedan ' + quedan + ' comprobantes ' + t, 'Solicite un nuevo rango a la DGII antes de que se agoten.']);
       if (dias !== null && dias < 0) a.push(['facturacion', 'red', 'ti-calendar-x', 'Los ' + t + ' vencieron', 'Venció el ' + ajFecha(x.vencimiento) + '. Pide uno nuevo a la DGII.']);
-      else if (dias !== null && dias <= 30) a.push(['facturacion', 'orange', 'ti-calendar-time', 'Los ' + t + ' vencen en ' + dias + ' día(s)', 'Vencen el ' + ajFecha(x.vencimiento) + '.']);
+      else if (dias !== null && dias <= 30) a.push(['facturacion', 'orange', 'ti-calendar-time', 'Los ' + t + ' vencen en ' + dias + (dias === 1 ? ' día' : ' días'), 'Vencen el ' + ajFecha(x.vencimiento) + '.']);
     });
-    if (cv2fin() && !(c.fin_acreedor_nombre || '').trim()) a.push(['financiamiento', 'orange', 'ti-file-certificate', 'Los contratos salen sin los datos del acreedor', 'Completa los datos legales (quién vende a crédito, notario y testigos).']);
+    if (cv2fin() && !(c.fin_acreedor_nombre || '').trim()) a.push(['financiamiento', 'orange', 'ti-file-certificate', 'Los contratos salen sin los datos del acreedor', 'Faltan los datos legales del acreedor, el notario y los testigos.']);
     if (!(_acceso || []).length) a.push(['equipo', 'orange', 'ti-shield-lock', 'Los permisos por rol no están guardados', 'La pantalla usa los permisos de fábrica, pero el servidor no los conoce: por eso el vendedor no puede cobrar cuotas aunque las vea.', 'Guardar permisos', 'window.nxAccesoInit()']);
     return a;
   }
@@ -2077,7 +2079,7 @@
     const porSec = {}; av.forEach(x => { porSec[x[0]] = (porSec[x[0]] || 0) + 1; });
     const secs = AJ_SECS.filter(s => ajSecVisible(s[0]) && (!q || q.split(/\s+/).every(p => ajNorm(s[3] + ' ' + s[4] + ' ' + s[5]).indexOf(p) >= 0)));
     const avisos = !av.length ? `<div class="ajOk"><i class="ti ti-circle-check"></i> Todo en orden: no falta nada importante por configurar.</div>`
-      : `<div class="ajAvisos"><div class="ajAvT"><i class="ti ti-bulb"></i> ${av.length === 1 ? '1 cosa por revisar' : av.length + ' cosas por revisar'}</div>${av.map(x => `<button type="button" class="ajAv ${x[1]}" onclick="${x[6] ? x[6] : `window.nxAjSec('${x[0]}')`}"><i class="ti ${x[2]}"></i><span><b>${esc(x[3])}</b><small>${esc(x[4])}</small></span><em>${x[5] ? esc(x[5]) : 'Arreglar'} <i class="ti ti-chevron-right"></i></em></button>`).join('')}</div>`;
+      : `<div class="ajAvisos"><div class="ajAvT"><i class="ti ti-bulb"></i> ${av.length === 1 ? '1 pendiente' : av.length + ' pendientes'}</div>${av.map(x => `<button type="button" class="ajAv ${x[1]}" onclick="${x[6] ? x[6] : `window.nxAjSec('${x[0]}')`}"><i class="ti ${x[2]}"></i><span><b>${esc(x[3])}</b><small>${esc(x[4])}</small></span><em>${x[5] ? esc(x[5]) : 'Revisar'} <i class="ti ti-chevron-right"></i></em></button>`).join('')}</div>`;
     return `<div class="nxPf nxAjWrap">
       <div class="ajHead"><h2>Configuración</h2><div class="ajBus"><i class="ti ti-search"></i><input id="ajBusq" value="${esc(_ajQ)}" placeholder="¿Qué quieres configurar? Ej: RNC, clave, mora" autocomplete="off" oninput="window.nxAjBuscar(this.value)">${_ajQ ? `<button type="button" aria-label="Borrar búsqueda" onclick="window.nxAjBuscar('');document.getElementById('ajBusq').value=''"><i class="ti ti-x"></i></button>` : ''}</div></div>
       ${q ? '' : avisos}
@@ -2823,7 +2825,7 @@
         <td data-l="Importe" class="r imp">${fmt(lineImporte(it))}</td>
         <td data-l="Quitar" class="cX"><button type="button" class="del" aria-label="Quitar ${esc(it.nombre)} de la factura" onclick="window.nxPosDel(${i});window.nxFacRepaint()"><i class="ti ti-minus" aria-hidden="true"></i></button></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="7" class="vacio">Aún no hay artículos. Búscalos arriba (o escanéalos) y se agregan al documento.</td></tr>`;
+    }).join('') : `<tr><td colspan="7" class="vacio">Sin artículos. Use el buscador o escanee un código para agregarlos.</td></tr>`;
     cont.innerHTML = `<table class="docTbl">
         <thead><tr><th style="width:34px">#</th><th>Descripción</th><th class="r" style="width:104px">Precio</th><th style="width:100px">Cant.</th><th style="width:100px">Desc.</th><th class="r" style="width:104px">Importe</th><th style="width:32px"></th></tr></thead>
         <tbody>${filas}</tbody>
@@ -2917,7 +2919,7 @@
   // Lo que falta para poder guardar: la MISMA validación que hace nxPosConfirmar, pero antes de abrir
   // el cobro y con el arreglo a un toque (nxFacArreglar).
   function facChequeo() {
-    if (!_cart.length) return { ok: false, txt: 'Agrega artículos para guardar', fix: () => window.nxProdPicker('factura') };
+    if (!_cart.length) return { ok: false, txt: 'Agregue artículos para guardar', fix: () => window.nxProdPicker('factura') };
     for (let i = 0; i < _cart.length; i++) {
       const it = _cart[i]; const p = _prods.find(x => String(x.id) === String(it.producto_id));
       if (p && p.serial && (it.seriales || []).length < Number(it.cantidad)) return { ok: false, txt: 'Falta el IMEI de ' + p.nombre + ' (' + (it.seriales || []).length + ' de ' + it.cantidad + ')', fix: () => window.nxFacSerial(i) };
@@ -2942,10 +2944,10 @@
           : (u && !u.anulada) ? 'Anula ' + facNumTxt(u) + ', devuelve el stock y revierte el asiento' : 'Busca la factura que quieres anular' },
       { k: 'reimp', ic: 'ti-printer', t: 'Imprimir', key: 'F8', on: hay || !!u, cls: 'fbS',
         why: hay ? 'Vista previa de lo que hay en pantalla (sin guardar, no es fiscal)' : u ? 'Reimprime ' + facNumTxt(u) + ' como ' + (facFmt() === 'carta' ? 'factura carta' : 'ticket') : 'No hay nada que imprimir todavía' },
-      { k: 'wa', ic: 'ti-brand-whatsapp', t: waUlt ? 'WhatsApp' : 'Guardar+WhatsApp', key: 'F7', on: ok || waUlt, cls: 'fbW',
+      { k: 'wa', ic: 'ti-brand-whatsapp', t: waUlt ? 'WhatsApp' : 'Guardar y enviar', key: 'F7', on: ok || waUlt, cls: 'fbW',
         why: waUlt ? 'Envía ' + facNumTxt(u) + ' por WhatsApp' + (u.waTel ? ' (···' + u.waTel.slice(-4) + ')' : '')
           : !ok ? chk.txt : tel ? 'Cobra, guarda y abre WhatsApp de ' + quien + ' (···' + tel.slice(-4) + ') con la factura' : 'Cobra, guarda y te pide el número de WhatsApp' },
-      { k: 'imprimir', ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', on: ok, cls: 'fbG2',
+      { k: 'imprimir', ic: 'ti-printer', t: 'Guardar e imprimir', key: 'F6', on: ok, cls: 'fbG2',
         why: ok ? 'Cobra, guarda' + cond + ' e imprime ' + fmtTxt : chk.txt },
       { k: 'guardar', ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', on: ok, cls: 'fbP',
         why: ok ? 'Cobra y guarda la factura' + cond : chk.txt }
@@ -3201,8 +3203,8 @@
   };
   const DOC_BTN = {
     guardar: { ic: 'ti-device-floppy', t: 'Guardar', key: 'F4', cls: 'fbP' },
-    imprimir: { ic: 'ti-printer', t: 'Guardar+Imprimir', key: 'F6', cls: 'fbG2' },
-    wa: { ic: 'ti-brand-whatsapp', t: 'Guardar+WhatsApp', key: 'F7', cls: 'fbW' },
+    imprimir: { ic: 'ti-printer', t: 'Guardar e imprimir', key: 'F6', cls: 'fbG2' },
+    wa: { ic: 'ti-brand-whatsapp', t: 'Guardar y enviar', key: 'F7', cls: 'fbW' },
     reimp: { ic: 'ti-printer', t: 'Imprimir', key: 'F8', cls: 'fbS' },
     anular: { ic: 'ti-ban', t: 'Anular', cls: 'fbS fbDanger' },
     cancelar: { ic: 'ti-x', t: 'Cancelar', cls: 'fbS' }
@@ -4308,7 +4310,7 @@
       <td style="text-align:right"><div style="font-weight:700">${fmt(p.precio)}</div>${desfaseNivel(p) ? `<div style="font-size:9px;color:#ea580c;font-weight:700" title="El nivel por defecto de este artículo dice ${fmt(desfaseNivel(p))}, pero el precio de lista dice ${fmt(p.precio)}. Al cliente se le cobra el del nivel."><i class="ti ti-alert-triangle"></i> Nivel: ${fmt(desfaseNivel(p))}</div>` : ''}${Number(p.costo || 0) > 0 ? `<div style="font-size:9px;color:#94a3b8">Costo: ${fmt(p.costo)}</div>` : ''}</td>
       <td style="text-align:right;white-space:nowrap">${stkCell}</td>
       <td style="text-align:center">${p.itbis ? '<span style="font-size:9px;color:#2563eb">18%</span>' : '<span style="font-size:9px;color:#475569">—</span>'}</td>
-      <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-minus"></i></button></td>
+      <td style="white-space:nowrap;text-align:right"><button class="btn bsm bghost" title="Ver 360°" aria-label="Ver ficha 360 del artículo" onclick="window.nxArticulo360('${p.id}')"><i class="ti ti-id-badge-2"></i></button> ${p.serial ? `<button class="btn bsm bghost" title="IMEI / Seriales" onclick="window.nxSerialMgr('${p.id}')" aria-label="IMEI / Seriales"><i class="ti ti-device-mobile"></i></button> ` : ''}<button aria-label="Editar este artículo" class="btn bsm bc1" onclick="window.nxPosEditProd('${p.id}')"><i class="ti ti-edit"></i></button> <button aria-label="Eliminar este artículo" class="btn bsm bc3" onclick="window.nxPosDelProd('${p.id}')"><i class="ti ti-trash"></i></button></td>
     </tr>`;
   }
   // Cuerpo de la tabla (tbody + pie de paginación) — se puede reconstruir SOLO esta
@@ -6337,7 +6339,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="text-align:center;font-size:10.5px;color:var(--pf-txt3)">${c.tipo_persona === 'juridica' ? 'Jurídico' : 'Físico'}</td>
         <td>${entRolesBadges(c)}</td>
         <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxEntEdit('${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : `<tr><td colspan="5" class="emptyrow">Sin entidades con ese filtro. Toca "Nueva entidad".</td></tr>`;
+      </tr>`).join('') : `<tr><td colspan="5" class="emptyrow">No hay entidades en este filtro.</td></tr>`;
     return `<div class="nxPf">
       <div class="toolbar2">
         <button class="ab g2 sm" type="button" onclick="window.nxEntNueva()"><i class="ti ti-plus"></i> Nueva entidad</button>
@@ -6520,7 +6522,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
         <td style="text-align:right;white-space:nowrap"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxCliente360('${c.id}')" title="Ver 360°" aria-label="Ver ficha 360 del cliente"><i class="ti ti-id-badge-2"></i></button></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="3" class="emptyrow">Sin clientes. Toca "Nuevo cliente".</td></tr>`;
+    }).join('') : `<tr><td colspan="3" class="emptyrow">Aún no hay clientes registrados.</td></tr>`;
     return `<div class="nxPf">
       <div class="kpirow">
         ${kpiPf('Clientes', lista.length, 'var(--pf-purple)')}
@@ -6552,7 +6554,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const exposicionTotal = saldo + totCuotas;
     const planesHTML = finesCli.length ? finesCli.map(f => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(f.descripcion || '')}<div style="color:#475569;font-size:9.5px">${cuotasDe(f.id).filter(c => c.pagado).length}/${f.cuotas_total} cuotas pagadas</div></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#2563eb">${fmt(pendPlan(f))}</b><button class="btn bsm bghost" onclick="document.getElementById('nxPosCli').remove();window.nxFinPlan('${f.id}')" title="Ver plan" aria-label="Ver plan"><i class="ti ti-list-numbers"></i></button></div></div>`).join('') : '';
     const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(v.numero_factura || v.numero || '')} <span style="color:#475569">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#475569;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin ventas fiadas</div>';
-    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div>${puedeVerMin() ? `<button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button>` : ''}</div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
+    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div>${puedeVerMin() ? `<button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar abono" aria-label="Eliminar abono"><i class="ti ti-trash" style="color:#dc2626"></i></button>` : ''}</div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
@@ -7219,7 +7221,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (_compraVista === 'nueva') return renderCompraForm();
     if (cv2() && _compraVista === 'cxp') return renderCxp();
     const totalCxP = _proveedores.reduce((s, p) => s + saldoProv(p), 0);
-    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${(c.fecha || '').slice(0, 10)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
+    const comprasHTML = _compras.length ? _compras.map(c => `<tr onclick="window.nxPosCompraVer('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">#${c.numero || ''}<div style="color:var(--pf-txt3)">${fechaSolaDMY(c.fecha)}</div></td><td style="font-size:11px">${esc(c.proveedor_nombre || '—')}</td><td style="font-size:10px">${c.a_credito ? '<span style="color:var(--pf-red)">Crédito</span>' : 'Contado'}</td><td style="text-align:right;font-weight:800">${fmt(c.total)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--pf-txt3);font-size:12px">Sin compras registradas</td></tr>';
     return `<div class="nxPf nxCompWrap">
       <div class="kpirow" style="margin-bottom:10px">
         ${kpiPf('Proveedores', _proveedores.length, 'var(--pf-purple)')}
@@ -7624,7 +7626,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compra ${esc(c.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:620px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:8px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#0A0A0A;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -7989,9 +7991,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const tt = _cajaTot || { efe: 0, tar: 0, tra: 0, cre: 0, abEfe: 0, ent: 0, sal: 0, esperado: Number(_caja.monto_inicial || 0), movs: [], nventas: 0 };
     const movsHTML = (tt.movs || []).length ? tt.movs.map(m => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--pf-line);font-size:11px"><div><b style="color:${m.tipo === 'entrada' ? 'var(--pf-green)' : 'var(--pf-red)'}">${m.tipo === 'entrada' ? '+' : '−'}${fmt(m.monto)}</b> <span style="color:var(--pf-txt2)">${esc(m.concepto || m.tipo)}</span></div><button aria-label="Eliminar este movimiento de caja" class="btn bsm bghost" onclick="window.nxPosDelMov('${m.id}')"><i class="ti ti-minus" style="color:var(--pf-red)"></i></button></div>`).join('') : '<div style="color:var(--pf-txt3);font-size:11px;padding:10px">Sin movimientos</div>';
     return `<div class="nxPf nxCajaWrap"><div class="cajaCard">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:var(--pf-green);font-size:13px"><i class="ti ti-lock-open"></i> Caja ABIERTA</div><div style="font-size:11px;color:var(--pf-txt2)">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-weight:800;color:var(--pf-green);font-size:13px"><i class="ti ti-lock-open"></i> Caja abierta</div><div style="font-size:11px;color:var(--pf-txt2)">Desde ${fechaDMY(_caja.apertura)} · Fondo ${fmt(_caja.monto_inicial)} · ${tt.nventas} ventas</div></div></div>
         <div class="kpirow" style="margin-bottom:10px">
-          ${kpiPf('Efectivo', fmt(tt.efe), 'var(--pf-green)')}${kpiPf('Tarjeta', fmt(tt.tar), 'var(--pf-purple)')}${kpiPf('Transfer.', fmt(tt.tra), 'var(--pf-purple)')}${kpiPf('Crédito', fmt(tt.cre), 'var(--pf-red)')}${kpiPf('Abonos efec.', fmt(tt.abEfe), 'var(--pf-green)')}
+          ${kpiPf('Efectivo', fmt(tt.efe), 'var(--pf-green)')}${kpiPf('Tarjeta', fmt(tt.tar), 'var(--pf-purple)')}${kpiPf('Transferencias', fmt(tt.tra), 'var(--pf-purple)')}${kpiPf('Crédito', fmt(tt.cre), 'var(--pf-red)')}${kpiPf('Abonos en efectivo', fmt(tt.abEfe), 'var(--pf-green)')}
         </div>
         <div class="cajaEsp" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px">${fmt(tt.esperado)}</b></div>
         <div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
@@ -8259,14 +8261,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return buckets;
   }
   function ctaFlujoSVG(ms) {
-    const W = 320, H = 120, PL = 6, PR = 6, PT = 10, PB = 18;
+    const W = 320, H = 120, PL = 18, PR = 18, PT = 10, PB = 18;
     const max = Math.max(1, ...ms.reduce((a, b) => a.concat([Math.abs(b.ing), Math.abs(b.gas), Math.abs(b.util)]), []));
     const n = ms.length;
     const x = i => PL + (n <= 1 ? (W - PL - PR) / 2 : i * (W - PL - PR) / (n - 1));
     const mid = PT + (H - PT - PB) / 2; const y = v => mid - (v / max) * ((H - PT - PB) / 2);
     const linea = (key, col) => `<polyline points="${ms.map((b, i) => x(i).toFixed(1) + ',' + y(b[key]).toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>` + ms.map((b, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(b[key]).toFixed(1)}" r="2.4" fill="${col}"/>`).join('');
     const labels = ms.map((b, i) => `<text x="${x(i).toFixed(1)}" y="${H - 4}" font-size="8" text-anchor="middle" fill="#94a3b8">${esc(b.label)}</text>`).join('');
-    return `<svg class="ctachart" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet"><line x1="${PL}" y1="${y(0).toFixed(1)}" x2="${W - PR}" y2="${y(0).toFixed(1)}" stroke="var(--pf-line)" stroke-width="1" stroke-dasharray="3 3"/>${linea('ing', '#16a34a')}${linea('gas', '#dc2626')}${linea('util', '#2563eb')}${labels}</svg>`;
+    return `<svg class="ctachart" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet"><line x1="${PL}" y1="${y(0).toFixed(1)}" x2="${W - PR}" y2="${y(0).toFixed(1)}" stroke="var(--pf-line)" stroke-width="1" stroke-dasharray="3 3"/>${linea('ing', '#16a34a')}${linea('gas', '#dc2626')}${linea('util', '#806515')}${labels}</svg>`;
   }
   function ctaGastosBars(s) {
     const arr = Object.values(s).filter(o => (o.cuenta.tipo === 'costo' || o.cuenta.tipo === 'gasto') && saldoNat(o) > 0).map(o => ({ nombre: o.cuenta.nombre, v: saldoNat(o) })).sort((a, b) => b.v - a.v).slice(0, 6);
@@ -8298,7 +8300,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       <div class="ctagrid">
         <div class="card"><h4><i class="ti ti-chart-line" style="color:var(--pf-blue)"></i> Flujo de efectivo <span style="font-weight:600;color:var(--pf-txt3);font-size:11px">· últimos 6 meses</span></h4>
           ${ctaFlujoSVG(ctaFlujoMeses(6))}
-          <div class="clgnd"><span><i style="background:#16a34a"></i>Ingresos</span><span><i style="background:#dc2626"></i>Gastos</span><span><i style="background:#2563eb"></i>Utilidad</span></div>
+          <div class="clgnd"><span><i style="background:#16a34a"></i>Ingresos</span><span><i style="background:#dc2626"></i>Gastos</span><span><i style="background:#806515"></i>Utilidad</span></div>
         </div>
         <div class="card"><h4><i class="ti ti-chart-donut" style="color:var(--pf-red)"></i> Distribución de gastos</h4>
           ${ctaGastosBars(s)}
@@ -9034,7 +9036,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
         <button class="btn bsm bc1" type="button" onclick="window.nxInvAjustarProd('')"><i class="ti ti-adjustments"></i> Ajustar inventario</button>
-        <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Ver kardex de un producto..." onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
+        <div class="nxFacAdd" style="flex:1;min-width:180px;margin:0"><i class="ti ti-search"></i><input list="invProds" placeholder="Buscar producto…" onchange="window.nxInvBuscar(this.value)"><datalist id="invProds">${prodList}</datalist></div>
       </div>
       ${conciliacion}${almSec}${detalle}${bajosHTML}${recientes}</div>`;
   }
@@ -9057,7 +9059,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kardex — ${esc(p.nombre)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:720px;margin:0 auto;padding:20px;font-size:12px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:9.5px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:5px}td{padding:4px 5px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#0A0A0A;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -9307,7 +9309,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Despacho ${esc(t.numero || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css">
       <style>body{font-family:Segoe UI,system-ui,-apple-system,sans-serif;color:#111;max-width:560px;margin:0 auto;padding:20px;font-size:12.5px}h1{font-size:16px;text-align:center;margin:0}.c{text-align:center}.muted{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin:10px 0}th{text-align:left;font-size:10px;text-transform:uppercase;color:#555;border-bottom:1.5px solid #999;padding:6px}td{padding:6px;border-bottom:1px solid #eee}.r{text-align:right}.line{border-top:1px solid #ccc;margin:8px 0}.rut{display:flex;justify-content:space-between;margin:8px 0;font-weight:700}.fz{display:flex;justify-content:space-between;margin-top:40px;font-size:12px}.fz>div{text-align:center;width:45%;border-top:1px solid #999;padding-top:4px}@media print{.noprint{display:none}body{padding:0}}</style></head>
       <body>
-        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#4c1d95;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
+        <div class="noprint" style="position:sticky;top:0;display:flex;gap:8px;background:#0A0A0A;margin:-20px -20px 14px;padding:9px 14px"><button onclick="window.close()" style="background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-x"></i> Cerrar</button><button onclick="window.print()" style="background:#fff;color:#4c1d95;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer"><i class="ti ti-printer"></i> Imprimir</button></div>
         <h1>${esc(e.nom)}</h1>
         <div class="c muted">${e.rnc ? 'RNC: ' + esc(e.rnc) : ''}</div>
         <div class="line"></div>
@@ -9671,7 +9673,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
         <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
         <td style="text-align:right;white-space:nowrap"><button aria-label="Editar este empleado" class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Sin empleados. Toca "Nuevo empleado".</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">No hay empleados registrados.</td></tr>';
     return `<div class="kpirow" style="margin-bottom:12px">
         ${kpiPf('Empleados activos', activos.length, 'var(--pf-purple)')}
         ${kpiPf('Nómina mensual (bruto)', fmt(nomMensual), 'var(--pf-blue)')}
@@ -9690,7 +9692,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td style="text-align:right;font-weight:700">${fmt(n.total_neto)}</td>
         <td style="text-align:right"><i class="ti ti-chevron-right" style="color:#cbd5e1"></i></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">Aún no has generado nóminas.</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:24px;color:#475569;font-size:12px">No hay nóminas generadas.</td></tr>';
     return `<div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxRhGenerar()"><i class="ti ti-calculator"></i> Generar nómina</button></div>
       <div class="tw" style="font-size:12px"><table style="width:100%"><thead><tr><th>Período</th><th style="text-align:center">Estado</th><th style="text-align:right">Neto</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>`;
   }
@@ -11651,7 +11653,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   function filasPH() {
     const lista = sortRows(phFiltradas(), p => phSortVal(p, _phSort.k), _phSort.d);
-    if (!lista.length) return `<tr><td colspan="6" class="emptyrow">${(_prefHist || []).length ? 'Sin prefacturas con esos filtros' : 'Aún no hay prefacturas. Créalas en la pestaña Prefactura.'}</td></tr>`;
+    if (!lista.length) return `<tr><td colspan="6" class="emptyrow">${(_prefHist || []).length ? 'Sin prefacturas con esos filtros' : 'Aún no hay prefacturas. Se crean desde Prefactura.'}</td></tr>`;
     return lista.map(p => {
       const est = p.estado || 'abierta';
       const nArt = Array.isArray(p.items) ? p.items.length : 0;
@@ -11830,7 +11832,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         wa(String(a.telefono || '').replace(/\D/g, ''), 'Hola ' + (a.cliente_nombre || '') + ', su apartado de ' + (a.descripcion || '') + ' en ' + neg + (venc ? ' está VENCIDO' : ' vence el ' + String(a.fecha_limite).slice(0, 10)) + '. Le falta ' + fmt(falta) + ' para completarlo. ¡Le esperamos!') +
         `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('apartados')" aria-label="Ir a Apartados"><i class="ti ti-bookmark"></i></button>`);
     }).join('') : '';
-    // 3) Reparaciones LISTAS sin recoger
+    // 3) Reparaciones listas sin recoger
     const listas = _reps.filter(r => r.estado === 'listo');
     const sec3 = listas.length ? listas.map(r => fila(
       esc(r.equipo || '') + ' · ' + esc(r.numero || ''),
@@ -11840,20 +11842,20 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     // 4) Bajo stock
     const bajos = _prods.filter(p => p.tipo !== 'servicio' && Number(p.stock_min || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_min || 0));
     const sec4 = bajos.length ? bajos.slice(0, 30).map(p => fila(esc(p.nombre || ''), 'quedan <b style="color:var(--pf-red)">' + Number(p.stock || 0) + '</b> (mínimo ' + Number(p.stock_min) + ')', `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('productos')" aria-label="Ir a Inventario"><i class="ti ti-box"></i></button>`)).join('') : '';
-    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
+    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${html ? col : 'var(--studio-steel,#5f5c54)'};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
     const totalPend = cuotasV.length + apas.length + listas.length + bajos.length;
-    return `<div class="nxPf" style="max-width:720px">
+    return `<div class="nxPf nxAvisos">
       <div class="kpirow">
         ${kpiPf('Cuotas vencidas', cuotasV.length, cuotasV.length ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Apartados por vencer', apas.length, apas.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
         ${kpiPf('Listos sin recoger', listas.length, listas.length ? 'var(--pf-blue)' : 'var(--pf-green)')}
         ${kpiPf('Bajo stock', bajos.length, bajos.length ? 'var(--pf-orange)' : 'var(--pf-green)')}
       </div>
-      ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:var(--pf-green);font-weight:800;font-size:14px">✅ Todo al día — nada pendiente de avisar</div>' : ''}
+      ${totalPend === 0 ? '<div style="text-align:center;padding:20px;color:var(--pf-green);font-weight:800;font-size:14px"><i class="ti ti-circle-check"></i> Todo al día: no hay avisos pendientes</div>' : ''}
       ${window.nxCRM && window.nxCRM.avisosHTML ? bloque('Tareas del CRM — vencidas y de hoy', 'ti-checklist', 'var(--pf-red)', window.nxCRM.avisosHTML(fila), 'Ninguna tarea pendiente para hoy') : ''}
-      ${bloque('Cuotas vencidas — cobrar HOY', 'ti-calendar-dollar', 'var(--pf-red)', sec1, 'Ninguna cuota vencida')}
+      ${bloque('Cuotas vencidas: cobrar hoy', 'ti-calendar-dollar', 'var(--pf-red)', sec1, 'Ninguna cuota vencida')}
       ${bloque('Apartados vencidos o por vencer (3 días)', 'ti-bookmark', 'var(--pf-orange)', sec2, 'Ningún apartado en riesgo')}
-      ${bloque('Reparaciones LISTAS sin recoger', 'ti-tool', 'var(--pf-blue)', sec3, 'Ninguna pendiente de entrega')}
+      ${bloque('Reparaciones listas sin recoger', 'ti-tool', 'var(--pf-blue)', sec3, 'Ninguna pendiente de entrega')}
       ${bloque('Bajo stock — comprar', 'ti-alert-triangle', 'var(--pf-orange)', sec4, 'Inventario saludable')}
     </div>`;
   }
@@ -11951,7 +11953,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       inactivos.sort((a, b) => b.dias - a.dias);
     }
     const fila = (t1, t2, extra) => `<div class="avrow"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:12px">${t1}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${t2}</div></div><div style="display:flex;gap:6px;align-items:center">${extra}</div></div>`;
-    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${col};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
+    const bloque = (tit, ic, col, html, vacio) => `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;font-size:13px;margin-bottom:8px;color:${html ? col : 'var(--studio-steel,#5f5c54)'};display:flex;align-items:center;gap:7px"><i class="ti ${ic}"></i> ${tit}</div>${html || `<div style="font-size:11.5px;color:var(--pf-txt3);padding:4px">${vacio}</div>`}</div>`;
     const verProd = pid => `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxArticulo360('${pid}')" aria-label="Ver artículo 360"><i class="ti ti-id-badge-2"></i></button>`;
     const verCli = cid => `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxCliente360('${cid}')" aria-label="Ver cliente 360"><i class="ti ti-id-badge-2"></i></button>`;
 
@@ -12070,15 +12072,15 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const rows = _apartados.length ? _apartados.map(a => {
       const falta = Math.max(0, Number(a.total || 0) - Number(a.abonado || 0));
       const vencido = a.estado === 'activo' && a.fecha_limite && String(a.fecha_limite) < hoyK;
-      const est = a.estado === 'completado' ? ['#16a34a', '#f0fdf4', 'COMPLETADO'] : a.estado === 'cancelado' ? ['#64748b', '#f1f5f9', 'CANCELADO'] : vencido ? ['#dc2626', '#fef2f2', 'VENCIDO'] : ['#db2777', '#fdf2f8', 'APARTADO'];
+      const est = a.estado === 'completado' ? ['#16a34a', '#f0fdf4', 'COMPLETADO'] : a.estado === 'cancelado' ? ['#64748b', '#f1f5f9', 'CANCELADO'] : vencido ? ['#dc2626', '#fef2f2', 'VENCIDO'] : ['#806515', 'rgba(201,162,39,.13)', 'APARTADO'];
       const pct = Number(a.total || 0) > 0 ? Math.min(100, Math.round(Number(a.abonado || 0) / Number(a.total) * 100)) : 0;
       return `<div class="apacard">
         <div style="display:flex;gap:10px;align-items:flex-start">
-          <span class="bdg" style="width:34px;height:34px;background:#fdf2f8;color:#db2777"><i class="ti ti-bookmark"></i></span>
-          <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${esc(a.descripcion || '')}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(a.cliente_nombre || '')}${a.telefono ? ' · ' + esc(a.telefono) : ''}${a.fecha_limite ? ' · límite ' + String(a.fecha_limite).slice(0, 10) : ''}</div></div>
+          <span class="bdg" style="width:34px;height:34px;background:rgba(201,162,39,.13);color:#806515"><i class="ti ti-bookmark"></i></span>
+          <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${esc(a.descripcion || a.cliente_nombre || 'Apartado')}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(a.cliente_nombre || '')}${a.telefono ? ' · ' + esc(a.telefono) : ''}${a.fecha_limite ? ' · límite ' + fechaSolaDMY(a.fecha_limite) : ''}</div></div>
           <span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap;background:${est[1]};color:${est[0]}">${est[2]}</span>
         </div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:var(--pf-txt2)"><span>Total: <b>${fmt(a.total)}</b></span><span>Abonado: <b style="color:var(--pf-green)">${fmt(a.abonado)}</b> (${pct}%)</span><span>Falta: <b style="color:${falta > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(falta)}</b></span></div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:var(--pf-txt2)"><span>Total: <b>${fmt(a.total)}</b></span><span>Abonado: <b style="color:${Number(a.abonado || 0) > 0 ? 'var(--pf-green)' : 'inherit'}">${fmt(a.abonado)}</b> (${pct}%)</span><span>Falta: <b style="color:${falta > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(falta)}</b></span></div>
         <div class="apabar"><div style="width:${pct}%"></div></div>
         ${a.estado === 'activo' ? `<div class="apabtns">
           <button class="ab g2" style="height:32px;width:auto;padding:0 12px" type="button" onclick="window.nxApaAbonar('${a.id}')"><i class="ti ti-cash"></i> Abonar</button>
@@ -12610,7 +12612,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (venc.length) { const d = Math.max.apply(null, venc.map(finV2Atraso)); return { key: 'vencido', label: 'ATRASADA ' + d + (d === 1 ? ' DÍA' : ' DÍAS'), cls: 'bad' }; }
     const hoyK = hoyISOPos(); if (cs.some(c => !c.pagado && String(c.fecha_venc).slice(0, 10) === hoyK)) return { key: 'hoy', label: 'PAGA HOY', cls: 'warn' };
     if (f.contrato_texto && !f.firma_cliente) return { key: 'sinfirma', label: 'SIN FIRMA', cls: 'info' };
-    return { key: 'aldia', label: 'AL DÍA', cls: 'ok' };
+    return { key: 'aldia', label: 'Al día', cls: 'ok' };
   }
   function finV2Kpis() {
     const act = _fins.filter(f => f.estado === 'activo');
@@ -12918,7 +12920,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
         ${big('p', 'ti-file-plus', 'Nueva solicitud', 'Cliente, artículo y condiciones en 5 pasos', 'solicitud')}
         ${big('', 'ti-calculator', 'Consultar / Cotizar', 'Calcula la cuota sin guardar nada', 'cotizar')}
         ${big('', 'ti-cash', 'Cobrar cuota', 'Busca por cédula, teléfono o nombre', 'cobrar')}
-        ${big('', 'ti-calendar-due', 'Quién paga hoy', hoy.length ? hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie atrasado hoy', 'hoy', hoy.length || '')}
+        ${big('', 'ti-calendar-due', 'Pagos de hoy', hoy.length ? hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie atrasado hoy', 'hoy', hoy.length || '')}
       </div>`;
     if (admin) {
       html += `<div class="ffAdm">
@@ -13520,9 +13522,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   function finV2CarteraHTML() {
     const k = finV2Kpis();
     const chips = [['todos', 'Todos', _fins.length], ['vencidos', 'Atrasados', _fins.filter(f => finV2EstadoFin(f).key === 'vencido').length], ['hoy', 'Pagan hoy', _fins.filter(f => finV2EstadoFin(f).key === 'hoy').length], ['sinfirma', 'Sin firma', _fins.filter(f => f.estado === 'activo' && f.contrato_texto && !f.firma_cliente).length], ['activos', 'Activos', _fins.filter(f => f.estado === 'activo').length], ['saldados', 'Saldados', _fins.filter(f => f.estado === 'saldado').length]];
-    return `<div class="ffSec">Cartera · ${_fins.filter(f => f.estado === 'activo').length} activos</div>
+    return `<div class="ffSec">Cartera · ${(n => n + (n === 1 ? ' activo' : ' activos'))(_fins.filter(f => f.estado === 'activo').length)}</div>
       <div class="nxF2Card"><div class="nxF2Lbl">Por cobrar (sin interés)</div><div class="nxF2Big">${fmt2(k.capital)}</div>
-        <div class="nxF2G3"><div class="nxF2K"><span>Ganancia por cobrar</span><span>${fmt2(k.interes)}</span></div><div class="nxF2K"><span>Atrasado</span><span style="color:#b91c1c">${fmt2(k.vencido)}</span></div><div class="nxF2K"><span>Cobrado este mes</span><span style="color:#15803d">${fmt2(k.cobradoMes)}</span></div></div></div>
+        <div class="nxF2G3"><div class="nxF2K"><span>Intereses por cobrar</span><span>${fmt2(k.interes)}</span></div><div class="nxF2K"><span>Atrasado</span><span style="color:#b91c1c">${fmt2(k.vencido)}</span></div><div class="nxF2K"><span>Cobrado este mes</span><span style="color:#15803d">${fmt2(k.cobradoMes)}</span></div></div></div>
       <div class="nxF2Chips">${chips.map(c => `<button type="button" class="nxF2Chip ${_finV2Filtro === c[0] ? 'on' : ''}" onclick="window.nxFinV2Filtro('${c[0]}')">${c[1]} · ${c[2]}</button>`).join('')}</div>
       <div class="nxF2F" style="margin-bottom:8px"><input type="search" placeholder="Nombre, cédula, teléfono o código…" value="${esc(_finV2Q)}" oninput="window.nxFinV2Buscar(this.value)" autocomplete="off" aria-label="Buscar en la cartera"></div>
       <div id="finV2Lista">${finV2ListaHTML()}</div>

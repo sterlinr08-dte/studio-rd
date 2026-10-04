@@ -166,7 +166,7 @@
     const vc = puedeCosto();
     return `<div class="nxRpKpis">
         ${kpi('Ventas netas', fmt(C.netas), variacion(C.bruto, C.previo) || (C.devTot ? 'Devoluciones: ' + fmt(C.devTot) : ''), 'main')}
-        ${vc ? kpi('Ganancia bruta', fmt(C.ganBruta), 'Margen ' + pct(C.ganBruta, C.netas) + '% sobre lo vendido', C.ganBruta >= 0 ? 'ok' : 'bad') : ''}
+        ${vc ? kpi('Ganancia bruta', fmt(C.ganBruta), (C.netas > 0 && Math.abs(C.ganBruta - C.netas) < 0.005) ? 'Sin costo registrado: el margen no es real' : 'Margen ' + pct(C.ganBruta, C.netas) + '% sobre lo vendido', (C.netas > 0 && Math.abs(C.ganBruta - C.netas) < 0.005) ? 'warn' : C.ganBruta >= 0 ? 'ok' : 'bad') : ''}
         ${vc ? kpi('Gastos del período', fmt(C.gastos), 'Resultado: ' + fmt(C.ganBruta - C.gastos), '') : ''}
         ${kpi('Cobrado', fmt(C.cobradoContado + C.cobrosAbonos), 'Contado ' + fmt(C.cobradoContado) + ' · Abonos ' + fmt(C.cobrosAbonos), '')}
         ${kpi('Por cobrar hoy', fmt(C.cxcTot), C.cxc.length + ' factura(s) con saldo', C.tramos['Más de 90'] > 0 ? 'warn' : '')}

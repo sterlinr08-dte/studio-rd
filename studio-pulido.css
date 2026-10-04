@@ -1,0 +1,169 @@
+/* STUDIO · Pulido de diseño de todo el sistema (04-oct-2026, «diseño impecable»).
+   Capa FINAL y aislada: se carga después de studio-brand-theme.css y studio-sidebar-dock.css. Solo presentación;
+   no cambia datos ni lógica. Cada bloque dice qué arregla (hallazgos de la revisión 390/1280 de los 24 módulos).
+   Para quitarla: borrar este archivo y su cargarCSS() en index.html. Reglas de DESIGN.md: oro plano sin halo,
+   chip seleccionado negro, tabular-nums en cifras, áreas táctiles de 44 px, sin colores fuera de paleta. */
+
+/* ── 1. Oro plano (DESIGN.md: sin relieve ni «neon glow») ─────────────────────────────────────────────────── */
+html.nx-studio {
+  --studio-gold-grad: var(--studio-gold);
+  --studio-gold-grad-hover: #D4AE35;
+  --studio-gold-grad-active: var(--studio-gold-dark);
+  --studio-gold-glow: 0 1px 2px rgba(128, 101, 21, .22);
+}
+html.nx-studio .btn.bc1, html.nx-studio .bxl, html.nx-studio .btn.primary, html.nx-studio #v-pos .nxTQuick, html.nx-studio .nxPpkElegir,
+html.nx-studio #v-pos .facTot .g1, html.nx-studio #v-pos .fbP, html.nx-studio .fbP { text-shadow: none; box-shadow: 0 1px 2px rgba(128, 101, 21, .22); }
+html.nx-studio .btn.bc1:hover, html.nx-studio .bxl:hover, html.nx-studio .btn.primary:hover, html.nx-studio #v-pos .nxTQuick:hover,
+html.nx-studio .nxPpkElegir:hover, html.nx-studio #v-pos .facTot .g1:hover, html.nx-studio .fbP:hover { box-shadow: 0 2px 6px rgba(128, 101, 21, .22); }
+
+/* ── 2. Botones rojo/verde que salían blancos (el degradado blanco de secundarios tapaba su color) ─────────── */
+html.nx-studio body #v-pos .btn.bc3 { background: #dc2626 !important; background-image: none !important; border-color: #b91c1c !important; color: #fff !important; }
+html.nx-studio body #v-pos .btn.bc5 { background: #15803d !important; background-image: none !important; border-color: #166534 !important; color: #fff !important; }
+html.nx-studio body #v-pos .btn.bc3 i, html.nx-studio body #v-pos .btn.bc5 i { color: #fff !important; }
+
+/* ── 3. Acción principal única: «Nuevo …» (.ab.g2) era oliva con texto blanco; ahora el mismo oro de todo el sistema ── */
+html.nx-studio .nxPf .ab.g2 { background: var(--studio-gold); border: 1px solid #a8851b; color: var(--studio-black); box-shadow: 0 1px 2px rgba(128, 101, 21, .22); }
+html.nx-studio .nxPf .ab.g2 i { color: var(--studio-black); }
+
+/* ── 4. Filtros (chips): el seleccionado era blanco sobre blanco; seleccionado = negro (DESIGN.md) ─────────── */
+html.nx-studio .nxPf .chip { background: #fff; border: 1px solid var(--studio-hair, #e6e1d3); box-shadow: none; color: var(--studio-ink); font-weight: 600; }
+html.nx-studio .nxPf .chip.on, html.nx-studio .nxPf .entTab.on { background: var(--studio-black); border-color: var(--studio-black); color: var(--studio-white); box-shadow: none; }
+html.nx-studio body.tema-glass #v-pos .nxInvPill, html.nx-studio #v-pos .nxInvPill { background: #fff !important; border: 1px solid var(--studio-hair, #e6e1d3); box-shadow: none !important; color: var(--studio-ink) !important; }
+html.nx-studio body.tema-glass #v-pos .nxInvPill.on, html.nx-studio #v-pos .nxInvPill.on { background: var(--studio-black) !important; border-color: var(--studio-black); color: #FFFEFA !important; }
+@media (max-width: 768px) {
+  html.nx-studio .nxPf .chiprow, html.nx-studio #v-pos .nxPf .vchiprow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+  html.nx-studio .nxPf .chiprow::-webkit-scrollbar, html.nx-studio #v-pos .nxPf .vchiprow::-webkit-scrollbar { display: none; }
+  html.nx-studio .nxPf .chip, html.nx-studio #v-pos .nxPf .vchip { flex: none; }
+}
+
+/* ── 5. Tablas: encabezado legible y cálido, filas sin azul, texto de 13 px ─────────────────────────────── */
+html.nx-studio .nxPf .tw table thead th, html.nx-studio #v-pos .nxProdTw thead th { background: #F0EDE4; color: #49463d !important; }
+html.nx-studio #v-pos .nxProdTw thead th.nxThSort, html.nx-studio #v-pos .nxProdTw thead .nxThI { color: #49463d !important; }
+html.nx-studio #v-pos .nxProdTw tbody tr:nth-child(even) td { background: #FBFAF6; }
+html.nx-studio #v-pos .nxProdTw tbody tr:hover td { background: #fbf8ee; }
+html.nx-studio #v-pos .nxProdTw td { border-color: var(--studio-line, #ece7da); }
+html.nx-studio .nxPf :is(.tw, .ltbl) td { font-size: 13px !important; }
+html.nx-studio .nxPf .ltbl td .ab { display: inline-flex; vertical-align: middle; margin-left: 4px; }
+
+/* ── 6. Indicadores (KPI): cifra en tinta, sin arcoíris ni dorado claro ilegible; la tarjeta impar ocupa la fila ── */
+html.nx-studio .nxPf .kpitile .v { color: var(--studio-ink) !important; }
+html.nx-studio .nxPf .kpitile .v.rojo, html.nx-studio .nxPf .kpitile .v[data-alerta] { color: #b91c1c !important; }
+@media (max-width: 480px) {
+  html.nx-studio .nxPf .kpirow > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+html.nx-studio #v-pos .nxTKpiL { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.nx-studio #v-pos .nxTKpiV { font-variant-numeric: tabular-nums; letter-spacing: -.022em; }
+
+/* ── 7. Menú lateral: activo sin halo ni «píldora» detrás del icono (DESIGN.md §7); sombra del cajón cerrado ── */
+html.nx-studio body #v-pos .nxTNav.on, html.nx-studio body #v-pos .nxTNav.active { background: rgba(201, 162, 39, .16); border-color: transparent; color: #E3C45C; box-shadow: inset 2px 0 0 var(--studio-gold) !important; }
+html.nx-studio body #v-pos .nxTNav.on i, html.nx-studio body #v-pos .nxTNav.active i { background: transparent; border-color: transparent; color: var(--studio-gold); box-shadow: none !important; }
+@media (max-width: 860px) {
+  html.nx-studio body #v-pos .nxTSide:not(.open) { box-shadow: none; }
+}
+
+/* ── 8. Áreas táctiles de 44 px en el teléfono (barra superior y botones de los módulos) ────────────────── */
+@media (max-width: 768px) {
+  html.nx-studio #v-pos .nxTTop button:not(.nxTQuick), html.nx-studio #v-pos .nxTTop .nxTIcoBtn { min-width: 44px; min-height: 44px; }
+  html.nx-studio #v-pos .nxPf .btn, html.nx-studio #v-pos .nxPf .ab { min-height: 44px; }
+  html.nx-studio #v-pos .nxPf .btn { font-size: 13px !important; padding-inline: 14px; }
+  /* iOS hace zoom en campos de menos de 16 px */
+  html.nx-studio .nxPf .datef, html.nx-studio #histDesde, html.nx-studio #histHasta { font-size: 16px; height: 44px; }
+}
+
+/* ── 9. Pestañas de Contabilidad / RRHH: fuera de marca (verde azulado, relieve) y de 4 líneas en el teléfono ── */
+html.nx-studio #v-pos .nxFacSubTabs { background: #fff; border: 1px solid var(--studio-hair, #e6e1d3); box-shadow: none; border-radius: 12px; padding: 4px;
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+html.nx-studio #v-pos .nxFacSubTabs::-webkit-scrollbar { display: none; }
+html.nx-studio #v-pos .nxFacSubTab { white-space: nowrap; border-right: 0; color: var(--studio-steel, #5f5c54); min-height: 40px; border-radius: 9px; box-shadow: none; background: transparent; }
+html.nx-studio #v-pos .nxFacSubTab:hover { color: var(--studio-ink); }
+html.nx-studio #v-pos .nxFacSubTab.on { background: var(--studio-black); color: #fff; box-shadow: none; }
+
+/* ── 10. Estados vacíos de Factura/Prefactura: sin azul ni bordes de celda sueltos ───────────────────────── */
+html.nx-studio #v-pos .nx-invoice-pro .docTbl td.vacio { color: var(--studio-steel, #5f5c54) !important; border: 0 !important; background: transparent; }
+
+/* ── 11. Botones deshabilitados de la barra de Factura: un solo aspecto ──────────────────────────────────── */
+html.nx-studio .nxFacBar button:disabled { background: var(--studio-canvas-2, #F0EDE4) !important; background-image: none !important;
+  color: var(--studio-mute, #8f8b80) !important; border-color: transparent !important; box-shadow: none !important; opacity: 1; }
+
+/* ── 12. Avisos: contenido en minúscula normal (todo salía en MAYÚSCULAS) ───────────────────────────────── */
+html.nx-studio #v-pos .nxAvisos { max-width: 960px; }
+html.nx-studio #v-pos .nxAvisos .card, html.nx-studio #v-pos .nxAvisos .card * { text-transform: none; }
+
+/* ── 13. Historial de ventas en el teléfono: cada fila es una tarjeta (antes se cortaban total y acciones) ── */
+@media (max-width: 600px) {
+  html.nx-studio #v-pos .tw-hist thead { display: none; }
+  html.nx-studio #v-pos .tw-hist, html.nx-studio #v-pos .tw-hist tbody { display: block; width: 100%; }
+  html.nx-studio #v-pos .tw-hist tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "num tot" "cli tipo" "fec acc";
+    gap: 4px 10px; padding: 12px 14px; border-top: 1px solid var(--studio-line, #ece7da); align-items: center; }
+  html.nx-studio #v-pos .tw-hist td { padding: 0 !important; border: 0 !important; font-size: 13px !important; min-width: 0; }
+  html.nx-studio #v-pos .tw-hist td:nth-child(1) { grid-area: num; font-weight: 700; }
+  html.nx-studio #v-pos .tw-hist td:nth-child(2) { grid-area: fec; color: var(--studio-steel, #5f5c54); }
+  html.nx-studio #v-pos .tw-hist td:nth-child(3) { grid-area: cli; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html.nx-studio #v-pos .tw-hist td:nth-child(4) { grid-area: tipo; justify-self: end; }
+  html.nx-studio #v-pos .tw-hist td:nth-child(5) { grid-area: tot; justify-self: end; font-variant-numeric: tabular-nums; }
+  html.nx-studio #v-pos .tw-hist td:nth-child(6) { grid-area: acc; justify-self: end; white-space: nowrap; }
+  html.nx-studio #v-pos .tw-hist td[colspan] { grid-column: 1 / -1; }
+}
+html.nx-studio #v-pos .tw-hist td:nth-child(5) { color: var(--studio-ink) !important; font-variant-numeric: tabular-nums; }
+
+/* ── 14. Financiamiento: avatar del cliente en la marca (era azul) ───────────────────────────────────────── */
+html.nx-studio .nxF2Av:not(.bad):not(.ok):not(.gris) { background: var(--studio-gold-soft, rgba(201, 162, 39, .13)); color: var(--studio-gold-dark, #806515); }
+
+/* ── 15. Inicio: accesos más compactos (ícono 38 px), etiqueta que no toca los bordes ─────────────────────── */
+html.nx-studio #v-pos .nxAppIco { width: 38px; height: 38px; }
+html.nx-studio #v-pos .nxAppNom { font-size: 12px; letter-spacing: -.01em; padding-inline: 2px; overflow-wrap: normal; hyphens: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.nx-studio #v-pos .nxPf * { scroll-behavior: auto; }
+}
+
+/* ── 16. CRM: acento de la marca (era rojo/azul) y pestañas que no se aplastan en el teléfono ───────────────── */
+html.nx-studio .crmB .crm-pill-select > i, html.nx-studio .crmB .crm-pill-select.abierto .chev { color: var(--studio-gold-dark, #806515); }
+html.nx-studio .crmB .crm-selector-option:hover { background: #fbf8ee; color: var(--studio-ink); }
+html.nx-studio .crmB .crm-selector-option.activa { background: var(--studio-black); color: #fff; }
+html.nx-studio .crmB .crm-tab-seg.on, html.nx-studio .crmB .crm-tab-seg.activa, html.nx-studio .crmB .crm-chip.on, html.nx-studio .crmB .crm-chip.activa,
+html.nx-studio .crmB .crm-lead-f.on, html.nx-studio .crmB .crm-lead-f.activa { color: var(--studio-ink) !important; background: rgba(201, 162, 39, .13) !important; filter: none !important; text-shadow: none !important; }
+html.nx-studio .crmB .crm-tab-seg.on i, html.nx-studio .crmB .crm-tab-seg.activa i { color: var(--studio-gold-dark, #806515) !important; filter: none !important; }
+html.nx-studio .crmB .crm-nuevo { background: var(--studio-gold) !important; color: var(--studio-black) !important; border-color: #a8851b !important; box-shadow: 0 1px 2px rgba(128, 101, 21, .22) !important; }
+@media (max-width: 860px) {
+  html.nx-studio .crmB .crm-tabs-row { flex-wrap: wrap; }
+  html.nx-studio .crmB .crm-tabs-track { flex: 1 1 100%; }
+  html.nx-studio .crmB .crm-acciones-rapidas { margin-left: auto; }
+  html.nx-studio .crmB .crm-tab-seg { font-size: 12px; }
+}
+
+/* ── 17. Vender en el teléfono: nombre en dos líneas, existencias visibles, favorito tocable ────────────────── */
+@media (max-width: 619px) {
+  html.nx-studio #v-pos .nxPf .vnom { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  html.nx-studio #v-pos .nxPf .vstk { display: block; width: auto; }
+  html.nx-studio #v-pos .nxPf .vfav { width: 44px; height: 44px; }
+}
+
+/* ── 18. Reparaciones: columnas que caben (escritorio) y deslizan con imán (teléfono) ───────────────────────── */
+@media (min-width: 861px) {
+  html.nx-studio #v-pos .nxRepKb { display: grid; grid-template-columns: repeat(5, minmax(160px, 1fr)); overflow-x: auto; }
+  html.nx-studio #v-pos .nxRepKb .nxRepCol { min-width: 0; max-width: none; }
+}
+@media (max-width: 860px) {
+  html.nx-studio #v-pos .nxRepKb { scroll-snap-type: x mandatory; scroll-padding-inline: 12px; padding-right: 24px; }
+  html.nx-studio #v-pos .nxRepKb .nxRepCol { scroll-snap-align: start; flex: 0 0 78vw; max-width: 78vw; }
+}
+
+/* ── 19. Ajustes en el teléfono: el aviso usa todo el ancho y «Revisar» va debajo ─────────────────────────── */
+@media (max-width: 480px) {
+  html.nx-studio .nxAjWrap .ajAv { flex-wrap: wrap; }
+  html.nx-studio .nxAjWrap .ajAv > span { flex: 1 1 calc(100% - 40px); }
+  html.nx-studio .nxAjWrap .ajAv em { width: 100%; padding-left: 30px; }
+}
+html.nx-studio .nxAjWrap .ajHead h2 { text-transform: none; }
+
+/* ── 20. Tabla de productos en el teléfono: cada artículo es una tarjeta (antes se cortaban las acciones) ──── */
+@media (max-width: 619px) {
+  html.nx-studio #v-pos .nxProdTw { overflow: visible; }
+  html.nx-studio #v-pos .nxProdTw table, html.nx-studio #v-pos .nxProdTw tbody { display: block; width: 100%; }
+  html.nx-studio #v-pos .nxProdTw thead { display: none; }
+  html.nx-studio #v-pos .nxProdTw tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 12px; border-bottom: 1px solid var(--studio-line, #ece7da); }
+  html.nx-studio #v-pos .nxProdTw tbody td { display: block; border: 0 !important; padding: 0 !important; background: transparent !important; }
+  html.nx-studio #v-pos .nxProdTw tbody td:nth-child(2) { flex: 1 1 calc(100% - 40px); min-width: 0; }
+  html.nx-studio #v-pos .nxProdTw tbody td:last-child { margin-left: auto; }
+}

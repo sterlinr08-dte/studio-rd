@@ -2,8 +2,8 @@
    STUDIO · Reacondicionado (taller de lotes) — réplica del módulo "Reacondicionados" de BAYOL CELL
    (taller.html #v-refurb) adaptada al POS de STUDIO. 2026-09-22.
 
-   Se conserva la estructura y el flujo del original: 5 pestañas (Lotes · Catálogo de Fallas ·
-   Devoluciones · Pedidos de Piezas · Rentabilidad), 6 etapas (01 Recibidos · 02 Diagnóstico ·
+   Se conserva la estructura y el flujo del original: 5 pestañas (Lotes · Catálogo de fallas ·
+   Devoluciones · Pedidos de piezas · Rentabilidad), 6 etapas (01 Recibidos · 02 Diagnóstico ·
    03 En reparación · 04 Control de calidad · 05 Listo para venta · 06 Despachados), tarjetas de
    lote con contadores por etapa, detalle del lote con KPI, chips de técnico, buscador/filtros,
    selección múltiple con "Asignar a técnico" y "Pasar a ▾", tarjetas de equipo con la acción de
@@ -344,7 +344,7 @@
     else if (reacondMainTab === 'mis') window.__nxRcInt.renderMisReacond();
   }
   function moduleNav() {
-    const tabs = [['lotes', 'ti-stack', 'Lotes'], ['catalogo', 'ti-list-details', 'Catálogo de Fallas'], ['devoluciones', 'ti-rotate-2', 'Devoluciones'], ['piezas', 'ti-packages', 'Pedidos de Piezas'], ['rentabilidad', 'ti-cash', 'Rentabilidad']];
+    const tabs = [['lotes', 'ti-stack', 'Lotes'], ['catalogo', 'ti-list-details', 'Catálogo de fallas'], ['devoluciones', 'ti-rotate-2', 'Devoluciones'], ['piezas', 'ti-packages', 'Pedidos de piezas'], ['rentabilidad', 'ti-cash', 'Rentabilidad']];
     const mine = esTecnicoNoAdmin() ? [['mis', 'ti-user-cog', 'Mis reacondicionados']] : [];
     const vis = mine.concat(tabs.filter(t => t[0] !== 'rentabilidad' || isAdminUser()));
     return `<div class="reacond-module-nav nxRcNav">${vis.map(t => `<button type="button" id="reacondMainTab_${t[0]}" class="reacond-main-tab${reacondMainTab === t[0] ? ' tab-active' : ''}" onclick="window.nxRc.mainTab('${t[0]}')"><span class="reacond-main-icon"><i class="ti ${t[1]}"></i></span><span class="reacond-main-label">${t[2]}</span></button>`).join('')}</div>`;
@@ -1357,8 +1357,8 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
   }
   async function solicitarPiezaDeFalla(equipoId, nombreEnc) {
     const nombre = decodeURIComponent(nombreEnc || '').trim(); if (!nombre) return;
-    if (!await confirmar(`¿Solicitar la pieza "${nombre}" para este equipo?\n\nAparecerá en Pedidos de Piezas.`, { peligro: false, ok: 'Solicitar' })) return;
-    try { await api().post('pos_reacond_piezas', { equipo_id: equipoId, tecnico_id: miId() || null, pieza_nombre: nombre, cantidad: 1, estado: 'pendiente', agregada_por_tecnico: true }); toast('✅ Pieza solicitada: ' + nombre + '. Aparece en Pedidos de Piezas.'); await loadAll(); refrescarPanel(); } catch (e) { logError('Solicitar pieza de falla', e); toastError(friendly(e)); }
+    if (!await confirmar(`¿Solicitar la pieza "${nombre}" para este equipo?\n\nAparecerá en Pedidos de piezas.`, { peligro: false, ok: 'Solicitar' })) return;
+    try { await api().post('pos_reacond_piezas', { equipo_id: equipoId, tecnico_id: miId() || null, pieza_nombre: nombre, cantidad: 1, estado: 'pendiente', agregada_por_tecnico: true }); toast('✅ Pieza solicitada: ' + nombre + '. Aparece en Pedidos de piezas.'); await loadAll(); refrescarPanel(); } catch (e) { logError('Solicitar pieza de falla', e); toastError(friendly(e)); }
   }
   async function solicitarDevolucionPieza(piezaId) {
     const motivo = await pedirTexto('¿Por qué devuelves esta pieza?\n(Ej: No se necesitó, pieza defectuosa, sobró...)'); if (motivo === null) return; if (!motivo.trim()) return toast('Debes indicar un motivo para devolver la pieza.', 'error');
@@ -1828,7 +1828,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
   // ═══════════════ CATÁLOGO DE FALLAS ═══════════════
   function htmlCatalogo() {
     return `<div id="reacondMainContentCatalogo"><div class="nxRcCard">
-      <div class="nxRcRow" style="margin-bottom:14px"><h3 class="nxRcH3"><i class="ti ti-list-details"></i> Catálogo de Fallas</h3><div class="nxRcActs">${isAdminUser() ? `<button type="button" class="btn nxRcBtn light" onclick="window.nxRc.abrirModalCategoria()"><i class="ti ti-category"></i> Nueva categoría</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.abrirModalFalla()"><i class="ti ti-plus"></i> Nueva Falla</button>` : ''}</div></div>
+      <div class="nxRcRow" style="margin-bottom:14px"><h3 class="nxRcH3"><i class="ti ti-list-details"></i> Catálogo de fallas</h3><div class="nxRcActs">${isAdminUser() ? `<button type="button" class="btn nxRcBtn light" onclick="window.nxRc.abrirModalCategoria()"><i class="ti ti-category"></i> Nueva categoría</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.abrirModalFalla()"><i class="ti ti-plus"></i> Nueva Falla</button>` : ''}</div></div>
       <div style="background:#dbeafe;border:1px solid #93c5fd;padding:10px;border-radius:8px;margin-bottom:14px;font-size:12px;color:#1e3a8a"><b><i class="ti ti-info-circle"></i> Estas fallas se usarán en la evaluación.</b> Cada una tiene un nombre completo y uno corto para imprimir en el label.</div>
       <div class="nxRcSearch" style="margin-bottom:14px"><i class="ti ti-search"></i><input type="text" id="fallasBuscador" class="nxRcInput" placeholder="Buscar falla..." value="${esc(_filtros.fallasBusq)}" oninput="window.nxRc.fallasBusq(this.value)"></div>
       <div id="fallasContainer"></div></div></div>`;
@@ -1948,7 +1948,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
   // ═══════════════ PEDIDOS DE PIEZAS ═══════════════
   function htmlPedidosPiezas() {
     return `<div id="reacondMainContentPiezas"><div class="nxRcCard">
-      <div class="nxRcRow" style="margin-bottom:14px"><h3 class="nxRcH3"><i class="ti ti-packages"></i> Pedidos de Piezas (Reacondicionados)</h3><div class="nxRcActs"><button type="button" class="btn nxRcBtn light" onclick="window.nxRc.solicitarPiezaLibre()"><i class="ti ti-plus"></i> Solicitar pieza</button><button type="button" class="btn nxRcBtn light" onclick="window.nxRc.refrescar()"><i class="ti ti-refresh"></i> Actualizar</button></div></div>
+      <div class="nxRcRow" style="margin-bottom:14px"><h3 class="nxRcH3"><i class="ti ti-packages"></i> Pedidos de piezas (Reacondicionados)</h3><div class="nxRcActs"><button type="button" class="btn nxRcBtn light" onclick="window.nxRc.solicitarPiezaLibre()"><i class="ti ti-plus"></i> Solicitar pieza</button><button type="button" class="btn nxRcBtn light" onclick="window.nxRc.refrescar()"><i class="ti ti-refresh"></i> Actualizar</button></div></div>
       <div style="background:#ecfeff;border:1px solid #a5f3fc;padding:12px;border-radius:8px;margin-bottom:14px;font-size:12px;color:#0e7490"><b><i class="ti ti-info-circle"></i> Separa el trabajo operativo de los costos.</b> Las solicitudes técnicas muestran lo que debe gestionarse; las piezas del inventario que agrega el admin quedan como consulta de costo y no cuentan como pedidos pendientes.</div>
       <div id="pedidosPiezasReacondCont"></div></div></div>`;
   }
@@ -1980,7 +1980,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
   async function solicitarPiezaReacondLibre() {
     let nombre = ''; while (true) { nombre = await pedirTexto('🔧 SOLICITAR PIEZA (Reacondicionados)\n\nEscribe la pieza que necesitas:\n\nEjemplo: "Pantalla iPhone 11", "Batería 13 Pro", "Flex de carga"'); if (nombre === null) return; if (nombre.trim()) break; toast('Escribe el nombre de la pieza.', 'error'); }
     const cantStr = await pedirTexto('¿Cuántas unidades? (deja 1 si es una sola)', { valor: '1', tipo: 'number' }); if (cantStr === null) return;
-    try { await api().post('pos_reacond_piezas', { equipo_id: null, tecnico_id: miId() || null, pieza_nombre: nombre.trim(), cantidad: parseInt(cantStr) || 1, estado: 'pendiente', agregada_por_tecnico: true }); toast('✅ Pieza solicitada. Aparece en Pedidos de Piezas.'); await loadAll(); rerenderPOS(); } catch (e) { logError('Solicitar pieza libre', e); toastError(friendly(e)); }
+    try { await api().post('pos_reacond_piezas', { equipo_id: null, tecnico_id: miId() || null, pieza_nombre: nombre.trim(), cantidad: parseInt(cantStr) || 1, estado: 'pendiente', agregada_por_tecnico: true }); toast('✅ Pieza solicitada. Aparece en Pedidos de piezas.'); await loadAll(); rerenderPOS(); } catch (e) { logError('Solicitar pieza libre', e); toastError(friendly(e)); }
   }
 
   // ═══════════════ RENTABILIDAD ═══════════════
@@ -2037,7 +2037,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     const cards = mis.length ? mis.map(eq => { const tareasEq = cache.tareas.filter(t => t.tipo === 'equipo' && t.ref_id === eq.id); const pend = tareasEq.filter(t => t.estado !== 'hecha').length; const et = obtenerEtiquetaEstado(eq.estado_evaluacion || 'en_proceso'); return `<div class="nxRcEq" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:default"><div><b>${esc(eq.marca || '')} ${esc(eq.modelo || '')}</b> ${eq.capacidad ? '· ' + esc(eq.capacidad) : ''} ${badge(et.text, et.bg, et.color, 'font-size:10px')}<div class="nxRcMuted" style="font-size:12px;margin-top:2px">IMEI: ${esc(eq.imei || '—')} ${pend > 0 ? `· ${pend} falla(s) pendiente(s)` : '· ✅ sin pendientes'}</div>${eq.fecha_asignacion ? `<div style="font-size:11px;color:#0891b2;font-weight:600;margin-top:2px"><i class="ti ti-stopwatch"></i> Tomado: ${tiempoDesde(eq.fecha_asignacion)}</div>` : ''}</div><button type="button" class="btn nxRcBtn dark" onclick="window.nxRc.abrirPanelProceso('${eq.id}')"><i class="ti ti-tool"></i> Trabajar</button></div>`; }).join('') : '<div class="nxRcMuted" style="font-size:13px;padding:8px 0">No tienes equipos reacondicionados asignados.</div>';
     const terminados = cache.refurb.filter(e => String(e.tecnico_asignado_id || '') === mi && inList(['listo_venta', 'vendido'], e.estado_evaluacion)).sort((a, b) => new Date(b.fecha_despacho || b.fecha_terminado || 0) - new Date(a.fecha_despacho || a.fecha_terminado || 0)).slice(0, 30);
     cont.innerHTML = `<h4 class="nxRcH4" style="color:#92400e;text-transform:uppercase;font-size:12px;margin-bottom:8px"><i class="ti ti-device-mobile"></i> Mis Equipos</h4>${cards}
-      <h4 class="nxRcH4" style="color:#92400e;text-transform:uppercase;font-size:12px;margin:18px 0 8px"><i class="ti ti-packages"></i> Mis Pedidos de Piezas</h4>${construirPanelPedidosPiezas(mi, 'solicitudes')}
+      <h4 class="nxRcH4" style="color:#92400e;text-transform:uppercase;font-size:12px;margin:18px 0 8px"><i class="ti ti-packages"></i> Mis Pedidos de piezas</h4>${construirPanelPedidosPiezas(mi, 'solicitudes')}
       <h4 class="nxRcH4" style="color:#92400e;text-transform:uppercase;font-size:12px;margin:18px 0 8px"><i class="ti ti-history"></i> Mi Historial</h4>${terminados.length ? `<div style="overflow-x:auto"><table class="nxRcTbl"><thead><tr><th>Fecha</th><th>Equipo</th><th>Estado</th></tr></thead><tbody>${terminados.map(e => { const et = obtenerEtiquetaEstado(e.estado_evaluacion); return `<tr><td style="white-space:nowrap;font-size:12px">${fechaDO(e.fecha_despacho || e.fecha_terminado)}</td><td style="font-weight:600">${esc(_modeloRep(e))}</td><td>${badge(et.text, et.bg, et.color)}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="nxRcMuted" style="font-size:13px;padding:8px 0">No hay reparaciones terminadas todavía.</div>'}`;
   }
 

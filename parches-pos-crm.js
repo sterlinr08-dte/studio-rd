@@ -120,7 +120,7 @@
     if (!S.cargado && !S.error) { cargar().then(repintar); }
     if (P.bandeja && !BD.cargado) { bdCargar().then(() => { repintar(); bdTimer(); }); }
     const leadsAb = S.ops.filter(abierta).length;
-    const tab = (k, l, ic, extra) => `<button class="crm-tab-seg${S.vista === k ? ' on pill-hundido' : ''}" onclick="window.nxCRM.tab('${k}')"><i class="ti ${ic}"${k === 'campanas' ? ' style="color:#e31e24"' : ''}></i> ${l}${extra || ''}</button>`;
+    const tab = (k, l, ic, extra) => `<button class="crm-tab-seg${S.vista === k ? ' on pill-hundido' : ''}" onclick="window.nxCRM.tab('${k}')"><i class="ti ${ic}"></i> ${l}${extra || ''}</button>`;
     const lineas = BD.canales.filter(c => c.plataforma === 'whatsapp');
     const lin = lineas.find(c => String(c.id) === String(BD.linea));
     const selector = `<div class="crm-selectores"><div class="crm-selector">
@@ -135,7 +135,7 @@
     return `<div class="nxCrm crmB${BD.sel && (S.vista === 'mensajes' || S.vista === 'redes') ? ' chat-abierto' : ''}">
       <div class="crm-ocultar-en-chat">${S.vista === 'mensajes' ? selector : ''}
       <div class="crm-tabs-row"><div class="crm-tabs-track pill-elevado">
-        ${vistas.indexOf('mensajes') >= 0 ? tab('mensajes', 'Mensajes', 'ti-brand-whatsapp') : ''}${vistas.indexOf('redes') >= 0 ? tab('redes', 'Redes', 'ti-share') : ''}${P.crm ? tab('leads', 'Leads', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '') + tab('campanas', 'Campañas', 'ti-speakerphone') : ''}
+        ${vistas.indexOf('mensajes') >= 0 ? tab('mensajes', 'Mensajes', 'ti-brand-whatsapp') : ''}${vistas.indexOf('redes') >= 0 ? tab('redes', 'Redes', 'ti-share') : ''}${P.crm ? tab('leads', 'Prospectos', 'ti-user-plus', leadsAb ? `<span class="crm-badge">${leadsAb}</span>` : '') + tab('campanas', 'Campañas', 'ti-speakerphone') : ''}
       </div>
       <div class="crm-acciones-rapidas">${P.bandeja ? `<button class="crm-icon-btn pill-elevado crm-tr-btn" onclick="window.nxCRM.trBandeja()" title="Clientes transferidos a mí" aria-label="Clientes transferidos a mí"><i class="ti ti-arrows-transfer-down"></i><span id="crmTrBadge" class="crm-tr-badge"${FN.trPend ? '' : ' hidden'}>${FN.trPend || ''}</span></button>` : ''}${esAdmin() ? `<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.bdSincronizar()" title="Sincronizar conversaciones" aria-label="Sincronizar conversaciones"><i class="ti ti-cloud-download"></i></button><button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.canalesModal()" title="Canales conectados" aria-label="Canales conectados"><i class="ti ti-plug-connected"></i></button>` : ''}<button class="crm-icon-btn pill-elevado" onclick="window.nxCRM.actualizar(this)" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div></div></div>
       ${body}

@@ -6889,7 +6889,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.78';
+const APP_VERSION='59.79';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7019,7 +7019,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-reportes.js','parches-pos-crm.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-reportes.js','parches-pos-crm.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css','studio-pulido.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -14168,6 +14168,8 @@ function rHistorialAuto(){
     cargarCSS('studio-brand-theme.css');
     // Dock de navegación STUDIO: geometría final, aislada de la lógica.
     cargarCSS('studio-sidebar-dock.css');
+    // Pulido de diseño de todo el sistema (04-oct-2026): capa final y aislada, solo presentación.
+    cargarCSS('studio-pulido.css');
   })();
 </script>
 </body>

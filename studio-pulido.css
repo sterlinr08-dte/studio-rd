@@ -203,3 +203,25 @@ html.nx-studio .nxPf .emptyrow, html.nx-studio .nxPf td.vacio, html.nx-studio .n
   html.nx-studio .ffBig:not(.p) { min-height: 56px; padding-top: 10px; padding-bottom: 10px; }
   html.nx-studio .ffBig:not(.p) small { display: none; }
 }
+
+/* ── 27. Factura en el teléfono: acciones en cuadrícula (antes una fila que se cortaba a la derecha) ───────── */
+@media (max-width: 600px) {
+  html.nx-studio #v-pos .nx-invoice-pro .facQs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; overflow: visible;
+    -webkit-mask-image: none; mask-image: none; padding: 2px; margin: 0; }
+  html.nx-studio #v-pos .nx-invoice-pro .facQ { flex-direction: column; justify-content: center; gap: 3px; height: auto; min-height: 56px; padding: 6px 2px;
+    border-radius: 12px; min-width: 0; padding-left: 0; padding-right: 0; }
+  html.nx-studio #v-pos .nx-invoice-pro .facQ i { font-size: 18px; }
+  html.nx-studio #v-pos .nx-invoice-pro .facQ b { font-size: 10.5px; font-weight: 600; line-height: 1.15; letter-spacing: -.01em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+@media (min-width: 601px) {
+  html.nx-studio #v-pos .nx-invoice-pro .facQs { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; padding-right: 2px; }
+}
+@media (max-width: 374px) { html.nx-studio #v-pos .nx-invoice-pro .facQ b { font-size: 9.5px; letter-spacing: -.02em; } }
+
+/* ── 28. CRM: bandeja vacía con el mensaje centrado (antes quedaba arriba de un recuadro blanco vacío) ─────── */
+html.nx-studio .crmB .wa-list-scroll:has(> .crm-vacio:only-child) { display: flex; align-items: center; justify-content: center; }
+html.nx-studio .crmB .wa-list-scroll > .crm-vacio:only-child { max-width: 260px; font-size: 14px; line-height: 1.45; color: var(--studio-steel, #5f5c54); }
+
+/* ── 29. Kardex: cabecera de Almacenes sin apretarse en el teléfono ───────────────────────────────────────── */
+html.nx-studio .nxAlmTit > span:first-child { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }

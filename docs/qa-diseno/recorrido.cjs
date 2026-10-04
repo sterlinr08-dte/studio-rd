@@ -95,6 +95,8 @@ function db() {
         await p.evaluate(m => { window.scrollTo(0, 0); window.nxPosTab(m); }, mod); await p.waitForTimeout(900);
         await p.screenshot({ path: `${OUT}/${W}-${mod}.png`, fullPage: !movil });
         if (movil) await p.screenshot({ path: `${OUT}/${W}-${mod}-completo.png`, fullPage: true });
+        if (process.env.SONDA) console.log(W, mod, JSON.stringify(await p.evaluate(process.env.SONDA)));
+        if (movil && process.env.FONDO) { await p.evaluate(() => { window.scrollTo(0, document.documentElement.scrollHeight); document.querySelectorAll('*').forEach(e => { const cs = getComputedStyle(e).overflowY; if ((cs === 'auto' || cs === 'scroll') && e.scrollHeight > e.clientHeight + 4) e.scrollTop = e.scrollHeight; }); }); await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/${W}-${mod}-fondo.png` }); }
       } catch (e) { console.log('FALLA', W, mod, e.message.slice(0, 120)); }
     }
     console.log(W, 'listo · errores JS:', errs.length ? [...new Set(errs)].join(' | ').slice(0, 400) : 'ninguno');

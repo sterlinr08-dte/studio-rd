@@ -167,3 +167,39 @@ html.nx-studio .nxAjWrap .ajHead h2 { text-transform: none; }
   html.nx-studio #v-pos .nxProdTw tbody td:nth-child(2) { flex: 1 1 calc(100% - 40px); min-width: 0; }
   html.nx-studio #v-pos .nxProdTw tbody td:last-child { margin-left: auto; }
 }
+
+/* ── 21. Vender en computadora: carrito en columna derecha fija (otra capa forzaba una sola columna) ──────── */
+@media (min-width: 1100px) {
+  html.nx-studio #v-pos .nxPf.nxPosGridWrap { display: grid !important; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+  html.nx-studio #v-pos .nxPf.nxPosGridWrap > .nxPosRight { position: sticky; top: 12px; }
+}
+
+/* ── 22. Título de página en computadora (en el teléfono ya va en la barra superior) ───────────────────────── */
+html.nx-studio #v-pos .nxTPageT { display: none; }
+@media (min-width: 861px) {
+  html.nx-studio #v-pos .nxTPageT { display: block; margin: 2px 0 16px; font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -.022em; color: var(--studio-ink); text-transform: none; }
+}
+
+/* ── 23. Buscador dentro de la barra de herramientas (Clientes, Cotizaciones) ────────────────────────────── */
+html.nx-studio .nxPf .toolbar2.nxConBusca { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+html.nx-studio .nxPf .nxBuscaFila { flex: 1 1 260px; max-width: 460px; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px;
+  background: #fff; border: 1px solid var(--studio-hair, #e6e1d3); border-radius: 12px; }
+html.nx-studio .nxPf .nxBuscaFila:focus-within { border-color: var(--studio-gold); box-shadow: 0 0 0 3px rgba(201, 162, 39, .18); }
+html.nx-studio .nxPf .nxBuscaFila i { color: var(--studio-steel, #5f5c54); font-size: 17px; }
+html.nx-studio .nxPf .nxBuscaFila input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 16px; color: var(--studio-ink); text-transform: none; }
+
+/* ── 24. Estados vacíos iguales en todo el sistema ───────────────────────────────────────────────────────── */
+html.nx-studio .nxPf .emptyrow, html.nx-studio .nxPf td.vacio, html.nx-studio .nxPf .vacio { padding: 28px 16px !important; font-size: 13.5px !important; color: var(--studio-steel, #5f5c54) !important;
+  text-transform: none !important; letter-spacing: 0 !important; text-align: center; font-weight: 500; }
+
+/* ── 25. Menú lateral más compacto en computadora (caben más módulos sin desplazar) ───────────────────────── */
+@media (min-width: 861px) {
+  html.nx-studio body #v-pos .nxTNav { min-height: 42px; padding-top: 6px; padding-bottom: 6px; }
+  html.nx-studio body #v-pos .nxTNav i { width: 32px; height: 32px; font-size: 17px; }
+}
+
+/* ── 26. Financiamiento en el teléfono: accesos secundarios más compactos ─────────────────────────────────── */
+@media (max-width: 480px) {
+  html.nx-studio .ffBig:not(.p) { min-height: 56px; padding-top: 10px; padding-bottom: 10px; }
+  html.nx-studio .ffBig:not(.p) small { display: none; }
+}

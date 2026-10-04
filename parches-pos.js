@@ -17,7 +17,16 @@
     o = o || {};
     return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
   }
-  function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
+  function fmt(n) { const v = Math.round(Number(n || 0)); return (v < 0 ? '-RD$ ' : 'RD$ ') + Math.abs(v).toLocaleString('en-US'); }
+  // Teléfono legible: 8095551234 → 809-555-1234 (10 dígitos; si no, se deja como está).
+  function fmtTel(t) { const d = String(t || '').replace(/\D/g, ''); const x = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return x.length === 10 ? x.slice(0, 3) + '-' + x.slice(3, 6) + '-' + x.slice(6) : String(t || ''); }
+  // Filtro instantáneo de una tabla por texto (sin volver a pintar: no se pierde el foco del buscador).
+  function normBusca(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  window.nxFiltrarFilas = function (tablaId, q) {
+    const n = normBusca(q).trim(); const tb = document.getElementById(tablaId); if (!tb) return; let vis = 0;
+    tb.querySelectorAll('tr[data-q]').forEach(tr => { const ok = !n || tr.getAttribute('data-q').indexOf(n) >= 0 || tr.getAttribute('data-q').replace(/\D/g, '').indexOf(n.replace(/\D/g, '') || '§') >= 0; tr.style.display = ok ? '' : 'none'; if (ok) vis++; });
+    const v = tb.querySelector('tr.nxSinRes'); if (v) v.style.display = vis ? 'none' : '';
+  };
   function hoy() { return new Date().toISOString().slice(0, 10); }
   // Lee una tabla completa en páginas de 1000 (el máximo que entrega la API por consulta). Antes las cargas de
   // financiamiento tenían tope (300/2000/3000) y al crecer la cartera se perdían justo las cuotas y pagos más nuevos.
@@ -666,6 +675,10 @@
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + (puedeVer('reportes') && window.nxReportes && window.nxReportes.navHTML ? window.nxReportes.navHTML(_posTab === 'reportes') : it('reportes', 'Reportes', 'ti-chart-pie')) + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Inteligencia', it('ia', 'IA NEXUS', 'ti-brain'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
+    // Título del módulo: en el teléfono va en la barra superior; en computadora, como encabezado de página, salvo en
+    // los módulos que ya traen el suyo (Inicio, Financiamiento, Reportes, Ajustes).
+    const titMod = _posTab === 'inicio' ? biz : ((MODULOS.find(m => m[0] === _posTab) || [])[1] || biz).replace('Financiamiento / Cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas');
+    const titPag = ['inicio', 'cuotas', 'reportes', 'ajustes'].indexOf(_posTab) >= 0 ? '' : `<h1 class="nxTPageT">${esc(titMod)}</h1>`;
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
           <div class="nxTBrand"><div class="nxTLogo"><i class="ti ti-building-store"></i></div><div class="nxTBiz">${esc(biz)}<small>PUNTO DE VENTA</small></div></div>
@@ -679,8 +692,9 @@
           </div>
         </aside>
         <div class="nxTMain">
-          <div class="nxTTop"><button aria-label="Abrir el menú" class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(_posTab === 'inicio' ? biz : ((MODULOS.find(m => m[0] === _posTab) || [])[1] || biz).replace('Financiamiento / Cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas'))}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
+          <div class="nxTTop"><button aria-label="Abrir el menú" class="nxTBurger" type="button" onclick="window.nxPosToggleSide()"><i class="ti ti-menu-2"></i></button><button class="nxTSearchBtnM" type="button" onclick="window.nxBuscadorUniversal()" aria-label="Buscar en todo el sistema"><i class="ti ti-search"></i></button><div class="nxTTopBiz">${esc(titMod)}</div><button class="nxTQuick" type="button" onclick="window.nxPosTab('vender')"><i class="ti ti-bolt"></i> Venta rápida</button></div>
           ${previewBar}
+          ${titPag}
           ${body}
         </div>
       </div>
@@ -6335,7 +6349,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const chip = (k, lbl) => `<button type="button" class="chip${_entFiltro === k ? ' on' : ''}" onclick="window.nxEntFiltro('${k}')">${lbl}</button>`;
     const filas = lista.length ? lista.map(c => `<tr data-row tabindex="0" role="button" onclick="window.nxEntEdit('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxEntEdit('${c.id}')}">
         <td style="font-weight:800;color:var(--pf-blue-d)">${esc(c.codigo || '—')}</td>
-        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(fmtTel(c.telefono)) : ''}</div></td>
         <td style="text-align:center;font-size:10.5px;color:var(--pf-txt3)">${c.tipo_persona === 'juridica' ? 'Jurídico' : 'Físico'}</td>
         <td>${entRolesBadges(c)}</td>
         <td style="text-align:right"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxEntEdit('${c.id}')" aria-label="Editar"><i class="ti ti-edit"></i></button></td>
@@ -6517,10 +6531,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const conDeuda = lista.filter(c => saldoCli(c) > 0).length;
     const filas = lista.length ? lista.map(c => {
       const sal = saldoCli(c);
-      return `<tr data-row tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
-        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}</div></td>
+      return `<tr data-row data-q="${esc(normBusca([c.nombre, c.cedula, c.telefono, c.codigo].join(' ')))}" tabindex="0" role="button" onclick="window.nxPosCliVer('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxPosCliVer('${c.id}')}">
+        <td><div style="font-weight:700">${esc(c.nombre)}</div><div style="font-size:10.5px;color:var(--pf-txt3)">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(fmtTel(c.telefono)) : ''}</div></td>
         <td style="text-align:right;font-weight:800;color:${sal > 0 ? 'var(--pf-red)' : 'var(--pf-green)'}">${fmt(sal)}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxPosCliVer('${c.id}')" title="Ver cuenta" aria-label="Ver cuenta"><i class="ti ti-eye"></i></button> <button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxCliente360('${c.id}')" title="Ver 360°" aria-label="Ver ficha 360 del cliente"><i class="ti ti-id-badge-2"></i></button></td>
+        <td style="text-align:right;white-space:nowrap"><button class="ab g3" style="height:30px;width:30px;padding:0" onclick="event.stopPropagation();window.nxCliente360('${c.id}')" title="Ver 360°" aria-label="Ver ficha 360 del cliente"><i class="ti ti-id-badge-2"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="3" class="emptyrow">Aún no hay clientes registrados.</td></tr>`;
     return `<div class="nxPf">
@@ -6529,8 +6543,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody id="nxCliTb">${filas}${lista.length ? '<tr class="nxSinRes" style="display:none"><td colspan="3" class="emptyrow">Ningún cliente coincide con la búsqueda.</td></tr>' : ''}</tbody></table></div>
     </div>`;
   }
   window.nxPosNuevoCli = function () { abrirEntidad(null, { es_cliente: true }); };
@@ -6560,7 +6574,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-user"></i> ${esc(c.nombre)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCli').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
-          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(c.telefono) : ''}${c.acepta_whatsapp ? ' · <span style="color:#16a34a;font-weight:700"><i class="ti ti-circle-check"></i> Acepta WhatsApp</span>' : ''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${esc(c.cedula || '')}${c.telefono ? ' · ' + esc(fmtTel(c.telefono)) : ''}${c.acepta_whatsapp ? ' · <span style="color:#16a34a;font-weight:700"><i class="ti ti-circle-check"></i> Acepta WhatsApp</span>' : ''}</div>
           ${finesCli.length ? `<div style="background:${exposicionTotal > 0 ? '#fef2f2' : '#f0fdf4'};border:1px solid ${exposicionTotal > 0 ? '#fecaca' : '#bbf7d0'};border-radius:10px;padding:9px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:10.5px;font-weight:800;color:#475569;text-transform:uppercase">Exposición total (fiado + cuotas)</span><b style="font-size:16px;color:${exposicionTotal > 0 ? '#dc2626' : '#16a34a'}">${fmt(exposicionTotal)}</b></div>` : ''}
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
             ${kpi('Total a crédito', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
@@ -6666,7 +6680,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const datosGenerales = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;font-size:11.5px">
         <div><span style="color:var(--pf-txt3)">Código</span><br><b>${esc(c.codigo || '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Cédula/RNC</span><br><b>${esc(c.cedula || '—')}</b></div>
-        <div><span style="color:var(--pf-txt3)">Teléfono</span><br><b>${esc(c.telefono || '—')}</b></div>
+        <div><span style="color:var(--pf-txt3)">Teléfono</span><br><b>${esc(c.telefono ? fmtTel(c.telefono) : '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Email</span><br><b>${esc(c.email || '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Dirección</span><br><b>${esc(c.direccion || '—')}</b></div>
         <div><span style="color:var(--pf-txt3)">Cliente desde</span><br><b>${String(c.created_at || '').slice(0, 10).split('-').reverse().join('/') || '—'}</b></div>
@@ -8765,7 +8779,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     nxPfEnsureCSS();
     const filas = _cotizaciones.length ? _cotizaciones.map(c => {
       const est = cotVigente(c);
-      return `<tr data-row tabindex="0" role="button" onclick="window.nxCotEditar('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxCotEditar('${c.id}')}">
+      return `<tr data-row data-q="${esc(normBusca([c.numero, c.cliente_nombre].join(' ')))}" tabindex="0" role="button" onclick="window.nxCotEditar('${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.nxCotEditar('${c.id}')}">
         <td style="font-weight:800;font-family:var(--mono,monospace);color:var(--pf-blue-d)">${esc(c.numero || '')}</td>
         <td>${esc(c.cliente_nombre || '—')}<div style="font-size:10px;color:var(--pf-txt3)">${fechaDMY(c.fecha)}</div></td>
         <td style="text-align:center">${cotEstadoBadge(est)}</td>
@@ -8779,8 +8793,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       </tr>`;
     }).join('') : `<tr><td colspan="5" class="emptyrow">Aún no hay cotizaciones. Crea la primera.</td></tr>`;
     return `<div class="nxPf">
-      <div class="toolbar2"><button class="ab g2 sm" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
-      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Buscar por número o cliente" aria-label="Buscar cotización" oninput="window.nxFiltrarFilas('nxCotTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxCotNueva()"><i class="ti ti-plus"></i> Nueva cotización</button></div>
+      <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>No.</th><th>Cliente</th><th style="text-align:center">Estado</th><th style="text-align:right">Total</th><th></th></tr></thead><tbody id="nxCotTb">${filas}<tr class="nxSinRes" style="display:none"><td colspan="5" class="emptyrow">Ninguna cotización coincide con la búsqueda.</td></tr></tbody></table></div>
     </div>`;
   }
   window.nxCotNueva = function () { _cotEdit = { id: null, cliente_id: '', cliente_nombre: '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); };

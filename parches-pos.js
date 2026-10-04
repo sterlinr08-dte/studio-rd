@@ -19,6 +19,20 @@
   }
   function fmt(n) { return 'RD$ ' + Math.round(Number(n || 0)).toLocaleString('en-US'); }
   function hoy() { return new Date().toISOString().slice(0, 10); }
+  // Lee una tabla completa en páginas de 1000 (el máximo que entrega la API por consulta). Antes las cargas de
+  // financiamiento tenían tope (300/2000/3000) y al crecer la cartera se perdían justo las cuotas y pagos más nuevos.
+  // Devuelve null si alguna página falla (igual que g() en la carga inicial), para no pintar una cartera incompleta.
+  async function getTodasPOS(tabla, qs) {
+    const out = []; const PAG = 1000;
+    try {
+      for (let off = 0; off < 100000; off += PAG) {
+        const r = await getAPI().get(tabla, qs + '&limit=' + PAG + '&offset=' + off) || [];
+        out.push.apply(out, r);
+        if (r.length < PAG) break;
+      }
+      return out;
+    } catch (e) { return null; }
+  }
   function fechaDMY(d) { try { const dt = new Date(d || Date.now()); return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0') + '/' + dt.getFullYear() + ' ' + String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0'); } catch (e) { return ''; } }
   function toast(t, m, s) { try { if (window.toast) window.toast(t, m, s); } catch (e) {} }
   function cerrarModal(id) { const o = document.getElementById(id); if (o) o.remove(); }
@@ -226,9 +240,9 @@
       g('pos_secuencias', 'select=*&order=tipo.asc'),
       g('pos_acceso', 'select=*'),
       g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
@@ -365,7 +379,9 @@
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
     try {
-      const fi = await getAPI().get('pos_ventas', 'select=cliente_id,credito_monto&credito_monto=gt.0&estado=neq.anulada') || [];
+      // pos_ventas_fiado (migración 37): ventas a crédito no anuladas y SIN plan de cuotas — una venta financiada se
+      // cobra por cuotas, no es fiado (antes contaba en los dos lados y el cliente salía debiendo el doble).
+      const fi = await getAPI().get('pos_ventas_fiado', 'select=cliente_id,credito_monto') || [];
       fi.forEach(v => { if (v.cliente_id) _fiadoByCli[v.cliente_id] = (_fiadoByCli[v.cliente_id] || 0) + Number(v.credito_monto || 0); });
       const ab = await getAPI().get('pos_abonos', 'select=cliente_id,monto') || [];
       ab.forEach(a => { if (a.cliente_id) _abonosByCli[a.cliente_id] = (_abonosByCli[a.cliente_id] || 0) + Number(a.monto || 0); });
@@ -5952,8 +5968,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         _finsVenta = await getAPI().get('pos_financiamientos', 'select=id&venta_id=eq.' + id) || [];
         if (_finsVenta.length) {
           const ids = _finsVenta.map(f => f.id);
-          const pagos = await getAPI().get('pos_fin_pagos', 'financiamiento_id=in.(' + ids.join(',') + ')&select=monto') || [];
-          _totalPagadoCuotas = pagos.reduce((t, p) => t + Number(p.monto || 0), 0);
+          const pagos = await getAPI().get('pos_fin_pagos', 'financiamiento_id=in.(' + ids.join(',') + ')&select=monto,tipo') || [];
+          // Las reversas (tipo 'reversa', monto positivo) restan: antes se sumaban y el aviso decía el doble.
+          _totalPagadoCuotas = pagos.reduce((t, p) => t + (p.tipo === 'reversa' ? -1 : 1) * Number(p.monto || 0), 0);
         }
       } catch (e) {}
     }
@@ -6520,7 +6537,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
     cerrarModal('nxPosCli');
     let ventas = [], abonos = [];
-    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&credito_monto=gt.0&order=created_at.desc') || []; } catch (e) {}
+    try { ventas = await getAPI().get('pos_ventas_fiado', 'select=*&cliente_id=eq.' + id + '&order=created_at.desc') || []; } catch (e) {}
     try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.desc') || []; } catch (e) {}
     const totFiado = ventas.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
     const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
@@ -6535,7 +6552,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const exposicionTotal = saldo + totCuotas;
     const planesHTML = finesCli.length ? finesCli.map(f => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(f.descripcion || '')}<div style="color:#475569;font-size:9.5px">${cuotasDe(f.id).filter(c => c.pagado).length}/${f.cuotas_total} cuotas pagadas</div></div><div style="display:flex;align-items:center;gap:6px"><b style="color:#2563eb">${fmt(pendPlan(f))}</b><button class="btn bsm bghost" onclick="document.getElementById('nxPosCli').remove();window.nxFinPlan('${f.id}')" title="Ver plan" aria-label="Ver plan"><i class="ti ti-list-numbers"></i></button></div></div>`).join('') : '';
     const ventasHTML = ventas.length ? ventas.map(v => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div>${esc(v.numero_factura || v.numero || '')} <span style="color:#475569">${fechaDMY(v.fecha || v.created_at)}</span>${Number(v.credito_monto || 0) < Number(v.total || 0) ? `<div style="color:#475569;font-size:9.5px">Venta ${fmt(v.total)} · fiado</div>` : ''}</div><div style="display:flex;align-items:center;gap:6px"><b style="color:#dc2626">${fmt(v.credito_monto)}</b><button class="btn bsm bghost" onclick="window.nxPosTicketVenta('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button></div></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin ventas fiadas</div>';
-    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div><button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button></div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
+    const abonosHTML = abonos.length ? abonos.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px"><div><b style="color:#059669">${fmt(a.monto)}</b> <span style="color:#475569">${(a.fecha || '').slice(0, 10)} · ${esc(a.metodo || '')}</span>${a.nota ? `<div style="color:#475569;font-size:10px">${esc(a.nota)}</div>` : ''}</div>${puedeVerMin() ? `<button class="btn bsm bghost" onclick="window.nxPosDelAbono('${a.id}','${id}')" title="Eliminar" aria-label="Eliminar"><i class="ti ti-minus" style="color:#dc2626"></i></button>` : ''}</div>`).join('') : '<div style="color:#475569;font-size:11px;padding:10px">Sin abonos</div>';
     const ov = document.createElement('div'); ov.id = 'nxPosCli'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:460px;max-height:90vh;display:flex;flex-direction:column">
@@ -6550,7 +6567,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px">${planesHTML}</div>` : ''}
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
-            <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none"><input id="posAbFecha" type="date" value="${hoy()}" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"></div>
+            <div style="display:flex;gap:6px;margin-bottom:6px"><input id="posAbMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;outline:none">${puedeVerMin() ? `<input id="posAbFecha" type="date" value="${hoyISOPos()}" max="${hoyISOPos()}" title="Fecha del abono (solo admin/gerente puede poner una anterior)" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none">` : ''}</div>
             <div style="display:flex;gap:6px"><select id="posAbMet" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><input id="posAbNota" class="no-upper" placeholder="Nota" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;outline:none"><button aria-label="Registrar un abono" class="btn bc1 bsm" type="button" onclick="window.nxPosAbonar('${id}')"><i class="ti ti-plus"></i></button></div>
           </div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px"><i class="ti ti-circle-check"></i> Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">VENTAS FIADAS (${ventas.length})</div>
@@ -6607,7 +6624,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const bodyEl = document.getElementById('nxCli360Body'); if (!bodyEl) return; // se cerró mientras cargaba
 
     // ── Créditos (mismo cálculo que nxPosCliVer) ──
-    const ventasCredito = ventas.filter(v => Number(v.credito_monto || 0) > 0);
+    // Igual que pos_ventas_fiado: sin anuladas y sin las ventas que tienen plan de cuotas (esas se cuentan en cuotas).
+    const _ventasConPlan = new Set(finesCli.filter(f => f.estado !== 'cancelado').map(f => String(f.venta_id)));
+    const ventasCredito = ventas.filter(v => Number(v.credito_monto || 0) > 0 && v.estado !== 'anulada' && !_ventasConPlan.has(String(v.id)));
     const totFiado = ventasCredito.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
     const totAbFiado = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
     const saldoFiado = Math.max(0, totFiado - totAbFiado);
@@ -6629,7 +6648,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 
     // ── Pagos: fiado (pos_abonos) + cuotas (pos_fin_pagos), fusionados y ordenados ──
     const pagos = abonos.map(a => ({ monto: a.monto, fecha: a.fecha, metodo: a.metodo, tipo: 'Cobro fiado', detalle: a.nota }))
-      .concat(finPagos.map(p => ({ monto: p.monto, fecha: p.fecha, metodo: p.metodo, tipo: 'Pago de cuota', detalle: p.referencia })))
+      .concat(finPagos.map(p => p.tipo === 'reversa'
+        ? ({ monto: -Number(p.monto || 0), fecha: p.fecha, metodo: p.metodo, tipo: 'Pago de cuota anulado', detalle: p.motivo_reversa || p.referencia })
+        : ({ monto: p.monto, fecha: p.fecha, metodo: p.metodo, tipo: 'Pago de cuota', detalle: p.referencia })))
       .sort((x, y) => String(y.fecha || '').localeCompare(String(x.fecha || '')));
 
     const badge = (txt, color, bg) => `<span style="font-size:9px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap;background:${bg};color:${color}">${esc(txt)}</span>`;
@@ -7086,7 +7107,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPosEstadoCuenta = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
     let ventas = [], abonos = [];
-    try { ventas = await getAPI().get('pos_ventas', 'select=*&cliente_id=eq.' + id + '&credito_monto=gt.0&order=created_at.asc') || []; } catch (e) {}
+    try { ventas = await getAPI().get('pos_ventas_fiado', 'select=*&cliente_id=eq.' + id + '&order=created_at.asc') || []; } catch (e) {}
     try { abonos = await getAPI().get('pos_abonos', 'select=*&cliente_id=eq.' + id + '&order=fecha.asc') || []; } catch (e) {}
     const totFiado = ventas.reduce((s, v) => s + Number(v.credito_monto || 0), 0);
     const totAb = abonos.reduce((s, a) => s + Number(a.monto || 0), 0);
@@ -7127,27 +7148,40 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     let items = []; try { items = await getAPI().get('pos_venta_items', 'select=*&venta_id=eq.' + ventaId) || []; } catch (e) {}
     ticketHTML(Object.assign({}, v, { _items: items }));
   };
+  // Abono de fiado (migración 37): el servidor valida monto y saldo, toma la caja abierta (efectivo), numera el recibo
+  // y hace el asiento en una sola transacción. La clave de operación nace al abrir la ficha: un doble toque o un
+  // reintento devuelven el mismo abono en vez de cobrar dos veces.
+  const FIADO_ERR = { FIADO_EXCEDE_SALDO: 'El abono es mayor que lo que debe el cliente', FIADO_MONTO_INVALIDO: 'Pon un monto mayor que cero',
+    FIADO_CAJA_CERRADA: 'La caja está cerrada: ábrela en Caja antes de recibir efectivo', FIADO_FECHA_SOLO_ADMIN: 'Solo admin o gerente puede registrar un abono con otra fecha',
+    FIADO_ELIMINAR_SOLO_ADMIN: 'Solo admin o gerente puede eliminar un abono', FIADO_SIN_PERMISO: 'Tu usuario no tiene permiso',
+    FIADO_CUENTAS_CONTABLES_FALTAN: 'Faltan las cuentas contables 1101/1102/1103', ABONO_SOLO_POR_SISTEMA: 'Los abonos solo se registran con este botón',
+    PERIODO_CERRADO: 'Ese período contable está cerrado' };
+  function fiadoErrTxt(e) { const m = String(e && e.message || e || ''); const k = Object.keys(FIADO_ERR).find(x => m.indexOf(x) >= 0); return k ? FIADO_ERR[k] : m; }
+  let _posAbOp = { cli: null, op: null };
+  function posAbOpId(cliId) { if (_posAbOp.cli !== String(cliId) || !_posAbOp.op) _posAbOp = { cli: String(cliId), op: finUuid() }; return _posAbOp.op; }
   window.nxPosAbonar = async function (id) {
-    const monto = parseMoney(val('posAbMonto')); if (monto <= 0) { toast('err', 'Pon el monto del abono'); return; }
-    // REGLAMENTO DE COBRO regla 4: un abono en efectivo entra a una caja abierta o no entra.
+    const monto = Math.round(parseMoney(val('posAbMonto')) * 100) / 100; if (!(monto > 0)) { toast('err', 'Pon el monto del abono'); return; }
     const _met = val('posAbMet') || 'Efectivo';
-    if (/efectivo/i.test(_met) && !(_caja && _caja.id)) {
-      try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {}
-      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja antes de recibir ' + fmt(monto) + ' en efectivo'); return; }
-    }
+    const btn = document.activeElement && document.activeElement.tagName === 'BUTTON' ? document.activeElement : null;
+    if (btn) { if (btn.disabled) return; btn.disabled = true; }
+    const fecha = puedeVerMin() ? (val('posAbFecha') || '') : '';
     try {
-      const rab = await getAPI().post('pos_abonos', { cliente_id: id, monto: monto, fecha: val('posAbFecha') || hoy(), metodo: _met, nota: (val('posAbNota') || '').trim() || null, numero: await nextSeq('recibo'), caja_id: (_caja && _caja.id) || null, created_by_name: nomAdmin() });
-      const abId = rab && rab[0] && rab[0].id;
+      const r = await getAPI().post('rpc/pos_fiado_registrar_abono', { p_cliente_id: id, p_monto: monto, p_metodo: _met,
+        p_nota: (val('posAbNota') || '').trim() || null, p_fecha: fecha && fecha !== hoyISOPos() ? fecha : null,
+        p_operacion_id: posAbOpId(id), p_created_by_name: nomAdmin() });
+      _posAbOp = { cli: null, op: null };
+      const res = Array.isArray(r) ? r[0] : r;
       _abonosByCli[id] = (_abonosByCli[id] || 0) + monto;
-      try { const cli = _clientes.find(x => String(x.id) === String(id)); postAsientoAbono(cli && cli.nombre, monto, _met, val('posAbFecha') || hoy(), abId); } catch (e) {}
-      toast('ok', 'Abono registrado', fmt(monto));
+      toast('ok', res && res.repetido ? 'Ese abono ya estaba registrado' : 'Abono registrado', fmt(monto) + (res && res.numero ? ' · ' + res.numero : ''));
       window.nxPosCliVer(id);
       const view = document.getElementById('v-pos'); if (view && _posTab === 'clientes') renderPOS(view);
-    } catch (e) { toast('err', 'No se pudo registrar', String(e && e.message || e)); }
+    } catch (e) { toast('err', 'No se pudo registrar', fiadoErrTxt(e)); if (btn) btn.disabled = false; }
   };
   window.nxPosDelAbono = async function (abId, cliId) {
+    if (!puedeVerMin()) { toast('err', FIADO_ERR.FIADO_ELIMINAR_SOLO_ADMIN); return; }
     if (!confirm('¿Eliminar este abono? Se revierte su contabilidad.')) return;
-    try { await getAPI().del('pos_abonos', 'id=eq.' + abId); await delAsientoOrigen('cobro', abId); await delAsientoOrigen('rebaja_cliente', abId); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); } catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
+    try { await getAPI().post('rpc/pos_fiado_eliminar_abono', { p_abono_id: abId }); toast('ok', 'Abono eliminado'); window.nxPosCliVer(cliId); }
+    catch (e) { toast('err', 'No se pudo', fiadoErrTxt(e)); }
   };
   window.nxPosDelCli = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;
@@ -12468,7 +12502,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // supabase/studio/14_financiamiento_v2.sql). Con la bandera apagada nada de esto se alcanza.
   // Línea gráfica: tokens --nx-* de DESIGN.md §7b (sin hex morados).
   // ══════════════════════════════════════════════════════════════════════════════════════════
-  function cv2fin() { return !!(_posCfg && _posCfg.financiamiento_v2); }
+  // Falla cerrada (auditoría 04-oct-2026): si pos_config no cargó, NO se cae al módulo viejo (v1, que escribía las
+  // tablas desde el navegador); solo se usa v1 si la configuración cargó y dice explícitamente financiamiento_v2=false.
+  function cv2fin() { return !(_posCfg && _posCfg.financiamiento_v2 === false); }
   // Camino rápido de Factura (venta a crédito → cuotas sin solicitud ni aprobación). Apagado por decisión del
   // dueño (29-sep-2026). Poner en true lo vuelve a mostrar; el servidor lo sigue permitiendo hasta la migración 35.
   const FIN_FACTURA_CUOTAS = false;
@@ -12623,9 +12659,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   async function finV2RecargarLedger() {
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
     const [fins, fcuo, finpag, so] = await Promise.all([
-      g('pos_financiamientos', 'select=*&order=created_at.desc&limit=300'),
-      g('pos_fin_cuotas', 'select=*&order=fecha_venc.asc&limit=2000'),
-      g('pos_fin_pagos', 'select=*&order=fecha.asc&limit=3000'),
+      getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
+      getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
+      getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
       g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300')
     ]);
     if (fins) _fins = fins; if (fcuo) _finCuotas = fcuo; if (finpag) _finPagos = finpag; if (so) _finSols = so;
@@ -14531,6 +14567,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     try { console.error('[Financiamiento]', m, e); } catch (x) {}
     const map = { FIN_IMEI_FALTANTE: 'Falta el IMEI de un equipo. Elige un IMEI por cada unidad.', FIN_IMEI_NO_DISPONIBLE: 'Un IMEI ya no está disponible (se vendió o está apartado). Elige otro.', VENTA_IMEI_OTRO_ALMACEN: 'El IMEI está en otro almacén. Cambia de almacén o elige otro IMEI.', FIN_CAJA_CERRADA: 'La caja está cerrada. Ábrela en Caja y vuelve a intentar.', FIN_INICIAL_MENOR_AL_MINIMO: 'La inicial es menor que el mínimo del plan. Súbela y vuelve a intentar.', FIN_PLAN_INVALIDO: 'Ese plan ya no está activo. Elige otro plan.', FIN_SOLICITUD_NO_PENDIENTE: 'Esta solicitud ya fue decidida. Refresca la pantalla.', FIN_PAGO_EXCEDE_SALDO: 'El monto es mayor que lo que se debe de esta cuota. Revisa el monto.', FIN_NO_ACTIVO: 'Este financiamiento no está activo.', FIN_APROBAR_SIN_PERMISO: 'Solo un administrador o gerente puede aprobar o rechazar.', FIN_REVERSA_SIN_PERMISO: 'Solo un administrador o gerente puede anular pagos.', FIN_CONDONAR_SIN_PERMISO: 'Solo un administrador o gerente puede perdonar recargos.', FIN_EXPEDIENTE_INCOMPLETO: 'Faltan documentos del cliente (cédula, foto, video o firma). No se puede aprobar todavía.', FIN_EXPEDIENTE_YA_ENVIADO: 'El cliente ya envió sus documentos.', FIN_TEXTOS_VACIOS: 'Faltan los textos del link. Pide ayuda a un administrador.', FIN_MOTIVO_REQUERIDO: 'Escribe el motivo.', FIN_COBRO_SIN_PERMISO: 'Tu usuario aún no tiene permiso para cobrar; avisa al administrador.', FIN_TERMINOS_SIN_PERMISO: 'Solo un administrador o gerente puede cambiar el interés o el recargo.', FIN_MANUAL_UN_RENGLON: 'Con monto a mano solo va un concepto. Quita los demás renglones.', FIN_MANUAL_CONCEPTO_INVALIDO: 'Escribe qué se financia y un monto mayor que cero.', FIN_ITEM_SIN_PRODUCTO: 'Un renglón no tiene artículo. Elige el artículo o marca «Poner el monto a mano».', FIN_SIN_PERMISO: 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.', VENTA_ITEM_INVALIDO: 'Un artículo ya no existe o está inactivo. Quítalo y agrégalo de nuevo.', INVENTARIO_SIN_STOCK: 'No hay existencia suficiente de un artículo.', FIN_CUENTA_BANCARIA_INVALIDA: 'Elige una cuenta de banco activa.' };
     for (const k in map) if (m.indexOf(k) >= 0) return map[k];
+    if (/pos_fin_pagos_centavos_chk/.test(m)) return 'El monto tiene fracciones de centavo. Escríbelo con 2 decimales como máximo.';
+    if (/FIN_PAGO_NO_CUADRA/.test(m)) return 'El reparto del pago (capital, interés y mora) no cuadra con el monto. No se registró nada; avisa a un administrador.';
+    if (/FIN_PRIMER_VENCIMIENTO_INVALIDO/.test(m)) return 'La fecha del primer pago ya pasó. Pide al administrador que la cambie en Condiciones y vuelve a aprobar.';
     if (/row-level security|42501|permission denied|violates row/i.test(m)) return 'Tu usuario no tiene permiso para esto. Pídele a un administrador o gerente.';
     if (/Failed to fetch|NetworkError|Load failed|network|timeout/i.test(m)) return 'No hay conexión con el sistema. Revisa el internet y vuelve a intentar.';
     if (/JWT|expired|401/i.test(m)) return 'Tu sesión se venció. Sal y vuelve a entrar.';
@@ -14777,21 +14816,25 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   };
   window.nxFinV2CobrarGo = async function () {
     const st = _finV2Cobro; if (!st) return; const f = finFinDe(st.finId); const c = finCuotaDe(st.cuotaId); if (!f || !c) return;
+    // Doble toque: el botón se apaga ANTES de cualquier espera y la clave de la operación es la de esta ventana
+    // (se crea una vez); un reintento tras un corte de red devuelve el mismo pago en vez de cobrar dos veces.
+    const btn = document.getElementById('fpGo'); if (btn && btn.disabled) return;
+    if (!st.opId) st.opId = finUuid();
     const monto = r2(finNum(val('fpMonto')));
     if (!st.metodo) { toast('err', 'Elige cómo pagó', 'Efectivo, transferencia o tarjeta'); return; }
     if (!finPuedeCobrar()) { toast('err', 'Tu usuario no puede cobrar cuotas', 'El administrador lo activa en Permisos por rol'); return; }
     if (!(monto > 0)) { toast('err', 'Escribe el monto', 'Debe ser mayor que cero'); return; }
     if (monto > st.pend.total + 0.01) { toast('err', 'El monto es mayor que lo que se debe', 'Esta cuota debe ' + fmt2(st.pend.total)); return; }
-    if (st.metodo === 'efectivo') {
-      if (!(_caja && _caja.id)) { try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {} }
-      if (!(_caja && _caja.id)) { toast('err', 'La caja está cerrada', 'Ábrela en Caja o elige transferencia o tarjeta'); return; }
-    }
     const cta = (st.metodo !== 'efectivo') ? (val('fpCta') || null) : null;
     if (st.metodo !== 'efectivo' && _finCtas.length && !cta) { toast('err', 'Elige la cuenta de banco'); return; }
-    const btn = document.getElementById('fpGo'); if (btn) btn.disabled = true;
+    if (btn) btn.disabled = true;
+    if (st.metodo === 'efectivo') {
+      if (!(_caja && _caja.id)) { try { const _cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (_cj && _cj[0]) || null; } catch (e) {} }
+      if (!(_caja && _caja.id)) { if (btn) btn.disabled = false; toast('err', 'La caja está cerrada', 'Ábrela en Caja o elige transferencia o tarjeta'); return; }
+    }
     try {
       const metodoTxt = st.metodo === 'efectivo' ? 'Efectivo' : st.metodo === 'tarjeta' ? 'Tarjeta' : 'Transferencia';
-      const _opId = finUuid();
+      const _opId = st.opId;
       const pagoId = await finRpc('pos_fin_registrar_pago_v2', { p_financiamiento_id: f.id, p_cuota_id: c.id, p_monto: monto, p_metodo: metodoTxt, p_referencia: (val('fpRef') || '').trim() || null, p_operacion_id: _opId, p_created_by_name: finYo(), p_cuenta_bancaria_id: cta });
       await finV2RecargarLedger();
       const c2 = finCuotaDe(c.id); const f2 = finFinDe(f.id);

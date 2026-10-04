@@ -304,7 +304,7 @@
     }
     else if (k === 'fin') {
       const [fins, cuotas, pagos, planes, sols, clientes, cfg] = await Promise.all([
-        pr(getAll('pos_financiamientos', 'select=id,codigo,venta_id,cliente_id,cliente_nombre,descripcion,monto_total,inicial,monto_financiado,interes_total,cuotas_total,frecuencia,estado,plan_id,created_at,firma_cliente_en,firma_tienda_en,firma_token_vence&order=created_at.asc'), []),
+        pr(getAll('pos_financiamientos', 'select=id,codigo,venta_id,cliente_id,cliente_nombre,descripcion,monto_total,inicial,monto_financiado,interes_total,cuotas_total,frecuencia,estado,plan_id,created_at,firma_cliente_en,firma_tienda_en,firma_token_vence,mora_tipo,mora_valor,mora_dias_gracia&order=created_at.asc'), []),
         pr(getAll('pos_fin_cuotas', 'select=id,financiamiento_id,numero,fecha_venc,monto,capital,interes,pagado,mora_generada,mora_exenta&order=fecha_venc.asc'), []),
         pr(getAll('pos_fin_pagos', 'select=id,financiamiento_id,cuota_id,monto,metodo,fecha,tipo,monto_principal,monto_interes,monto_mora,created_by_name&order=fecha.asc'), []),
         pr(getAll('pos_fin_planes', 'select=id,nombre,mora_tipo,mora_valor,mora_dias_gracia'), []),
@@ -462,7 +462,8 @@
     </div>`;
   }
 
-  // ── Financiamiento: saldo por cuota con la misma regla del POS (mora → interés → capital; mora del plan con gracia) ──
+  // ── Financiamiento: saldo por cuota con la misma regla del POS (mora → interés → capital; mora congelada en el
+  //    financiamiento y, si no tiene, la del plan; con gracia y redondeo a centavos) ──
   function libroFin(x) {
     const pgC = {}; x.pagos.forEach(p => { const s2 = p.tipo === 'reversa' ? -1 : 1; const o = pgC[p.cuota_id] = pgC[p.cuota_id] || { cap: 0, int: 0, mora: 0 }; o.cap += s2 * n(p.monto_principal); o.int += s2 * n(p.monto_interes); o.mora += s2 * n(p.monto_mora); });
     const plan = {}; x.planes.forEach(p => { plan[p.id] = p; });
@@ -470,13 +471,13 @@
     const tel = {}; x.clientes.forEach(c => { tel[c.id] = c; });
     const hoy = hoyISO();
     const cuotas = x.cuotas.map(c => {
-      const f = fin[c.financiamiento_id] || {}; const pl = plan[f.plan_id]; const pg = pgC[c.id] || { cap: 0, int: 0, mora: 0 };
+      const f = fin[c.financiamiento_id] || {}; const pl = f.mora_tipo != null ? { mora_tipo: f.mora_tipo, mora_valor: f.mora_valor, mora_dias_gracia: f.mora_dias_gracia } : plan[f.plan_id]; const pg = pgC[c.id] || { cap: 0, int: 0, mora: 0 };
       const capP = Math.max(0, n(c.capital != null ? c.capital : c.monto) - pg.cap), intP = Math.max(0, n(c.interes) - pg.int);
       const venc = String(c.fecha_venc || '').slice(0, 10); const dias = !c.pagado && venc && venc < hoy ? diasEntre(venc, hoy) : 0;
       let moraCalc = 0;
       if (!c.pagado && dias > 0 && capP + intP > 0.01) {
         const gr = pl ? n(pl.mora_dias_gracia) : n(x.cfg.mora_dias_gracia);
-        if (dias > gr) moraCalc = pl ? (pl.mora_tipo === 'fija' ? n(pl.mora_valor) : pl.mora_tipo === 'pct' ? n(c.monto) * n(pl.mora_valor) / 100 : 0) : n(c.monto) * n(x.cfg.mora_pct) / 100;
+        if (dias > gr) moraCalc = Math.round((pl ? (pl.mora_tipo === 'fija' ? n(pl.mora_valor) : pl.mora_tipo === 'pct' ? n(c.monto) * n(pl.mora_valor) / 100 : 0) : n(c.monto) * n(x.cfg.mora_pct) / 100) * 100) / 100;
       }
       const moraTot = c.mora_exenta ? pg.mora : Math.max(n(c.mora_generada), moraCalc);
       const moraP = c.pagado ? 0 : Math.max(0, moraTot - pg.mora);

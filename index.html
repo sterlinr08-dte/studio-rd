@@ -6889,7 +6889,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.81';
+const APP_VERSION='59.82';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -7019,7 +7019,7 @@ function nxPrecargarParche(versionNueva){
     // Bloque 2026-08-27: parches.js se dividió en 6 archivos por tema — se
     // precargan todos con la misma URL que pedirá el cargador al final del
     // archivo, para que el navegador los sirva de su caché.
-    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-reportes.js','parches-pos-crm.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-brand-theme.css','studio-sidebar-dock.css','studio-pulido.css']
+    ['parches-pos-money.js','parches-pos.js','parches-pos-reacond.js','parches-pos-reportes.js','parches-pos-crm.js','parches-pos-stitch-visual.js','parches-whatsapp.js','parches-pos-motion.js','studio-vidrio.js','studio-brand-theme.css','studio-sidebar-dock.css','studio-pulido.css']
       .forEach(f=>fetch(location.origin+'/'+f+'?v='+versionNueva,{credentials:'same-origin'}).catch(()=>{}));
   }catch(e){}
 }
@@ -14159,6 +14159,7 @@ function rHistorialAuto(){
     cargarConReintento('parches-pos-stitch-visual.js');
     cargarConReintento('parches-whatsapp.js'); // Inbox de WhatsApp: solo carga sus capas si pos_config.whatsapp_inbox
     cargarConReintento('parches-pos-motion.js'); // STUDIO: movimiento fluido (DESIGN.md §10), solo presentación
+    cargarConReintento('studio-vidrio.js'); // STUDIO: reflector (luz de vidrio) y brillo fijo en lo elegido, como NEXUS PRO; solo visual
     // Capas de UI compartidas (no son de Seguros): ajustes móviles de modales y motion de
     // botones/tablas/diálogos que el POS usa a través de las clases .modal/.btn/.tw del shell.
     cargarConReintento('parches-contenido-movil-ajuste.js');

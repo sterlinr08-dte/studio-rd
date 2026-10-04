@@ -12909,7 +12909,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const guia = `<button type="button" class="nxF2Back ffGuiaBtn" aria-label="Guía de financiamiento" onclick="window.nxFinGuia()"><i class="ti ti-help-circle"></i> Guía</button>`;
     let html = finV2HeaderHTML('Financiamiento', admin ? 'Solicitudes, cobros y cartera' : 'Solicitudes y cobros de cuotas', null, guia) + `
       <div class="ffBig3 ffBig4">
-        ${big('p', 'ti-file-plus', 'Nueva solicitud', 'Cliente, equipo y plan en 5 pasos', 'solicitud')}
+        ${big('p', 'ti-file-plus', 'Nueva solicitud', 'Cliente, artículo y condiciones en 5 pasos', 'solicitud')}
         ${big('', 'ti-calculator', 'Consultar / Cotizar', 'Calcula la cuota sin guardar nada', 'cotizar')}
         ${big('', 'ti-cash', 'Cobrar cuota', 'Busca por cédula, teléfono o nombre', 'cobrar')}
         ${big('', 'ti-calendar-due', 'Quién paga hoy', hoy.length ? hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie atrasado hoy', 'hoy', hoy.length || '')}
@@ -13608,7 +13608,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   // solicitud de antes (pos_fin_perfil, pos_fin_referencias, pos_fin_solicitudes) y deja la evaluación
   // calculada con los datos que se pidieron una sola vez. El navegador no toca contabilidad: aprobar y
   // facturar siguen siendo la RPC pos_fin_aprobar_solicitud (solo admin/gerente).
-  const FIN_WIZ = ['Cliente', 'Equipo', 'Plan', 'Datos del cliente', 'Revisar y enviar'];
+  const FIN_WIZ = ['Cliente', 'Artículo', 'Condiciones', 'Perfil del cliente', 'Revisión y envío'];
   function finWizTotal(s) { return r2((s.items || []).reduce((t, it) => t + r2(Number(it.precio) * Number(it.cantidad)), 0)); }
   // Con condiciones por caso, el «plan» de la solicitud es el plan base (valores de la tienda) + lo elegido aquí.
   function finWizPlan(s) { const base = _finPlanes.find(p => p.activo && String(p.id) === String(s.plan_id)); if (!base) return null; return finTerminosOn() ? finPlanEfectivo(s) : base; }
@@ -13632,7 +13632,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const cuerpo = paso === 1 ? finWizPaso1(s) : paso === 2 ? finWizPaso2(s) : paso === 3 ? (finTerminosOn() ? finWizPaso3Libre(s) : finWizPaso3(s)) : paso === 4 ? finWizPaso4(s) : finWizPaso5(s);
     const sig = paso < FIN_WIZ.length ? `<button type="button" class="nxF2Btn p ffBigBtn" onclick="window.nxFinWizSig()">Siguiente <i class="ti ti-arrow-right"></i></button>` : `<button type="button" class="nxF2Btn p ffBigBtn" id="ffEnviar" onclick="window.nxFinSolEnviar()"><i class="ti ti-send"></i> Enviar a aprobación</button>`;
     const atras = paso > 1 ? `<button type="button" class="nxF2Btn ffBigBtn" onclick="window.nxFinWizAtras()"><i class="ti ti-arrow-left"></i> Atrás</button>` : `<button type="button" class="nxF2Btn ffBigBtn" onclick="window.nxFinSolDescartar()">Cancelar</button>`;
-    return finV2HeaderHTML('Nueva solicitud', 'Financiamiento paso a paso', 'cartera') + finWizProgresoHTML(paso) + `
+    return finV2HeaderHTML('Nueva solicitud', 'Solicitud de financiamiento', 'cartera') + finWizProgresoHTML(paso) + `
       <div class="ffWiz">${cuerpo}</div>
       <div class="ffAviso bad" id="ffWizErr" role="alert" style="display:none"></div>
       <div class="nxF2Foot ffFoot">${atras}${sig}</div>`;
@@ -13642,23 +13642,23 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const cli = s.cliente_id ? _clientes.find(c => String(c.id) === String(s.cliente_id)) : null;
     if (cli) {
       const hist = finHistorialCli(cli.id);
-      return `<div class="nxF2Card"><div class="h">¿Quién compra?</div>
+      return `<div class="nxF2Card"><div class="h">Cliente solicitante</div>
         <div class="nxF2Sel"><div class="nxF2Av" style="background:#fff">${finIniciales(cli.nombre).ini}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800">${esc(cli.nombre)}</div><div style="font-size:12px;color:var(--f2-steel)">${esc([cli.cedula ? 'Cédula ' + cli.cedula : 'Sin cédula', cli.telefono || 'sin teléfono'].join(' · '))}</div></div><button type="button" class="nxF2Btn" style="min-height:40px;font-size:12px" onclick="window.nxFinSolCliente(null)">Cambiar</button></div>
         <div class="ffLinea ${hist.ok ? 'ok' : 'bad'}"><i class="ti ${hist.ok ? 'ti-check' : 'ti-alert-triangle'}"></i> ${esc(hist.txt)}</div>
         ${!cli.cedula ? '<div class="ffLinea warn"><i class="ti ti-alert-circle"></i> Este cliente no tiene cédula guardada. Agrégala en Clientes antes de aprobar.</div>' : ''}
-        ${!waNum(cli.telefono) ? '<div class="ffLinea warn"><i class="ti ti-alert-circle"></i> Sin teléfono válido: no se le podrá enviar el link de documentos por WhatsApp.</div>' : ''}
+        ${!waNum(cli.telefono) ? '<div class="ffLinea warn"><i class="ti ti-alert-circle"></i> Sin un teléfono válido no se podrá enviar el enlace de documentos por WhatsApp.</div>' : ''}
       </div>`;
     }
     const n = s.nuevo;
-    return `<div class="nxF2Card"><div class="h">¿Quién compra?</div>
-        <div class="nxF2F"><label for="ffCliQ">Busca por nombre, cédula o teléfono</label><input id="ffCliQ" type="search" autocomplete="off" placeholder="Ej.: Juan Pérez, 001-1234567-8 o 809…" value="${esc(s.cliQ || '')}" oninput="window.nxFinWizCliBuscar(this.value)"></div>
+    return `<div class="nxF2Card"><div class="h">Cliente solicitante</div>
+        <div class="nxF2F"><label for="ffCliQ">Buscar por nombre, cédula o teléfono</label><input id="ffCliQ" type="search" autocomplete="off" placeholder="Ej.: Juan Pérez, 001-1234567-8 o 809…" value="${esc(s.cliQ || '')}" oninput="window.nxFinWizCliBuscar(this.value)"></div>
         <div id="ffCliRes" class="ffLista">${finWizCliResHTML(s.cliQ || '')}</div>
       </div>
       <div class="nxF2Card"><div class="h">¿Es un cliente nuevo?${n ? '' : ` <button type="button" class="nxF2Btn" style="min-height:40px;font-size:12px" onclick="window.nxFinWizNuevo(true)"><i class="ti ti-user-plus"></i> Crear cliente</button>`}</div>
         ${n ? `<div class="nxF2F"><label for="ffNNom">Nombre completo *</label><input id="ffNNom" autocomplete="off" value="${esc(n.nombre || '')}"></div>
         <div class="nxF2G2"><div class="nxF2F"><label for="ffNCed">Cédula *</label><input id="ffNCed" inputmode="numeric" autocomplete="off" placeholder="000-0000000-0" value="${esc(n.cedula || '')}"></div><div class="nxF2F"><label for="ffNTel">Teléfono (WhatsApp) *</label><input id="ffNTel" inputmode="tel" autocomplete="off" placeholder="809-000-0000" value="${esc(n.telefono || '')}"></div></div>
         <div class="nxF2F"><label for="ffNDir">Dirección</label><input id="ffNDir" autocomplete="off" placeholder="Calle, número, sector, ciudad" value="${esc(n.direccion || '')}"></div>
-        <div style="display:flex;gap:8px"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinWizNuevo(false)">Cancelar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinWizNuevoGuardar()"><i class="ti ti-device-floppy"></i> Guardar cliente</button></div>` : '<div style="font-size:12px;color:var(--f2-steel)">Si no aparece en la búsqueda, créalo aquí sin salir de la solicitud.</div>'}
+        <div style="display:flex;gap:8px"><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinWizNuevo(false)">Cancelar</button><button type="button" class="nxF2Btn p" style="flex:2" onclick="window.nxFinWizNuevoGuardar()"><i class="ti ti-device-floppy"></i> Guardar cliente</button></div>` : '<div style="font-size:12px;color:var(--f2-steel)">Si el cliente no está registrado, puede crearlo aquí sin salir de la solicitud.</div>'}
       </div>`;
   }
   function finNorm(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -13668,9 +13668,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return finNorm(c.nombre + ' ' + (c.codigo || '')).includes(qn);
   }
   function finWizCliResHTML(q) {
-    if (String(q || '').trim().length < 2) return '<div class="ffVacio">Escribe al menos 2 letras o números.</div>';
+    if (String(q || '').trim().length < 2) return '<div class="ffVacio">Escriba al menos 2 caracteres.</div>';
     const l = _clientes.filter(c => c.es_cliente !== false && finCliCoincide(c, q)).slice(0, 8);
-    if (!l.length) return '<div class="ffVacio">No aparece. Revisa lo que escribiste o créalo abajo como cliente nuevo.</div>';
+    if (!l.length) return '<div class="ffVacio">No se encontraron resultados. Verifique los datos o registre un cliente nuevo.</div>';
     return l.map(c => `<button type="button" class="ffItem" onclick="window.nxFinSolCliente('${c.id}')"><div class="nxF2Av">${finIniciales(c.nombre).ini}</div><div style="flex:1;min-width:0;text-align:left"><b>${esc(c.nombre)}</b><small>${esc([c.cedula, c.telefono].filter(Boolean).join(' · ') || 'Sin cédula ni teléfono')}</small></div><i class="ti ti-chevron-right"></i></button>`).join('');
   }
   // Paso 2 · Equipo: el mismo buscador de Factura; los equipos con IMEI piden el IMEI igual que hoy.
@@ -13684,35 +13684,35 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       return `<div class="ffEq"><div class="ffEqTop"><div style="min-width:0;flex:1"><b>${esc(it.nombre)}</b>${pr.codigo ? `<small class="nxF2Mono">${esc(pr.codigo)}</small>` : ''}</div><button type="button" class="x" aria-label="Quitar ${esc(it.nombre)}" onclick="window.nxFinSolItemDel(${i})"><i class="ti ti-trash"></i></button></div><div class="ffEqBot">${cant}<div style="text-align:right">${precio}${Number(it.cantidad) > 1 ? `<small>${Number(it.cantidad)} × ${fmt2(it.precio)}</small>` : ''}</div></div></div>`;
     };
     const m = finWizManualItem(s); const manual = !!(s.manualOn && finManualOn());
-    const toggle = finManualOn() ? `<label class="ffSwitch"><input type="checkbox" id="ffManual" ${manual ? 'checked' : ''} onchange="window.nxFinWizManual(this.checked)"><span class="ffSwTrack"></span><span>Poner el monto a mano</span></label>` : '';
+    const toggle = finManualOn() ? `<label class="ffSwitch"><input type="checkbox" id="ffManual" ${manual ? 'checked' : ''} onchange="window.nxFinWizManual(this.checked)"><span class="ffSwTrack"></span><span>Ingresar monto manualmente</span></label>` : '';
     if (manual) return `<div class="nxF2Card"><div class="h">¿Qué se financia?${toggle}</div>
-        <div class="nxF2F"><label for="ffMConcepto">¿Qué se financia? *</label><input id="ffMConcepto" autocomplete="off" placeholder="Ej.: Motor eléctrico usado, reparación de aire…" value="${esc(m ? m.nombre : '')}" oninput="window.nxFinWizManualLeer()"></div>
+        <div class="nxF2F"><label for="ffMConcepto">Descripción de lo financiado *</label><input id="ffMConcepto" autocomplete="off" placeholder="Ej.: Motor eléctrico usado, reparación de aire…" value="${esc(m ? m.nombre : '')}" oninput="window.nxFinWizManualLeer()"></div>
         <div class="nxF2F"><label for="ffMMonto">Monto a financiar (RD$) *</label><input id="ffMMonto" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(m && m.precio ? m.precio : '')}" oninput="window.nxFinWizManualLeer()"></div>
         <div class="ffAviso info"><i class="ti ti-info-circle"></i><div>Este monto <b>no toca el inventario</b> ni pide IMEI. Úsalo solo cuando no hay un artículo del catálogo.</div></div>
       </div>`;
-    return `<div class="nxF2Card"><div class="h">¿Qué se lleva?${toggle}</div>
+    return `<div class="nxF2Card"><div class="h">Artículo a financiar${toggle}</div>
         <div id="solProdSlot" class="nxF2Slot">${finSolSearchBoxHTML()}</div>
-        <div id="solItems">${s.items.length ? s.items.map(itemHTML).join('') : '<div class="ffVacio">Toca el buscador y elige el equipo. Si tiene IMEI, se te pedirá.</div>'}</div>
+        <div id="solItems">${s.items.length ? s.items.map(itemHTML).join('') : '<div class="ffVacio">Seleccione el artículo en el buscador. Si tiene IMEI, el sistema lo solicitará.</div>'}</div>
         ${s.items.length ? `<div class="nxF2Line tot"><span>Precio a crédito</span><span class="nxF2Mono" id="solTotal">${fmt2(finWizTotal(s))}</span></div>` : ''}
       </div>`;
   }
   // Paso 3 · Plan: tarjetas grandes en palabras, inicial con su mínimo y fecha del primer pago.
   function finWizPaso3(s) {
     const planes = _finPlanes.filter(p => p.activo);
-    if (!planes.length) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>No hay planes activos.</b> Pídele a un administrador que cree uno en Financiamiento → Planes.</div></div>`;
+    if (!planes.length) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>No hay planes activos.</b> Solicite a un administrador que cree uno en Financiamiento → Planes.</div></div>`;
     const pl = finWizPlan(s); const minIni = finWizMinIni(s, pl); const total = finWizTotal(s);
     const iniVal = s.inicial != null ? s.inicial : '';
     const met = (m, t, ic) => `<button type="button" class="${s.inicial_metodo === m ? 'on' : ''}" data-m="${m}" onclick="window.nxFinWizIniMet('${m}')"><i class="ti ${ic}"></i> ${t}</button>`;
-    return `<div class="nxF2Card"><div class="h">Elige el plan <span style="font-size:12px;color:var(--f2-steel);font-weight:600">Precio ${fmt2(total)}</span></div>
+    return `<div class="nxF2Card"><div class="h">Seleccione el plan <span style="font-size:12px;color:var(--f2-steel);font-weight:600">Precio ${fmt2(total)}</span></div>
         <div id="ffPlanes" class="ffPlanes">${finWizPlanesHTML(s)}</div>
       </div>
-      <div class="nxF2Card"><div class="h">Inicial (lo que paga hoy)</div>
+      <div class="nxF2Card"><div class="h">Pago inicial</div>
         <div class="ffMin" id="ffMin">${pl ? (minIni > 0 ? `Mínimo para este plan: <b class="nxF2Mono">${fmt2(minIni)}</b> (${Number(pl.inicial_min_pct)} %)` : 'Este plan no pide inicial mínima.') : 'Primero elige un plan.'}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="ffIni" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(iniVal)}" oninput="window.nxFinWizIni(this.value)" style="flex:1 1 160px;min-width:0" aria-label="Inicial">${pl && minIni > 0 ? `<button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinWizIniMin()">Usar el mínimo</button>` : ''}</div>
-        <div class="nxF2F"><label>¿Cómo paga la inicial?</label><div class="nxF2Meth ffMeth" id="ffIniMet">${met('efectivo', 'Efectivo', 'ti-cash')}${met('transferencia', 'Transferencia', 'ti-building-bank')}${met('tarjeta', 'Tarjeta', 'ti-credit-card')}</div></div>
+        <div class="nxF2F"><label>Forma de pago del inicial</label><div class="nxF2Meth ffMeth" id="ffIniMet">${met('efectivo', 'Efectivo', 'ti-cash')}${met('transferencia', 'Transferencia', 'ti-building-bank')}${met('tarjeta', 'Tarjeta', 'ti-credit-card')}</div></div>
       </div>
-      <div class="nxF2Card"><div class="h">Primer pago</div>
-        <div class="nxF2F"><label for="ffFecha">Fecha del primer pago</label><input id="ffFecha" type="date" value="${esc(s.primera_fecha || '')}" min="${hoyISOPos()}" onchange="window.nxFinWizFecha(this.value)"></div>
+      <div class="nxF2Card"><div class="h">Primera cuota</div>
+        <div class="nxF2F"><label for="ffFecha">Fecha de la primera cuota</label><input id="ffFecha" type="date" value="${esc(s.primera_fecha || '')}" min="${hoyISOPos()}" onchange="window.nxFinWizFecha(this.value)"></div>
         <div class="ffMin" id="ffFechaTxt">${s.primera_fecha ? 'El cliente paga por primera vez el <b>' + esc(finFechaBonita(s.primera_fecha)) + '</b>' + (pl ? ', y después ' + finFrecCada(pl.frecuencia) + '.' : '.') : ''}</div>
       </div>`;
   }
@@ -13721,7 +13721,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return planes.map(pl => {
       const minIni = finWizMinIni(s, pl); const ini = Math.max(Number(s.inicial || 0), minIni);
       const r = finPlanResumen(s, pl, ini); const on = String(pl.id) === String(s.plan_id);
-      const linea = r ? `<div class="ffPlanL"><span>Inicial</span><b class="nxF2Mono">${fmt2(r.ini)}</b></div><div class="ffPlanBig"><b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)}</div><div class="ffPlanL"><span>Total a pagar</span><b class="nxF2Mono">${fmt2(r.total)}</b></div>` : '<div class="ffPlanL"><span>Agrega el equipo para ver las cuotas</span></div>';
+      const linea = r ? `<div class="ffPlanL"><span>Inicial</span><b class="nxF2Mono">${fmt2(r.ini)}</b></div><div class="ffPlanBig"><b>${r.n}</b> cuotas de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)}</div><div class="ffPlanL"><span>Total a pagar</span><b class="nxF2Mono">${fmt2(r.total)}</b></div>` : '<div class="ffPlanL"><span>Agregue el artículo para calcular las cuotas</span></div>';
       return `<button type="button" class="ffPlan${on ? ' on' : ''}" aria-pressed="${on}" onclick="window.nxFinWizPlan('${pl.id}')"><div class="ffPlanH"><span>${esc(pl.nombre)}</span><i class="ti ${on ? 'ti-circle-check' : 'ti-circle'}"></i></div>${linea}</button>`;
     }).join('');
   }
@@ -13729,39 +13729,39 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   // El interés lo pone la tienda (plan activo); solo admin/gerente lo cambia. Los planes quedan como «plantillas».
   function finWizPaso3Libre(s) {
     const bases = _finPlanes.filter(p => p.activo);
-    if (!bases.length) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>Falta el interés de la tienda.</b> Pídele a un administrador que active un plan en Financiamiento → Planes (de ahí sale el interés y el recargo).</div></div>`;
+    if (!bases.length) return `<div class="ffAviso bad"><i class="ti ti-alert-triangle"></i><div><b>Falta el interés de la tienda.</b> Solicite a un administrador que active un plan en Financiamiento → Planes (define la tasa de interés y el recargo).</div></div>`;
     const total = finWizTotal(s); const pl = finWizPlan(s); const admin = puedeVerMin();
     const fr = (k, t) => `<button type="button" class="${s.frecuencia === k ? 'on' : ''}" data-f="${k}" onclick="window.nxFinWizFrec('${k}')">${t}</button>`;
     const chip = n => `<button type="button" class="nxF2Chip ${Number(s.num_cuotas) === n ? 'on' : ''}" onclick="window.nxFinWizN(${n})">${n}</button>`;
     const iniTxt = s.iniModo === 'pct' ? (s.iniPct != null ? s.iniPct : '') : (s.inicial != null ? s.inicial : '');
-    return `${bases.length > 1 || bases[0].num_cuotas ? `<div class="nxF2Card"><div class="h">Plantillas (opcional)</div><div class="nxF2Chips" style="margin:0">${bases.map(b => `<button type="button" class="nxF2Chip ${String(s.plan_id) === String(b.id) && s.frecuencia === b.frecuencia && Number(s.num_cuotas) === Number(b.num_cuotas) ? 'on' : ''}" onclick="window.nxFinWizPlantilla('${b.id}')">${esc(b.nombre)} · ${b.num_cuotas} ${esc(finFrecPlural(b.frecuencia))}</button>`).join('')}</div><div style="font-size:12px;color:var(--f2-steel)">Llenan los datos de abajo. Puedes cambiarlos.</div></div>` : ''}
-      <div class="nxF2Card"><div class="h">¿Cada cuánto paga?</div><div class="nxF2Meth ffMeth" id="ffFrec">${fr('mensual', 'Mensual')}${fr('quincenal', 'Quincenal')}${fr('semanal', 'Semanal')}</div></div>
-      <div class="nxF2Card"><div class="h">¿En cuántos pagos?</div>
+    return `${bases.length > 1 || bases[0].num_cuotas ? `<div class="nxF2Card"><div class="h">Plan predefinido (opcional)</div><div class="nxF2Chips" style="margin:0">${bases.map(b => `<button type="button" class="nxF2Chip ${String(s.plan_id) === String(b.id) && s.frecuencia === b.frecuencia && Number(s.num_cuotas) === Number(b.num_cuotas) ? 'on' : ''}" onclick="window.nxFinWizPlantilla('${b.id}')">${esc(b.nombre)} · ${b.num_cuotas} ${esc(finFrecPlural(b.frecuencia))}</button>`).join('')}</div><div style="font-size:12px;color:var(--f2-steel)">Completa las condiciones siguientes; puede modificarlas.</div></div>` : ''}
+      <div class="nxF2Card"><div class="h">Frecuencia de pago</div><div class="nxF2Meth ffMeth" id="ffFrec">${fr('mensual', 'Mensual')}${fr('quincenal', 'Quincenal')}${fr('semanal', 'Semanal')}</div></div>
+      <div class="nxF2Card"><div class="h">Número de cuotas</div>
         <div class="nxF2Chips" style="margin:0">${[3, 6, 12, 18, 24].map(chip).join('')}</div>
-        <div class="nxF2F"><label for="ffN">Otro número de pagos</label><input id="ffN" class="mono" inputmode="numeric" value="${esc(s.num_cuotas || '')}" oninput="window.nxFinWizNIn(this.value)"></div>
+        <div class="nxF2F"><label for="ffN">Otro número de cuotas</label><input id="ffN" class="mono" inputmode="numeric" value="${esc(s.num_cuotas || '')}" oninput="window.nxFinWizNIn(this.value)"></div>
       </div>
-      <div class="nxF2Card"><div class="h">Inicial (lo que paga hoy) <span class="ffModo"><button type="button" class="${s.iniModo === 'pct' ? '' : 'on'}" onclick="window.nxFinWizIniModo('monto')">RD$</button><button type="button" class="${s.iniModo === 'pct' ? 'on' : ''}" onclick="window.nxFinWizIniModo('pct')">%</button></span></div>
+      <div class="nxF2Card"><div class="h">Pago inicial <span class="ffModo"><button type="button" class="${s.iniModo === 'pct' ? '' : 'on'}" onclick="window.nxFinWizIniModo('monto')">RD$</button><button type="button" class="${s.iniModo === 'pct' ? 'on' : ''}" onclick="window.nxFinWizIniModo('pct')">%</button></span></div>
         <input id="ffIni" class="mono ffMontoIn" inputmode="decimal" placeholder="${s.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinWizIniLibre(this.value)" aria-label="Inicial">
-        <div class="ffMin" id="ffIniEq">${s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no da inicial.'}</div>
-        <div class="nxF2F"><label>¿Cómo paga la inicial?</label><div class="nxF2Meth ffMeth" id="ffIniMet">${['efectivo', 'transferencia', 'tarjeta'].map((m, i) => `<button type="button" class="${s.inicial_metodo === m ? 'on' : ''}" data-m="${m}" onclick="window.nxFinWizIniMet('${m}')"><i class="ti ${['ti-cash', 'ti-building-bank', 'ti-credit-card'][i]}"></i> ${['Efectivo', 'Transferencia', 'Tarjeta'][i]}</button>`).join('')}</div></div>
+        <div class="ffMin" id="ffIniEq">${s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no hay pago inicial.'}</div>
+        <div class="nxF2F"><label>Forma de pago del inicial</label><div class="nxF2Meth ffMeth" id="ffIniMet">${['efectivo', 'transferencia', 'tarjeta'].map((m, i) => `<button type="button" class="${s.inicial_metodo === m ? 'on' : ''}" data-m="${m}" onclick="window.nxFinWizIniMet('${m}')"><i class="ti ${['ti-cash', 'ti-building-bank', 'ti-credit-card'][i]}"></i> ${['Efectivo', 'Transferencia', 'Tarjeta'][i]}</button>`).join('')}</div></div>
       </div>
       ${admin ? `<div class="nxF2Card"><div class="h">Interés por pago (solo administrador)</div><div class="nxF2F"><label for="ffTasa">Interés por cada pago (%)</label><input id="ffTasa" class="mono" inputmode="decimal" value="${esc(s.tasa != null ? s.tasa : (pl ? pl.tasa1 : ''))}" oninput="window.nxFinWizTasa(this.value)"></div><div style="font-size:12px;color:var(--f2-steel)">El de la tienda es ${pl ? Number(_finPlanes.find(b => String(b.id) === String(s.plan_id)).tasa1 || 0) : 0} %. Los empleados no ven ni cambian este dato.</div></div>` : ''}
-      <div class="nxF2Card"><div class="h">Primer pago</div>
-        <div class="nxF2F"><label for="ffFecha">Fecha del primer pago</label><input id="ffFecha" type="date" value="${esc(s.primera_fecha || '')}" min="${hoyISOPos()}" onchange="window.nxFinWizFecha(this.value)"></div>
+      <div class="nxF2Card"><div class="h">Primera cuota</div>
+        <div class="nxF2F"><label for="ffFecha">Fecha de la primera cuota</label><input id="ffFecha" type="date" value="${esc(s.primera_fecha || '')}" min="${hoyISOPos()}" onchange="window.nxFinWizFecha(this.value)"></div>
         <div class="ffMin" id="ffFechaTxt">${s.primera_fecha ? 'El cliente paga por primera vez el <b>' + esc(finFechaBonita(s.primera_fecha)) + '</b>' + (pl ? ', y después ' + finFrecCada(pl.frecuencia) + '.' : '.') : ''}</div>
       </div>
       <div class="nxF2Card ffResumenVivo" id="ffResumen">${finWizResumenVivo(s)}</div>`;
   }
   function finWizResumenVivo(s) {
     const pl = finWizPlan(s); const total = finWizTotal(s);
-    if (!pl || !(Number(s.num_cuotas) > 0)) return '<div class="ffMin">Elige cada cuánto paga y en cuántos pagos para ver la cuota.</div>';
+    if (!pl || !(Number(s.num_cuotas) > 0)) return '<div class="ffMin">Seleccione la frecuencia y el número de cuotas para calcular el monto de cada cuota.</div>';
     const r = finPlanResumen(s, pl, s.inicial || 0);
     if (!r) return '<div class="ffMin" style="color:#b91c1c">La inicial tiene que ser menor que el precio (' + fmt2(total) + ').</div>';
-    return `<div class="nxF2Lbl">Así queda</div><div class="ffPlanBig">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b> · <b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div>`;
+    return `<div class="nxF2Lbl">Resumen del plan</div><div class="ffPlanBig">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b> · <b>${r.n}</b> cuotas de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div>`;
   }
   function finWizRefrescarLibre() {
     const s = _finSolForm; const box = document.getElementById('ffResumen'); if (box) box.innerHTML = finWizResumenVivo(s);
-    const eq = document.getElementById('ffIniEq'); if (eq) eq.innerHTML = s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no da inicial.';
+    const eq = document.getElementById('ffIniEq'); if (eq) eq.innerHTML = s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no hay pago inicial.';
   }
   window.nxFinWizFrec = function (k) { finSolLeerForm(); const s = _finSolForm; s.frecuencia = k; if (!s.fechaManual) s.primera_fecha = finWizFechaSugerida({ frecuencia: k }); finV2Repintar(); };
   window.nxFinWizN = function (n) { finSolLeerForm(); _finSolForm.num_cuotas = n; finV2Repintar(); };
@@ -13787,30 +13787,30 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const pf = Object.assign({}, finPerfilDe(s.cliente_id) || {}, s.perfil || {});
     const guardadas = finRefsDe(s.cliente_id);
     const num = v => v ? r2(v).toLocaleString('en-US') : '';
-    const refRow = (r, i) => `<div class="ffRef"><div class="ffRefN">Referencia ${guardadas.length + i + 1}</div><div class="nxF2G2"><div class="nxF2F"><label for="ffRN${i}">Nombre</label><input id="ffRN${i}" autocomplete="off" value="${esc(r.nombre || '')}"></div><div class="nxF2F"><label for="ffRT${i}">Teléfono</label><input id="ffRT${i}" inputmode="tel" autocomplete="off" value="${esc(r.telefono || '')}"></div></div><div class="nxF2F"><label for="ffRP${i}">¿Qué es del cliente?</label><input id="ffRP${i}" autocomplete="off" placeholder="Hermana, compañero de trabajo…" value="${esc(r.parentesco || '')}"></div><button type="button" class="ffRefX" onclick="window.nxFinSolRefDel(${i})"><i class="ti ti-trash"></i> Quitar</button></div>`;
-    return `<div class="nxF2Card"><div class="h">Trabajo y dinero</div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">¿Dónde trabaja? *</label><input id="pfTrab" autocomplete="off" value="${esc(pf.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">¿Qué hace ahí?</label><input id="pfOcu" autocomplete="off" placeholder="Puesto u oficio" value="${esc(pf.ocupacion || '')}"></div></div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfTipoIng">¿De dónde saca el dinero?</label><select id="pfTipoIng"><option value="">Elige…</option>${FIN_TIPO_ING.map(o => `<option${pf.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="nxF2F"><label for="pfAntig">Años en ese trabajo</label><input id="pfAntig" class="mono" inputmode="decimal" value="${pf.antiguedad_anios != null ? pf.antiguedad_anios : ''}"></div></div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfIng">¿Cuánto gana al mes? *</label><input id="pfIng" class="mono" inputmode="decimal" placeholder="RD$" value="${num(pf.ingreso_mensual)}"></div><div class="nxF2F"><label for="pfGastos">¿Cuánto gasta al mes?</label><input id="pfGastos" class="mono" inputmode="decimal" placeholder="Alquiler, comida, deudas" value="${num(pf.gastos_mensuales)}"></div></div>
-        <div class="nxF2F"><label for="pfOtros">Otros ingresos al mes (opcional)</label><input id="pfOtros" class="mono" inputmode="decimal" placeholder="Remesas, negocio…" value="${num(pf.otros_ingresos)}"></div>
+    const refRow = (r, i) => `<div class="ffRef"><div class="ffRefN">Referencia ${guardadas.length + i + 1}</div><div class="nxF2G2"><div class="nxF2F"><label for="ffRN${i}">Nombre</label><input id="ffRN${i}" autocomplete="off" value="${esc(r.nombre || '')}"></div><div class="nxF2F"><label for="ffRT${i}">Teléfono</label><input id="ffRT${i}" inputmode="tel" autocomplete="off" value="${esc(r.telefono || '')}"></div></div><div class="nxF2F"><label for="ffRP${i}">Parentesco o relación</label><input id="ffRP${i}" autocomplete="off" placeholder="Ej.: hermana, compañero de trabajo" value="${esc(r.parentesco || '')}"></div><button type="button" class="ffRefX" onclick="window.nxFinSolRefDel(${i})"><i class="ti ti-trash"></i> Quitar</button></div>`;
+    return `<div class="nxF2Card"><div class="h">Información laboral y financiera</div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">Empresa o lugar de trabajo *</label><input id="pfTrab" autocomplete="off" value="${esc(pf.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">Cargo u ocupación</label><input id="pfOcu" autocomplete="off" placeholder="Ej.: Encargado de ventas" value="${esc(pf.ocupacion || '')}"></div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfTipoIng">Fuente de ingresos</label><select id="pfTipoIng"><option value="">Seleccione…</option>${FIN_TIPO_ING.map(o => `<option${pf.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="nxF2F"><label for="pfAntig">Antigüedad laboral (años)</label><input id="pfAntig" class="mono" inputmode="decimal" value="${pf.antiguedad_anios != null ? pf.antiguedad_anios : ''}"></div></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfIng">Ingreso mensual *</label><input id="pfIng" class="mono" inputmode="decimal" placeholder="RD$" value="${num(pf.ingreso_mensual)}"></div><div class="nxF2F"><label for="pfGastos">Gastos mensuales</label><input id="pfGastos" class="mono" inputmode="decimal" placeholder="Ej.: alquiler, alimentación, préstamos" value="${num(pf.gastos_mensuales)}"></div></div>
+        <div class="nxF2F"><label for="pfOtros">Otros ingresos mensuales (opcional)</label><input id="pfOtros" class="mono" inputmode="decimal" placeholder="Ej.: remesas, negocio propio" value="${num(pf.otros_ingresos)}"></div>
       </div>
-      <div class="nxF2Card"><div class="h">Referencias <span style="font-size:12px;color:var(--f2-steel);font-weight:600">Se recomiendan 2</span></div>
+      <div class="nxF2Card"><div class="h">Referencias <span style="font-size:12px;color:var(--f2-steel);font-weight:600">Se recomiendan dos</span></div>
         ${guardadas.length ? `<div class="ffGuard">${guardadas.map(r => `<div><i class="ti ti-user-check"></i> ${esc(r.nombre)}${r.parentesco ? ' · ' + esc(r.parentesco) : ''}${r.telefono ? ' · ' + esc(r.telefono) : ''}</div>`).join('')}<small>Ya guardadas de antes.</small></div>` : ''}
         <div id="ffRefs">${(s.refs || []).map(refRow).join('')}</div>
-        <button type="button" class="nxF2Btn" onclick="window.nxFinSolRefAdd()"><i class="ti ti-plus"></i> Agregar otra referencia</button>
+        <button type="button" class="nxF2Btn" onclick="window.nxFinSolRefAdd()"><i class="ti ti-plus"></i> Agregar referencia</button>
       </div>
       <div class="nxF2Card"><div class="h">Fiador (opcional)</div>
-        <label class="fevFiaChk"><input type="checkbox" id="pfFia"${pf.tiene_fiador ? ' checked' : ''} onchange="document.getElementById('pfFiaBox').style.display=this.checked?'':'none'"> Tiene alguien que responda por él</label>
+        <label class="fevFiaChk"><input type="checkbox" id="pfFia"${pf.tiene_fiador ? ' checked' : ''} onchange="document.getElementById('pfFiaBox').style.display=this.checked?'':'none'"> El cliente presenta fiador</label>
         <div id="pfFiaBox" style="display:${pf.tiene_fiador ? '' : 'none'}">
           <div class="nxF2G2"><div class="nxF2F"><label for="pfFN">Nombre del fiador</label><input id="pfFN" autocomplete="off" value="${esc(pf.fiador_nombre || '')}"></div><div class="nxF2F"><label for="pfFC">Cédula</label><input id="pfFC" inputmode="numeric" autocomplete="off" value="${esc(pf.fiador_cedula || '')}"></div></div>
-          <div class="nxF2G2"><div class="nxF2F"><label for="pfFT">Teléfono</label><input id="pfFT" inputmode="tel" autocomplete="off" value="${esc(pf.fiador_telefono || '')}"></div><div class="nxF2F"><label for="pfFR">¿Qué es del cliente?</label><input id="pfFR" autocomplete="off" value="${esc(pf.fiador_relacion || '')}" placeholder="Hermano, jefe…"></div></div>
-          <div class="nxF2G2"><div class="nxF2F"><label for="pfFO">¿En qué trabaja?</label><input id="pfFO" autocomplete="off" value="${esc(pf.fiador_ocupacion || '')}"></div><div class="nxF2F"><label for="pfFD">Dirección</label><input id="pfFD" autocomplete="off" value="${esc(pf.fiador_direccion || '')}"></div></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfFT">Teléfono</label><input id="pfFT" inputmode="tel" autocomplete="off" value="${esc(pf.fiador_telefono || '')}"></div><div class="nxF2F"><label for="pfFR">Parentesco o relación</label><input id="pfFR" autocomplete="off" value="${esc(pf.fiador_relacion || '')}" placeholder="Ej.: hermano, supervisor"></div></div>
+          <div class="nxF2G2"><div class="nxF2F"><label for="pfFO">Ocupación</label><input id="pfFO" autocomplete="off" value="${esc(pf.fiador_ocupacion || '')}"></div><div class="nxF2F"><label for="pfFD">Dirección</label><input id="pfFD" autocomplete="off" value="${esc(pf.fiador_direccion || '')}"></div></div>
         </div>
       </div>
-      <details class="fevDet nxF2Card"${pf.fecha_nacimiento || pf.estado_civil || pf.sector ? ' open' : ''}><summary>Más datos del cliente (opcional)</summary>
+      <details class="fevDet nxF2Card"${pf.fecha_nacimiento || pf.estado_civil || pf.sector ? ' open' : ''}><summary>Información adicional del cliente (opcional)</summary>
         <div class="nxF2G2"><div class="nxF2F"><label for="pfNac">Fecha de nacimiento</label><input id="pfNac" type="date" value="${esc(pf.fecha_nacimiento || '')}"></div><div class="nxF2F"><label for="pfCivil">Estado civil</label><select id="pfCivil"><option value="">—</option>${FIN_CIVIL.map(o => `<option${pf.estado_civil === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div></div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfNacion">Nacionalidad</label><input id="pfNacion" value="${esc(pf.nacionalidad || 'Dominicana')}"></div><div class="nxF2F"><label for="pfDeps">¿Cuántas personas dependen de él?</label><input id="pfDeps" class="mono" inputmode="numeric" value="${pf.dependientes != null ? pf.dependientes : ''}"></div></div>
-        <div class="nxF2F"><label for="pfTelAlt">Otro teléfono</label><input id="pfTelAlt" inputmode="tel" value="${esc(pf.telefono_alterno || '')}"></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfNacion">Nacionalidad</label><input id="pfNacion" value="${esc(pf.nacionalidad || 'Dominicana')}"></div><div class="nxF2F"><label for="pfDeps">Dependientes económicos</label><input id="pfDeps" class="mono" inputmode="numeric" value="${pf.dependientes != null ? pf.dependientes : ''}"></div></div>
+        <div class="nxF2F"><label for="pfTelAlt">Teléfono alternativo</label><input id="pfTelAlt" inputmode="tel" value="${esc(pf.telefono_alterno || '')}"></div>
         <div class="nxF2F"><label for="pfDir">Dirección</label><input id="pfDir" value="${esc(pf.direccion || cli.direccion || '')}"></div>
         <div class="nxF2G2"><div class="nxF2F"><label for="pfSector">Sector</label><input id="pfSector" value="${esc(pf.sector || '')}"></div><div class="nxF2F"><label for="pfCiudad">Ciudad o municipio</label><input id="pfCiudad" value="${esc(pf.ciudad || '')}"></div></div>
         <div class="nxF2F"><label for="pfProv">Provincia</label><input id="pfProv" value="${esc(pf.provincia || '')}"></div>
@@ -13824,17 +13824,17 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const ing = Number(pf.ingreso_mensual || 0) + Number(pf.otros_ingresos || 0);
     const cuotaMes = r ? r2(r.max * (FIN_FREC_MES[pl.frecuencia] || 1)) : 0; const peso = ing > 0 && r ? Math.round(cuotaMes / ing * 100) : null;
     const avisos = [];
-    if (refsN < 2) avisos.push('Tiene ' + refsN + ' referencia' + (refsN === 1 ? '' : 's') + '. Se recomiendan 2.');
-    if (peso != null && peso > 40) avisos.push('La cuota es el ' + peso + ' % de lo que gana. Es mucho: el administrador puede pedir más inicial.');
-    if (!cli.cedula) avisos.push('El cliente no tiene cédula guardada.');
+    if (refsN < 2) avisos.push('Tiene ' + refsN + ' referencia' + (refsN === 1 ? '' : 's') + '. Se recomiendan dos.');
+    if (peso != null && peso > 40) avisos.push('La cuota es el ' + peso + ' % del ingreso mensual. Es un porcentaje alto: el aprobador podría requerir un inicial mayor.');
+    if (!cli.cedula) avisos.push('El cliente no tiene cédula registrada.');
     const blq = (t, paso, html) => `<div class="nxF2Card ffRes"><div class="h">${t}<button type="button" class="ffCambiar" onclick="window.nxFinWizPaso(${paso})">Cambiar</button></div>${html}</div>`;
     return blq('Cliente', 1, `<div class="ffResTx"><b>${esc(cli.nombre || '')}</b><span>${esc([cli.cedula ? 'Cédula ' + cli.cedula : '', cli.telefono].filter(Boolean).join(' · '))}</span></div>`)
-      + blq(s.manualOn ? 'Qué se financia (monto a mano)' : 'Equipo', 2, s.items.map(it => `<div class="nxF2Line"><span>${esc(it.nombre)}${Number(it.cantidad) > 1 ? ' × ' + Number(it.cantidad) : ''}${it.serial ? `<br><small class="nxF2Mono">IMEI ${esc(it.serial)}</small>` : ''}</span><b class="nxF2Mono">${fmt2(r2(Number(it.precio) * Number(it.cantidad)))}</b></div>`).join(''))
-      + blq('Plan', 3, pl && r ? `<div class="ffResPlan">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b>${r.ini > 0 ? ' en ' + esc(s.inicial_metodo || '') : ''} · <b>${r.n}</b> pagos de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div><div class="ffMin">Primer pago: <b>${esc(finFechaBonita(s.primera_fecha))}</b>${pl.porCaso ? '' : ' · ' + esc(pl.nombre)}</div>` : '<div class="ffVacio">Falta elegir el plan.</div>')
-      + blq('Datos del cliente', 4, `<div class="nxF2Line"><span>Trabaja en</span><b>${esc(pf.lugar_trabajo || '—')}</b></div><div class="nxF2Line"><span>Gana al mes</span><b class="nxF2Mono">${pf.ingreso_mensual ? fmt2(pf.ingreso_mensual) : '—'}</b></div><div class="nxF2Line"><span>Gasta al mes</span><b class="nxF2Mono">${pf.gastos_mensuales ? fmt2(pf.gastos_mensuales) : '—'}</b></div><div class="nxF2Line"><span>Referencias</span><b>${refsN}</b></div><div class="nxF2Line"><span>Fiador</span><b>${pf.tiene_fiador && pf.fiador_nombre ? esc(pf.fiador_nombre) : 'No'}</b></div>${peso != null ? `<div class="nxF2Line tot"><span>La cuota es de lo que gana</span><span class="nxF2Badge ${peso > 40 ? 'bad' : peso > 30 ? 'warn' : 'ok'}">${peso} %</span></div>` : ''}`)
+      + blq(s.manualOn ? 'Financiamiento (monto manual)' : 'Artículo', 2, s.items.map(it => `<div class="nxF2Line"><span>${esc(it.nombre)}${Number(it.cantidad) > 1 ? ' × ' + Number(it.cantidad) : ''}${it.serial ? `<br><small class="nxF2Mono">IMEI ${esc(it.serial)}</small>` : ''}</span><b class="nxF2Mono">${fmt2(r2(Number(it.precio) * Number(it.cantidad)))}</b></div>`).join(''))
+      + blq('Condiciones', 3, pl && r ? `<div class="ffResPlan">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b>${r.ini > 0 ? ' en ' + esc(s.inicial_metodo || '') : ''} · <b>${r.n}</b> cuotas de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div><div class="ffMin">Primera cuota: <b>${esc(finFechaBonita(s.primera_fecha))}</b>${pl.porCaso ? '' : ' · ' + esc(pl.nombre)}</div>` : '<div class="ffVacio">Falta elegir el plan.</div>')
+      + blq('Perfil del cliente', 4, `<div class="nxF2Line"><span>Lugar de trabajo</span><b>${esc(pf.lugar_trabajo || '—')}</b></div><div class="nxF2Line"><span>Ingreso mensual</span><b class="nxF2Mono">${pf.ingreso_mensual ? fmt2(pf.ingreso_mensual) : '—'}</b></div><div class="nxF2Line"><span>Gastos mensuales</span><b class="nxF2Mono">${pf.gastos_mensuales ? fmt2(pf.gastos_mensuales) : '—'}</b></div><div class="nxF2Line"><span>Referencias</span><b>${refsN}</b></div><div class="nxF2Line"><span>Fiador</span><b>${pf.tiene_fiador && pf.fiador_nombre ? esc(pf.fiador_nombre) : 'No'}</b></div>${peso != null ? `<div class="nxF2Line tot"><span>Cuota sobre el ingreso mensual</span><span class="nxF2Badge ${peso > 40 ? 'bad' : peso > 30 ? 'warn' : 'ok'}">${peso} %</span></div>` : ''}`)
       + (avisos.length ? `<div class="ffAviso warn"><i class="ti ti-alert-triangle"></i><div>${avisos.map(esc).join('<br>')}</div></div>` : '')
-      + `<div class="nxF2Card"><div class="nxF2F"><label for="solNotas">Nota para quien aprueba (opcional)</label><input id="solNotas" value="${esc(s.notas || '')}" placeholder="Ej.: cliente de hace años, paga puntual"></div></div>
-      <div class="ffAviso info"><i class="ti ti-info-circle"></i><div>Después de enviar: manda el <b>link de documentos</b> al cliente. <b>No entregues el equipo</b> hasta que esté aprobada y firmada.</div></div>`;
+      + `<div class="nxF2Card"><div class="nxF2F"><label for="solNotas">Observaciones para el aprobador (opcional)</label><input id="solNotas" value="${esc(s.notas || '')}" placeholder="Ej.: cliente desde hace años, con buen historial de pago"></div></div>
+      <div class="ffAviso info"><i class="ti ti-info-circle"></i><div>Después de enviar, remita al cliente el <b>enlace de documentos</b>. <b>No entregue el artículo</b> hasta que la solicitud esté aprobada y firmada.</div></div>`;
   }
   const FIN_TIPO_ING = ['Empleado', 'Negocio propio', 'Independiente', 'Remesas', 'Pensión', 'Otro'];
   const FIN_CIVIL = ['Soltero(a)', 'Casado(a)', 'Unión libre', 'Divorciado(a)', 'Viudo(a)'];
@@ -13867,43 +13867,43 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const s = _finSolForm;
     if (paso === 1) {
       if (s.nuevo) return 'Termina de guardar el cliente nuevo (o toca Cancelar).';
-      if (!s.cliente_id) return 'Elige el cliente o crea uno nuevo.';
+      if (!s.cliente_id) return 'Seleccione un cliente o registre uno nuevo.';
     }
     if (paso === 2) {
-      if (s.manualOn && finManualOn()) { const m = finWizManualItem(s); if (!m || String(m.nombre || '').trim().length < 3) return 'Escribe qué se financia.'; if (!(Number(m.precio) > 0)) return 'Escribe el monto a financiar (mayor que cero).'; return null; }
-      if (!s.items.length) return 'Agrega el equipo que se lleva.';
+      if (s.manualOn && finManualOn()) { const m = finWizManualItem(s); if (!m || String(m.nombre || '').trim().length < 3) return 'Indique qué se financia.'; if (!(Number(m.precio) > 0)) return 'Indique el monto a financiar (mayor que cero).'; return null; }
+      if (!s.items.length) return 'Agregue el artículo a financiar.';
       const sinImei = s.items.find(it => { const pr = _prods.find(x => String(x.id) === String(it.producto_id)); return pr && pr.serial && !String(it.serial || '').trim(); });
-      if (sinImei) return 'Elige el IMEI de ' + sinImei.nombre + '.';
-      if (s.items.some(it => !(Number(it.precio) > 0) || !(Number(it.cantidad) > 0))) return 'Revisa el precio y la cantidad de cada equipo.';
+      if (sinImei) return 'Seleccione el IMEI de ' + sinImei.nombre + '.';
+      if (s.items.some(it => !(Number(it.precio) > 0) || !(Number(it.cantidad) > 0))) return 'Verifique el precio y la cantidad de cada artículo.';
     }
     if (paso === 3) {
       if (finTerminosOn()) {
-        if (!s.frecuencia) return 'Elige cada cuánto paga: mensual, quincenal o semanal.';
-        if (!(Number(s.num_cuotas) >= 1 && Number(s.num_cuotas) <= 120)) return 'Elige en cuántos pagos (de 1 a 120).';
+        if (!s.frecuencia) return 'Seleccione la frecuencia de pago: mensual, quincenal o semanal.';
+        if (!(Number(s.num_cuotas) >= 1 && Number(s.num_cuotas) <= 120)) return 'Indique el número de cuotas (de 1 a 120).';
         if (s.tasa != null && !(Number(s.tasa) >= 0 && Number(s.tasa) <= 100)) return 'El interés por pago debe estar entre 0 y 100 %.';
       }
-      const pl = finWizPlan(s); if (!pl) return finTerminosOn() ? 'Falta el interés de la tienda: pídele a un administrador que active un plan.' : 'Elige un plan.';
+      const pl = finWizPlan(s); if (!pl) return finTerminosOn() ? 'Falta la tasa de interés: solicite a un administrador que active un plan.' : 'Seleccione un plan.';
       const total = finWizTotal(s); const min = finWizMinIni(s, pl); const ini = Number(s.inicial || 0);
-      if (s.inicial == null && min > 0) return 'Escribe la inicial. El mínimo es ' + fmt2(min) + '.';
+      if (s.inicial == null && min > 0) return 'Indique el pago inicial. El mínimo es ' + fmt2(min) + '.';
       if (ini < min - 0.01) return 'La inicial es menor que el mínimo del plan (' + fmt2(min) + ').';
       if (ini >= total) return 'La inicial tiene que ser menor que el precio (' + fmt2(total) + ').';
-      if (ini > 0 && !s.inicial_metodo) return 'Elige cómo paga la inicial: efectivo, transferencia o tarjeta.';
-      if (!s.primera_fecha || s.primera_fecha < hoyISOPos()) return 'La fecha del primer pago no puede ser antes de hoy.';
+      if (ini > 0 && !s.inicial_metodo) return 'Seleccione la forma de pago del inicial: efectivo, transferencia o tarjeta.';
+      if (!s.primera_fecha || s.primera_fecha < hoyISOPos()) return 'La fecha de la primera cuota no puede ser anterior a hoy.';
     }
     if (paso === 4) {
       const pf = s.perfil || {};
-      if (!pf.lugar_trabajo && !pf.tipo_ingreso) return 'Escribe dónde trabaja o de dónde saca el dinero.';
-      if (!(Number(pf.ingreso_mensual) > 0)) return 'Escribe cuánto gana al mes.';
+      if (!pf.lugar_trabajo && !pf.tipo_ingreso) return 'Indique el lugar de trabajo o la fuente de ingresos.';
+      if (!(Number(pf.ingreso_mensual) > 0)) return 'Indique el ingreso mensual.';
       const mala = (s.refs || []).findIndex(r => (r.nombre || r.telefono || r.parentesco) && !(r.nombre && r.telefono));
-      if (mala >= 0) return 'A la referencia ' + (finRefsDe(s.cliente_id).length + mala + 1) + ' le falta el nombre o el teléfono (o quítala).';
-      if (pf.tiene_fiador && !(pf.fiador_nombre && pf.fiador_telefono)) return 'Escribe el nombre y el teléfono del fiador (o quita la marca de fiador).';
+      if (mala >= 0) return 'A la referencia ' + (finRefsDe(s.cliente_id).length + mala + 1) + ' le falta el nombre o el teléfono (complétela o elimínela).';
+      if (pf.tiene_fiador && !(pf.fiador_nombre && pf.fiador_telefono)) return 'Indique el nombre y el teléfono del fiador, o desmarque la opción de fiador.';
     }
     return null;
   }
   function finWizError(msg) {
     const box = document.getElementById('ffWizErr');
     if (box) { box.innerHTML = msg ? '<i class="ti ti-alert-triangle"></i><div>' + esc(msg) + '</div>' : ''; box.style.display = msg ? '' : 'none'; if (msg) try { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
-    if (msg) toast('err', 'Falta algo', msg);
+    if (msg) toast('err', 'Información incompleta', msg);
   }
   function finWizIr(paso) { _finSolForm.paso = Math.max(1, Math.min(FIN_WIZ.length, paso)); finV2Repintar(); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }
   window.nxFinWizSig = function () {
@@ -13927,9 +13927,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     finSolLeerForm(); const n = _finSolForm.nuevo || {};
     const body = { nombre: String(n.nombre || '').trim(), tipo_persona: 'fisica', cedula: String(n.cedula || '').trim() || null, telefono: String(n.telefono || '').trim() || null, direccion: String(n.direccion || '').trim() || null, es_cliente: true, es_proveedor: false, es_empleado: false, es_banco: false, nivel_precio: 'final', acepta_whatsapp: false };
     const cedN = (body.cedula || '').replace(/\D/g, ''), telN = (body.telefono || '').replace(/\D/g, '');
-    if (body.nombre.length < 3) { finWizError('Escribe el nombre completo del cliente.'); return; }
-    if (cedN.length !== 11) { finWizError('La cédula debe tener 11 números.'); return; }
-    if (telN.length < 10) { finWizError('Escribe el teléfono con el código de área (10 números).'); return; }
+    if (body.nombre.length < 3) { finWizError('Indique el nombre completo del cliente.'); return; }
+    if (cedN.length !== 11) { finWizError('La cédula debe tener 11 dígitos.'); return; }
+    if (telN.length < 10) { finWizError('Indique el teléfono con código de área (10 dígitos).'); return; }
     const dup = _clientes.find(x => { const t = (x.telefono || '').replace(/\D/g, ''), c = (x.cedula || '').replace(/\D/g, ''); return (c && c === cedN) || (t && t === telN); });
     if (dup) {
       const usar = await finDialogo({ titulo: 'Ese cliente ya existe', icono: 'ti-user-check', texto: 'Ya hay un cliente con ' + ((dup.cedula || '').replace(/\D/g, '') === cedN ? 'la misma cédula' : 'el mismo teléfono') + ': <b>' + esc(dup.nombre) + '</b>' + (dup.telefono ? ' · ' + esc(dup.telefono) : '') + '. ¿Usamos ese?', ok: 'Usar ese cliente', cancelar: 'Revisar datos' });
@@ -14031,7 +14031,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   let _finSolEnviada = null;
   window.nxFinSolEnviar = async function () {
     finSolLeerForm(); const s = _finSolForm;
-    for (let p = 1; p <= 4; p++) { const e = finWizValidar(p); if (e) { toast('err', 'Falta algo en el paso ' + p, e); finWizIr(p); setTimeout(() => finWizError(e), 80); return; } }
+    for (let p = 1; p <= 4; p++) { const e = finWizValidar(p); if (e) { toast('err', 'Información incompleta en el paso ' + p, e); finWizIr(p); setTimeout(() => finWizError(e), 80); return; } }
     const pl = finWizPlan(s); const total = finWizTotal(s); const ini = r2(s.inicial || 0);
     const btn = document.getElementById('ffEnviar'); const btns = document.querySelectorAll('.nxF2Foot button'); btns.forEach(b => b.disabled = true);
     if (btn) btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando…';
@@ -14070,9 +14070,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const linkListo = s.exp_estado === 'sin_enviar' || s.exp_estado === 'corregir';
     return finV2HeaderHTML('Solicitud enviada', (s.codigo || '') + ' · ' + (s.cliente_nombre || ''), 'cartera') + `
       <div class="nxF2Card ffOk"><i class="ti ti-circle-check"></i><div><b>¡Listo! La solicitud ${esc(s.codigo || '')} está esperando aprobación.</b><span>Un administrador o gerente la revisa.</span></div></div>
-      <div class="nxF2Card"><div class="h">¿Qué sigue?</div>
-        <div class="nxF2Steps"><div><i>1</i><span>Envíale al cliente el <b>link de documentos</b>: sube su cédula (frente y dorso), una foto con la cédula, un video leyendo la declaración y su firma.</span></div><div><i>2</i><span>Espera la aprobación. Sin documentos completos no se puede aprobar.</span></div><div><i>3</i><span><b>No entregues el equipo</b> hasta que esté aprobada y el contrato firmado.</span></div></div>
-        <button type="button" class="nxF2Btn wa ffBigBtn" onclick="window.nxFinDocsLink('${s.id}')"><i class="ti ti-brand-whatsapp"></i> ${linkListo ? 'Volver a abrir WhatsApp con el link' : 'Enviar link de documentos al cliente'}</button>
+      <div class="nxF2Card"><div class="h">Próximos pasos</div>
+        <div class="nxF2Steps"><div><i>1</i><span>Envíe al cliente el <b>enlace de documentos</b> para que suba su cédula (frente y reverso), una foto sosteniendo la cédula, un video leyendo la declaración y su firma.</span></div><div><i>2</i><span>Espere la aprobación. Sin la documentación completa la solicitud no puede aprobarse.</span></div><div><i>3</i><span><b>No entregue el artículo</b> hasta que la solicitud esté aprobada y el contrato firmado.</span></div></div>
+        <button type="button" class="nxF2Btn wa ffBigBtn" onclick="window.nxFinDocsLink('${s.id}')"><i class="ti ti-brand-whatsapp"></i> ${linkListo ? 'Volver a abrir WhatsApp con el enlace' : 'Enviar enlace de documentos al cliente'}</button>
         <div style="font-size:11px;color:var(--f2-steel);text-align:center">Se abre WhatsApp con el mensaje listo${waNum(cli.telefono) ? ' para ' + esc(cli.telefono) : ''}. Tú tocas «Enviar».</div>
       </div>
       <div class="nxF2G2"><button type="button" class="nxF2Btn" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><i class="ti ti-file-search"></i> Ver la solicitud</button><button type="button" class="nxF2Btn" onclick="window.nxFinV2Go('cartera')"><i class="ti ti-home"></i> Volver al inicio</button></div>`;
@@ -14082,7 +14082,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   // ── Documentos del cliente (cédula, carta de trabajo…) — bucket privado «documentos», tabla pos_fin_documentos ──
   // Se listan por cliente (sirven para todas sus solicitudes). Ver = link firmado de 10 minutos; nunca URL pública.
   const FIN_DOC_TIPOS = [['cedula_frente', 'Cédula (frente)'], ['cedula_dorso', 'Cédula (dorso)'], ['carta_trabajo', 'Carta de trabajo'], ['ingresos', 'Comprobante de ingresos'], ['servicio', 'Recibo de luz/agua (dirección)'], ['contrato_firmado', 'Contrato firmado en papel'], ['otro', 'Otro']];
-  const FIN_DOC_TIPOS_LINK = { selfie: 'Foto con la cédula (link)', video: 'Video de compromiso (link)' };
+  const FIN_DOC_TIPOS_LINK = { selfie: 'Foto sosteniendo la cédula', video: 'Video de compromiso' };
   const _finDocs = {}; const _finDocsCargando = {};
   function finDocTipoTxt(t) { return FIN_DOC_TIPOS_LINK[t] || (FIN_DOC_TIPOS.find(x => x[0] === t) || [t, t || 'Documento'])[1]; }
   async function finV2DocsCargar(cliId, forzar) {
@@ -14133,7 +14133,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     try {
       const A = getAPI();
       const r = await fetch(A.url + '/storage/v1/object/sign/' + (d.bucket || 'documentos') + '/' + d.storage_path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 600 }) });
-      const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin link');
+      const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin enlace');
       const url = /^https?:/.test(u) ? u : A.url + '/storage/v1' + u;
       if (w) w.location.href = url; else window.open(url, '_blank');
     } catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo abrir el documento', finErrTxt(e)); }
@@ -14150,7 +14150,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     } catch (e) { toast('err', 'No se pudo borrar', finErrTxt(e)); }
   };
 
-  // ── Expediente por link (réplica de «Préstamos» de NEXUS PRO: firma-prestamo.html) ──
+  // ── Expediente digital (réplica de «Préstamos» de NEXUS PRO: firma-prestamo.html) ──
   // La tienda prepara el link revisando la declaración y el guion del video; el cliente sube cédula, foto con cédula,
   // graba el video de compromiso y firma; la tienda revisa y aprueba, pide corrección (mismo link) o rechaza.
   // ── Evaluación financiera (réplica de NEXUS PRO «Nueva evaluación financiera») ─────────────────
@@ -14169,7 +14169,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return Math.max(0, Math.min(100, Math.round(base)));
   }
   function finEvRec(score) {
-    if (score == null) return { txt: 'Sin evaluar', cls: 'gris', riesgo: '—', desc: 'Falta lo que gana el cliente para calcular la puntuación.' };
+    if (score == null) return { txt: 'Sin evaluar', cls: 'gris', riesgo: '—', desc: 'Falta el ingreso mensual del cliente para calcular la puntuación.' };
     if (score >= 70) return { txt: 'Aprobable', cls: 'ok', riesgo: 'Bajo', desc: 'El cliente presenta un buen perfil de pago.' };
     if (score >= 50) return { txt: 'Revisar', cls: 'warn', riesgo: 'Medio', desc: 'Perfil aceptable — conviene revisar referencias y fiador.' };
     return { txt: 'No recomendado', cls: 'bad', riesgo: 'Alto', desc: 'Perfil de riesgo — la cuota pesa demasiado sobre el ingreso.' };
@@ -14228,7 +14228,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
         <div class="nxF2Line ${ev.recomendado < ev.capital ? 'warn' : ''}"><span>Monto recomendado a financiar</span><span class="nxF2Mono">${fmt(ev.recomendado)}</span></div>
         ${ev.recomendado < ev.capital ? `<div class="fevSug"><i class="ti ti-bulb" aria-hidden="true"></i><span>Para que la cuota no pase del 35 % del ingreso, sube la inicial a <b>${fmt(ev.inicialSugerida)}</b> o elige un plan más largo.</span></div>` : ''}
       </div>
-      <div class="fevChks">${chk(!!(perfil && perfil.tiene_fiador), 'Fiador' + (perfil && perfil.fiador_nombre ? ': ' + esc(perfil.fiador_nombre) : ''))}${chk(refsN >= 2, refsN + ' referencia' + (refsN === 1 ? '' : 's'))}${chk(!!(perfil && perfil.tipo_ingreso), 'Tipo de ingreso' + (perfil && perfil.tipo_ingreso ? ': ' + esc(perfil.tipo_ingreso) : ''))}${chk(s.exp_estado === 'enviado', 'Expediente por link')}</div>`;
+      <div class="fevChks">${chk(!!(perfil && perfil.tiene_fiador), 'Fiador' + (perfil && perfil.fiador_nombre ? ': ' + esc(perfil.fiador_nombre) : ''))}${chk(refsN >= 2, refsN + ' referencia' + (refsN === 1 ? '' : 's'))}${chk(!!(perfil && perfil.tipo_ingreso), 'Tipo de ingreso' + (perfil && perfil.tipo_ingreso ? ': ' + esc(perfil.tipo_ingreso) : ''))}${chk(s.exp_estado === 'enviado', 'Expediente digital')}</div>`;
   }
   // La evaluación usa los datos que se pidieron UNA vez en la solicitud (perfil del cliente): aquí no se vuelven a escribir.
   function finEvDesdePerfil(perfil) { return { ingreso: Number(perfil.ingreso_mensual || 0), otros: Number(perfil.otros_ingresos || 0), gastos: Number(perfil.gastos_mensuales || 0), antig: Number(perfil.antiguedad_anios || 0), notas: '' }; }
@@ -14265,7 +14265,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const c = finEvCtx(id); if (!c) return;
     if (!puedeVerMin()) { toast('err', 'Solo un administrador o gerente guarda la evaluación'); return; }
     const d = finEvLeer(c.perfil);
-    if (!(d.ingreso > 0)) { toast('err', 'Falta lo que gana el cliente', 'Se llena en la solicitud (paso 4)'); return; }
+    if (!(d.ingreso > 0)) { toast('err', 'Falta el ingreso mensual del cliente', 'Se completa en la solicitud (paso 4)'); return; }
     const ev = finEvCalcular(c.s, c.pl, c.rows, d, c.perfil);
     const quien = ((curSesPOS() || {}).nom) || null;
     const evaluacion = { ingreso: d.ingreso, otros: d.otros, gastos: d.gastos, antig: d.antig, notas: d.notas || null,
@@ -14312,26 +14312,26 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   function finExpMsg(s, motivo) {
     const nom = (s.cliente_nombre || '').split(' ')[0];
     return motivo
-      ? 'Hola ' + nom + ', revisamos tu solicitud de crédito en ' + empNom() + ' y hay algo que corregir: ' + motivo + '.\nEntra al mismo link, corrígelo y vuelve a enviar:\n' + finExpLink(s)
-      : 'Hola ' + nom + ', para completar tu crédito en ' + empNom() + ' entra a este link desde tu celular. Tendrás que subir tu cédula, una foto tuya con la cédula, grabar un video corto leyendo el texto que aparece y firmar:\n' + finExpLink(s) + '\n\nEl link es personal.';
+      ? 'Saludos, ' + nom + '. Hemos revisado su solicitud de crédito en ' + empNom() + ' y es necesario corregir lo siguiente: ' + motivo + '.\nPuede hacerlo en el mismo enlace y enviarla nuevamente:\n' + finExpLink(s)
+      : 'Saludos, ' + nom + '. Para completar su solicitud de crédito en ' + empNom() + ', ingrese desde su celular al siguiente enlace. Se le pedirá subir su cédula, una foto sosteniendo la cédula, grabar un video corto leyendo el texto indicado y firmar:\n' + finExpLink(s) + '\n\nEste enlace es personal e intransferible.';
   }
   const _finSignCache = {};
   async function finSignedUrl(bucket, path) {
     const k = bucket + '/' + path; const c = _finSignCache[k]; if (c && c.hasta > Date.now()) return c.url;
     const A = getAPI();
     const r = await fetch(A.url + '/storage/v1/object/sign/' + bucket + '/' + path, { method: 'POST', headers: { apikey: A.key, Authorization: 'Bearer ' + (A.token || A.key), 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: 3600 }) });
-    const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin link');
+    const j = await r.json(); const u = j && (j.signedURL || j.signedUrl); if (!u) throw new Error('sin enlace');
     const url = /^https?:/.test(u) ? u : A.url + '/storage/v1' + u; _finSignCache[k] = { url: url, hasta: Date.now() + 50 * 60000 }; return url;
   }
   function finV2ExpCard(s, pl, rows) {
     const e = s.exp_estado; const pend = s.estado === 'pendiente';
     if (!pend && e !== 'enviado') return '';
     const head = `<div class="h">Expediente del cliente ${finExpBadge(s)}</div>`;
-    if (!e) return `<div class="nxF2Card">${head}<div style="font-size:12px;color:#334155;line-height:1.5">Envía un link por WhatsApp para que el cliente suba su <b>cédula</b> (frente y dorso), una <b>foto con la cédula</b>, grabe un <b>video</b> leyendo un texto y <b>firme</b>. Sin estos documentos no se puede aprobar.</div><button type="button" class="nxF2Btn wa" onclick="window.nxFinDocsLink('${s.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar link de documentos al cliente</button>${puedeVerMin() ? `<button type="button" class="nxF2Btn" style="min-height:38px;font-size:12px" onclick="window.nxFinExpPreparar('${s.id}')"><i class="ti ti-edit"></i> Revisar los textos antes (administrador)</button>` : ''}</div>`;
+    if (!e) return `<div class="nxF2Card">${head}<div style="font-size:12px;color:#334155;line-height:1.5">Envíe un enlace por WhatsApp para que el cliente suba su <b>cédula</b> (frente y reverso), una <b>foto sosteniendo la cédula</b>, grabe un <b>video</b> leyendo la declaración y <b>firme</b>. Sin esta documentación la solicitud no puede aprobarse.</div><button type="button" class="nxF2Btn wa" onclick="window.nxFinDocsLink('${s.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar enlace de documentos al cliente</button>${puedeVerMin() ? `<button type="button" class="nxF2Btn" style="min-height:38px;font-size:12px" onclick="window.nxFinExpPreparar('${s.id}')"><i class="ti ti-edit"></i> Revisar los textos antes (administrador)</button>` : ''}</div>`;
     if (e === 'sin_enviar' || e === 'corregir') return `<div class="nxF2Card">${head}
       ${e === 'corregir' ? `<div class="nxF2Note" style="border-color:#fecaca;background:#fef2f2;color:#991b1b">Pediste corregir: ${esc(s.correccion_motivo || '')}</div>` : `<div style="font-size:12px;color:#334155">Link creado ${finFechaCorta(s.exp_link_en)}${s.exp_link_por ? ' por ' + esc(s.exp_link_por) : ''}. El cliente todavía no ha enviado sus datos.</div>`}
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="nxF2Btn wa" style="flex:2" onclick="window.nxFinExpWA('${s.id}')"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</button><button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinExpCopiar('${s.id}')"><i class="ti ti-copy"></i> Copiar</button>${puedeVerMin() ? `<button type="button" class="nxF2Btn" style="flex:1" onclick="window.nxFinExpPreparar('${s.id}')"><i class="ti ti-edit"></i> Textos</button>` : ''}</div>
-      <div style="font-size:10.5px;color:var(--f2-steel)">Vence ${finFechaCorta(s.exp_token_vence)}. No se envía nada solo: tú le das enviar en WhatsApp.</div></div>`;
+      <div style="font-size:10.5px;color:var(--f2-steel)">Vence ${finFechaCorta(s.exp_token_vence)}. Nada se envía automáticamente: usted confirma el envío en WhatsApp.</div></div>`;
     const m = s.exp_meta || {};
     setTimeout(() => finExpCargarMedia(s), 0);
     return `<div class="nxF2Card">${head}
@@ -14365,11 +14365,11 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const ta = 'width:100%;min-height:96px;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:16px;line-height:1.45;font-family:inherit;resize:vertical;text-transform:none;box-sizing:border-box';
     finVentana({ id: 'nxFinM', titulo: 'Link del expediente · ' + (s.codigo || ''), icono: 'ti-link', destructivo: true,
       cuerpo: `<div style="display:flex;flex-direction:column;gap:10px">
-        <div style="font-size:12.5px;color:#475569">Revisa y corrige los textos antes de crear el link. El cliente verá la declaración y leerá el guion en el video.</div>
+        <div style="font-size:12.5px;color:#475569">Revise y corrija los textos antes de crear el enlace. El cliente verá la declaración y leerá el guion en el video.</div>
         <label style="font-size:12px;font-weight:700;color:#475569">Declaración (lo que acepta)<textarea id="fxDecl" style="${ta}">${esc(s.declaracion || t.decl)}</textarea></label>
         <label style="font-size:12px;font-weight:700;color:#475569">Texto que leerá en el video<textarea id="fxGuion" style="${ta}">${esc(s.video_guion || t.guion)}</textarea></label>
       </div>`,
-      pie: `<button class="btn bghost" type="button" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinExpCrear('${s.id}')"><i class="ti ti-check"></i> ${s.exp_token ? 'Guardar textos' : 'Crear link'}</button>` });
+      pie: `<button class="btn bghost" type="button" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxFinExpCrear('${s.id}')"><i class="ti ti-check"></i> ${s.exp_token ? 'Guardar textos' : 'Crear enlace'}</button>` });
   };
   window.nxFinExpCrear = async function (id) {
     const decl = (document.getElementById('fxDecl') || {}).value || '', guion = (document.getElementById('fxGuion') || {}).value || '';
@@ -14379,7 +14379,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       await finV2Cargar(); cerrarModal('nxFinM'); toast('ok', 'Link listo', 'Envíalo por WhatsApp');
       try { window.logAudit && window.logAudit('POS_FIN_EXP_LINK', id, 'Financiamiento'); } catch (e) {}
       finV2Repintar();
-    } catch (e) { toast('err', 'No se pudo crear el link', finErrTxt(e)); }
+    } catch (e) { toast('err', 'No se pudo crear el enlace', finErrTxt(e)); }
   };
   window.nxFinExpWA = function (id, motivo) {
     const s = _finSols.find(x => String(x.id) === String(id)); if (!s || !s.exp_token) return;
@@ -14389,16 +14389,16 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   };
   window.nxFinExpCopiar = async function (id) {
     const s = _finSols.find(x => String(x.id) === String(id)); if (!s || !s.exp_token) return;
-    try { await navigator.clipboard.writeText(finExpLink(s)); toast('ok', 'Link copiado'); } catch (e) { finDialogo({ titulo: 'Copia el link', icono: 'ti-copy', texto: '<div class="ffLinkTx">' + esc(finExpLink(s)) + '</div>Mantén el dedo sobre el link para copiarlo.', ok: 'Listo', cancelar: 'Cerrar' }); }
+    try { await navigator.clipboard.writeText(finExpLink(s)); toast('ok', 'Enlace copiado'); } catch (e) { finDialogo({ titulo: 'Copiar enlace', icono: 'ti-copy', texto: '<div class="ffLinkTx">' + esc(finExpLink(s)) + '</div>Mantenga presionado el enlace para copiarlo.', ok: 'Listo', cancelar: 'Cerrar' }); }
   };
   window.nxFinExpCorregir = async function (id) {
     if (!puedeVerMin()) { toast('err', 'Solo un administrador o gerente puede pedir correcciones'); return; }
-    const motivo = await finDialogo({ titulo: 'Pedir corrección al cliente', icono: 'ti-arrow-back-up', texto: 'El cliente recibe el mismo link para corregir. Después se abre WhatsApp con el mensaje listo; tú decides si lo envías.', campo: { label: '¿Qué debe corregir?', placeholder: 'Ej.: la foto de la cédula salió borrosa', min: 5 }, ok: 'Pedir corrección' });
+    const motivo = await finDialogo({ titulo: 'Pedir corrección al cliente', icono: 'ti-arrow-back-up', texto: 'El cliente recibirá el mismo enlace para corregir. Luego se abrirá WhatsApp con el mensaje preparado para que usted lo envíe.', campo: { label: 'Corrección requerida', placeholder: 'Ej.: la foto de la cédula no es legible', min: 5 }, ok: 'Pedir corrección' });
     if (motivo === null) return;
     const w = window.open('', '_blank'); // abrir justo después del toque (Safari)
     try {
       await finRpc('pos_fin_sol_corregir', { p_solicitud_id: id, p_motivo: motivo.trim() });
-      await finV2Cargar(); finV2Repintar(); toast('ok', 'Corrección pedida', 'Mismo link; se abre WhatsApp');
+      await finV2Cargar(); finV2Repintar(); toast('ok', 'Corrección pedida', 'Mismo enlace; se abre WhatsApp');
       const s = _finSols.find(x => String(x.id) === String(id)); const cli = s ? (_clientes.find(c => String(c.id) === String(s.cliente_id)) || {}) : {}; const num = waNum(cli.telefono);
       const url = (num ? 'https://wa.me/' + num : 'https://wa.me/') + '?text=' + encodeURIComponent(finExpMsg(s, motivo.trim()));
       if (w) w.location.href = url; else window.open(url, '_blank');
@@ -14421,7 +14421,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const pendiente = s.estado === 'pendiente';
     return finV2HeaderHTML('Solicitud ' + (s.codigo || ''), (s.cliente_nombre || '') + ' · ' + finFechaCorta(s.created_at) + (s.creado_por_nombre ? ' por ' + s.creado_por_nombre : ''), 'aprobacion', `<span class="nxF2Badge ${pendiente ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'}">${String(s.estado).toUpperCase()}</span>`) + `
       <div class="nxF2Card"><div class="h"><div><div style="font-size:13px">${esc((s.items || []).map(i => i.nombre + (Number(i.cantidad) > 1 ? ' × ' + i.cantidad : '')).join(', '))}</div><div style="font-size:11px;color:var(--f2-steel);font-weight:600">Precio ${fmt2(s.precio_total)} · inicial ${fmt2(s.inicial)} (${esc(s.inicial_metodo)}) · ${pl ? esc(pl.porCaso ? finTerminosTxt(pl) + ' · ' + pl.tasa1 + ' % por pago' : pl.nombre) : 'plan no disponible'}</div></div><span class="nxF2Mono" style="font-size:16px;font-weight:700">${fmt2(cap)}</span></div>
-        <div class="nxF2G3"><div class="nxF2K"><span>Gana al mes</span><span>${ing ? fmt2(ing) : '—'}</span></div><div class="nxF2K"><span>Cuota más alta</span><span>${fmt2(cuotaMax)}</span></div><div class="nxF2K"><span>La cuota pesa</span><span style="color:${carga === null ? 'inherit' : carga > 40 ? '#b91c1c' : carga > 30 ? '#b45309' : '#15803d'}">${carga === null ? '—' : carga + ' %'}</span></div></div>
+        <div class="nxF2G3"><div class="nxF2K"><span>Ingreso mensual</span><span>${ing ? fmt2(ing) : '—'}</span></div><div class="nxF2K"><span>Cuota más alta</span><span>${fmt2(cuotaMax)}</span></div><div class="nxF2K"><span>La cuota pesa</span><span style="color:${carga === null ? 'inherit' : carga > 40 ? '#b91c1c' : carga > 30 ? '#b45309' : '#15803d'}">${carga === null ? '—' : carga + ' %'}</span></div></div>
         <div style="font-size:11px;color:var(--f2-steel)">${esc([perfil.lugar_trabajo, perfil.ocupacion, perfil.tiempo_laborando].filter(Boolean).join(' · ') || 'Sin perfil crediticio')}${cli.cedula ? ' · cédula ' + esc(cli.cedula) : ''}</div>
         <div style="font-size:11px;font-weight:700;color:${hist.ok ? '#15803d' : '#b91c1c'}"><i class="ti ${hist.ok ? 'ti-check' : 'ti-alert-triangle'}"></i> ${refs.length} referencia(s) · ${esc(hist.txt)}</div>
         ${refs.length ? `<div style="font-size:11px;color:var(--f2-steel)">${refs.map(r => esc(r.nombre + (r.parentesco ? ' (' + r.parentesco + ')' : '') + (r.telefono ? ' ' + r.telefono : ''))).join(' · ')}</div>` : ''}
@@ -14438,11 +14438,11 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       ${finV2EvalCard(s, pl, rows)}
       ${finV2ExpCard(s, pl, rows)}
       ${finV2DocsCard(s.cliente_id, s.id, s.financiamiento_id)}
-      ${pendiente && puedeVerMin() ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura: inicial de ${fmt2(s.inicial)} ${s.inicial_metodo === 'efectivo' ? 'en efectivo en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y ${fmt2(cap)} a crédito del cliente.</span></div><div><i>2</i><span>El sistema crea las ${pl ? pl.num_cuotas : ''} cuotas.</span></div><div><i>3</i><span>Queda listo el contrato para firmar. <b>El equipo se entrega solo después de aprobar y firmar.</b></span></div></div>
+      ${pendiente && puedeVerMin() ? `<div class="nxF2Card"><div class="h">Al aprobar</div><div class="nxF2Steps"><div><i>1</i><span>Se factura: inicial de ${fmt2(s.inicial)} ${s.inicial_metodo === 'efectivo' ? 'en efectivo en tu caja abierta' : 'por ' + esc(s.inicial_metodo)} y ${fmt2(cap)} a crédito del cliente.</span></div><div><i>2</i><span>El sistema crea las ${pl ? pl.num_cuotas : ''} cuotas.</span></div><div><i>3</i><span>Queda listo el contrato para firmar. <b>El artículo se entrega únicamente después de la aprobación y la firma.</b></span></div></div>
         <div class="nxF2F"><label for="apNota">Nota (opcional)</label><input id="apNota" placeholder="Ej.: verifiqué por teléfono con una referencia"></div></div>
       ${finAprobarFaltasHTML(s)}
       <div class="nxF2Foot"><button type="button" class="nxF2Btn d" style="flex:1" onclick="window.nxFinSolRechazar('${s.id}')">Rechazar</button><button type="button" class="nxF2Btn p" style="flex:2" id="ffAprobarBtn" ${finAprobarFaltas(s).length ? 'disabled' : ''} onclick="window.nxFinSolAprobar('${s.id}')"><i class="ti ti-check"></i> Aprobar y facturar</button></div>`
-      : pendiente ? `<div class="nxF2Card"><div class="h">¿Qué sigue?</div><div class="nxF2Steps"><div><i>1</i><span>El cliente sube sus documentos con el link (cédula, foto, video y firma).</span></div><div><i>2</i><span>Un administrador o gerente revisa y aprueba.</span></div><div><i>3</i><span><b>No entregues el equipo</b> hasta que esté aprobada y firmada.</span></div></div></div>`
+      : pendiente ? `<div class="nxF2Card"><div class="h">Próximos pasos</div><div class="nxF2Steps"><div><i>1</i><span>El cliente sube su documentación mediante el enlace (cédula, foto, video y firma).</span></div><div><i>2</i><span>Un administrador o gerente revisa y aprueba la solicitud.</span></div><div><i>3</i><span><b>No entregue el artículo</b> hasta que la solicitud esté aprobada y firmada.</span></div></div></div>`
       : `<div class="nxF2Card"><div class="h">Decisión</div><div style="font-size:12px;color:#334155">${esc(s.estado === 'aprobada' ? 'Aprobada' : 'Rechazada')} ${s.decidido_en ? 'el ' + finFechaCorta(s.decidido_en) : ''}${s.motivo_rechazo ? ' · ' + esc(s.motivo_rechazo) : ''}${s.nota_aprobador ? ' · ' + esc(s.nota_aprobador) : ''}</div>${s.financiamiento_id ? `<button type="button" class="nxF2Btn" onclick="window.nxFinV2Go('detalle','${s.financiamiento_id}')">Ver financiamiento</button>` : ''}</div>`}`;
   }
   // Condiciones de la solicitud que el aprobador puede ajustar antes de aprobar (solo con la migración 35):
@@ -14482,9 +14482,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   const _finExpRev = {};
   const FIN_EXP_PIEZAS = [['exp_cedula_frente', 'Cédula (frente)'], ['exp_cedula_dorso', 'Cédula (dorso)'], ['exp_selfie', 'Foto con la cédula'], ['exp_video', 'Video leyendo la declaración'], ['exp_firma', 'Firma']];
   function finExpFaltas(s) {
-    if (!s.exp_estado) return ['El link de documentos todavía no se ha enviado al cliente'];
+    if (!s.exp_estado) return ['El enlace de documentos aún no se ha enviado al cliente'];
     if (s.exp_estado === 'corregir') return ['El cliente todavía no ha enviado la corrección'];
-    if (s.exp_estado !== 'enviado') return ['El cliente todavía no ha enviado sus documentos por el link'];
+    if (s.exp_estado !== 'enviado') return ['El cliente aún no ha enviado su documentación'];
     return FIN_EXP_PIEZAS.filter(x => !s[x[0]]).map(x => 'Falta: ' + x[1]);
   }
   function finExpChecklistHTML(s) {
@@ -14517,15 +14517,15 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
         const pl = finPlanEfectivo(s); const rows = pl ? finV2Amortizar(r2(s.precio_total - s.inicial), pl, s.primera_fecha) : [];
         const t = finExpTextos(s, pl, rows);
         await finRpc('pos_fin_sol_link', { p_solicitud_id: s.id, p_declaracion: s.declaracion || t.decl, p_guion: s.video_guion || t.guion });
-        try { window.logAudit && window.logAudit('POS_FIN_EXP_LINK', (s.codigo || '') + ' · link de documentos', 'Financiamiento'); } catch (e) {}
+        try { window.logAudit && window.logAudit('POS_FIN_EXP_LINK', (s.codigo || '') + ' · enlace de documentos', 'Financiamiento'); } catch (e) {}
         await finV2Cargar();
       }
       const s2 = _finSols.find(x => String(x.id) === String(id)) || s;
       const url = (num ? 'https://wa.me/' + num : 'https://wa.me/') + '?text=' + encodeURIComponent(finExpMsg(s2, s2.exp_estado === 'corregir' ? s2.correccion_motivo : ''));
       if (w) w.location.href = url; else window.open(url, '_blank');
-      toast('ok', 'WhatsApp abierto', num ? 'Toca «Enviar» en WhatsApp' : 'El cliente no tiene teléfono: elige el chat en WhatsApp');
+      toast('ok', 'WhatsApp abierto', num ? 'Pulse «Enviar» en WhatsApp' : 'El cliente no tiene teléfono: elige el chat en WhatsApp');
       finV2Repintar();
-    } catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo preparar el link', finErrTxt(e)); }
+    } catch (e) { try { w && w.close(); } catch (x) {} toast('err', 'No se pudo preparar el enlace', finErrTxt(e)); }
   };
   window.nxFinSolRechazar = async function (id) {
     if (!puedeVerMin()) { toast('err', 'Solo un administrador o gerente puede rechazar'); return; }

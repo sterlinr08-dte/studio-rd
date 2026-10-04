@@ -12669,6 +12669,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function finV2Repintar() { const el = document.getElementById('v-pos'); if (el) renderPOS(el); }
   function finV2PostRender() {
     try { const v = document.getElementById('v-pos'); if (v) scanMoney(v); } catch (e) {}
+    if (_finV2Vista === 'solicitud') try { finWizAnimar(); } catch (e) {} else _finWizAnim = null;
     if (_finV2Vista === 'solicitud' && _finSolForm && (_finSolForm.paso || 1) === 1 && !_finSolForm.cliente_id && !_finSolForm.nuevo) { const i = document.getElementById('ffCliQ'); if (i && window.matchMedia && window.matchMedia('(pointer:fine)').matches) try { i.focus(); } catch (e) {} }
     if (_finV2Vista === 'cobrar') { const i = document.getElementById('ffCobQ'); if (i && window.matchMedia && window.matchMedia('(pointer:fine)').matches) try { i.focus(); } catch (e) {} }
   }
@@ -12676,6 +12677,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     _finV2Vista = vista || 'cartera';
     if (vista === 'detalle') _finV2Sel = id || _finV2Sel;
     if (vista === 'aprobacion') _finV2SolSel = id || null;
+    if (vista === 'solicitud') _finWizAnim = { dir: 1, a: 0 };
     if (vista === 'solicitud' && !_finSolForm) {
       const pl0 = _finPlanes.filter(p => p.activo); const t = finTerminosOn(); const b0 = pl0[0] || null;
       _finSolForm = { paso: 1, cliente_id: null, cliQ: '', nuevo: null, items: [], inicial: null, iniModo: 'monto', iniPct: null, inicial_metodo: null, plan_id: (t || pl0.length === 1) && b0 ? b0.id : null, primera_fecha: finWizFechaSugerida(pl0.length === 1 || t ? b0 : null), fechaManual: false, perfil: {}, refs: [], notas: '',
@@ -12795,7 +12797,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffAviso>i{font-size:20px;flex-shrink:0;margin-top:1px}.ffAviso>div{flex:1;min-width:0}.ffAviso ul{margin:4px 0 0;padding-left:18px}.ffAviso .nxF2Btn{flex-shrink:0;min-height:40px;font-size:12px}
 .ffAviso.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}.ffAviso.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b}.ffAviso.info{background:var(--ff-canvas);border-color:#e6e1d3;color:#3f3f3a}
 .ffProg{margin:0 0 12px}.ffProgT{font-size:13px;color:var(--f2-steel);margin-bottom:6px}.ffProgT b{color:var(--ff-ink)}
-.ffProgBar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.ffProgBar span{height:6px;border-radius:999px;background:#e6e1d3}.ffProgBar span.on{background:var(--ff-gold)}
+.ffProgBar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.ffProgBar span{height:6px;border-radius:999px;background:#e6e1d3;transition:background-color .3s ease}.ffProgBar span.on{background:var(--ff-gold)}
+.ffWiz button,.ffFoot .ffBigBtn{transition:transform .14s cubic-bezier(.22,1,.36,1),background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease}
+.ffWiz button:active:not(:disabled),.ffFoot .ffBigBtn:active:not(:disabled){transform:scale(.97)}
+.ffWiz input,.ffWiz select{transition:border-color .2s ease,box-shadow .2s ease}
+@media (prefers-reduced-motion:reduce){.ffWiz button,.ffFoot .ffBigBtn,.ffProgBar span,.ffWiz input,.ffWiz select{transition:none}.ffWiz button:active,.ffFoot .ffBigBtn:active{transform:none}}
 .ffWiz .nxF2F label{font-size:12.5px;color:#3f3f3a}.ffWiz .nxF2F input,.ffWiz .nxF2F select{height:48px;font-size:16px}
 .ffFoot{gap:10px}.ffBigBtn{flex:1;min-height:52px!important;font-size:15px!important}
 .ffLista{display:flex;flex-direction:column;gap:6px}
@@ -13760,7 +13766,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return `<div class="nxF2Lbl">Resumen del plan</div><div class="ffPlanBig">Inicial <b class="nxF2Mono">${fmt2(r.ini)}</b> · <b>${r.n}</b> cuotas de <b class="nxF2Mono">${r.iguales ? '' : 'desde '}${fmt2(r.cuota)}</b> ${finFrecCada(pl.frecuencia)} · Total <b class="nxF2Mono">${fmt2(r.total)}</b></div>`;
   }
   function finWizRefrescarLibre() {
-    const s = _finSolForm; const box = document.getElementById('ffResumen'); if (box) box.innerHTML = finWizResumenVivo(s);
+    const s = _finSolForm; const box = document.getElementById('ffResumen'); if (box) { const antes = box.innerHTML; box.innerHTML = finWizResumenVivo(s); if (box.innerHTML !== antes) finWizDestello(box); }
     const eq = document.getElementById('ffIniEq'); if (eq) eq.innerHTML = s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no hay pago inicial.';
   }
   window.nxFinWizFrec = function (k) { finSolLeerForm(); const s = _finSolForm; s.frecuencia = k; if (!s.fechaManual) s.primera_fecha = finWizFechaSugerida({ frecuencia: k }); finV2Repintar(); };
@@ -13902,10 +13908,42 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   }
   function finWizError(msg) {
     const box = document.getElementById('ffWizErr');
-    if (box) { box.innerHTML = msg ? '<i class="ti ti-alert-triangle"></i><div>' + esc(msg) + '</div>' : ''; box.style.display = msg ? '' : 'none'; if (msg) try { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} }
+    if (box) { box.innerHTML = msg ? '<i class="ti ti-alert-triangle"></i><div>' + esc(msg) + '</div>' : ''; box.style.display = msg ? '' : 'none'; if (msg) try { box.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+      if (msg && box.animate && !finSinMovimiento()) box.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(7px)' }, { transform: 'translateX(-4px)' }, { transform: 'translateX(2px)' }, { transform: 'none' }], { duration: 420, easing: 'ease-out' }); }
     if (msg) toast('err', 'Información incompleta', msg);
   }
-  function finWizIr(paso) { _finSolForm.paso = Math.max(1, Math.min(FIN_WIZ.length, paso)); finV2Repintar(); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }
+  // Animación «smart» del asistente (04-oct-2026): SOLO al cambiar de paso (nunca al escribir ni al refrescar datos),
+  // con WAAPI y fill:'backwards' en el mismo tick del pintado → no hay parpadeo. Respeta «reducir movimiento».
+  let _finWizAnim = null;
+  const FIN_EASE = 'cubic-bezier(.22,1,.36,1)';
+  function finSinMovimiento() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  function finWizAnimar() {
+    const a = _finWizAnim; _finWizAnim = null;
+    if (!a || finSinMovimiento()) return;
+    const wiz = document.querySelector('#v-pos .ffWiz'); if (!wiz || !wiz.animate) return;
+    const dx = 26 * (a.dir || 1);
+    Array.from(wiz.children).forEach((el, i) => el.animate([{ opacity: 0, transform: 'translateX(' + dx + 'px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 380, delay: Math.min(i, 6) * 45, easing: FIN_EASE, fill: 'backwards' }));
+    const t = document.querySelector('#v-pos .ffProgT');
+    if (t) t.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: FIN_EASE, fill: 'backwards' });
+    const seg = document.querySelectorAll('#v-pos .ffProgBar span')[a.a - 1];
+    if (seg && a.dir > 0) { seg.style.transformOrigin = 'left center'; seg.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 460, delay: 60, easing: FIN_EASE, fill: 'backwards' }); }
+    const pie = document.querySelector('#v-pos .ffFoot');
+    if (pie) pie.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 120, easing: FIN_EASE, fill: 'backwards' });
+  }
+  // Resumen del plan: brillo dorado corto cuando cambia el monto (sin mover nada de sitio).
+  function finWizDestello(box) {
+    if (!box || !box.animate || finSinMovimiento()) return;
+    try { box.getAnimations().forEach(x => x.cancel()); } catch (e) {}
+    box.animate([{ boxShadow: '0 0 0 0 rgba(201,162,39,0)' }, { boxShadow: '0 0 0 5px rgba(201,162,39,.28)', offset: .35 }, { boxShadow: '0 0 0 0 rgba(201,162,39,0)' }], { duration: 700, easing: 'ease-out' });
+    const big = box.querySelector('.ffPlanBig');
+    if (big) big.animate([{ opacity: .35, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: FIN_EASE });
+  }
+  function finWizIr(paso) {
+    const de = _finSolForm.paso || 1; _finSolForm.paso = Math.max(1, Math.min(FIN_WIZ.length, paso));
+    if (_finSolForm.paso !== de) _finWizAnim = { dir: _finSolForm.paso > de ? 1 : -1, a: _finSolForm.paso };
+    finV2Repintar(); try { window.scrollTo({ top: 0, behavior: finSinMovimiento() ? 'auto' : 'smooth' }); } catch (e) {}
+  }
   window.nxFinWizSig = function () {
     finSolLeerForm(); const s = _finSolForm; const e = finWizValidar(s.paso || 1);
     if (e) { finWizError(e); return; }

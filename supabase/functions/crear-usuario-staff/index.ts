@@ -12,7 +12,7 @@ const CORS = {
 // Reglas: nadie se cambia su propio rol ni se desactiva; nunca se queda la empresa sin un administrador activo;
 // solo usuarios de la misma empresa; cada acción queda en auditoría.
 // 05-oct-2026 (v4, «Usuarios y acceso»): crear y actualizar guardan también el WhatsApp del empleado (telefono,
-// migración 45) y las funciones del CRM en el MISMO paso (antes era una segunda llamada que podía fallar a medias);
+// migración 46) y las funciones del CRM en el MISMO paso (antes era una segunda llamada que podía fallar a medias);
 // crear devuelve el id; nueva acción «accesos»: última entrada de cada usuario (auth.users.last_sign_in_at).
 const PRESET = ["admin", "gerente", "cajero", "vendedor"];
 const json = (o: unknown, status = 200) => Response.json(o, { status, headers: CORS });

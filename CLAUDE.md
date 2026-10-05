@@ -35,6 +35,26 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
 7. Publicación: subir `APP_VERSION` (`index.html`) y `version.json`; los parches se cargan con `?v=APP_VERSION`.
 8. Diseño: `DESIGN.md` es la única línea gráfica (negro y carbón estructural, blanco cálido operativo y oro STUDIO como único acento de marca).
 
+## Ventana de contexto y memoria de la IA (explicado al dueño, 05-oct-2026)
+
+La **ventana de contexto** es la memoria de trabajo de la IA durante una conversación: tus mensajes y sus respuestas, cada archivo que lee (`parches-pos.js` o `index.html` ocupan mucho), los resultados de comandos, pruebas y consultas, y las imágenes o cuadros de video que revisa.
+
+**Qué pasa al llenarse:** nunca se bloquea. Antes de llegar al 100 % el sistema **compacta** automáticamente.
+- Resume la parte más vieja: qué se pidió, qué se hizo, ramas, qué está publicado y qué falta.
+- Borra el texto original de esa parte.
+- La conversación sigue con ese resumen más lo reciente; el dueño no tiene que hacer nada.
+
+**Qué se conserva:** pedidos, decisiones, estado del trabajo (versiones, ramas, publicado o pendiente) y tareas abiertas.
+
+**Qué se puede perder:** detalles finos, como el texto exacto de un archivo leído hace horas, una línea concreta, cifras de una prueba vieja o los matices de cómo se dijo algo. La IA debe **volver a leerlos** del repo o de la base; nunca debe suponerlos.
+
+**Reglas que se derivan:**
+1. Toda decisión importante del dueño se escribe en `CLAUDE.md`, `REGLAMENTOS.md` o la bitácora. Lo escrito ahí no se resume ni se pierde; lo que solo se dijo en el chat, sí.
+2. La memoria de la conversación desaparece al terminar la sesión; la bitácora no. Por eso cada cambio deja su entrada en `docs/bitacora/`.
+3. **Una sesión por tema grande** (por ejemplo, acumulados y transferencias, diseño o financiamiento): arranca con la memoria limpia y se pone al día leyendo `AGENTS.md`, este archivo y la bitácora.
+4. Si se compacta varias veces, el resumen se vuelve más general. Si la IA parece olvidar algo acordado, el dueño puede recordárselo, y la IA debe confirmarlo contra la bitácora o el código antes de actuar.
+5. Las grabaciones de pantalla y las capturas son muy útiles, pero ocupan mucho espacio: mejor cortas y al punto.
+
 ## Estado técnico (22-sep-2026)
 
 - Esquema de la base: `supabase/studio/01…14` (clon del POS + `13_compras_v2` + `14_financiamiento_v2`), ya

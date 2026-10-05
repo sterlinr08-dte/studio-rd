@@ -21,7 +21,7 @@
   function ctx() { return window.nxPosCtx || {}; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function n(v) { const x = Number(v); return isFinite(x) ? x : 0; }
-  function fmt(v) { const r = Math.round(n(v)); return 'RD$ ' + (r === 0 ? 0 : r).toLocaleString('en-US'); }
+  function fmt(v) { const r = Math.round(n(v) * 100) / 100; return 'RD$ ' + (r === 0 ? 0 : r).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function toast(t, m, s) { try { window.toast && window.toast(t, m, s); } catch (e) {} }
   function hoyISO() { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' }); } catch (e) { return new Date().toISOString().slice(0, 10); } }
   function diaRD(ts) { if (!ts) return ''; const s = String(ts); if (s.length === 10) return s; try { return new Date(s).toLocaleDateString('en-CA', { timeZone: 'America/Santo_Domingo' }); } catch (e) { return s.slice(0, 10); } }
@@ -288,7 +288,7 @@
             <label class="nxCrmF"><span>Teléfono</span><div class="tel"><input id="ocTel" inputmode="tel" value="${esc(o.telefono || '')}" placeholder="${esc((c && c.telefono) || '809…')}">${wa && !nuevaOp ? `<a class="wa" href="https://wa.me/${wa}" target="_blank" rel="noopener" onclick="window.nxCRM.waAbierto('${o.id}')" aria-label="Abrir WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : ''}</div></label>
           </div>
           <div class="g2">
-            <label class="nxCrmF"><span>Monto estimado (RD$)</span><input id="ocMonto" inputmode="decimal" value="${n(o.monto_estimado) ? Math.round(n(o.monto_estimado)) : ''}" placeholder="0"></label>
+            <label class="nxCrmF"><span>Monto estimado (RD$)</span><input id="ocMonto" data-nx-money inputmode="decimal" value="${n(o.monto_estimado) ? n(o.monto_estimado) : ''}" placeholder="0.00"></label>
             <label class="nxCrmF"><span>Fuente</span><select id="ocFuente"><option value="">—</option>${FUENTES.map(f => `<option${o.fuente === f ? ' selected' : ''}>${f}</option>`).join('')}${o.fuente && FUENTES.indexOf(o.fuente) < 0 ? `<option selected>${esc(o.fuente)}</option>` : ''}</select></label>
           </div>
           <div class="g2">
@@ -309,7 +309,7 @@
   function leerForm() {
     const v = id => { const e = document.getElementById(id); return e ? String(e.value || '').trim() : ''; };
     const b = { nombre: v('ocNom'), cliente_id: v('ocCli') || null, interes: v('ocInt') || null, contacto: v('ocCont') || null, telefono: v('ocTel') || null,
-      monto_estimado: n(String(v('ocMonto')).replace(/[^\d.]/g, '')), fuente: v('ocFuente') || null, email: v('ocEmail') || null, notas: v('ocNotas') || null };
+      monto_estimado: window.nxMoney ? window.nxMoney.parse(v('ocMonto')) : n(String(v('ocMonto')).replace(/[^\d.]/g, '')), fuente: v('ocFuente') || null, email: v('ocEmail') || null, notas: v('ocNotas') || null };
     if (document.getElementById('ocAsig')) b.asignado_id = v('ocAsig') || null;
     return b;
   }
@@ -1441,8 +1441,20 @@
   }
   async function bdCrearCliente(id) {
     const c = bdConvPorId(id); if (!c) return;
-    const cr = ctx().crearCliente; if (!cr) { toast('err', 'No disponible', 'Actualiza la página'); return; }
     const sug = c.contacto_nombre || '';
+    // Dueño 05-oct-2026 («que sean la misma plataforma»): el cliente se crea con la ficha de Entidades, con el nombre y
+    // el teléfono del chat ya escritos; al guardarla queda vinculado a la conversación.
+    const ficha = ctx().abrirFichaCliente;
+    if (ficha) {
+      let t0 = String(c.telefono_e164 || '').replace(/\D/g, ''); if (t0.length === 11 && t0[0] === '1') t0 = t0.slice(1);
+      cerrar('bdFiM');
+      ficha({ nombre: sug, telefono: t0.length === 10 ? t0 : '' }, async function (cli) {
+        if (!cli || !cli.id) return;
+        try { await bdPatch(id, { cliente_id: cli.id }, 'Cliente vinculado: ' + cli.nombre); } catch (e) { toast('err', 'No se pudo vincular el cliente', String((e && e.message) || e)); }
+      });
+      return;
+    }
+    const cr = ctx().crearCliente; if (!cr) { toast('err', 'No disponible', 'Actualiza la página'); return; }
     const nombre = (window.prompt('Nombre completo del cliente:', sug) || '').trim(); if (!nombre) return;
     let tel = String(c.telefono_e164 || '').replace(/\D/g, ''); if (tel.length === 11 && tel[0] === '1') tel = tel.slice(1);
     try {

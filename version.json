@@ -1,7 +1,17 @@
 {
-  "version": "59.86",
+  "version": "59.87",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.87",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Dinero en todo el sistema como «RD$ 1,250.00»: signo, coma de miles y siempre dos decimales (pantallas, facturas, reportes, CRM).",
+        "Campos donde se escribe dinero: «RD$» al lado y, al salir del campo, el monto queda con coma y dos decimales (Factura, Cotización, Financiamiento, Asientos, Reacondicionado, CRM y los que ya tenían formato).",
+        "Factura y carrito: como la venta se cobra en pesos enteros, la diferencia de centavos se muestra como «Redondeo» para que la cuenta cuadre.",
+        "Clientes y Entidades son la misma ficha: «Crear cliente nuevo» en Elegir cliente abre la ficha de Entidades y lo deja elegido; el CRM y la solicitud de financiamiento también crean clientes con esa ficha."
+      ]
+    },
     {
       "version": "59.86",
       "fecha": "2026-10-05",

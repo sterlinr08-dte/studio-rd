@@ -17,7 +17,8 @@
     o = o || {};
     return '<div class="nxLupaBox"><i class="ti ti-search"></i><input' + (o.id ? ' id="' + o.id + '"' : '') + (o.inputmode ? ' inputmode="' + o.inputmode + '"' : '') + ' placeholder="' + esc(o.placeholder || 'Buscar…') + '" value="' + esc(o.value || '') + '" autocomplete="off" oninput="' + (o.oninput || '') + '"></div>';
   }
-  function fmt(n) { const v = Math.round(Number(n || 0)); return (v < 0 ? '-RD$ ' : 'RD$ ') + Math.abs(v).toLocaleString('en-US'); }
+  // Dinero (dueño 05-oct-2026: «RD$ 1,250.00»): signo, coma de miles y siempre dos decimales.
+  function fmt(n) { const v = Math.round(Number(n || 0) * 100) / 100; return (v < 0 ? '-RD$ ' : 'RD$ ') + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   // Teléfono legible: 8095551234 → 809-555-1234 (10 dígitos; si no, se deja como está).
   function fmtTel(t) { const d = String(t || '').replace(/\D/g, ''); const x = d.length === 11 && d[0] === '1' ? d.slice(1) : d; return x.length === 10 ? x.slice(0, 3) + '-' + x.slice(3, 6) + '-' + x.slice(6) : String(t || ''); }
   // Filtro instantáneo de una tabla por texto (sin volver a pintar: no se pierde el foco del buscador).
@@ -160,6 +161,8 @@
       _clientes.push(nuevo); _clientes.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
       return nuevo;
     },
+    // Crear un cliente con la ficha de Entidades (la misma de todo el sistema); cb recibe el cliente guardado.
+    abrirFichaCliente: function (defs, cb) { abrirEntidad(null, Object.assign({ es_cliente: true }, defs || {}), cb); },
     facturar: function (cliId) { _cart = []; _factCli = cliId || ''; _posTab = 'factura'; const v = document.getElementById('v-pos'); if (v) renderPOS(v); },
     cotizar: function (c) { _cotEdit = { id: null, cliente_id: (c && c.id) || '', cliente_nombre: (c && c.nombre) || '', fecha: isoHoy(), validez_dias: 15, notas: '', lineas: [] }; _cotEditSnapshot = null; abrirCotizacion(); }
   };
@@ -493,8 +496,11 @@
   function totales() {
     let total = 0, itbis = 0, descuento = 0;
     _cart.forEach(it => { const imp = lineImporte(it); descuento += lineDescMonto(it); total += imp; if (it.itbis) itbis += imp * 18 / 118; });
+    // La venta se cobra en pesos enteros (regla de siempre). Con los centavos visibles (59.87), la diferencia se
+    // muestra como «Redondeo» para que la suma de las líneas cuadre con el total.
+    const bruto = total;
     total = Math.round(total); itbis = Math.round(itbis); descuento = Math.round(descuento);
-    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
+    return { total: total, itbis: itbis, subtotal: total - itbis, descuento: descuento, redondeo: Math.round((total - bruto) * 100) / 100, items: _cart.reduce((s, it) => s + Number(it.cantidad), 0) };
   }
   function catNombre(id) { const c = _cats.find(x => String(x.id) === String(id)); return c ? c.nombre : ''; }
 
@@ -1125,8 +1131,9 @@
         <div class="carthd"><span><i class="ti ti-shopping-cart"></i> Carrito (${t.items})</span><div style="display:flex;align-items:center"><button type="button" class="cartsuspbadge" onclick="window.nxVentaSuspLista()" title="Ventas suspendidas" aria-label="Ver ventas suspendidas"><i class="ti ti-player-pause"></i>${_ventasSusp.length ? `<b>${_ventasSusp.length}</b>` : ''}</button>${_cart.length ? `<button type="button" class="cartclear" onclick="window.nxPosVaciar()" title="Vaciar" aria-label="Vaciar carrito"><i class="ti ti-trash"></i></button>` : ''}</div></div>
         <div class="cartlist">${filas}</div>
         <div class="carttotals">
-          <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>
+          <div class="cartrow"><span>Subtotal</span><span>${fmt(t.subtotal - (t.redondeo || 0))}</span></div>
           <div class="cartrow"><span>ITBIS (18%)</span><span>${fmt(t.itbis)}</span></div>
+          ${t.redondeo ? `<div class="cartrow"><span>Redondeo</span><span>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</span></div>` : ''}
           <div class="cartpaytot"><span>Total a pagar</span><b>${fmt(t.total)}</b></div>
         </div>
         <div class="cartsave">
@@ -1479,7 +1486,9 @@
     } else { reg.favShown = []; reg.recShown = []; }
     const resultsHtml = filas.map((c, i) => { navOrder.push({ kind: 'res', i }); return nxPosCliFilaHTML(modalId, nxPosCliSnap(c), 'res', i, favIds.indexOf(c.id) >= 0); }).join('') || (secciones ? '' : '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:12px">Sin resultados</div>');
     reg.filas = filas; reg.navOrder = navOrder;
-    drop.innerHTML = `<div class="pf2clirow pf2cliCF" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="pf2cliAv" aria-hidden="true"><i class="ti ti-user"></i></span><div><b>Consumidor final</b><span>Venta sin cliente asignado</span></div></div>` + secciones + resultsHtml;
+    drop.innerHTML = `<div class="pf2clirow pf2cliCF" onclick="window.nxPosCliElegir('${modalId}','')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="pf2cliAv" aria-hidden="true"><i class="ti ti-user"></i></span><div><b>Consumidor final</b><span>Venta sin cliente asignado</span></div></div>`
+      // Dueño 05-oct-2026 («que sean la misma plataforma»): crear el cliente con la MISMA ficha de Entidades.
+      + `<div class="pf2clirow pf2cliNuevo" onclick="window.nxPosCliCrear('${modalId}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><span class="pf2cliAv" aria-hidden="true"><i class="ti ti-user-plus"></i></span><div><b>Crear cliente nuevo</b><span>${ql ? 'Con «' + esc(String(q).trim()) + '» · ficha completa de Entidades' : 'Ficha completa de Entidades'}</span></div></div>` + secciones + resultsHtml;
   }
   function nxPosCliRegistrarReciente(modalId, c) {
     const snap = nxPosCliSnap(c);
@@ -1514,6 +1523,17 @@
     const vivo = _clientes.find(c => String(c.id) === String(snap.__id));
     if (kind === 'rec' && vivo) nxPosCliRegistrarReciente(modalId, vivo);
     nxPosCliTerminar(modalId, vivo || { id: snap.__id, nombre: snap.__t });
+  };
+  // Crear cliente desde «Elegir cliente»: abre la ficha de Entidades (la misma del módulo Entidades) con lo que se
+  // escribió en el buscador, y al guardar lo deja elegido donde se estaba (Factura, Vender, Cotización, CRM…).
+  window.nxPosCliCrear = function (modalId) {
+    const reg = window.__nxPosCliReg[modalId] || {};
+    const q = String(val(modalId + 'Q') || '').trim(), dig = q.replace(/\D/g, '');
+    const defs = { es_cliente: true };
+    if (q && dig.length >= 7 && dig.length === q.replace(/[\s()+-]/g, '').length) defs.telefono = q; else if (q) defs.nombre = q;
+    const onPick = reg.onPick;
+    cerrarModal(modalId); delete window.__nxPosCliReg[modalId];
+    abrirEntidad(null, defs, function (c) { if (c) { try { nxPosCliRegistrarReciente(modalId, c); } catch (e) {} } if (typeof onPick === 'function') onPick(c); });
   };
   function nxPosCliTerminar(modalId, c) {
     const reg = window.__nxPosCliReg[modalId];
@@ -3074,7 +3094,7 @@
           <div class="dsub">${cod ? `<span class="cod">${esc(cod)}</span>` : ''}${ser}${gtxt ? `<span class="gar">${gtxt}</span>` : ''}</div>
           ${serLista}
         </td>
-        <td data-l="Precio" class="r"><input class="pin" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${Math.round(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
+        <td data-l="Precio" class="r"><input class="pin" data-nx-money="sinsigno" inputmode="decimal" aria-label="Precio de ${esc(it.nombre)}" value="${r2(it.precio)}" onchange="window.nxFacPrecio(${i},this.value)"></td>
         <td data-l="Cant."><div class="stp"><button type="button" aria-label="Restar cantidad" onclick="window.nxFacQtyStep(${i},-1)">−</button><input type="number" inputmode="numeric" min="1" step="1" class="stp-in" value="${it.cantidad}" aria-label="Cantidad de ${esc(it.nombre)}" onclick="event.stopPropagation()" onchange="window.nxFacQtySet(${i},this.value)"><button type="button" aria-label="Sumar cantidad" onclick="window.nxFacQtyStep(${i},1)">+</button></div></td>
         <td data-l="Desc."><div class="dsc"><input inputmode="decimal" aria-label="Descuento de ${esc(it.nombre)}" value="${Number(it.desc || 0)}" onchange="window.nxFacDesc(${i},this.value)"><button type="button" onclick="window.nxFacDescTipo(${i})" title="Cambiar % / RD$" aria-label="Cambiar tipo de descuento a porcentaje o monto">${it.descT === 'mon' ? 'RD$' : '%'}</button></div></td>
         <td data-l="Importe" class="r imp">${fmt(lineImporte(it))}</td>
@@ -3089,9 +3109,11 @@
     // cobrar" se quitaron por redundantes — repetían el TOTAL y todos abrían la misma ventana).
     const res = document.getElementById('facResumen'); if (!res) return;
     const pre = esPreTab();
-    res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal)}</b></div>
+    // En pantalla el subtotal va SIN redondear, para que Subtotal + ITBIS ± Redondeo = Total cuadre a simple vista.
+    res.innerHTML = `<div class="tr"><span>Subtotal</span><b>${fmt(t.subtotal - (t.redondeo || 0))}</b></div>
       ${t.descuento > 0 ? `<div class="tr"><span>Descuento</span><b style="color:#dc2626">− ${fmt(t.descuento)}</b></div>` : ''}
       <div class="tr"><span>ITBIS (18%)</span><b>${fmt(t.itbis)}</b></div>
+      ${t.redondeo ? `<div class="tr"><span>Redondeo</span><b>${t.redondeo > 0 ? '+' : '−'} ${fmt(Math.abs(t.redondeo))}</b></div>` : ''}
       <div class="tr big"><span>Total</span><b>${fmt(t.total)}</b></div>
       <div class="acc">
         ${pre ? `<button type="button" class="g2" ${_cart.length ? '' : 'disabled'} onclick="window.nxPrefGuardar(true)" title="Guardar e imprimir" aria-label="Guardar e imprimir"><i class="ti ti-printer"></i></button>` : ''}
@@ -3730,7 +3752,8 @@
     const qz = document.getElementById('pgQuick');
     if (qz) qz.innerHTML = (k === 'efe' ? PG_QUICK_EFE : PG_QUICK_OTRO).map(q => `<button type="button" onclick="window.nxPagoQuick('${q[1]}')">${q[0]}</button>`).join('');
     const c = leerCobro(); const big = document.getElementById('payBig');
-    if (big) big.value = Math.round(c.total).toLocaleString('en-US');
+    // Total de la venta (ya en pesos enteros, ver totales()) con el formato «1,250.00».
+    if (big) big.value = window.nxMoney ? window.nxMoney.fixed(c.total) : r2(c.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     window.nxPagoBigIn();
   };
   // El campo grande es un ESPEJO: escribe en el campo real del método activo
@@ -3745,9 +3768,9 @@
     const c = leerCobro();
     let n;
     if (v === 'T') n = c.total;
-    else if (v === 'M') n = Math.round(c.total / 2);
+    else if (v === 'M') n = r2(c.total / 2);
     else n = parseMoney(big.value) + Number(v);
-    big.value = Math.round(Math.max(0, n)).toLocaleString('en-US');
+    big.value = window.nxMoney ? window.nxMoney.fixed(Math.max(0, n)) : r2(Math.max(0, n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     window.nxPagoBigIn();
   };
   window.nxPagoOpts = function () {
@@ -5443,8 +5466,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                 <div class="card">
                   <h4><span class="bdg purple"><i class="ti ti-receipt-2"></i></span> Compra y fiscalidad</h4>
                   <div class="cols" style="display:flex;flex-direction:column;gap:12px">
-                    <div class="fld"><label>Costo</label><div class="inw"><span class="cur">$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
-                    ${puedeVerMin() ? `<div class="fld"><label><i class="ti ti-lock"></i> Precio mínimo</label><div class="inw"><span class="cur">$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
+                    <div class="fld"><label>Costo</label><div class="inw"><span class="cur">RD$</span><input id="ppCos" class="no-upper" data-nx-money inputmode="numeric" value="${e.costo ? Math.round(e.costo) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+                    ${puedeVerMin() ? `<div class="fld"><label><i class="ti ti-lock"></i> Precio mínimo</label><div class="inw"><span class="cur">RD$</span><input id="ppMinP" class="no-upper" data-nx-money inputmode="numeric" value="${Number(e.precio_minimo || 0) ? Math.round(e.precio_minimo).toLocaleString('en-US') : ''}" placeholder="0 = sin mínimo" style="padding-left:24px"></div></div>` : ''}
                     <div class="fld"><label>Proveedor preferido</label><div class="inw"><i class="ti ti-building-warehouse"></i><select id="ppProv" onchange="window.nxPfProvEntrega()"><option value="">— Sin proveedor asignado —</option>${_proveedores.map(pr => `<option value="${pr.id}"${String(e.proveedor_id || '') === String(pr.id) ? ' selected' : ''}>${esc(pr.nombre)}</option>`).join('')}</select><i class="ti ti-chevron-down chev"></i></div></div>
                     <div class="fld"><label>¿Lleva ITBIS (18%)?</label><div class="inw"><i class="ti ti-percentage"></i><select id="ppItb"><option value="1"${e.itbis !== false ? ' selected' : ''}>Sí</option><option value="0"${e.itbis === false ? ' selected' : ''}>No (exento)</option></select></div></div>
                     ${!p ? `<div class="fld"><label>Stock inicial</label><div class="inw"><i class="ti ti-stack-2"></i><input id="ppStk" inputmode="numeric" value="0" placeholder="0"></div><div style="font-size:10px;color:var(--pf-txt3)">Cantidad inicial disponible en inventario.</div></div>` : ''}
@@ -5496,7 +5519,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
               <div class="card">
                 <h4><span class="bdg orange"><i class="ti ti-scale"></i></span> Reglas de venta <span style="font-weight:600;color:var(--pf-txt3);font-size:10.5px">— por el nivel seleccionado arriba</span></h4>
                 <div class="g2">
-                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
+                  <div class="fld"><label style="color:var(--pf-green)">Precio Especial</label><div class="inw"><span class="cur">RD$</span><input id="ppNivEsp" class="no-upper" data-nx-money inputmode="numeric" value="${nivRowInicial.precio_especial != null ? Math.round(nivRowInicial.precio_especial) : ''}" placeholder="0" style="padding-left:24px" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-stack-2"></i></div><div><label>Cantidad Mínima</label><input id="ppNivCantMin" inputmode="numeric" value="${nivRowInicial.cantidad_minima != null ? Number(nivRowInicial.cantidad_minima) : 1}" placeholder="1" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-percentage"></i></div><div><label>Crédito (%)</label><input id="ppNivCredPct" inputmode="decimal" value="${nivRowInicial.credito_pct != null ? Number(nivRowInicial.credito_pct) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
                   <div class="reglas"><div class="ic"><i class="ti ti-currency-dollar"></i></div><div><label>Crédito ($)</label><input id="ppNivCredMonto" data-nx-money inputmode="numeric" value="${nivRowInicial.credito_monto != null ? Math.round(nivRowInicial.credito_monto) : ''}" placeholder="0" onchange="window.nxPfNivelReglaInput('${prodId}')"></div></div>
@@ -6668,7 +6691,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxEntFiltro = function (k) { _entFiltro = k; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxEntNueva = function () { abrirEntidad(null, { es_cliente: true }); };
   window.nxEntEdit = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
-  function abrirEntidad(c, defs) {
+  // alGuardar(cliente): para quien abre la ficha desde otro módulo (elegir cliente, CRM, financiamiento).
+  let _entAlGuardar = null;
+  function abrirEntidad(c, defs, alGuardar) {
+    _entAlGuardar = typeof alGuardar === 'function' ? alGuardar : null;
     nxPfEnsureCSS();
     cerrarModal('nxEntForm');
     const e = c || defs || {};
@@ -6718,7 +6744,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <h4><span class="bdg purple"><i class="ti ti-user-dollar"></i></span> Cliente</h4>
             <div class="g2">
               <div class="fld"><label>Nivel de precio</label><div class="inw"><select id="entNivel" onchange="window.nxEntResumen()">${_niveles.length ? _niveles.map(n => `<option value="nivel:${n.id}"${(e.nivel_id ? String(e.nivel_id) === String(n.id) : String(n.id) === String(nivelPorDefectoId())) ? ' selected' : ''}>${esc(n.nombre)}${n.es_default ? ' (por defecto)' : ''}</option>`).join('') : `<option value="final"${e.nivel_precio !== 'mayor' ? ' selected' : ''}>Normal — consumidor final (precio 1)</option><option value="mayor"${e.nivel_precio === 'mayor' ? ' selected' : ''}>Por mayor (precio 2)</option>`}</select><i class="ti ti-chevron-down chev"></i></div></div>
-              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Límite de crédito</label><div class="inw"><span class="cur">RD$</span><input id="entLim" data-nx-money inputmode="numeric" oninput="window.nxEntResumen()" value="${e.limite_credito ? Math.round(e.limite_credito) : ''}" placeholder="0 = sin límite" style="padding-left:24px"></div></div>
             </div>
           </div>
           <div class="card" id="entWaBox">
@@ -6799,7 +6825,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (dup) {
         const porQue = (cedN && (dup.cedula || '').replace(/\D/g, '') === cedN) ? 'la misma cédula/RNC' : 'el mismo teléfono';
         const ok = confirm('Ya existe "' + (dup.nombre || '') + '" (' + (dup.codigo || 's/código') + ') con ' + porQue + '.\n\nAceptar = crear otra de todos modos.\nCancelar = abrir la que ya existe.');
-        if (!ok) { cerrarModal('nxEntForm'); abrirEntidad(dup, null); return; }
+        if (!ok) { const cb = _entAlGuardar; cerrarModal('nxEntForm'); abrirEntidad(dup, null, cb); return; }
       }
     }
     if (!body.codigo) body.codigo = entCodigoAuto(body);
@@ -6815,6 +6841,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
       mergeProvEntidades(); mergeVendedorEntidades();
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
+      const cb = _entAlGuardar; _entAlGuardar = null;
+      if (cb && entId) { const ent = _clientes.find(x => String(x.id) === String(entId)); if (ent) { try { cb(ent); } catch (e) {} } }
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
   // Crea/actualiza la ficha de RRHH enlazada a una entidad-empleado (salario/puesto se completan en RRHH)
@@ -8386,7 +8414,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxPosDenom = function () {
     let sum = 0;
-    document.querySelectorAll('#cierreDenoms [data-den]').forEach(inp => { const d = Number(inp.getAttribute('data-den')); const q = Number(inp.value) || 0; const st = d * q; sum += st; const lbl = document.querySelector('#cierreDenoms [data-densub="' + d + '"]'); if (lbl) lbl.textContent = 'RD$ ' + st.toLocaleString('en-US'); });
+    document.querySelectorAll('#cierreDenoms [data-den]').forEach(inp => { const d = Number(inp.getAttribute('data-den')); const q = Number(inp.value) || 0; const st = d * q; sum += st; const lbl = document.querySelector('#cierreDenoms [data-densub="' + d + '"]'); if (lbl) lbl.textContent = fmt(st); });
     const c = document.getElementById('cierreContado'); if (c) c.value = sum.toLocaleString('en-US');
     window.nxPosCierreCalc();
   };
@@ -8902,7 +8930,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const wrap = document.getElementById('asLineas'); if (!wrap) return;
     _asEdit.lineas.forEach((l, i) => {
       const cs = wrap.querySelector(`[data-asc="${i}"]`), db = wrap.querySelector(`[data-asd="${i}"]`), cr = wrap.querySelector(`[data-ash="${i}"]`);
-      if (cs) l.cuenta_id = cs.value; if (db) l.debito = db.value; if (cr) l.credito = cr.value;
+      // Debe/haber llegan con coma de miles: se guardan como número limpio (strip) para que Number() los lea bien.
+      const lim = x => window.nxMoney ? window.nxMoney.strip(x) : x;
+      if (cs) l.cuenta_id = cs.value; if (db) l.debito = lim(db.value); if (cr) l.credito = lim(cr.value);
     });
     const f = document.getElementById('asF'), c = document.getElementById('asC');
     if (f) _asEdit.fecha = f.value; if (c) _asEdit.concepto = c.value;
@@ -8911,8 +8941,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const wrap = document.getElementById('asLineas'); if (!wrap || !_asEdit) return;
     wrap.innerHTML = _asEdit.lineas.map((l, i) => `<div class="nxAsRow">
         <select data-asc="${i}" onchange="window.nxAsTotals()">${asientoCtaOpts(l.cuenta_id)}</select>
-        <input data-asd="${i}" inputmode="numeric" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
-        <input data-ash="${i}" inputmode="numeric" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
+        <input data-asd="${i}" data-nx-money="sinsigno" inputmode="decimal" placeholder="Debe" value="${l.debito || ''}" oninput="window.nxAsTotals()">
+        <input data-ash="${i}" data-nx-money="sinsigno" inputmode="decimal" placeholder="Haber" value="${l.credito || ''}" oninput="window.nxAsTotals()">
         <button aria-label="Quitar esta línea" class="nxPosX" type="button" onclick="window.nxAsDelLinea(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button>
       </div>`).join('');
     pintarAsTot();
@@ -9168,7 +9198,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const filas = _cotEdit.lineas.map((l, i) => `<tr>
         <td class="nxFacDesc">${esc(l.nombre)}</td>
         <td class="nxFacCant"><input inputmode="numeric" value="${l.cantidad}" onchange="window.nxCotLinea(${i},'cantidad',this.value)"></td>
-        <td class="nxFacPre"><input inputmode="numeric" value="${Math.round(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
+        <td class="nxFacPre"><input data-nx-money="sinsigno" inputmode="decimal" value="${r2(l.precio)}" onchange="window.nxCotLinea(${i},'precio',this.value)"></td>
         <td class="nxFacImp">${fmt(lineImporte(l))}</td>
         <td class="nxFacDel"><button aria-label="Quitar este producto" onclick="window.nxCotDel(${i})"><i class="ti ti-minus" style="color:#dc2626"></i></button></td>
       </tr>`).join('');
@@ -9740,7 +9770,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div class="card">
             <h4><span class="bdg green"><i class="ti ti-calendar-stats"></i></span> Seguimiento</h4>
             <div class="g2" style="margin-bottom:10px">
-              <div class="fld"><label>Monto estimado</label><div class="inw"><span class="cur">$</span><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0" style="padding-left:24px"></div></div>
+              <div class="fld"><label>Monto estimado</label><div class="inw"><span class="cur">RD$</span><input id="crMonto" data-nx-money inputmode="numeric" value="${e.monto_estimado ? Math.round(e.monto_estimado) : ''}" placeholder="0" style="padding-left:24px"></div></div>
               <div class="fld"><label>Próxima acción</label><div class="inw"><input type="date" id="crProx" value="${esc((e.proxima_accion || '').slice(0, 10))}"></div></div>
             </div>
             <div class="fld" style="margin-bottom:10px"><label>Fuente</label><div class="inw"><input id="crFuente" class="no-upper" value="${esc(e.fuente || '')}" placeholder="Referido, redes..."></div></div>
@@ -10474,8 +10504,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
           <div class="g2">
-            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
-            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">RD$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">RD$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
           </div>
           <div class="fld" style="margin-top:10px"><label>Técnico</label><div class="inw"><i class="ti ti-user-cog"></i><input id="repTec" class="no-upper" placeholder="Quién repara"></div></div>
           <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
@@ -10551,8 +10581,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Presupuesto</h4>
           <div class="g2">
-            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">$</span><input id="repPre2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div></div>
-            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">$</span><input id="repAbo2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
+            <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">RD$</span><input id="repPre2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.presupuesto || 0) ? Math.round(r.presupuesto).toLocaleString('en-US') : ''}"></div></div>
+            <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">RD$</span><input id="repAbo2" data-nx-money inputmode="numeric" style="padding-left:24px" oninput="window.nxRepEstim('repPre2','repAbo2','nxRepEstimBox2')" value="${Number(r.abono || 0) ? Math.round(r.abono).toLocaleString('en-US') : ''}"></div></div>
           </div>
           ${r.estado !== 'entregado' ? `<div class="nxRepEstim" id="nxRepEstimBox2" style="margin-top:10px"></div>${_posCfg.garantia_rep_dias > 0 ? `<div style="margin-top:8px;font-size:11.5px;color:var(--pf-txt3)">Al entregar se le darán ${_posCfg.garantia_rep_dias} día(s) de garantía.</div>` : ''}` : `<div style="margin-top:10px;font-size:12px;color:var(--pf-green);font-weight:800"><i class="ti ti-circle-check"></i> Entregado ${String(r.entregado_at || '').slice(0, 10)} · Cobrado ${fmt(r.cobrado_monto || 0)}</div>${gi ? `<div style="margin-top:6px;font-size:12px;font-weight:700;color:${gi.vigente ? 'var(--pf-green)' : 'var(--pf-red)'}"><i class="ti ti-shield-check"></i> Garantía ${gi.vigente ? 'vigente hasta' : 'vencida el'} ${gi.fecha}</div>` : ''}`}
         </div>
@@ -10585,7 +10615,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:400px">
       <div class="mt"><span><i class="ti ti-check"></i> Entregar y cobrar</span><button class="nxBack" type="button" onclick="document.getElementById('nxRepEnt').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div style="font-size:11.5px;color:#475569;margin-bottom:8px">${esc(r.equipo || '')} · ${esc(r.cliente_nombre || '')} · resta <b style="color:#dc2626">${fmt(resto)}</b></div>
-      <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${Math.round(resto).toLocaleString('en-US')}"></div>
+      <div class="fr-row"><div class="fr"><label>Monto a cobrar</label><input id="reMonto" data-nx-money inputmode="numeric" value="${r2(resto).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"></div>
       <div class="fr"><label>Método</label><select id="reMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div></div>
       <div class="fr" style="margin-top:2px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" id="reItbis" style="width:17px;height:17px"> ¿Esta reparación lleva ITBIS (18%)?</label></div>
       <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" onclick="window.nxRepEntregarGo('${id}')"><i class="ti ti-check"></i> Entregar equipo</button></div>
@@ -12449,8 +12479,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <h4><span class="bdg green"><i class="ti ti-cash"></i></span> Precio y plazo</h4>
           <div class="g2" style="margin-bottom:10px">
-            <div class="fld"><label>Precio TOTAL *</label><div class="inw"><span class="cur">$</span><input id="apTot" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
-            <div class="fld"><label>Abono inicial</label><div class="inw"><span class="cur">$</span><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Precio TOTAL *</label><div class="inw"><span class="cur">RD$</span><input id="apTot" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Abono inicial</label><div class="inw"><span class="cur">RD$</span><input id="apAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px"></div></div>
           </div>
           <div class="fld"><label>Días de plazo</label><div class="inw"><input id="apDias" inputmode="numeric" value="30"></div></div>
         </div>
@@ -12500,7 +12530,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="card">
           <div style="font-size:11.5px;color:var(--pf-txt2);margin-bottom:10px">${esc(a.descripcion || '')} · ${esc(a.cliente_nombre || '')} · falta <b style="color:var(--pf-red)">${fmt(falta)}</b></div>
           <div class="g2">
-            <div class="fld"><label>Monto</label><div class="inw"><span class="cur">$</span><input id="apMonto" data-nx-money inputmode="numeric" value="${Math.round(falta).toLocaleString('en-US')}" style="padding-left:24px"></div></div>
+            <div class="fld"><label>Monto</label><div class="inw"><span class="cur">RD$</span><input id="apMonto" data-nx-money inputmode="numeric" value="${r2(falta).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" style="padding-left:24px"></div></div>
             <div class="fld"><label>Método</label><div class="inw"><select id="apMet"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select><i class="ti ti-chevron-down chev"></i></div></div>
           </div>
         </div>
@@ -13307,10 +13337,10 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       <div class="nxF2Card"><div class="h">Monto a financiar</div>
         <div id="cotProdSlot" class="nxF2Slot">${finSolSearchBoxHTML('fincot')}</div>
         ${c.concepto ? `<div class="ffLinea ok" id="cotConcepto"><i class="ti ti-check"></i> ${esc(c.concepto)}</div>` : ''}
-        <div class="nxF2F"><label for="cotMonto">O escribe el precio a crédito (RD$)</label><input id="cotMonto" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${c.monto != null ? esc(c.monto) : ''}" oninput="window.nxFinCotMonto(this.value)"></div>
+        <div class="nxF2F"><label for="cotMonto">O escribe el precio a crédito (RD$)</label><input id="cotMonto" class="mono ffMontoIn" data-nx-money inputmode="decimal" placeholder="0.00" value="${c.monto != null ? esc(c.monto) : ''}" oninput="window.nxFinCotMonto(this.value)"></div>
       </div>
       <div class="nxF2Card"><div class="h">Inicial (lo que paga hoy) <span class="ffModo"><button type="button" class="${c.iniModo === 'pct' ? '' : 'on'}" onclick="window.nxFinCotIniModo('monto')">RD$</button><button type="button" class="${c.iniModo === 'pct' ? 'on' : ''}" onclick="window.nxFinCotIniModo('pct')">%</button></span></div>
-        <input id="cotIni" class="mono ffMontoIn" inputmode="decimal" placeholder="${c.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinCotIni(this.value)" aria-label="Inicial">
+        <input id="cotIni" class="mono ffMontoIn"${c.iniModo === 'pct' ? '' : ' data-nx-money'} inputmode="decimal" placeholder="${c.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinCotIni(this.value)" aria-label="Inicial">
         <div class="ffMin" id="cotIniEq">${c.iniModo === 'pct' && c.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(c.inicial) + '</b>' : 'Puede ser 0 si no da inicial.'}</div>
       </div>
       <div class="nxF2Card"><div class="h">¿Cada cuánto paga?</div><div class="nxF2Meth ffMeth" id="cotFrec">${fr('mensual', 'Mensual')}${fr('quincenal', 'Quincenal')}${fr('semanal', 'Semanal')}</div></div>
@@ -13966,7 +13996,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const admin = puedeVerMin();
     const itemHTML = (it, i) => {
       const pr = _prods.find(x => String(x.id) === String(it.producto_id)) || {};
-      const precio = admin ? `<input class="nxF2Mono ffPrecio" inputmode="decimal" value="${esc(it.precio)}" aria-label="Precio a crédito" onchange="window.nxFinSolItem(${i},'precio',this.value)">` : `<span class="nxF2Mono" style="font-size:13px">${fmt2(it.precio)}</span>`;
+      const precio = admin ? `<input class="nxF2Mono ffPrecio" data-nx-money="sinsigno" inputmode="decimal" value="${esc(it.precio)}" aria-label="Precio a crédito" onchange="window.nxFinSolItem(${i},'precio',this.value)">` : `<span class="nxF2Mono" style="font-size:13px">${fmt2(it.precio)}</span>`;
       const cant = pr.serial ? `<button type="button" class="nxF2Btn ffImei${it.serial ? '' : ' falta'}" onclick="window.nxFinSolImei(${i})"><i class="ti ti-device-mobile"></i> ${it.serial ? esc(it.serial) : 'Elegir IMEI'}</button>`
         : `<div class="ffCant"><button type="button" aria-label="Menos" onclick="window.nxFinWizCant(${i},-1)">−</button><b>${Number(it.cantidad)}</b><button type="button" aria-label="Más" onclick="window.nxFinWizCant(${i},1)">+</button></div>`;
       return `<div class="ffEq"><div class="ffEqTop"><div style="min-width:0;flex:1"><b>${esc(it.nombre)}</b>${pr.codigo ? `<small class="nxF2Mono">${esc(pr.codigo)}</small>` : ''}</div><button type="button" class="x" aria-label="Quitar ${esc(it.nombre)}" onclick="window.nxFinSolItemDel(${i})"><i class="ti ti-trash"></i></button></div><div class="ffEqBot">${cant}<div style="text-align:right">${precio}${Number(it.cantidad) > 1 ? `<small>${Number(it.cantidad)} × ${fmt2(it.precio)}</small>` : ''}</div></div></div>`;
@@ -13975,7 +14005,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const toggle = finManualOn() ? `<label class="ffSwitch"><input type="checkbox" id="ffManual" ${manual ? 'checked' : ''} onchange="window.nxFinWizManual(this.checked)"><span class="ffSwTrack"></span><span>Ingresar monto manualmente</span></label>` : '';
     if (manual) return `<div class="nxF2Card"><div class="h">¿Qué se financia?${toggle}</div>
         <div class="nxF2F"><label for="ffMConcepto">Descripción de lo financiado *</label><input id="ffMConcepto" autocomplete="off" placeholder="Ej.: Motor eléctrico usado, reparación de aire…" value="${esc(m ? m.nombre : '')}" oninput="window.nxFinWizManualLeer()"></div>
-        <div class="nxF2F"><label for="ffMMonto">Monto a financiar (RD$) *</label><input id="ffMMonto" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(m && m.precio ? m.precio : '')}" oninput="window.nxFinWizManualLeer()"></div>
+        <div class="nxF2F"><label for="ffMMonto">Monto a financiar (RD$) *</label><input id="ffMMonto" data-nx-money class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(m && m.precio ? m.precio : '')}" oninput="window.nxFinWizManualLeer()"></div>
         <div class="ffAviso info"><i class="ti ti-info-circle"></i><div>Este monto <b>no toca el inventario</b> ni pide IMEI. Úsalo solo cuando no hay un artículo del catálogo.</div></div>
       </div>`;
     return `<div class="nxF2Card"><div class="h">Artículo a financiar${toggle}</div>
@@ -13996,7 +14026,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       </div>
       <div class="nxF2Card"><div class="h">Pago inicial</div>
         <div class="ffMin" id="ffMin">${pl ? (minIni > 0 ? `Mínimo para este plan: <b class="nxF2Mono">${fmt2(minIni)}</b> (${Number(pl.inicial_min_pct)} %)` : 'Este plan no pide inicial mínima.') : 'Primero elige un plan.'}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="ffIni" class="mono ffMontoIn" inputmode="decimal" placeholder="0.00" value="${esc(iniVal)}" oninput="window.nxFinWizIni(this.value)" style="flex:1 1 160px;min-width:0" aria-label="Inicial">${pl && minIni > 0 ? `<button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinWizIniMin()">Usar el mínimo</button>` : ''}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="ffIni" class="mono ffMontoIn" data-nx-money inputmode="decimal" placeholder="0.00" value="${esc(iniVal)}" oninput="window.nxFinWizIni(this.value)" style="flex:1 1 160px;min-width:0" aria-label="Inicial">${pl && minIni > 0 ? `<button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px" onclick="window.nxFinWizIniMin()">Usar el mínimo</button>` : ''}</div>
         <div class="nxF2F"><label>Forma de pago del inicial</label><div class="nxF2Meth ffMeth" id="ffIniMet">${met('efectivo', 'Efectivo', 'ti-cash')}${met('transferencia', 'Transferencia', 'ti-building-bank')}${met('tarjeta', 'Tarjeta', 'ti-credit-card')}</div></div>
       </div>
       <div class="nxF2Card"><div class="h">Primera cuota</div>
@@ -14029,7 +14059,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
         <div class="nxF2F"><label for="ffN">Otro número de cuotas</label><input id="ffN" class="mono" inputmode="numeric" value="${esc(s.num_cuotas || '')}" oninput="window.nxFinWizNIn(this.value)"></div>
       </div>
       <div class="nxF2Card"><div class="h">Pago inicial <span class="ffModo"><button type="button" class="${s.iniModo === 'pct' ? '' : 'on'}" onclick="window.nxFinWizIniModo('monto')">RD$</button><button type="button" class="${s.iniModo === 'pct' ? 'on' : ''}" onclick="window.nxFinWizIniModo('pct')">%</button></span></div>
-        <input id="ffIni" class="mono ffMontoIn" inputmode="decimal" placeholder="${s.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinWizIniLibre(this.value)" aria-label="Inicial">
+        <input id="ffIni" class="mono ffMontoIn" data-nx-money inputmode="decimal" placeholder="${s.iniModo === 'pct' ? 'Ej.: 20' : '0.00'}" value="${esc(iniTxt)}" oninput="window.nxFinWizIniLibre(this.value)" aria-label="Inicial">
         <div class="ffMin" id="ffIniEq">${s.iniModo === 'pct' && s.inicial != null ? 'Equivale a <b class="nxF2Mono">' + fmt2(s.inicial) + '</b>' : 'Puede ser 0 si no hay pago inicial.'}</div>
         <div class="nxF2F"><label>Forma de pago del inicial</label><div class="nxF2Meth ffMeth" id="ffIniMet">${['efectivo', 'transferencia', 'tarjeta'].map((m, i) => `<button type="button" class="${s.inicial_metodo === m ? 'on' : ''}" data-m="${m}" onclick="window.nxFinWizIniMet('${m}')"><i class="ti ${['ti-cash', 'ti-building-bank', 'ti-credit-card'][i]}"></i> ${['Efectivo', 'Transferencia', 'Tarjeta'][i]}</button>`).join('')}</div></div>
       </div>
@@ -14079,8 +14109,8 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     return `<div class="nxF2Card"><div class="h">Información laboral y financiera</div>
         <div class="nxF2G2"><div class="nxF2F"><label for="pfTrab">Empresa o lugar de trabajo *</label><input id="pfTrab" autocomplete="off" value="${esc(pf.lugar_trabajo || '')}"></div><div class="nxF2F"><label for="pfOcu">Cargo u ocupación</label><input id="pfOcu" autocomplete="off" placeholder="Ej.: Encargado de ventas" value="${esc(pf.ocupacion || '')}"></div></div>
         <div class="nxF2G2"><div class="nxF2F"><label for="pfTipoIng">Fuente de ingresos</label><select id="pfTipoIng"><option value="">Seleccione…</option>${FIN_TIPO_ING.map(o => `<option${pf.tipo_ingreso === o ? ' selected' : ''}>${o}</option>`).join('')}</select></div><div class="nxF2F"><label for="pfAntig">Antigüedad laboral (años)</label><input id="pfAntig" class="mono" inputmode="decimal" value="${pf.antiguedad_anios != null ? pf.antiguedad_anios : ''}"></div></div>
-        <div class="nxF2G2"><div class="nxF2F"><label for="pfIng">Ingreso mensual *</label><input id="pfIng" class="mono" inputmode="decimal" placeholder="RD$" value="${num(pf.ingreso_mensual)}"></div><div class="nxF2F"><label for="pfGastos">Gastos mensuales</label><input id="pfGastos" class="mono" inputmode="decimal" placeholder="Ej.: alquiler, alimentación, préstamos" value="${num(pf.gastos_mensuales)}"></div></div>
-        <div class="nxF2F"><label for="pfOtros">Otros ingresos mensuales (opcional)</label><input id="pfOtros" class="mono" inputmode="decimal" placeholder="Ej.: remesas, negocio propio" value="${num(pf.otros_ingresos)}"></div>
+        <div class="nxF2G2"><div class="nxF2F"><label for="pfIng">Ingreso mensual *</label><input id="pfIng" class="mono" data-nx-money inputmode="decimal" placeholder="RD$" value="${num(pf.ingreso_mensual)}"></div><div class="nxF2F"><label for="pfGastos">Gastos mensuales</label><input id="pfGastos" class="mono" data-nx-money inputmode="decimal" placeholder="Ej.: alquiler, alimentación, préstamos" value="${num(pf.gastos_mensuales)}"></div></div>
+        <div class="nxF2F"><label for="pfOtros">Otros ingresos mensuales (opcional)</label><input id="pfOtros" class="mono" data-nx-money inputmode="decimal" placeholder="Ej.: remesas, negocio propio" value="${num(pf.otros_ingresos)}"></div>
       </div>
       <div class="nxF2Card"><div class="h">Referencias <span style="font-size:12px;color:var(--f2-steel);font-weight:600">Se recomiendan dos</span></div>
         ${guardadas.length ? `<div class="ffGuard">${guardadas.map(r => `<div><i class="ti ti-user-check"></i> ${esc(r.nombre)}${r.parentesco ? ' · ' + esc(r.parentesco) : ''}${r.telefono ? ' · ' + esc(r.telefono) : ''}</div>`).join('')}<small>Ya guardadas de antes.</small></div>` : ''}
@@ -14238,6 +14268,19 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   window.nxFinWizCliBuscar = function (q) { if (_finSolForm) _finSolForm.cliQ = q; const box = document.getElementById('ffCliRes'); if (box) box.innerHTML = finWizCliResHTML(q); };
   window.nxFinWizNuevo = function (on) {
     finSolLeerForm(); const q = String(_finSolForm.cliQ || '').trim(); const dig = q.replace(/\D/g, '');
+    // Dueño 05-oct-2026 («que sean la misma plataforma»): el cliente nuevo se crea con la ficha de Entidades.
+    // La solicitud sigue exigiendo cédula (11 dígitos) y teléfono (10): si faltan, la ficha se vuelve a abrir.
+    if (on) {
+      const defs = { es_cliente: true, nombre: dig.length >= 7 ? '' : q, cedula: dig.length === 11 ? q : '', telefono: dig.length === 10 ? q : '' };
+      const alGuardar = function (c) {
+        if (!c) return;
+        const ced = String(c.cedula || '').replace(/\D/g, ''), tel = String(c.telefono || '').replace(/\D/g, '');
+        if (ced.length !== 11 || tel.length < 10) { toast('warn', 'Faltan datos para financiar', 'Completa la cédula (11 dígitos) y el teléfono (10 dígitos) en su ficha'); abrirEntidad(c, null, alGuardar); return; }
+        _finSolForm.nuevo = null; window.nxFinSolCliente(c.id);
+      };
+      abrirEntidad(null, defs, alGuardar);
+      return;
+    }
     _finSolForm.nuevo = on ? { nombre: dig.length >= 7 ? '' : q, cedula: dig.length === 11 ? q : '', telefono: dig.length === 10 ? q : '', direccion: '' } : null;
     finV2Repintar(); setTimeout(() => { const i = document.getElementById(on ? 'ffNNom' : 'ffCliQ'); if (i) i.focus(); }, 60);
   };
@@ -15120,7 +15163,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       cuerpo: `${bloqueo}${finCajaAvisoHTML()}
       <div class="ffCobCli"><b>${esc(f.cliente_nombre || '')}</b><span>${esc(f.descripcion || '')}</span><span class="${at > 0 ? 'rojo' : ''}">${at > 0 ? 'Venció el ' + finFechaCorta(c.fecha_venc) + ' · ' + at + (at === 1 ? ' día' : ' días') + ' de atraso' : 'Vence el ' + finFechaCorta(c.fecha_venc)}</span></div>
       <div class="nxF2Note" style="margin-bottom:10px"><div class="nxF2Line"><span>Cuota</span><span class="nxF2Mono">${fmt2(r2(p.capital + p.interes))}</span></div>${p.mora > 0 ? `<div class="nxF2Line"><span>Recargo por atraso</span><span class="nxF2Mono" style="color:#b91c1c">${fmt2(p.mora)}</span></div>` : ''}<div class="nxF2Line tot"><span>Total a cobrar</span><span class="nxF2Mono" style="font-size:15px">${fmt2(p.total)}</span></div>${p.pagado.total > 0 ? `<div style="font-size:11px;color:#b45309;margin-top:4px">Ya abonó ${fmt2(p.pagado.total)} a esta cuota.</div>` : ''}</div>
-      <div class="nxF2F"><label for="fpMonto">Monto que entrega el cliente</label><div style="display:flex;gap:6px"><input id="fpMonto" class="mono ffMontoIn" inputmode="decimal" value="${montoTxt}" style="flex:1;min-width:0"><button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px;flex:0 0 auto" onclick="document.getElementById('fpMonto').value='${montoTxt}'">Cuota completa</button></div><div style="font-size:11.5px;color:var(--f2-steel)">Si paga menos, se registra como abono y la cuota sigue abierta.</div></div>
+      <div class="nxF2F"><label for="fpMonto">Monto que entrega el cliente</label><div style="display:flex;gap:6px"><input id="fpMonto" class="mono ffMontoIn" data-nx-money inputmode="decimal" value="${montoTxt}" style="flex:1;min-width:0"><button type="button" class="nxF2Btn" style="min-height:44px;font-size:12px;flex:0 0 auto" onclick="document.getElementById('fpMonto').value='${montoTxt}'">Cuota completa</button></div><div style="font-size:11.5px;color:var(--f2-steel)">Si paga menos, se registra como abono y la cuota sigue abierta.</div></div>
       <div class="nxF2F" style="margin-top:10px"><label>¿Cómo pagó?</label><div class="nxF2Meth ffMeth" id="fpMet"><button type="button" data-m="efectivo" onclick="window.nxFinV2Met('efectivo')"><i class="ti ti-cash"></i> Efectivo</button><button type="button" data-m="transferencia" onclick="window.nxFinV2Met('transferencia')"><i class="ti ti-building-bank"></i> Transferencia</button><button type="button" data-m="tarjeta" onclick="window.nxFinV2Met('tarjeta')"><i class="ti ti-credit-card"></i> Tarjeta</button></div><div id="fpCajaInfo" style="display:none;font-size:12px;font-weight:700;margin-top:4px;color:#b91c1c"><i class="ti ti-alert-triangle"></i> La caja está cerrada: no se puede cobrar en efectivo.</div></div>
       <div class="nxF2G2" id="fpBanco" style="margin-top:10px;display:none"><div class="nxF2F" id="fpCtaBox"><label for="fpCta">Cuenta de banco</label><select id="fpCta">${_finCtas.map(x => `<option value="${x.id}">${esc(x.alias || x.banco_nombre)}</option>`).join('') || '<option value="">Sin cuentas activas</option>'}</select></div><div class="nxF2F"><label for="fpRef">Número de referencia</label><input id="fpRef" placeholder="Opcional"></div></div>`,
       pie: `<div id="fpHint" class="ffFtNota">${finPuedeCobrar() ? 'Elige cómo pagó para registrar.' : ''}</div><button type="button" class="nxF2Btn" onclick="document.getElementById('nxFinM').remove()">Cancelar</button><button type="button" class="nxF2Btn p" id="fpGo" disabled onclick="window.nxFinV2CobrarGo()"><i class="ti ti-check"></i> Registrar cobro</button>` });

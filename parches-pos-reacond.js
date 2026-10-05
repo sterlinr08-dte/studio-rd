@@ -28,6 +28,8 @@
   function api() { try { return (typeof API !== 'undefined') ? API : window.API; } catch (e) { return window.API; } }
   function ctx() { return window.nxPosCtx || {}; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[c])); }
+  // Montos escritos con coma de miles (campos data-nx-money, 59.87): siempre se leen con nxMoney.parse.
+  function nxNum(v) { try { if (window.nxMoney) return Number(window.nxMoney.parse(v)) || 0; } catch (e) {} return parseFloat(String(v || '').replace(/,/g, '')) || 0; }
   function money(n) { return 'RD$ ' + Number(n || 0).toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function toast(msg, tipo) { try { if (window.toast) window.toast(tipo === 'error' ? 'err' : 'ok', tipo === 'error' ? 'Reacondicionado' : 'Listo', String(msg || '')); } catch (e) {} }
   function toastError(msg) { toast(msg, 'error'); }
@@ -1394,14 +1396,14 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     abrirModal('nxRcPzIpM', cabecera('ti-search', 'Agregar piezas del inventario', 'nxRcPzIpM') + cuerpo(`
       ${fallas.length ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px"><div style="font-size:11px;font-weight:700;color:#9a3412;margin-bottom:4px">FALLAS DEL EQUIPO (referencia)</div>${fallas.map(f => badge('<i class="ti ti-alert-triangle"></i> ' + esc(f.falla_corto || f.falla_nombre || '') + (f.adicional ? ' (adic.)' : ''), '#fee2e2', '#991b1b', 'margin:2px')).join('')}</div>` : ''}
       <div class="nxRcFld"><label>Pieza *</label>${smartSelect('ss-pzip', items, '🔍 Nombre, código o marca…', '')}</div>
-      <div class="nxRcG2"><div class="nxRcFld"><label>Cantidad</label><input id="pzip_cant" type="number" class="nxRcInput" value="1" min="1"></div><div class="nxRcFld"><label>Costo unitario (RD$)</label><input id="pzip_costo" type="number" class="nxRcInput" step="any" placeholder="Se toma del inventario"></div></div>
+      <div class="nxRcG2"><div class="nxRcFld"><label>Cantidad</label><input id="pzip_cant" type="number" class="nxRcInput" value="1" min="1"></div><div class="nxRcFld"><label>Costo unitario (RD$)</label><input id="pzip_costo" data-nx-money class="nxRcInput" step="any" placeholder="Se toma del inventario"></div></div>
       <p class="nxRcMuted" style="font-size:11.5px;margin:0">La pieza suma al costo del equipo y se descuenta del inventario al despacharlo (o antes, con "Descontar").</p>`) +
       pie(`<button type="button" class="btn nxRcBtn light" onclick="window.nxRc.cerrar('nxRcPzIpM')">Cancelar</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.confirmarPiezaInfoPlus('${equipoId}')"><i class="ti ti-plus"></i> Agregar al costo</button>`), 520, '10850');
-    const el = byId('ss-pzip'); if (el) el.addEventListener('nxrc-change', ev => { const c = byId('pzip_costo'); if (c && ev.detail && ev.detail.extra && (!c.value || Number(c.value) === 0)) c.value = ev.detail.extra.costo; });
+    const el = byId('ss-pzip'); if (el) el.addEventListener('nxrc-change', ev => { const c = byId('pzip_costo'); if (c && ev.detail && ev.detail.extra && (!c.value || nxNum(c.value) === 0)) c.value = window.nxMoney ? window.nxMoney.fixed(ev.detail.extra.costo) : ev.detail.extra.costo; });
   }
   async function confirmarPiezaInfoPlus(equipoId) {
     const it = ssItem('ss-pzip'); if (!it) return toast('Selecciona una pieza.', 'error');
-    const cantidad = parseInt(val('pzip_cant')) || 1; const costo = val('pzip_costo') !== '' ? (parseFloat(val('pzip_costo')) || 0) : ((it.extra && it.extra.costo) || 0);
+    const cantidad = parseInt(val('pzip_cant')) || 1; const costo = val('pzip_costo') !== '' ? (nxNum(val('pzip_costo'))) : ((it.extra && it.extra.costo) || 0);
     try { await api().post('pos_reacond_piezas', { equipo_id: equipoId, producto_id: it.id, pieza_codigo: (it.extra && it.extra.codigo) || null, pieza_nombre: it.label, cantidad, costo_unitario: costo, estado: 'aprobada', agregada_por_tecnico: false }); await _recalcularCostoRepuestos(equipoId); toast('✅ Pieza agregada al costo: ' + it.label); cerrarModal('nxRcPzIpM'); await loadAll(); _refrescarVistaEquipo(equipoId); } catch (e) { logError('agregar pieza inventario', e); toastError(friendly(e)); }
   }
   async function editarPiezaInfoPlus(piezaId) {
@@ -1710,12 +1712,12 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
       <div class="nxRcG2"><div class="nxRcFld"><label>Modelo *</label><input id="eq_modelo" class="nxRcInput" placeholder="Ej. iPhone 12 128GB"></div><div class="nxRcFld"><label>Marca</label><input id="eq_marca" class="nxRcInput" placeholder="Apple, Samsung…"></div></div>
       <div id="eq_imei_disp" style="display:none" class="nxRcFld"><label>IMEI del inventario (disponibles de este artículo)</label><select id="eq_imei_sel" class="nxRcInput" onchange="var i=document.getElementById('eq_imei');if(this.value){i.value=this.value;var c=this.options[this.selectedIndex].dataset.color;var ce=document.getElementById('eq_color');if(ce&&c&&!ce.value)ce.value=c;}"><option value="">— Elegir un IMEI disponible o escribirlo abajo —</option></select></div>
       <div class="nxRcG2"><div class="nxRcFld"><label>IMEI / Serial *</label><input id="eq_imei" class="nxRcInput" placeholder="Escanea o escribe" inputmode="numeric" style="font-weight:700"></div><div class="nxRcFld"><label>Color</label><input id="eq_color" class="nxRcInput" placeholder="Ej. Negro, Azul, Dorado…"></div></div>
-      <div class="nxRcG2"><div class="nxRcFld"><label>Capacidad</label><input id="eq_capacidad" class="nxRcInput" placeholder="128GB"></div><div class="nxRcFld"><label>Costo unidad (RD$) *</label><input id="eq_costo" type="number" class="nxRcInput" step="any" min="0" placeholder="0.00"></div></div>
+      <div class="nxRcG2"><div class="nxRcFld"><label>Capacidad</label><input id="eq_capacidad" class="nxRcInput" placeholder="128GB"></div><div class="nxRcFld"><label>Costo unidad (RD$) *</label><input id="eq_costo" data-nx-money class="nxRcInput" step="any" min="0" placeholder="0.00"></div></div>
       <div class="nxRcFld"><label>Notas</label><input id="eq_notas" class="nxRcInput" placeholder="Opcional"></div>
       <label class="nxRcChk"><input type="checkbox" id="eq_garantia"> <i class="ti ti-shield"></i> Es por garantía (permite repetir el mismo IMEI)</label>
       <div class="nxRcMuted" style="font-size:11.5px">Modo rápido: al guardar se conservan artículo, costo y color; solo se limpia el IMEI para escanear el siguiente.</div>`) +
       pie(`<button type="button" class="btn nxRcBtn light" onclick="window.nxRc.cerrar('nxRcEqM')">Cerrar</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.agregarEquipoAlLote()"><i class="ti ti-plus"></i> Agregar equipo</button>`), 560);
-    const el = byId('ss-eq-articulo'); if (el) el.addEventListener('nxrc-change', ev => { const x = ev.detail && ev.detail.extra; if (!x) return; const set = (id, v) => { const e = byId(id); if (e && !e.value) e.value = v || ''; }; set('eq_modelo', x.nombre); set('eq_marca', x.marca); set('eq_capacidad', x.referencia); const c = byId('eq_costo'); if (c && (!c.value || Number(c.value) === 0) && x.costo > 0) c.value = x.costo; const im = byId('eq_imei'); if (im) im.focus(); _cargarImeisDisponibles(ev.detail.id, !!x.serial); });
+    const el = byId('ss-eq-articulo'); if (el) el.addEventListener('nxrc-change', ev => { const x = ev.detail && ev.detail.extra; if (!x) return; const set = (id, v) => { const e = byId(id); if (e && !e.value) e.value = v || ''; }; set('eq_modelo', x.nombre); set('eq_marca', x.marca); set('eq_capacidad', x.referencia); const c = byId('eq_costo'); if (c && (!c.value || nxNum(c.value) === 0) && x.costo > 0) c.value = window.nxMoney ? window.nxMoney.fixed(x.costo) : x.costo; const im = byId('eq_imei'); if (im) im.focus(); _cargarImeisDisponibles(ev.detail.id, !!x.serial); });
     setTimeout(() => { const m = byId('eq_modelo'); if (m) m.focus(); }, 60);
   }
   async function _cargarImeisDisponibles(productoId, esSerial) {
@@ -1732,7 +1734,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     const art = ssItem('ss-eq-articulo'); const modelo = val('eq_modelo') || (art && art.extra && art.extra.nombre) || ''; const imei = val('eq_imei'); const notas = val('eq_notas'); const esGarantia = !!(byId('eq_garantia') && byId('eq_garantia').checked);
     if (!modelo) return toast('Escribe el modelo o elige un artículo.', 'error'); if (!imei) return toast('Este equipo requiere IMEI / Serial.', 'error');
     if (!esGarantia) { const rep = cache.refurb.find(r => (r.imei || '').toLowerCase().trim() === imei.toLowerCase()); if (rep) { const lr = lote(rep.lote_id); return toast(`Ese IMEI (${imei}) ya está registrado en ${lr ? 'lote ' + (lr.codigo_lote || '') : 'otro lote'}. Si el equipo volvió por garantía, marca la casilla "Es por garantía".`, 'error'); } }
-    const costo = parseFloat(val('eq_costo')) || 0; if (costo <= 0) return toast('Costo debe ser mayor a 0.', 'error');
+    const costo = nxNum(val('eq_costo')); if (costo <= 0) return toast('Costo debe ser mayor a 0.', 'error');
     const color = val('eq_color');
     try {
       let serialId = null;
@@ -1749,7 +1751,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     abrirModal('nxRcEqEM', cabecera('ti-edit', 'Corregir equipo', 'nxRcEqEM') + cuerpo(`
       <div class="nxRcG2"><div class="nxRcFld"><label>Modelo *</label><input id="editEq_modelo" class="nxRcInput" value="${esc(e.modelo || '')}"></div><div class="nxRcFld"><label>Marca</label><input id="editEq_marca" class="nxRcInput" value="${esc(e.marca || '')}"></div></div>
       <div class="nxRcG2"><div class="nxRcFld"><label>IMEI / Serial *</label><input id="editEq_imei" class="nxRcInput" value="${esc(e.imei || '')}"></div><div class="nxRcFld"><label>Color</label><input id="editEq_color" class="nxRcInput" value="${esc(e.color || '')}"></div></div>
-      <div class="nxRcG2"><div class="nxRcFld"><label>Capacidad</label><input id="editEq_capacidad" class="nxRcInput" value="${esc(e.capacidad || '')}"></div><div class="nxRcFld"><label>Costo unidad (RD$) *</label><input id="editEq_costo" type="number" class="nxRcInput" step="any" value="${Number(e.costo_compra) || 0}"></div></div>
+      <div class="nxRcG2"><div class="nxRcFld"><label>Capacidad</label><input id="editEq_capacidad" class="nxRcInput" value="${esc(e.capacidad || '')}"></div><div class="nxRcFld"><label>Costo unidad (RD$) *</label><input id="editEq_costo" data-nx-money class="nxRcInput" step="any" value="${Number(e.costo_compra) || 0}"></div></div>
       <div class="nxRcFld"><label>Notas</label><input id="editEq_notas" class="nxRcInput" value="${esc(notas)}" placeholder="Opcional"></div>
       <label class="nxRcChk"><input type="checkbox" id="editEq_garantia" ${e.es_garantia ? 'checked' : ''}> <i class="ti ti-shield"></i> Es por garantía (permite repetir el mismo IMEI)</label>`) +
       pie(`<button type="button" class="btn nxRcBtn light" style="color:#b91c1c;margin-right:auto" onclick="window.nxRc.eliminarEquipo('${id}')"><i class="ti ti-trash"></i> Quitar del lote</button><button type="button" class="btn nxRcBtn light" onclick="window.nxRc.cerrar('nxRcEqEM')">Cancelar</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.guardarEdicionEquipo('${id}')"><i class="ti ti-device-floppy"></i> Guardar cambios</button>`), 480);
@@ -1757,7 +1759,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
   async function _guardarEdicionEquipoLote(id) {
     const e = equipo(id); if (!e) return; const imei = val('editEq_imei'); if (!imei) return toast('El IMEI / Serial es obligatorio.', 'error'); const esGar = !!(byId('editEq_garantia') && byId('editEq_garantia').checked);
     if (!esGar) { const rep = cache.refurb.find(r => r.id !== id && (r.imei || '').toLowerCase().trim() === imei.toLowerCase()); if (rep) return toast(`Ese IMEI (${imei}) ya está registrado en otro equipo. Si volvió por garantía, marca la casilla.`, 'error'); }
-    const c = parseFloat(val('editEq_costo')) || 0; if (c <= 0) return toast('El costo debe ser mayor a 0.', 'error'); const notas = val('editEq_notas');
+    const c = nxNum(val('editEq_costo')); if (c <= 0) return toast('El costo debe ser mayor a 0.', 'error'); const notas = val('editEq_notas');
     try { await api().patch('pos_reacond_equipos', 'id=eq.' + id, { modelo: val('editEq_modelo') || e.modelo, marca: val('editEq_marca') || null, imei, color: val('editEq_color') || null, capacidad: val('editEq_capacidad') || null, costo_compra: c, es_garantia: esGar, notas_diagnostico: esGar ? ('GARANTÍA' + (notas ? ' · ' + notas : '')) : (notas || null) }); toast('Equipo corregido.'); cerrarModal('nxRcEqEM'); await loadAll(); refrescarLote(); } catch (err) { logError('editar equipo lote', err); toastError(friendly(err)); }
   }
   async function eliminarEquipoLote(equipoId) {
@@ -1770,13 +1772,13 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     abrirModal('nxRcRexM', cabecera('ti-archive', 'Registrar equipo existente', 'nxRcRexM') + cuerpo(`
       <p class="nxRcMuted" style="font-size:12px;margin:0">Para equipos que ya tenías <b>antes del sistema</b>. Cae directo en su estado real y asignado a su técnico. Quedan en el lote <b>HISTÓRICO</b>.</p>
       <div class="nxRcFld"><label>Artículo del inventario (opcional)</label>${smartSelect('ss-rex-modelo', items, '🔍 Código, nombre o marca…', '')}</div>
-      <div class="nxRcG2"><div class="nxRcFld"><label>Modelo *</label><input id="rex_modelo" class="nxRcInput"></div><div class="nxRcFld"><label>Costo de compra (opcional)</label><input id="rex_costo" type="number" class="nxRcInput" step="any" min="0" placeholder="0.00"></div></div>
+      <div class="nxRcG2"><div class="nxRcFld"><label>Modelo *</label><input id="rex_modelo" class="nxRcInput"></div><div class="nxRcFld"><label>Costo de compra (opcional)</label><input id="rex_costo" data-nx-money class="nxRcInput" step="any" min="0" placeholder="0.00"></div></div>
       <div class="nxRcG2"><div class="nxRcFld"><label>IMEI *</label><input id="rex_imei" class="nxRcInput" placeholder="IMEI"></div><div class="nxRcFld"><label>Serial</label><input id="rex_serial" class="nxRcInput" placeholder="Serial / opcional"></div></div>
       <div class="nxRcFld"><label>Técnico que lo tiene *</label>${smartSelect('ss-rex-tecnico', tecItems(), '🔍 Buscar técnico…', '')}</div>
       <div class="nxRcFld"><label>Estado actual *</label><select id="rex_estado" class="nxRcInput"><option value="en_proceso">🔧 En Proceso</option><option value="espera_pieza">⏳ Espera pieza</option><option value="listo_revision">👍 Finalizado (por recibir)</option><option value="listo_venta">🛒 Listo para venta</option><option value="pendiente">🟡 Pendiente (sin empezar)</option></select></div>
       <div class="nxRcFld"><label>Nota (opcional)</label><textarea id="rex_nota" class="nxRcInput" rows="2" placeholder="Detalle de en qué punto va, falla, etc."></textarea></div>`) +
       pie(`<button type="button" class="btn nxRcBtn light" onclick="window.nxRc.cerrar('nxRcRexM')">Cancelar</button><button type="button" class="btn nxRcBtn gold" onclick="window.nxRc.guardarEquipoExistente(this)"><i class="ti ti-device-floppy"></i> Registrar equipo</button>`), 560);
-    const el = byId('ss-rex-modelo'); if (el) el.addEventListener('nxrc-change', ev => { const x = ev.detail && ev.detail.extra; if (!x) return; const m = byId('rex_modelo'); if (m && !m.value) m.value = x.nombre || ''; const c = byId('rex_costo'); if (c && !c.value && x.costo > 0) c.value = x.costo; });
+    const el = byId('ss-rex-modelo'); if (el) el.addEventListener('nxrc-change', ev => { const x = ev.detail && ev.detail.extra; if (!x) return; const m = byId('rex_modelo'); if (m && !m.value) m.value = x.nombre || ''; const c = byId('rex_costo'); if (c && !c.value && x.costo > 0) c.value = window.nxMoney ? window.nxMoney.fixed(x.costo) : x.costo; });
   }
   async function guardarEquipoExistente(btn) {
     const modelo = val('rex_modelo'), imei = val('rex_imei'), tecnicoId = ssGet('ss-rex-tecnico'), estado = val('rex_estado') || 'en_proceso'; const art = ssItem('ss-rex-modelo');
@@ -1785,7 +1787,7 @@ html.nx-studio #v-pos .btn.nxRcBtn[style*="background"],html.nx-studio .nxRcOver
     try {
       let hist = cache.lotes.find(l => l.codigo_lote === 'HISTORICO'); let loteId = hist && hist.id;
       if (!loteId) { const r = await api().post('pos_reacond_lotes', { codigo_lote: 'HISTORICO', notas: 'Equipos que ya existían antes del sistema', estado: 'En proceso', enviado_reacond: true, fecha_envio_reacond: nowISO(), creado_por: miId() || null }); loteId = r && r[0] && r[0].id; }
-      const r2 = await api().post('pos_reacond_equipos', { lote_id: loteId, producto_id: art ? art.id : null, articulo_codigo: (art && art.extra && art.extra.codigo) || null, modelo, marca: (art && art.extra && art.extra.marca) || null, capacidad: (art && art.extra && art.extra.referencia) || null, imei, serial: val('rex_serial') || null, costo_compra: parseFloat(val('rex_costo')) || 0, estado_evaluacion: estado, tecnico_asignado_id: tecnicoId || null, fecha_asignacion: tecnicoId ? nowISO() : null, notas_diagnostico: val('rex_nota') || null });
+      const r2 = await api().post('pos_reacond_equipos', { lote_id: loteId, producto_id: art ? art.id : null, articulo_codigo: (art && art.extra && art.extra.codigo) || null, modelo, marca: (art && art.extra && art.extra.marca) || null, capacidad: (art && art.extra && art.extra.referencia) || null, imei, serial: val('rex_serial') || null, costo_compra: nxNum(val('rex_costo')), estado_evaluacion: estado, tecnico_asignado_id: tecnicoId || null, fecha_asignacion: tecnicoId ? nowISO() : null, notas_diagnostico: val('rex_nota') || null });
       const nuevo = r2 && r2[0]; if (nuevo) await historial(nuevo.id, null, estado, 'Registrado como equipo existente (histórico)', val('rex_nota') || null);
       toast('Equipo registrado en el lote HISTÓRICO.'); cerrarModal('nxRcRexM'); await loadAll(); rerenderPOS();
     } catch (e) { logError('registrar existente', e); toastError(friendly(e)); } finally { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }

@@ -13,7 +13,7 @@
   function ctx() { return window.nxPosCtx || {}; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function n(v) { const x = Number(v); return isFinite(x) ? x : 0; }
-  function fmt(v) { const r = Math.round(n(v)); return 'RD$ ' + (r === 0 ? 0 : r).toLocaleString('en-US'); }
+  function fmt(v) { const r = Math.round(n(v) * 100) / 100; return 'RD$ ' + (r === 0 ? 0 : r).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function fmtN(v) { return (Math.round(n(v) * 100) / 100).toLocaleString('en-US'); }
   function pct(a, b) { return b ? Math.round(a / b * 1000) / 10 : 0; }
   function toast(t, m, s) { try { window.toast && window.toast(t, m, s); } catch (e) {} }

@@ -59,13 +59,54 @@
     return out;
   }
 
+  // Dueño 05-oct-2026 («RD$ 1,250.00»): al terminar de escribir, el monto queda con coma de miles y dos decimales.
+  function fixed(v) {
+    if (v === '' || v == null) return '';
+    const n = parse(v);
+    return (n < 0 ? '-' : '') + Math.abs(Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  // Signo de dinero dentro del campo. Si ya trae su adorno (span.cur o el «RD$» del cobro), se usa ese; si no, se
+  // envuelve el campo y el «RD$» se dibuja a la izquierda. El VALOR sigue siendo solo el número: nada cambia al leerlo.
+  // data-nx-money="sinsigno": sin signo (celdas muy angostas). data-nx-money="entero": sin decimales.
+  function signo(input) {
+    const modo = input.getAttribute('data-nx-money') || '';
+    if (modo.indexOf('sinsigno') >= 0) return;
+    const prev = input.previousElementSibling;
+    if (prev && prev.classList && prev.classList.contains('cur')) {
+      if (prev.textContent.trim() === '$') prev.textContent = 'RD$';
+      requestAnimationFrame(function () { const w = prev.offsetWidth; if (w) { const pl = parseFloat(getComputedStyle(input).paddingLeft) || 0; if (pl < w + 16) input.style.paddingLeft = (w + 16) + 'px'; } });
+      return;
+    }
+    const par = input.parentElement;
+    if (!par || (par.classList && (par.classList.contains('nxPgBig') || par.classList.contains('nxMon')))) return;
+    const cs = getComputedStyle(input);
+    const w = document.createElement('span'); w.className = 'nxMon';
+    w.style.display = (cs.display === 'inline' || cs.display === 'inline-block') && input.style.width !== '100%' ? 'inline-block' : 'block';
+    if (input.style.width && input.style.width !== '100%') { w.style.width = input.style.width; input.style.width = '100%'; }
+    if (input.style.flex) { w.style.flex = input.style.flex; input.style.flex = ''; }
+    par.insertBefore(w, input); w.appendChild(input);
+    const pl = parseFloat(cs.paddingLeft) || 0; if (pl < 36) input.style.paddingLeft = '36px';
+  }
+  function css() {
+    if (document.getElementById('nxMonCSS')) return;
+    const st = document.createElement('style'); st.id = 'nxMonCSS';
+    st.textContent = '.nxMon{position:relative;min-width:0}.nxMon>input{width:100%;box-sizing:border-box}.nxMon::before{content:"RD$";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:#8a877f;pointer-events:none;z-index:1}';
+    (document.head || document.documentElement).appendChild(st);
+  }
   function attach(input) {
     if (!input || input.__nxMoney) return;
     input.__nxMoney = true;
+    const entero = (input.getAttribute('data-nx-money') || '').indexOf('entero') >= 0;
     try { if (input.type !== 'text') input.type = 'text'; } catch (e) {}
     input.setAttribute('inputmode', 'decimal');
     input.setAttribute('autocomplete', 'off');
-    if (input.value) input.value = formatLive(input.value);
+    if (input.value) input.value = entero ? formatLive(input.value) : fixed(input.value);
+    try { css(); signo(input); } catch (e) {}
+    input.addEventListener('blur', function () {
+      if (entero || !input.value) return;
+      const after = fixed(input.value);
+      if (after !== input.value) { input.value = after; try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} }
+    });
     input.addEventListener('input', function () {
       const before = input.value;
       const after = formatLive(before);
@@ -97,7 +138,7 @@
     return (n.neg ? '-' : '') + (n.ent || '0') + (n.dec ? '.' + n.dec : '');
   }
 
-  window.nxMoney = { parse: parse, format: formatLive, attach: attach, scan: scan, strip: strip };
+  window.nxMoney = { parse: parse, format: formatLive, fixed: fixed, attach: attach, scan: scan, strip: strip };
 
   let pending = null;
   function schedule() {

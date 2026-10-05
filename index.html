@@ -5112,7 +5112,7 @@ const pend=c=>Math.max(0,(c.deuda_total||0)-(c.pagado||0));
 // Deuda anterior al sistema: vive APARTE, no se mezcla con las facturas. pend()=solo facturas; pendTot()=facturas+deuda anterior (para totales y estado).
 const deudaAnt=c=>Math.max(0,Number(c&&c.deuda_anterior)||0);
 const pendTot=c=>pend(c)+deudaAnt(c);
-const fmt=n=>'RD$ '+Math.round(n||0).toLocaleString('es-DO');
+const fmt=n=>'RD$ '+(Math.round((n||0)*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtN=n=>Math.round(n||0).toLocaleString('es-DO');
 const reciboNoStr=a=>{if(!a||a.recibo_num==null)return'';const y=a.recibo_anio||((a.fecha||'').slice(0,4))||new Date().getFullYear();return y+'-'+String(a.recibo_num).padStart(4,'0');};
 const inits=n=>(n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
@@ -6889,7 +6889,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.86';
+const APP_VERSION='59.87';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).
@@ -9327,7 +9327,7 @@ async function rChartCobros(){
   const cobCiclo=meses[meses.length-1].total;
   // El "RD$" va chiquito: en la columna del mini un monto de 6 cifras con el
   // prefijo a tamaño completo se parte en dos líneas y descuadra la fila.
-  const fmtMini=n=>'<span style="font-size:9px;opacity:.75">RD$ </span>'+Math.round(n||0).toLocaleString('es-DO');
+  const fmtMini=n=>'<span style="font-size:9px;opacity:.75">RD$ </span>'+(Math.round((n||0)*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const _kcm=document.getElementById('kpiCobMes');
   if(_kcm)_kcm.innerHTML=fmtMini(cobCiclo);
   const _kcs=document.getElementById('kpiCobSub');

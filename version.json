@@ -1,7 +1,19 @@
 {
-  "version": "59.73",
+  "version": "59.85",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.85",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Ajustes → Equipo ordenado en pestañas: Usuarios, Roles y permisos, Vendedores.",
+        "Usuarios y acceso: buscador, filtros por estado y rol, almacén, estado y última entrada de cada usuario.",
+        "Una sola ficha para crear y editar: nombre, WhatsApp, usuario sugerido, clave temporal oculta (mínimo 8), rol en tarjetas, almacén y canales del CRM en el mismo guardado.",
+        "Al crear un usuario o restablecer su clave, el mensaje de acceso (enlace, usuario y clave temporal) se envía por WhatsApp o se copia; el empleado cambia la clave al entrar.",
+        "Corregido: al editar a otro administrador, la ficha lo bajaba a Gerente sin avisar.",
+        "Un rol sin permisos configurados ya no ve todos los módulos: solo Inicio, hasta que se configure."
+      ]
+    },
     {
       "version": "59.73",
       "fecha": "2026-10-02",

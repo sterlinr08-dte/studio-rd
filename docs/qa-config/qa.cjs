@@ -19,7 +19,8 @@ function base() {
     pos_almacenes: [{ id: 'a1', nombre: 'Edificio Studio', es_principal: true, activo: true }, { id: 'a2', nombre: 'Villa Vázquez', activo: true }],
     usuarios_sistema: [{ id: 'us-admin', nom: 'ESTERLIN', login: 'admin', rol: 'admin', activo: true, almacen_id: 'a1', organizacion_id: 'org1' },
       { id: 'us-caj', nom: 'MARIA CAJERA', login: 'maria', rol: 'cajero', activo: true, almacen_id: 'a2' },
-      { id: 'us-ven', nom: 'PEDRO VENDEDOR', login: 'pedro', rol: 'vendedor', activo: false, almacen_id: null }]
+      { id: 'us-ven', nom: 'PEDRO VENDEDOR', login: 'pedro', rol: 'vendedor', activo: false, almacen_id: null },
+      { id: 'us-adm2', nom: 'ANA SOCIA', login: 'ana', rol: 'admin', activo: true, almacen_id: 'a1', telefono: '8095550101' }]
   };
 }
 
@@ -33,7 +34,11 @@ async function abrir(b, w, h, db) {
     const send = (o, st = 200) => route.fulfill({ status: st, contentType: 'application/json', body: JSON.stringify(o) });
     if (u.pathname.startsWith('/auth/v1/user')) return send({ id: 'auth-admin', email: 'admin@nexus-pro.local' });
     if (u.pathname.startsWith('/auth/v1/')) return send({ access_token: 'tok', refresh_token: 'r', expires_in: 3600, user: { id: 'auth-admin' } });
-    if (u.pathname.startsWith('/functions/v1/')) { const body = r.postDataJSON(); llamadas.push(['fn', u.pathname.split('/').pop(), body]); return send({ ok: true, login: body.login, rol: body.rol }); }
+    if (u.pathname.startsWith('/functions/v1/')) {
+      const body = r.postDataJSON(); llamadas.push(['fn', u.pathname.split('/').pop(), body]);
+      if (body.accion === 'accesos') return send({ ok: true, accesos: [{ usuario_id: 'us-admin', ultimo_acceso: new Date().toISOString(), debe_cambiar_clave: false }, { usuario_id: 'us-caj', ultimo_acceso: null, debe_cambiar_clave: true }] });
+      return send({ ok: true, id: body.accion === 'crear' ? 'us-new' : undefined, login: body.login, rol: body.rol });
+    }
     if (u.pathname.startsWith('/rest/v1/')) {
       const t = u.pathname.slice(9);
       if (m === 'GET' || m === 'HEAD') {
@@ -102,26 +107,64 @@ async function abrir(b, w, h, db) {
     const leg = llamadas.find(l => l[0] === 'PATCH' && l[1] === 'pos_config' && 'fin_acreedor_nombre' in l[3]);
     ok(!!leg && leg[3].fin_acreedor_nombre === 'STUDIO SRL' && leg[3].fin_abogado_nombre === 'Lic. Ana Pérez', 'guardar datos legales conserva lo que había');
     await p.click('.ajVolver'); await p.waitForTimeout(250);
-    // Equipo: lista de usuarios y acciones
-    await p.click('.ajSecBtn:has-text("Equipo")'); await p.waitForTimeout(700);
-    const usr = await p.$$eval('.ajUsr .tx b', x => x.map(e => e.textContent));
-    ok(usr.length === 3, `lista de usuarios (${usr.length})`);
+    // Equipo › Usuarios y acceso (59.85): pestañas, lista, buscador, filtros, ficha única, WhatsApp
+    p.removeAllListeners('dialog'); p.on('dialog', d => d.accept());
+    await p.click('.ajSecBtn:has-text("Equipo")'); await p.waitForTimeout(900);
+    const tabs = await p.$$eval('.ajTabs button', x => x.map(e => e.textContent.trim()));
+    ok(tabs.join('|') === 'Usuarios|Roles y permisos|Vendedores', 'pestañas de Equipo: ' + tabs.join(', '));
+    const usr = await p.$$eval('.ajUsrF .tx b', x => x.map(e => e.textContent));
+    ok(usr.length === 4, `lista de usuarios (${usr.length})`);
     ok(/tú/.test(usr.join('|')), 'marca al usuario actual');
-    ok(await p.$$eval('.ajUsr.inac', x => x.length) === 1, 'usuario desactivado se ve atenuado');
+    ok(await p.$$eval('.ajUsrF.inac', x => x.length) === 1, 'usuario desactivado se ve atenuado');
+    ok(/Hoy,/.test(await p.textContent('.ajUsrF:has-text("ESTERLIN") .c2 small')), 'muestra la última entrada (hoy)');
+    ok(/Debe cambiar la clave/.test(await p.textContent('.ajUsrF:has-text("MARIA") .c3')), 'muestra «Debe cambiar la clave»');
+    await p.fill('#ajUsrQ', 'mar'); await p.waitForTimeout(150);
+    ok(await p.$$eval('.ajUsrF', x => x.length) === 1 && await p.evaluate(() => document.activeElement && document.activeElement.id === 'ajUsrQ'), 'buscador filtra sin perder el foco');
+    await p.fill('#ajUsrQ', ''); await p.waitForTimeout(150);
+    await p.click('.ajUsrFil button:has-text("Desactivados")'); await p.waitForTimeout(300);
+    ok(await p.$$eval('.ajUsrF', x => x.length) === 1, 'filtro Desactivados');
+    await p.click('.ajUsrFil button:has-text("Todos")'); await p.waitForTimeout(300);
     await p.screenshot({ path: `${OUT}/cfg-equipo-${w}.png`, fullPage: true });
-    await p.click('.ajUsr:has-text("MARIA") button'); await p.waitForTimeout(200);
-    await p.selectOption('#ajURol', 'vendedor'); await p.click('#ajUBtn'); await p.waitForTimeout(400);
+    // Editar rol
+    await p.click('.ajUsrF:has-text("MARIA")'); await p.waitForTimeout(250);
+    await p.check('input[name="ajURol"][value="vendedor"]'); await p.click('#ajUBtn'); await p.waitForTimeout(500);
     const act = llamadas.find(l => l[0] === 'fn' && l[2].accion === 'actualizar');
     ok(!!act && act[2].usuario_id === 'us-caj' && act[2].rol === 'vendedor', 'editar rol → servidor (actualizar)');
-    await p.click('.ajUsr:has-text("MARIA") button'); await p.waitForTimeout(200);
-    await p.fill('#ajUClave', '123'); await p.click('button:has-text("Cambiar clave")'); await p.waitForTimeout(200);
-    ok(!llamadas.some(l => l[0] === 'fn' && l[2].accion === 'clave'), 'clave corta: no se envía');
-    await p.fill('#ajUClave', 'nueva123'); await p.click('button:has-text("Cambiar clave")'); await p.waitForTimeout(400);
+    // Error corregido: editar a OTRO administrador no lo baja a gerente
+    await p.click('.ajUsrF:has-text("ANA SOCIA")'); await p.waitForTimeout(250);
+    ok(await p.$eval('input[name="ajURol"][value="admin"]', x => x.checked), 'otro administrador: su ficha muestra Administrador');
+    ok(await p.$eval('#ajUTel', x => x.value) === '8095550101', 'ficha muestra el WhatsApp guardado');
+    await p.fill('#ajUNom', 'Ana Socia Pérez'); await p.click('#ajUBtn'); await p.waitForTimeout(500);
+    const act2 = llamadas.filter(l => l[0] === 'fn' && l[2].accion === 'actualizar' && l[2].usuario_id === 'us-adm2').pop();
+    ok(!!act2 && act2[2].rol === 'admin', 'guardar a otro administrador conserva su rol (antes lo bajaba a Gerente)');
+    // Restablecer clave → mensaje de WhatsApp
+    await p.click('.ajUsrF:has-text("MARIA")'); await p.waitForTimeout(250);
+    await p.click('#ajUReset'); await p.waitForTimeout(500);
     const cl = llamadas.find(l => l[0] === 'fn' && l[2].accion === 'clave');
-    ok(!!cl && cl[2].pedir_cambio === true, 'cambiar clave (pide cambiarla al entrar)');
-    await p.click('.ajUsr:has-text("ESTERLIN") button'); await p.waitForTimeout(200);
-    ok(await p.$eval('#ajURol', x => x.disabled) && !(await p.$('button:has-text("Desactivar usuario")')), 'a uno mismo: no cambia su rol ni se desactiva');
-    await p.click('#nxAjUsrM .nxBack');
+    ok(!!cl && cl[2].pedir_cambio === true && String(cl[2].clave).length >= 8, 'restablecer clave: temporal de 8+ y pide cambiarla');
+    ok(/restablecimos tu acceso/.test(await p.textContent('#ajUMsj')) && (await p.textContent('#ajUMsj')).indexOf(cl[2].clave) >= 0, 'mensaje de acceso con la clave temporal');
+    await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
+    // Uno mismo
+    await p.click('.ajUsrF:has-text("ESTERLIN")'); await p.waitForTimeout(250);
+    ok(await p.$eval('input[name="ajURol"][value="admin"]', x => x.disabled) && !(await p.$('#nxAjUsrM button:has-text("Desactivar")')), 'a uno mismo: no cambia su rol ni se desactiva');
+    await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
+    // Nuevo usuario
+    await p.click('.ajUsrBarra button:has-text("Nuevo usuario")'); await p.waitForTimeout(300);
+    await p.fill('#ajUNom', 'Laura Jiménez'); await p.waitForTimeout(80);
+    ok(await p.$eval('#ajULogin', x => x.value) === 'laura.j', 'usuario sugerido con el nombre (laura.j)');
+    ok(await p.$eval('#ajUClave', x => x.type === 'password' && x.value.length >= 8), 'clave temporal oculta, 8+ caracteres');
+    await p.fill('#ajUTel', '809 555'); await p.click('#ajUBtn'); await p.waitForTimeout(300);
+    ok(!llamadas.some(l => l[0] === 'fn' && l[2].accion === 'crear') && /10 dígitos/.test(await p.textContent('#ajUErr')), 'WhatsApp incompleto: no crea y lo dice en la ficha');
+    await p.fill('#ajUTel', '809 555 0199'); await p.click('#ajUBtn'); await p.waitForTimeout(600);
+    const cr = llamadas.find(l => l[0] === 'fn' && l[2].accion === 'crear');
+    ok(!!cr && cr[2].login === 'laura.j' && cr[2].telefono === '8095550199' && cr[2].pedir_cambio === true, 'crear → servidor con WhatsApp y cambio de clave al entrar');
+    const wa = await p.$eval('#nxAjUsrM a.ajWa', x => x.href);
+    ok(wa.indexOf('https://wa.me/18095550199?text=') === 0 && decodeURIComponent(wa).indexOf('Usuario: laura.j') > 0 && decodeURIComponent(wa).indexOf('studiord.net/app') > 0, 'Enviar por WhatsApp: al número del empleado con enlace, usuario y clave');
+    await p.screenshot({ path: `${OUT}/cfg-acceso-wa-${w}.png` });
+    await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
+    await p.click('.ajTabs button:has-text("Roles y permisos")'); await p.waitForTimeout(300);
+    ok(!!(await p.$('button:has-text("Nuevo rol")')), 'pestaña Roles y permisos');
+    await p.click('.ajTabs button:has-text("Usuarios")'); await p.waitForTimeout(200);
     // Aviso de permisos: botón Guardar permisos
     await p.click('.ajVolver'); await p.waitForTimeout(250);
     await p.click('.ajAv:has-text("permisos por rol")'); await p.waitForTimeout(600);

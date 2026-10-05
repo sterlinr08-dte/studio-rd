@@ -130,7 +130,8 @@
     if (mod === 'ia') return false;
     if (r === 'admin') return true;
     const a = (_acceso || []).find(x => x.rol === r);
-    if (!a) { const d = ROLES_DEF.find(x => x[0] === r); return d ? d[2].indexOf(mod) >= 0 : true; }
+    // Rol sin permisos guardados ni de fábrica (p. ej. uno migrado): solo Inicio, hasta que el administrador lo configure.
+    if (!a) { const d = ROLES_DEF.find(x => x[0] === r); return d ? d[2].indexOf(mod) >= 0 : mod === 'inicio'; }
     let mods = a.modulos; if (typeof mods === 'string') { try { mods = JSON.parse(mods); } catch (e) { mods = []; } }
     return (mods || []).indexOf(mod) >= 0;
   }
@@ -2124,7 +2125,7 @@
     else if (k === 'numeracion') body = ajustesSecuencias();
     else if (k === 'financiamiento') body = ajMoraHTML() + (cv2fin() ? finLegalCardHTML().replace('class="nxF2Card"', 'class="nxF2Card card"') + ajContratoHTML() : '');
     else if (k === 'taller') body = ajGarantiaHTML();
-    else if (k === 'equipo') body = ajUsuariosHTML() + ajustesRoles() + ajustesVendedores();
+    else if (k === 'equipo') body = ajEquipoHTML();
     else if (k === 'datos') body = ajCard('ti-alert-triangle', 'red', 'Zona de peligro', 'Borra las VENTAS, cobros, reparaciones, apartados, cuotas, compras, cotizaciones, caja y asientos de PRUEBA de esta empresa. Los productos, clientes, proveedores y ajustes NO se tocan. Úsalo antes de empezar a trabajar de verdad.')
       + `<button class="ab g4 sm" type="button" onclick="window.nxLimpiarPruebas()"><i class="ti ti-trash"></i> Borrar datos de prueba</button></div>`;
     return cab + body;
@@ -2258,38 +2259,116 @@
     await getAPI().post('rpc/crm_guardar_funciones', { p_usuario: usuarioId, p_canales: f.canales, p_transferir: f.transferir });
     try { window.logAudit && window.logAudit('CRM_FUNCIONES', 'usuario ' + usuarioId + ' · canales ' + (f.canales.join(', ') || 'ninguno') + ' · transferir ' + (f.transferir ? 'sí' : 'no'), 'Usuarios'); } catch (e) {}
   }
-  // ── Equipo: usuarios (lista, editar, desactivar, clave). Lo sensible lo hace el servidor (crear-usuario-staff). ──
+  // ══ Equipo › Usuarios y acceso (dueño 05-oct-2026: «organízame eso»; maqueta aprobada: «Visto bueno») ══
+  // Lista con buscador y filtros; UNA ficha para crear y editar (antes eran dos ventanas distintas); el acceso se
+  // envía por WhatsApp con la clave temporal (el empleado la cambia al entrar). Lo sensible lo hace el servidor
+  // (crear-usuario-staff): crear, editar, clave, desactivar. Esta pantalla solo la ve el administrador.
+  const STUDIO_APP_URL = 'https://studiord.net/app';
+  let _ajEqTab = 'usuarios', _ajUsrQ = '', _ajUsrF = 'todos', _ajAccesos = null;
   async function ajCargarUsuarios() {
     if (_ajUsuariosCargando) return; _ajUsuariosCargando = true; _ajUsuariosErr = '';
+    const base = 'id,nom,login,rol,activo,almacen_id,ultimo_login';
     try {
-      try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login,crm_funciones&order=activo.desc,nom.asc') || []; }
-      catch (e1) { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=id,nom,login,rol,activo,almacen_id,ultimo_login&order=activo.desc,nom.asc') || []; }   // base sin la migración 44
+      // telefono (migración 46) y crm_funciones (44): si la base aún no las tiene, se piden sin ellas.
+      try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + ',crm_funciones,telefono&order=activo.desc,nom.asc') || []; }
+      catch (e1) {
+        try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + ',crm_funciones&order=activo.desc,nom.asc') || []; }
+        catch (e2) { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + '&order=activo.desc,nom.asc') || []; }
+      }
     }
     catch (e) { _ajUsuarios = null; _ajUsuariosErr = String(e && e.message || e); }
     _ajUsuariosCargando = false;
     if (_ajSec === 'equipo') ajRepintar();
+    // Última entrada (servidor v4). Si la función aún no la da, la columna simplemente no se muestra.
+    if (_ajUsuarios && esAdmin()) {
+      ajStaff({ accion: 'accesos' }).then(j => {
+        if (!j || !Array.isArray(j.accesos)) return;
+        _ajAccesos = {}; j.accesos.forEach(a => { _ajAccesos[a.usuario_id] = a; });
+        if (_ajSec === 'equipo') ajRepintar();
+      }).catch(() => {});
+    }
   }
   function ajYoId() { try { const s = curSesPOS(); return s && s.id; } catch (e) { return null; } }
+  function ajAlmNom(id) { const a = (_almacenes || []).find(x => String(x.id) === String(id)); return a ? a.nombre : ''; }
+  function ajUltimo(u) {
+    const a = _ajAccesos && _ajAccesos[u.id]; const t = a && a.ultimo_acceso;
+    if (!_ajAccesos) return '';
+    if (!t) return 'Nunca ha entrado';
+    const d = new Date(t); if (isNaN(d)) return '';
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const dias = Math.floor((hoy - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    const hora = d.toLocaleTimeString('es-DO', { hour: 'numeric', minute: '2-digit' });
+    if (dias <= 0) return 'Hoy, ' + hora;
+    if (dias === 1) return 'Ayer, ' + hora;
+    if (dias < 30) return 'Hace ' + dias + ' días';
+    return d.toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function ajEstado(u) {
+    const a = _ajAccesos && _ajAccesos[u.id];
+    if (u.activo === false) return '<span class="ajEst off"><i></i>Desactivado</span>';
+    if (a && a.debe_cambiar_clave) return '<span class="ajEst pend"><i></i>Debe cambiar la clave</span>';
+    return '<span class="ajEst"><i></i>Activo</span>';
+  }
+  // Todos los roles asignables, INCLUIDO el administrador (antes faltaba: al editar a otro administrador la ficha
+  // mostraba «Gerente» y al guardar lo bajaba de rol sin avisar).
+  function ajRolesTodos() {
+    const mods = r => accesoRol(r).filter(m => !CAPACIDADES.some(c => c[0] === m) && m !== 'inicio').map(m => { const x = MODULOS.find(y => y[0] === m); return x ? x[1] : m; });
+    const desc = { admin: 'Todo, incluso Ajustes y usuarios.', gerente: 'Todo menos Ajustes.' };
+    return [{ rol: 'admin', label: rolLabel('admin') }].concat(rolesLista()).map(r => {
+      const m = mods(r.rol);
+      return Object.assign({}, r, { desc: desc[r.rol] || (m.length ? m.slice(0, 5).join(', ') + (m.length > 5 ? ' y ' + (m.length - 5) + ' más' : '') + '.' : 'Sin módulos: solo ve Inicio.') });
+    });
+  }
+  function ajEquipoHTML() {
+    const tabs = [['usuarios', 'Usuarios'], ['roles', 'Roles y permisos'], ['vendedores', 'Vendedores']].filter(t => t[0] !== 'usuarios' || esAdmin());
+    if (!tabs.find(t => t[0] === _ajEqTab)) _ajEqTab = tabs[0][0];
+    const bar = `<div class="ajTabs" role="tablist">${tabs.map(t => `<button type="button" role="tab" aria-selected="${_ajEqTab === t[0]}" onclick="window.nxAjEqTab('${t[0]}')">${t[1]}</button>`).join('')}</div>`;
+    const cuerpo = _ajEqTab === 'roles' ? ajustesRoles() : _ajEqTab === 'vendedores' ? ajustesVendedores() : ajUsuariosHTML();
+    return bar + cuerpo;
+  }
+  window.nxAjEqTab = function (t) { _ajEqTab = t; ajRepintar(); };
+  function ajUsrFiltrados() {
+    const q = _ajUsrQ.toLowerCase().trim();
+    return (_ajUsuarios || []).filter(u => {
+      if (_ajUsrF === 'activos' && u.activo === false) return false;
+      if (_ajUsrF === 'inactivos' && u.activo !== false) return false;
+      if (['todos', 'activos', 'inactivos'].indexOf(_ajUsrF) < 0 && u.rol !== _ajUsrF) return false;
+      return !q || (String(u.nom || '') + ' ' + String(u.login || '')).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function ajUsrFilasHTML() {
+    const yo = ajYoId(), L = ajUsrFiltrados();
+    if (!L.length) return `<div class="ajVacio">${_ajUsrQ ? 'Nadie coincide con «' + esc(_ajUsrQ) + '».' : 'No hay usuarios en este filtro.'}</div>`;
+    return L.map(u => {
+      const esYo = String(u.id) === String(yo), ult = ajUltimo(u);
+      return `<button type="button" class="ajUsrF${u.activo === false ? ' inac' : ''}" onclick="window.nxAjUsr('${u.id}')" aria-label="Abrir ${esc(u.nom || u.login || '')}">
+        <span class="av">${esc(String(u.nom || u.login || '?').trim().charAt(0).toUpperCase())}</span>
+        <span class="tx"><b>${esc(u.nom || '')}${esYo ? ' <small>(tú)</small>' : ''}</b><small class="lg">@${esc(u.login || '')}</small></span>
+        <span class="c2"><span>${esc(ajAlmNom(u.almacen_id) || 'Sin almacén fijo')}</span><small>${ult ? esc(ult) : 'Almacén'}</small></span>
+        <span class="c3">${ajEstado(u)}</span>
+        <span class="rol r-${u.rol === 'admin' ? 'admin' : u.rol === 'gerente' ? 'gerente' : 'otro'}">${esc(rolLabel(u.rol))}</span>
+      </button>`;
+    }).join('');
+  }
   function ajUsuariosHTML() {
     if (!esAdmin()) return '';
-    const head = ajCard('ti-users', 'blue', 'Usuarios', 'Quién entra al sistema, con qué rol y desde qué almacén factura. Desactivar no borra nada: el usuario ya no puede entrar y su historial se conserva.');
+    const head = ajCard('ti-users', 'blue', 'Usuarios y acceso', 'Quién entra al sistema, con qué rol y desde qué almacén factura. Desactivar no borra nada: el usuario ya no puede entrar y su historial se conserva.');
     if (_ajUsuariosErr) return head + `<div class="ajVacio">No se pudieron cargar los usuarios: ${esc(_ajUsuariosErr)} <button class="ab g3 sm" type="button" onclick="window.nxAjUsrRecargar()">Reintentar</button></div></div>`;
     if (!_ajUsuarios) return head + '<div class="ajVacio">Cargando usuarios…</div></div>';
-    const yo = ajYoId(), alm = id => { const a = (_almacenes || []).find(x => String(x.id) === String(id)); return a ? a.nombre : ''; };
-    const act = _ajUsuarios.filter(u => u.activo !== false).length;
-    const filas = _ajUsuarios.map(u => {
-      const esYo = String(u.id) === String(yo), inac = u.activo === false;
-      return `<div class="ajUsr${inac ? ' inac' : ''}">
-        <span class="av">${esc(String(u.nom || u.login || '?').trim().charAt(0).toUpperCase())}</span>
-        <span class="tx"><b>${esc(u.nom || '')}${esYo ? ' <small>(tú)</small>' : ''}</b><small>@${esc(u.login || '')}${alm(u.almacen_id) ? ' · ' + esc(alm(u.almacen_id)) : ''}${inac ? ' · desactivado' : ''}</small></span>
-        <span class="rol">${esc(rolLabel(u.rol))}</span>
-        <button type="button" class="ab g3 sm" aria-label="Opciones de ${esc(u.nom || '')}" onclick="window.nxAjUsr('${u.id}')"><i class="ti ti-dots"></i></button>
-      </div>`;
-    }).join('');
-    return head + `<div class="ajUsrRes">${act} activo(s) de ${_ajUsuarios.length}</div><div class="ajUsrs">${filas || '<div class="ajVacio">No hay usuarios.</div>'}</div>
-      <div class="ajbtns"><button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Nuevo usuario</button></div></div>`;
+    const U = _ajUsuarios, act = U.filter(u => u.activo !== false).length;
+    const F = [['todos', 'Todos', U.length], ['activos', 'Activos', act], ['inactivos', 'Desactivados', U.length - act]]
+      .concat(ajRolesTodos().map(r => [r.rol, r.label, U.filter(u => u.rol === r.rol).length]).filter(x => x[2]));
+    return head + `<div class="ajUsrBarra">
+        <div class="inw ajUsrBus"><i class="ti ti-search"></i><input id="ajUsrQ" type="search" class="no-upper" placeholder="Buscar por nombre o usuario" aria-label="Buscar usuario" value="${esc(_ajUsrQ)}" oninput="window.nxAjUsrBuscar(this.value)"></div>
+        <button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Nuevo usuario</button>
+      </div>
+      <div class="ajUsrFil">${F.map(f => `<button type="button" aria-pressed="${_ajUsrF === f[0]}" onclick="window.nxAjUsrFiltro('${esc(f[0])}')">${esc(f[1])} <b>${f[2]}</b></button>`).join('')}</div>
+      <div class="ajUsrs2" id="ajUsrLista">${ajUsrFilasHTML()}</div></div>`;
   }
-  window.nxAjUsrRecargar = function () { _ajUsuarios = null; ajCargarUsuarios(); ajRepintar(); };
+  // El buscador repinta solo la lista (el campo no pierde el foco ni el teclado del iPhone se cierra).
+  window.nxAjUsrBuscar = function (v) { _ajUsrQ = String(v || ''); const l = document.getElementById('ajUsrLista'); if (l) l.innerHTML = ajUsrFilasHTML(); };
+  window.nxAjUsrFiltro = function (f) { _ajUsrF = f; ajRepintar(); };
+  window.nxAjUsrRecargar = function () { _ajUsuarios = null; _ajAccesos = null; ajCargarUsuarios(); ajRepintar(); };
   async function ajStaff(body) {
     const api = getAPI();
     const resp = await fetch((api.url || '') + '/functions/v1/crear-usuario-staff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) }, body: JSON.stringify(body) });
@@ -2297,53 +2376,120 @@
     if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
     return j;
   }
-  window.nxAjUsr = function (id) {
-    const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)); if (!u) return;
-    const esYo = String(u.id) === String(ajYoId()), inac = u.activo === false;
-    const roles = rolesLista();
-    const rolOpts = roles.map(r => `<option value="${esc(r.rol)}"${r.rol === u.rol ? ' selected' : ''}>${esc(r.label)}</option>`).join('');
+  // Clave temporal: 9 caracteres sin letras que se confundan (l/1, O/0).
+  function ajClaveTemporal() {
+    const M = 'ABCDEFGHJKMNPQRSTUVWXYZ', m = 'abcdefghjkmnpqrstuvwxyz', n = '23456789';
+    const r = k => { try { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % k; } catch (e) { return Math.floor(Math.random() * k); } };
+    let s = M[r(M.length)]; for (let i = 0; i < 5; i++) s += m[r(m.length)]; s += n[r(n.length)] + n[r(n.length)] + M[r(M.length)];
+    return s;
+  }
+  function ajLoginSugerido(nom) {
+    const p = String(nom || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/).filter(Boolean).map(x => x.replace(/[^a-z0-9]/g, '')).filter(Boolean);
+    if (!p.length) return '';
+    let base = p[0] + (p[1] ? '.' + p[1][0] : ''), lg = base, i = 2;
+    const usados = (_ajUsuarios || []).map(u => String(u.login || '').toLowerCase());
+    while (usados.indexOf(lg) >= 0) lg = base + (i++);
+    return lg;
+  }
+  // WhatsApp de RD: 10 dígitos (809/829/849) → con el 1 delante.
+  function ajWaNum(t) { const d = String(t || '').replace(/\D/g, ''); return d.length === 10 ? '1' + d : d; }
+  // ── Ficha única: crear (u = null) o editar ──
+  function ajFicha(u) {
+    const nuevo = !u;
+    const yo = ajYoId(), esYo = !nuevo && String(u.id) === String(yo), inac = !nuevo && u.activo === false;
+    u = u || { nom: '', login: '', rol: 'cajero', almacen_id: (_almacenes[0] || {}).id || '', telefono: '', crm_funciones: null };
+    const roles = ajRolesTodos();
     const almOpts = '<option value="">— Sin almacén fijo —</option>' + (_almacenes || []).map(a => `<option value="${a.id}"${String(a.id) === String(u.almacen_id || '') ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
+    const tieneTel = nuevo || Object.prototype.hasOwnProperty.call(u, 'telefono');
     cerrarModal('nxAjUsrM');
     const ov = document.createElement('div'); ov.id = 'nxAjUsrM'; ov.className = 'overlay open';
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:440px" role="dialog" aria-labelledby="nxAjUsrT">
-      <div class="mt"><span id="nxAjUsrT"><i class="ti ti-user-cog"></i> ${esc(u.nom || u.login)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div class="fr"><label for="ajUNom">Nombre</label><input id="ajUNom" class="no-upper" value="${esc(u.nom || '')}"></div>
-      <div class="fr-row"><div class="fr"><label for="ajURol">Rol</label><select id="ajURol"${esYo ? ' disabled' : ''}>${rolOpts}</select></div>
-      <div class="fr"><label for="ajUAlm">Almacén</label><select id="ajUAlm">${almOpts}</select></div></div>
+    ov.innerHTML = `<div class="modal nxPrForm ajFicha" style="max-width:520px" role="dialog" aria-labelledby="nxAjUsrT">
+      <div class="mt"><span id="nxAjUsrT"><i class="ti ${nuevo ? 'ti-user-plus' : 'ti-user-cog'}"></i> ${nuevo ? 'Nuevo usuario' : esc(u.nom || u.login)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      ${nuevo ? '' : `<div class="ajFichaEst">${ajEstado(u)}${ajUltimo(u) ? '<span>Última entrada: <b>' + esc(ajUltimo(u)) + '</b></span>' : ''}</div>`}
+      <div class="ajSep">Datos</div>
+      <div class="fr"><label for="ajUNom">Nombre completo</label><input id="ajUNom" class="no-upper" value="${esc(u.nom || '')}" autocomplete="off"${nuevo ? ' oninput="window.nxAjUsrNom(this.value)"' : ''}></div>
+      ${tieneTel ? `<div class="fr"><label for="ajUTel">WhatsApp del empleado</label><input id="ajUTel" class="no-upper" inputmode="tel" value="${esc(u.telefono || '')}" placeholder="809 555 0000" autocomplete="off"><div class="ajHint">Para enviarle su acceso por WhatsApp.</div></div>` : ''}
+      <div class="ajSep">Acceso</div>
+      <div class="fr-row">
+        <div class="fr"><label for="ajULogin">Usuario</label><input id="ajULogin" class="no-upper" value="${esc(u.login || '')}" autocapitalize="none" autocomplete="off"${nuevo ? ' oninput="this.dataset.tocado=1"' : ' readonly'}><div class="ajHint">${nuevo ? 'Se sugiere con el nombre.' : 'No se cambia después de creado.'}</div></div>
+        ${nuevo ? `<div class="fr"><label for="ajUClave">Clave temporal</label><div class="ajClave"><input id="ajUClave" type="password" class="no-upper" value="${ajClaveTemporal()}" autocomplete="new-password"><button class="btn bghost" type="button" onclick="window.nxAjUsrVerClave(this)">Ver</button></div><div class="ajHint">Mínimo 8. <button type="button" class="ajLink" onclick="window.nxAjUsrGenerar()">Generar otra</button></div></div>`
+        : `<div class="fr"><label>Clave</label><button class="btn bghost" type="button" id="ajUReset" onclick="window.nxAjUsrClave('${u.id}')"><i class="ti ti-key"></i> Restablecer clave</button><div class="ajHint">Genera una temporal para enviarla por WhatsApp.</div></div>`}
+      </div>
+      <div class="ajSep">Rol</div>
+      <div class="ajRoles" role="radiogroup" aria-label="Rol">${roles.map(r => `<label class="ajRol"><input type="radio" name="ajURol" value="${esc(r.rol)}"${r.rol === u.rol ? ' checked' : ''}${esYo ? ' disabled' : ''} onchange="window.nxAjUsrRolCambio()"><span><b>${esc(r.label)}</b><small>${esc(r.desc)}</small></span></label>`).join('')}</div>
       ${esYo ? '<div class="ajHint">No puedes cambiar tu propio rol ni desactivarte.</div>' : ''}
-      ${u.rol === 'admin' ? '' : crmFnHTML('ajU', crmFnDe(u))}
-      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="ajUBtn" onclick="window.nxAjUsrGuardar('${u.id}')"><i class="ti ti-device-floppy"></i> Guardar cambios</button></div>
-      <div class="ajSep">Clave</div>
-      <div class="fr-row"><div class="fr"><label for="ajUClave">Nueva clave (mín. 6)</label><input id="ajUClave" class="no-upper" autocomplete="new-password" placeholder="••••••"></div>
-      <div class="fr" style="display:flex;align-items:flex-end"><label class="ajChk"><input type="checkbox" id="ajUPedir" checked> Que la cambie al entrar</label></div></div>
-      <div class="fe"><button class="btn bghost" type="button" onclick="window.nxAjUsrClave('${u.id}')"><i class="ti ti-key"></i> Cambiar clave</button></div>
-      ${esYo ? '' : `<div class="ajSep">Acceso</div><div class="fe"><button class="btn ${inac ? 'bc1' : 'bc3'}" type="button" onclick="window.nxAjUsrActivo('${u.id}', ${inac ? 'true' : 'false'})"><i class="ti ${inac ? 'ti-user-check' : 'ti-user-off'}"></i> ${inac ? 'Reactivar usuario' : 'Desactivar usuario'}</button></div>`}
+      <div class="ajSep">Trabajo</div>
+      <div class="fr"><label for="ajUAlm">Almacén asignado</label><select id="ajUAlm">${almOpts}</select><div class="ajHint">Factura y descuenta inventario de aquí.</div></div>
+      <div id="ajUCrm"${u.rol === 'admin' ? ' hidden' : ''}>${crmFnHTML('ajU', crmFnDe(u))}</div>
+      <div class="ajErr" id="ajUErr" role="alert" hidden></div>
+      <div class="fe ajFichaPie">
+        ${nuevo || esYo ? '' : `<button class="btn ${inac ? 'bc1' : 'bc3'}" type="button" style="margin-right:auto" onclick="window.nxAjUsrActivo('${u.id}', ${inac ? 'true' : 'false'})"><i class="ti ${inac ? 'ti-user-check' : 'ti-user-off'}"></i> ${inac ? 'Reactivar' : 'Desactivar'}</button>`}
+        <button class="btn bghost" type="button" onclick="document.getElementById('nxAjUsrM').remove()">Cancelar</button>
+        <button class="btn bc1" type="button" id="ajUBtn" onclick="window.nxAjUsrGuardar(${nuevo ? 'null' : `'${u.id}'`})"><i class="ti ${nuevo ? 'ti-check' : 'ti-device-floppy'}"></i> ${nuevo ? 'Crear usuario' : 'Guardar cambios'}</button>
+      </div>
     </div>`;
     document.body.appendChild(ov);
-  };
+    if (nuevo) setTimeout(() => { const f = document.getElementById('ajUNom'); if (f) f.focus(); }, 60);
+  }
+  window.nxStaffNuevo = function () { if (!esAdmin()) { toast('err', 'Solo el administrador'); return; } ajFicha(null); };
+  window.nxAjUsr = function (id) { const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)); if (u) ajFicha(u); };
+  window.nxAjUsrNom = function (v) { const l = document.getElementById('ajULogin'); if (l && !l.dataset.tocado) l.value = ajLoginSugerido(v); };
+  window.nxAjUsrVerClave = function (b) { const i = document.getElementById('ajUClave'); if (!i) return; i.type = i.type === 'password' ? 'text' : 'password'; b.textContent = i.type === 'password' ? 'Ver' : 'Ocultar'; };
+  window.nxAjUsrGenerar = function () { const i = document.getElementById('ajUClave'); if (i) { i.value = ajClaveTemporal(); toast('ok', 'Clave nueva generada'); } };
+  window.nxAjUsrRolCambio = function () { const r = (document.querySelector('input[name="ajURol"]:checked') || {}).value; const c = document.getElementById('ajUCrm'); if (c) c.hidden = r === 'admin'; };
   window.nxAjUsrGuardar = async function (id) {
-    const nombre = val('ajUNom').trim(); if (!nombre) { toast('err', 'Pon el nombre'); return; }
+    const nuevo = !id, u = nuevo ? null : (_ajUsuarios || []).find(x => String(x.id) === String(id));
+    const nombre = val('ajUNom').trim(), login = val('ajULogin').trim().toLowerCase();
+    const telEl = document.getElementById('ajUTel'), tel = telEl ? telEl.value.replace(/\D/g, '') : undefined;
+    const rolEl = document.querySelector('input[name="ajURol"]:checked'), rol = rolEl && !rolEl.disabled ? rolEl.value : undefined;
+    // Errores de lo escrito: dentro de la ficha, junto a los botones (un aviso flotante tapaba «Crear» en el iPhone).
+    const err = m => { const e = document.getElementById('ajUErr'); if (e) { e.textContent = m; e.hidden = !m; } };
+    err('');
+    if (!nombre) { err('Pon el nombre.'); return; }
+    if (tel && tel.length < 10) { err('Revisa el WhatsApp: debe tener 10 dígitos, por ejemplo 809 555 0000.'); return; }
+    if (nuevo && !login) { err('Pon el usuario.'); return; }
+    if (nuevo && val('ajUClave').length < 8) { err('La clave debe tener al menos 8 caracteres.'); return; }
+    const crmVis = document.getElementById('ajUTransf') && !(document.getElementById('ajUCrm') || {}).hidden;
+    const fn = crmVis ? crmFnLeer('ajU') : null;
     const b = document.getElementById('ajUBtn'); if (b) b.disabled = true;
     try {
-      const sel = document.getElementById('ajURol');
-      await ajStaff({ accion: 'actualizar', usuario_id: id, nombre: nombre, rol: sel && !sel.disabled ? sel.value : undefined, almacen_id: val('ajUAlm') || null });
-      const u = (_ajUsuarios || []).find(x => String(x.id) === String(id));
-      if (document.getElementById('ajUTransf')) {
-        const f = crmFnLeer('ajU');
-        if (!crmFnIgual(f, crmFnDe(u))) {
-          try { await crmFnGuardar(id, f); }
-          catch (e) { toast('err', 'Se guardó el usuario, pero no sus funciones del CRM', String(e && e.message || e)); if (b) b.disabled = false; return; }
+      if (nuevo) {
+        const clave = val('ajUClave');
+        const crm = fn && !crmFnIgual(fn, crmFnDe(null)) ? fn : undefined;
+        const j = await ajStaff({ accion: 'crear', nombre: nombre, login: login, clave: clave, rol: rol || 'cajero', almacen_id: val('ajUAlm') || null, pedir_cambio: true, telefono: tel, crm_funciones: crm });
+        // Servidor anterior (sin id): las funciones del CRM y el teléfono van aparte, como antes.
+        let aviso = '';
+        if (!j.id) {
+          try {
+            const r = await getAPI().get('usuarios_sistema', 'select=id&login=eq.' + encodeURIComponent(j.login || login) + '&limit=1');
+            const nid = r && r[0] && r[0].id;
+            if (nid && crm) await crmFnGuardar(nid, crm);
+            if (nid && tel) { try { await getAPI().patch('usuarios_sistema', 'id=eq.' + nid, { telefono: tel }); } catch (e) {} }
+          } catch (e) { aviso = String(e && e.message || e); }
         }
+        if (aviso) toast('err', 'Usuario creado, pero sin sus funciones del CRM', 'Ábrelo y vuelve a marcarlas · ' + aviso);
+        ajEnviado({ nom: nombre, login: j.login || login, telefono: tel }, clave, false);
+        window.nxAjUsrRecargar();
+        return;
       }
-      cerrarModal('nxAjUsrM'); toast('ok', 'Usuario actualizado', 'El cambio de rol aplica en su próxima acción'); window.nxAjUsrRecargar();
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); if (b) b.disabled = false; }
+      const cambios = { accion: 'actualizar', usuario_id: id, nombre: nombre, almacen_id: val('ajUAlm') || null };
+      if (rol !== undefined) cambios.rol = rol;
+      if (telEl) cambios.telefono = tel;
+      if (fn && !crmFnIgual(fn, crmFnDe(u))) cambios.crm_funciones = fn;
+      await ajStaff(cambios);
+      // Servidor anterior: no conoce crm_funciones/telefono en «actualizar»; se comprueba y se guarda aparte.
+      if (cambios.crm_funciones) { try { const r = await getAPI().get('usuarios_sistema', 'select=crm_funciones&id=eq.' + id); if (!crmFnIgual(crmFnDe(r && r[0]), fn)) await crmFnGuardar(id, fn); } catch (e) { toast('err', 'Se guardó el usuario, pero no sus funciones del CRM', String(e && e.message || e)); } }
+      cerrarModal('nxAjUsrM'); toast('ok', 'Cambios guardados', rol && u && rol !== u.rol ? 'El cambio de rol aplica en su próxima acción' : ''); window.nxAjUsrRecargar();
+    } catch (e) { toast('err', nuevo ? 'No se pudo crear' : 'No se pudo guardar', String(e && e.message || e)); }
+    if (b) b.disabled = false;
   };
   window.nxAjUsrClave = async function (id) {
-    const clave = val('ajUClave'); if (clave.length < 6) { toast('err', 'Clave muy corta', 'Mínimo 6 caracteres'); return; }
-    const pedir = !!(document.getElementById('ajUPedir') || {}).checked;
-    try { await ajStaff({ accion: 'clave', usuario_id: id, clave: clave, pedir_cambio: pedir }); cerrarModal('nxAjUsrM'); toast('ok', 'Clave cambiada', pedir ? 'Al entrar tendrá que poner una nueva' : 'Ya puede entrar con la nueva clave'); }
-    catch (e) { toast('err', 'No se pudo cambiar la clave', String(e && e.message || e)); }
+    const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)); if (!u) return;
+    if (!confirm('¿Restablecer la clave de ' + (u.nom || u.login) + '? La actual deja de servir y se le envía una temporal por WhatsApp.')) return;
+    const clave = ajClaveTemporal(), b = document.getElementById('ajUReset'); if (b) b.disabled = true;
+    try { await ajStaff({ accion: 'clave', usuario_id: id, clave: clave, pedir_cambio: true }); ajEnviado(Object.assign({}, u, { telefono: val('ajUTel') || u.telefono }), clave, true); if (_ajAccesos && _ajAccesos[id]) _ajAccesos[id].debe_cambiar_clave = true; }
+    catch (e) { toast('err', 'No se pudo cambiar la clave', String(e && e.message || e)); if (b) b.disabled = false; }
   };
   window.nxAjUsrActivo = async function (id, activar) {
     const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)) || {};
@@ -2351,6 +2497,32 @@
     try { await ajStaff({ accion: activar ? 'reactivar' : 'desactivar', usuario_id: id }); cerrarModal('nxAjUsrM'); toast('ok', activar ? 'Usuario reactivado' : 'Usuario desactivado', activar ? 'Ya puede entrar otra vez' : 'Ya no puede entrar'); window.nxAjUsrRecargar(); }
     catch (e) { toast('err', 'No se pudo', String(e && e.message || e)); }
   };
+  // Acceso listo: mensaje para el empleado (Copiar / WhatsApp). La clave solo se ve aquí; no se guarda en ningún lado.
+  function ajEnviado(u, clave, reset) {
+    const nom1 = String(u.nom || '').trim().split(/\s+/)[0] || '';
+    const nomBonito = nom1.charAt(0).toUpperCase() + nom1.slice(1).toLowerCase();
+    const msg = 'Hola ' + nomBonito + ', ' + (reset ? 'restablecimos tu acceso a STUDIO' : 'ya tienes acceso a STUDIO') + '.\n\nEntra en: ' + STUDIO_APP_URL + '\nUsuario: ' + u.login + '\nClave temporal: ' + clave + '\n\nAl entrar te pedirá crear tu propia clave. No compartas estos datos.';
+    const num = ajWaNum(u.telefono);
+    cerrarModal('nxAjUsrM');
+    const ov = document.createElement('div'); ov.id = 'nxAjUsrM'; ov.className = 'overlay open';
+    ov.innerHTML = `<div class="modal nxPrForm ajFicha" style="max-width:480px" role="dialog" aria-labelledby="nxAjUsrT">
+      <div class="mt"><span id="nxAjUsrT"><i class="ti ti-circle-check"></i> ${reset ? 'Clave restablecida' : 'Usuario creado'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-x"></i> Cerrar</button></div>
+      <div class="ajOk">${esc(String(u.nom || '').toUpperCase())} ${reset ? 'tiene una clave temporal nueva.' : 'ya puede entrar.'} Debe cambiar la clave la primera vez.</div>
+      <div class="ajSep">Mensaje para el empleado</div>
+      <div class="ajMsj" id="ajUMsj"></div>
+      ${num ? '' : '<div class="ajAvisoW">Falta el WhatsApp del empleado: el botón abrirá WhatsApp para que elijas el chat.</div>'}
+      <div class="ajHint">La clave solo se muestra ahora. Si se pierde, usa «Restablecer clave».</div>
+      <div class="fe ajFichaPie"><button class="btn bghost" type="button" id="ajUCopiar"><i class="ti ti-copy"></i> Copiar mensaje</button>
+      <a class="btn ajWa" target="_blank" rel="noopener" href="https://wa.me/${num}?text=${encodeURIComponent(msg)}"><i class="ti ti-brand-whatsapp"></i> Enviar por WhatsApp</a></div>
+    </div>`;
+    document.body.appendChild(ov);
+    document.getElementById('ajUMsj').textContent = msg;
+    document.getElementById('ajUCopiar').onclick = function () {
+      const ok = () => toast('ok', 'Mensaje copiado');
+      const sel = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('ajUMsj')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('warn', 'Mensaje seleccionado', 'Cópialo con el menú del teléfono'); };
+      try { navigator.clipboard.writeText(msg).then(ok, sel); } catch (e) { sel(); }
+    };
+  }
   // ── Limpieza de datos de PRUEBA (solo transaccional; catálogos intactos) ──
   window.nxLimpiarPruebas = function () {
     if (!esAdmin()) { toast('err', 'Solo el administrador'); return; }
@@ -4675,6 +4847,50 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajSep{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin:16px 0 6px;padding-top:12px;border-top:1px solid #e8ebf0}
 .ajChk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
 .ajCrmCan{display:flex;flex-wrap:wrap;gap:6px 14px}.ajCrmChk i{font-size:16px}
+.nxAjWrap .ajTabs{display:flex;gap:4px;border-bottom:1px solid var(--pf-line);margin:0 0 12px;overflow-x:auto;scrollbar-width:none}
+.nxAjWrap .ajTabs button{flex:none;border:0;background:transparent;font:inherit;font-size:14px;font-weight:600;color:var(--pf-txt2);padding:10px 12px;min-height:44px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+.nxAjWrap .ajTabs button[aria-selected="true"]{color:var(--pf-txt);border-bottom-color:var(--studio-gold,#C9A227)}
+.nxAjWrap .ajUsrBarra{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.nxAjWrap .ajUsrBus{flex:1;min-width:200px}
+.nxAjWrap .ajUsrFil{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.nxAjWrap .ajUsrFil button{border:1px solid var(--pf-line);background:var(--pf-panel);color:var(--pf-txt2);border-radius:999px;padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer;min-height:32px}
+.nxAjWrap .ajUsrFil button b{color:var(--pf-txt);font-variant-numeric:tabular-nums;margin-left:2px}
+.nxAjWrap .ajUsrFil button[aria-pressed="true"]{background:var(--pf-txt);border-color:var(--pf-txt);color:var(--pf-panel)}
+.nxAjWrap .ajUsrFil button[aria-pressed="true"] b{color:var(--pf-panel)}
+.nxAjWrap .ajUsrs2{display:flex;flex-direction:column;border:1px solid var(--pf-line);border-radius:12px;overflow:hidden}
+.nxAjWrap .ajUsrF{display:grid;grid-template-columns:36px minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 172px;gap:12px;align-items:center;padding:10px 12px;border:0;border-top:1px solid var(--pf-line);background:transparent;font:inherit;color:var(--pf-txt);text-align:left;cursor:pointer;min-height:56px;width:100%}
+.nxAjWrap .ajUsrF:first-child{border-top:0}
+.nxAjWrap .ajUsrF:hover{background:var(--pf-bg)}
+.nxAjWrap .ajUsrF:focus-visible{outline:2px solid var(--studio-gold,#C9A227);outline-offset:-2px}
+.nxAjWrap .ajUsrF.inac .av{background:var(--pf-line);color:var(--pf-txt2)}
+.nxAjWrap .ajUsrF.inac .tx b{color:var(--pf-txt2)}
+.nxAjWrap .ajUsrF .av{width:36px;height:36px;border-radius:10px;background:#171717;color:#F7F5EF;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.nxAjWrap .ajUsrF .tx,.nxAjWrap .ajUsrF .c2{min-width:0;display:flex;flex-direction:column}
+.nxAjWrap .ajUsrF b,.nxAjWrap .ajUsrF .c2>span{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxAjWrap .ajUsrF small{font-size:12px;color:var(--pf-txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxAjWrap .ajUsrF small.lg{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+.nxAjWrap .ajUsrF .rol{justify-self:end;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;background:var(--pf-bg);color:var(--pf-txt)}
+.nxAjWrap .ajUsrF .rol.r-admin{background:#171717;color:#F7F5EF}
+.nxAjWrap .ajUsrF .rol.r-gerente{background:rgba(201,162,39,.14);color:#806515}
+.ajEst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--pf-green)}
+.ajEst i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.ajEst.off{color:var(--pf-txt2)}.ajEst.pend{color:var(--pf-orange)}
+.ajFicha .ajFichaEst{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12.5px;color:var(--pf-txt2);margin:2px 0 4px}
+.ajFicha .ajFichaEst b{color:var(--pf-txt)}
+.ajFicha .ajClave{display:flex;gap:6px}.ajFicha .ajClave input{flex:1;min-width:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.04em}
+.ajFicha .ajLink{border:0;background:none;padding:0;font:inherit;font-weight:600;color:#806515;cursor:pointer}
+.ajFicha .ajRoles{display:grid;gap:8px}
+.ajFicha .ajRol{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:start;border:1px solid #e8e5dc;border-radius:12px;padding:10px 12px;cursor:pointer;background:#FFFEFA}
+.ajFicha .ajRol:has(input:checked){border-color:#C9A227;background:rgba(201,162,39,.10)}
+.ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
+.ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
+.ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.ajFicha .ajErr{background:rgba(180,35,24,.08);color:#B42318;border-radius:12px;padding:10px 12px;font-size:13px;margin-top:12px}
+.ajFicha .ajOk{background:rgba(31,122,77,.1);color:#1F7A4D;border-radius:12px;padding:10px 12px;font-size:13px}
+.ajFicha .ajAvisoW{background:rgba(201,140,0,.12);color:#8A5A00;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:8px}
+.ajFicha .ajMsj{background:#0B141A;color:#E9EDEF;border-radius:14px;padding:12px 14px;white-space:pre-wrap;font-size:13.5px;line-height:1.5;user-select:text;-webkit-user-select:text}
+.ajFicha .ajWa{background:#1F8F4E;border-color:#1F8F4E;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+@media (max-width:700px){.nxAjWrap .ajUsrF{grid-template-columns:36px minmax(0,1fr) auto}.nxAjWrap .ajUsrF .c2,.nxAjWrap .ajUsrF .c3{display:none}.nxAjWrap .ajUsrF .rol{max-width:42vw;overflow:hidden;text-overflow:ellipsis}.nxAjWrap .ajUsrBus{flex-basis:100%}.nxAjWrap .ajUsrBarra .ab{flex:1;justify-content:center;white-space:nowrap}}
 @media (max-width:540px){.nxAjWrap .ajUsr .rol{display:none}.nxAjWrap h2{font-size:20px}}
 .nxCajaWrap .cajaCard{background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:16px;padding:14px 16px;box-shadow:var(--pf-shadow)}
 .nxCajaWrap .cajaEsp{background:var(--pf-green-l);border:1px solid var(--pf-green);border-radius:12px;padding:10px 14px;color:var(--pf-green)}
@@ -12238,59 +12454,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
 
 
-  // ══════════════ USUARIOS DE STAFF (cajero/vendedor/gerente con su clave y su almacén) ══════════════
-  window.nxStaffNuevo = function () {
-    const roles = rolesLista().filter(r => r.rol !== 'admin');
-    const rolOpts = roles.length ? roles.map(r => `<option value="${esc(r.rol)}">${esc(r.label)}</option>`).join('') : '<option value="cajero">Cajero</option><option value="vendedor">Vendedor</option><option value="gerente">Gerente</option>';
-    const almOpts = _almacenes.length ? '<div class="fr"><label>Almacén asignado (factura de ahí)</label><select id="stfAlm">' + _almacenes.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('') + '</select></div>' : '';
-    cerrarModal('nxStaffM');
-    const ov = document.createElement('div'); ov.id = 'nxStaffM'; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
-    ov.innerHTML = `<div class="modal nxPrForm" style="max-width:420px">
-      <div class="mt"><span><i class="ti ti-user-plus"></i> Crear usuario de staff</span><button class="nxBack" type="button" onclick="document.getElementById('nxStaffM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-      <div class="fr"><label>Nombre *</label><input id="stfNom" class="no-upper" placeholder="Juan Pérez"></div>
-      <div class="fr-row"><div class="fr"><label>Usuario (para entrar) *</label><input id="stfLogin" class="no-upper" placeholder="juan" autocapitalize="none"></div>
-      <div class="fr"><label>Clave * (mín. 6)</label><input id="stfClave" class="no-upper" placeholder="••••••"></div></div>
-      <div class="fr"><label>Rol</label><select id="stfRol">${rolOpts}</select></div>
-      ${almOpts}
-      <label class="ajChk" style="margin:4px 0 6px"><input type="checkbox" id="stfPedir" checked> Que cambie la clave la primera vez que entre</label>
-      ${crmFnHTML('stf', crmFnDe(null))}
-      <div style="font-size:10.5px;color:#475569;margin-top:2px">El empleado entra en <b>studiord.net</b> con su usuario y clave, y ve SOLO los módulos de su rol. Sus datos son los de ESTA empresa.</div>
-      <div class="fe" style="margin-top:10px"><button class="btn bc1" type="button" id="stfBtn" onclick="window.nxStaffCrear()"><i class="ti ti-check"></i> Crear usuario</button></div>
-    </div>`;
-    document.body.appendChild(ov);
-  };
-  window.nxStaffCrear = async function () {
-    const nombre = val('stfNom').trim(), login = val('stfLogin').trim(), clave = val('stfClave');
-    if (!nombre || !login || !clave) { toast('err', 'Faltan datos', 'Nombre, usuario y clave'); return; }
-    if (clave.length < 6) { toast('err', 'Clave muy corta', 'Mínimo 6 caracteres'); return; }
-    const btn = document.getElementById('stfBtn'); if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin"></div>'; }
-    try {
-      const api = getAPI();
-      const resp = await fetch((api.url || '') + '/functions/v1/crear-usuario-staff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': api.key, 'Authorization': 'Bearer ' + (api.token || api.key) },
-        body: JSON.stringify({ nombre: nombre, login: login, clave: clave, rol: val('stfRol') || 'cajero', almacen_id: val('stfAlm') || null, pedir_cambio: !!(document.getElementById('stfPedir') || {}).checked })
-      });
-      const j = await resp.json().catch(() => ({}));
-      if (!resp.ok || j.error) throw new Error(j.error || ('HTTP ' + resp.status));
-      try { window.logAudit && window.logAudit('STAFF_CREADO', nombre.toUpperCase() + ' · usuario ' + j.login + ' · rol ' + j.rol, 'Usuarios'); } catch (e) {}
-      // Funciones del CRM: solo si no son las de siempre (todos los canales + transferir).
-      const fn = crmFnLeer('stf'); let avisoFn = '';
-      if (!crmFnIgual(fn, crmFnDe(null))) {
-        try {
-          const r = await getAPI().get('usuarios_sistema', 'select=id&login=eq.' + encodeURIComponent(j.login || login) + '&limit=1');
-          if (!r || !r[0]) throw new Error('no se encontró el usuario recién creado');
-          await crmFnGuardar(r[0].id, fn);
-        } catch (e) { avisoFn = String(e && e.message || e); }
-      }
-      cerrarModal('nxStaffM');
-      if (avisoFn) toast('err', 'Usuario creado, pero sin sus funciones del CRM', 'Ábrelo en Equipo y vuelve a marcarlas · ' + avisoFn);
-      else toast('ok', 'Usuario creado', j.login + ' (' + rolLabel(j.rol) + ') — ya puede entrar con su clave');
-      if (_ajSec === 'equipo') window.nxAjUsrRecargar();
-    } catch (e) { toast('err', 'No se pudo crear', String(e && e.message || e)); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Crear usuario'; }
-  };
+  // Crear usuario: ver «Equipo › Usuarios y acceso» (ajFicha). nxStaffNuevo abre la ficha única.
 
   // ── CSS + registro en el hub ──
   function inyectarCSS() {

@@ -11,8 +11,22 @@ const CORS = {
 // cambia la clave. Acepta los roles personalizados de Permisos por rol (antes los convertía en «cajero»).
 // Reglas: nadie se cambia su propio rol ni se desactiva; nunca se queda la empresa sin un administrador activo;
 // solo usuarios de la misma empresa; cada acción queda en auditoría.
+// 05-oct-2026 (v4, «Usuarios y acceso»): crear y actualizar guardan también el WhatsApp del empleado (telefono,
+// migración 45) y las funciones del CRM en el MISMO paso (antes era una segunda llamada que podía fallar a medias);
+// crear devuelve el id; nueva acción «accesos»: última entrada de cada usuario (auth.users.last_sign_in_at).
 const PRESET = ["admin", "gerente", "cajero", "vendedor"];
 const json = (o: unknown, status = 200) => Response.json(o, { status, headers: CORS });
+const CANALES = ["whatsapp", "instagram", "facebook"];
+// Funciones del CRM con las mismas reglas que crm_guardar_funciones (migración 44). undefined = no tocar.
+const crmDe = (v: unknown) => {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  const o = v as { canales?: unknown; transferir?: unknown };
+  const can = Array.isArray(o.canales) ? [...new Set(o.canales.map(String).filter((c) => CANALES.includes(c)))] : [];
+  return { canales: can, transferir: o.transferir !== false };
+};
+// Solo dígitos; vacío = sin teléfono. undefined = no tocar.
+const telDe = (v: unknown) => v === undefined ? undefined : (String(v ?? "").replace(/\D/g, "").slice(0, 15) || null);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -50,6 +64,7 @@ Deno.serve(async (req) => {
 
     if (accion === "crear") {
       const { nombre, login, clave, rol, almacen_id, pedir_cambio } = body;
+      const telefono = telDe(body.telefono), crm = crmDe(body.crm_funciones);
       const lg = String(login || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
       if (!nombre || !lg || !clave) return json({ error: "Faltan nombre, usuario o clave" }, 400);
       if (String(clave).length < 6) return json({ error: "La clave debe tener al menos 6 caracteres" }, 400);
@@ -63,7 +78,8 @@ Deno.serve(async (req) => {
       if (eAuth || !nuevo?.user) return json({ error: "Auth: " + (eAuth?.message || "no se pudo crear") }, 500);
 
       const { data: usNuevo, error: eUs } = await admin.from("usuarios_sistema")
-        .insert({ nom: String(nombre).toUpperCase(), cargo: rolStaff, login: lg, rol: rolStaff, activo: true, organizacion_id: orgId, almacen_id: almacen_id || null })
+        .insert({ nom: String(nombre).toUpperCase(), cargo: rolStaff, login: lg, rol: rolStaff, activo: true, organizacion_id: orgId, almacen_id: almacen_id || null,
+          ...(telefono !== undefined ? { telefono } : {}), ...(crm !== undefined ? { crm_funciones: crm } : {}), creado_por: perfil.nom || "admin" })
         .select().single();
       if (eUs) { await admin.auth.admin.deleteUser(nuevo.user.id); return json({ error: "usuarios_sistema: " + eUs.message }, 500); }
 
@@ -72,7 +88,21 @@ Deno.serve(async (req) => {
       if (eProf) { await admin.auth.admin.deleteUser(nuevo.user.id); await admin.from("usuarios_sistema").delete().eq("id", usNuevo.id); return json({ error: "profiles: " + eProf.message }, 500); }
 
       await auditar("USUARIO_CREADO", `${String(nombre).toUpperCase()} · usuario ${lg} · rol ${rolStaff}`, usNuevo.id, null, { rol: rolStaff, almacen_id: almacen_id || null });
-      return json({ ok: true, login: lg, rol: rolStaff });
+      return json({ ok: true, id: usNuevo.id, login: lg, rol: rolStaff });
+    }
+
+    // Última entrada de cada usuario de la empresa (para la lista). Solo lectura.
+    if (accion === "accesos") {
+      const { data: us } = await admin.from("usuarios_sistema").select("id").eq("organizacion_id", orgId);
+      const ids = (us || []).map((u) => u.id);
+      if (!ids.length) return json({ ok: true, accesos: [] });
+      const { data: profs } = await admin.from("profiles").select("id, usuario_sistema_id, must_change_password").in("usuario_sistema_id", ids);
+      const accesos = [];
+      for (const p of profs || []) {
+        const { data: au } = await admin.auth.admin.getUserById(p.id);
+        accesos.push({ usuario_id: p.usuario_sistema_id, ultimo_acceso: au?.user?.last_sign_in_at || null, debe_cambiar_clave: p.must_change_password === true });
+      }
+      return json({ ok: true, accesos });
     }
 
     // Acciones sobre un usuario existente de la MISMA empresa.
@@ -90,6 +120,8 @@ Deno.serve(async (req) => {
       const cambios: Record<string, unknown> = {};
       if (body.nombre !== undefined) { const n = String(body.nombre || "").trim(); if (!n) return json({ error: "Pon el nombre" }, 400); cambios.nom = n.toUpperCase(); }
       if (body.almacen_id !== undefined) cambios.almacen_id = body.almacen_id || null;
+      const tel = telDe(body.telefono); if (tel !== undefined) cambios.telefono = tel;
+      const crm = crmDe(body.crm_funciones); if (crm !== undefined) cambios.crm_funciones = crm;
       if (body.rol !== undefined && body.rol !== obj.rol) {
         if (esYo) return json({ error: "No puedes cambiar tu propio rol" }, 400);
         if (!(await rolValido(String(body.rol)))) return json({ error: "Ese rol no existe" }, 400);
@@ -103,7 +135,8 @@ Deno.serve(async (req) => {
         const pc: Record<string, unknown> = {}; if (cambios.nom) pc.nom = cambios.nom; if (cambios.rol) pc.rol = cambios.rol;
         if (Object.keys(pc).length) { const { error: e2 } = await admin.from("profiles").update(pc).eq("id", prof.id); if (e2) return json({ error: "profiles: " + e2.message }, 500); }
       }
-      await auditar("USUARIO_EDITADO", `${obj.nom} (@${obj.login})`, obj.id, { nom: obj.nom, rol: obj.rol, almacen_id: obj.almacen_id }, cambios);
+      const auditables = { ...cambios }; if ("telefono" in auditables) auditables.telefono = auditables.telefono ? "(cambiado)" : null;
+      await auditar("USUARIO_EDITADO", `${obj.nom} (@${obj.login})`, obj.id, { nom: obj.nom, rol: obj.rol, almacen_id: obj.almacen_id }, auditables);
       return json({ ok: true });
     }
 

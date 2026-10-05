@@ -2265,20 +2265,23 @@
   // (crear-usuario-staff): crear, editar, clave, desactivar. Esta pantalla solo la ve el administrador.
   const STUDIO_APP_URL = 'https://studiord.net/app';
   let _ajEqTab = 'usuarios', _ajUsrQ = '', _ajUsrF = 'todos', _ajAccesos = null;
+  let _ajEmpleados = [];
   async function ajCargarUsuarios() {
     if (_ajUsuariosCargando) return; _ajUsuariosCargando = true; _ajUsuariosErr = '';
     const base = 'id,nom,login,rol,activo,almacen_id,ultimo_login';
     try {
-      // telefono (migración 46) y crm_funciones (44): si la base aún no las tiene, se piden sin ellas.
-      try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + ',crm_funciones,telefono&order=activo.desc,nom.asc') || []; }
-      catch (e1) {
-        try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + ',crm_funciones&order=activo.desc,nom.asc') || []; }
-        catch (e2) { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + '&order=activo.desc,nom.asc') || []; }
+      // empleado_id (migración 47), telefono (46) y crm_funciones (44): si la base aún no las tiene, se piden sin ellas.
+      const extras = [',crm_funciones,telefono,empleado_id', ',crm_funciones,telefono', ',crm_funciones', ''];
+      for (let i = 0; i < extras.length; i++) {
+        try { _ajUsuarios = await getAPI().get('usuarios_sistema', 'select=' + base + extras[i] + '&order=activo.desc,nom.asc') || []; break; }
+        catch (e1) { if (i === extras.length - 1) throw e1; }
       }
+      // Fichas de empleado de RRHH (para enlazar usuario ↔ empleado). Si no cargan, la ficha simplemente no ofrece el enlace.
+      try { _ajEmpleados = await getAPI().get('rrhh_empleados', 'select=id,nombre,telefono,cedula,puesto,activo&order=nombre.asc') || []; } catch (e3) { _ajEmpleados = []; }
     }
     catch (e) { _ajUsuarios = null; _ajUsuariosErr = String(e && e.message || e); }
     _ajUsuariosCargando = false;
-    if (_ajSec === 'equipo') ajRepintar();
+    if (_ajSec === 'equipo' || document.querySelector('.nxRhWrap')) ajRepintar();
     // Última entrada (servidor v4). Si la función aún no la da, la columna simplemente no se muestra.
     if (_ajUsuarios && esAdmin()) {
       ajStaff({ accion: 'accesos' }).then(j => {
@@ -2332,7 +2335,8 @@
     return (_ajUsuarios || []).filter(u => {
       if (_ajUsrF === 'activos' && u.activo === false) return false;
       if (_ajUsrF === 'inactivos' && u.activo !== false) return false;
-      if (['todos', 'activos', 'inactivos'].indexOf(_ajUsrF) < 0 && u.rol !== _ajUsrF) return false;
+      if (_ajUsrF === 'sinemp' && u.empleado_id) return false;
+      if (['todos', 'activos', 'inactivos', 'sinemp'].indexOf(_ajUsrF) < 0 && u.rol !== _ajUsrF) return false;
       return !q || (String(u.nom || '') + ' ' + String(u.login || '')).toLowerCase().indexOf(q) >= 0;
     });
   }
@@ -2343,7 +2347,7 @@
       const esYo = String(u.id) === String(yo), ult = ajUltimo(u);
       return `<button type="button" class="ajUsrF${u.activo === false ? ' inac' : ''}" onclick="window.nxAjUsr('${u.id}')" aria-label="Abrir ${esc(u.nom || u.login || '')}">
         <span class="av">${esc(String(u.nom || u.login || '?').trim().charAt(0).toUpperCase())}</span>
-        <span class="tx"><b>${esc(u.nom || '')}${esYo ? ' <small>(tú)</small>' : ''}</b><small class="lg">@${esc(u.login || '')}</small></span>
+        <span class="tx"><b>${esc(u.nom || '')}${esYo ? ' <small>(tú)</small>' : ''}</b><small class="lg">@${esc(u.login || '')}${u.empleado_id && ajEmpDe(u.empleado_id) ? '<i class="ti ti-id-badge-2 ajEmpOk" title="Vinculado a su ficha de empleado" aria-label="Vinculado a su ficha de empleado"></i>' : ''}</small></span>
         <span class="c2"><span>${esc(ajAlmNom(u.almacen_id) || 'Sin almacén fijo')}</span><small>${ult ? esc(ult) : 'Almacén'}</small></span>
         <span class="c3">${ajEstado(u)}</span>
         <span class="rol r-${u.rol === 'admin' ? 'admin' : u.rol === 'gerente' ? 'gerente' : 'otro'}">${esc(rolLabel(u.rol))}</span>
@@ -2356,15 +2360,58 @@
     if (_ajUsuariosErr) return head + `<div class="ajVacio">No se pudieron cargar los usuarios: ${esc(_ajUsuariosErr)} <button class="ab g3 sm" type="button" onclick="window.nxAjUsrRecargar()">Reintentar</button></div></div>`;
     if (!_ajUsuarios) return head + '<div class="ajVacio">Cargando usuarios…</div></div>';
     const U = _ajUsuarios, act = U.filter(u => u.activo !== false).length;
-    const F = [['todos', 'Todos', U.length], ['activos', 'Activos', act], ['inactivos', 'Desactivados', U.length - act]]
+    const conEmp = U.length && Object.prototype.hasOwnProperty.call(U[0], 'empleado_id') && (_ajEmpleados || []).length;
+    const sinEmp = conEmp ? U.filter(u => !u.empleado_id).length : 0;
+    const pares = conEmp ? ajParesPorNombre() : [];
+    const F = [['todos', 'Todos', U.length], ['activos', 'Activos', act], ['inactivos', 'Desactivados', U.length - act]].concat(sinEmp ? [['sinemp', 'Sin empleado', sinEmp]] : [])
       .concat(ajRolesTodos().map(r => [r.rol, r.label, U.filter(u => u.rol === r.rol).length]).filter(x => x[2]));
     return head + `<div class="ajUsrBarra">
         <div class="inw ajUsrBus"><i class="ti ti-search"></i><input id="ajUsrQ" type="search" class="no-upper" placeholder="Buscar por nombre o usuario" aria-label="Buscar usuario" value="${esc(_ajUsrQ)}" oninput="window.nxAjUsrBuscar(this.value)"></div>
         <button class="ab g2 sm" type="button" onclick="window.nxStaffNuevo()"><i class="ti ti-user-plus"></i> Nuevo usuario</button>
       </div>
+      ${pares.length ? `<div class="ajVinc"><i class="ti ti-link"></i><span><b>${pares.length} usuario(s) coinciden por nombre con su ficha de empleado</b><small>Revísalos y vincúlalos: así cada persona es una sola ficha (usuario + nómina).</small></span><button class="ab g3 sm" type="button" onclick="window.nxAjVincular()">Revisar y vincular</button></div>` : ''}
       <div class="ajUsrFil">${F.map(f => `<button type="button" aria-pressed="${_ajUsrF === f[0]}" onclick="window.nxAjUsrFiltro('${esc(f[0])}')">${esc(f[1])} <b>${f[2]}</b></button>`).join('')}</div>
       <div class="ajUsrs2" id="ajUsrLista">${ajUsrFilasHTML()}</div></div>`;
   }
+  // Usuarios sin enlazar cuyo nombre coincide con UNA sola ficha de empleado libre (sin ambigüedad).
+  function ajParesPorNombre() {
+    const usados = new Set((_ajUsuarios || []).filter(u => u.empleado_id).map(u => String(u.empleado_id)));
+    const libres = (_ajEmpleados || []).filter(e => !usados.has(String(e.id)));
+    const out = [];
+    (_ajUsuarios || []).filter(u => !u.empleado_id).forEach(u => {
+      const m = libres.filter(e => ajNorm(e.nombre) && ajNorm(e.nombre) === ajNorm(u.nom));
+      if (m.length === 1 && !out.some(p => p.e.id === m[0].id)) out.push({ u: u, e: m[0] });
+    });
+    return out;
+  }
+  window.nxAjVincular = function () {
+    const pares = ajParesPorNombre(); if (!pares.length) return;
+    cerrarModal('nxAjUsrM');
+    const ov = document.createElement('div'); ov.id = 'nxAjUsrM'; ov.className = 'overlay open';
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxPrForm ajFicha" style="max-width:560px" role="dialog" aria-labelledby="nxAjUsrT">
+      <div class="mt"><span id="nxAjUsrT"><i class="ti ti-link"></i> Vincular usuarios con su ficha de empleado</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="ajHint" style="margin-bottom:8px">Mismo nombre en Usuarios y en Recursos Humanos. Desmarca los que no sean la misma persona. No cambia nombres, claves ni salarios: solo los enlaza.</div>
+      <div class="ajPares">${pares.map((p, i) => `<label class="ajPar"><input type="checkbox" id="ajPar${i}" checked><span><b>${esc(p.u.nom || '')}</b><small>@${esc(p.u.login || '')} · ${esc(rolLabel(p.u.rol))}</small></span><i class="ti ti-arrows-left-right"></i><span><b>${esc(p.e.nombre || '')}</b><small>${esc(p.e.puesto || 'Empleado de RRHH')}</small></span></label>`).join('')}</div>
+      <div class="ajErr" id="ajUErr" role="alert" hidden></div>
+      <div class="fe ajFichaPie"><button class="btn bghost" type="button" onclick="document.getElementById('nxAjUsrM').remove()">Cancelar</button><button class="btn bc1" type="button" id="ajVincBtn" onclick="window.nxAjVincularOk()"><i class="ti ti-link"></i> Vincular marcados</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+  };
+  window.nxAjVincularOk = async function () {
+    const pares = ajParesPorNombre().filter((p, i) => (document.getElementById('ajPar' + i) || {}).checked);
+    if (!pares.length) { cerrarModal('nxAjUsrM'); return; }
+    const b = document.getElementById('ajVincBtn'); if (b) b.disabled = true;
+    let ok = 0; const fallos = [];
+    for (const p of pares) {
+      try { await ajStaff({ accion: 'actualizar', usuario_id: p.u.id, empleado_id: p.e.id }); ok++; }
+      catch (e) { fallos.push((p.u.nom || p.u.login) + ': ' + String(e && e.message || e)); }
+    }
+    if (fallos.length) { const e = document.getElementById('ajUErr'); if (e) { e.textContent = 'No se pudieron vincular ' + fallos.length + ': ' + fallos.join(' · '); e.hidden = false; } if (b) b.disabled = false; }
+    else cerrarModal('nxAjUsrM');
+    toast(fallos.length ? 'warn' : 'ok', ok + ' usuario(s) vinculado(s) con su ficha de empleado');
+    window.nxAjUsrRecargar();
+  };
   // El buscador repinta solo la lista (el campo no pierde el foco ni el teclado del iPhone se cierra).
   window.nxAjUsrBuscar = function (v) { _ajUsrQ = String(v || ''); const l = document.getElementById('ajUsrLista'); if (l) l.innerHTML = ajUsrFilasHTML(); };
   window.nxAjUsrFiltro = function (f) { _ajUsrF = f; ajRepintar(); };
@@ -2394,10 +2441,22 @@
   // WhatsApp de RD: 10 dígitos (809/829/849) → con el 1 delante.
   function ajWaNum(t) { const d = String(t || '').replace(/\D/g, ''); return d.length === 10 ? '1' + d : d; }
   // ── Ficha única: crear (u = null) o editar ──
-  function ajFicha(u) {
+  // Nombre normalizado para comparar usuarios con fichas de empleado (sin acentos, espacios ni mayúsculas).
+  function ajNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+  function ajEmpDe(id) { return (_ajEmpleados || []).find(e => String(e.id) === String(id)); }
+  // Empleado vinculado: el propio + los activos que no tienen usuario.
+  function ajEmpOpts(actual) {
+    const usados = new Set((_ajUsuarios || []).filter(x => x.empleado_id && String(x.empleado_id) !== String(actual || '')).map(x => String(x.empleado_id)));
+    const lista = (_ajEmpleados || []).filter(e => String(e.id) === String(actual || '') || (e.activo !== false && !usados.has(String(e.id))));
+    return '<option value="">— Sin vincular —</option>' + lista.map(e => `<option value="${e.id}"${String(e.id) === String(actual || '') ? ' selected' : ''}>${esc(e.nombre || '')}${e.puesto ? ' · ' + esc(e.puesto) : ''}</option>`).join('');
+  }
+  function ajFicha(u, pre) {
     const nuevo = !u;
     const yo = ajYoId(), esYo = !nuevo && String(u.id) === String(yo), inac = !nuevo && u.activo === false;
-    u = u || { nom: '', login: '', rol: 'cajero', almacen_id: (_almacenes[0] || {}).id || '', telefono: '', crm_funciones: null };
+    // pre: crear partiendo de una ficha de empleado (RRHH → «Dar acceso»).
+    const ep = pre && pre.empleado_id ? ajEmpDe(pre.empleado_id) : null;
+    u = u || { nom: ep ? ep.nombre : '', login: ep ? ajLoginSugerido(ep.nombre) : '', rol: 'cajero', almacen_id: (_almacenes[0] || {}).id || '', telefono: ep ? String(ep.telefono || '').replace(/\D/g, '') : '', crm_funciones: null, empleado_id: ep ? ep.id : null };
+    const tieneEmp = (_ajEmpleados || []).length > 0 && (nuevo || Object.prototype.hasOwnProperty.call(u, 'empleado_id'));
     const roles = ajRolesTodos();
     const almOpts = '<option value="">— Sin almacén fijo —</option>' + (_almacenes || []).map(a => `<option value="${a.id}"${String(a.id) === String(u.almacen_id || '') ? ' selected' : ''}>${esc(a.nombre)}</option>`).join('');
     const tieneTel = nuevo || Object.prototype.hasOwnProperty.call(u, 'telefono');
@@ -2408,6 +2467,7 @@
       <div class="mt"><span id="nxAjUsrT"><i class="ti ${nuevo ? 'ti-user-plus' : 'ti-user-cog'}"></i> ${nuevo ? 'Nuevo usuario' : esc(u.nom || u.login)}</span><button class="nxBack" type="button" onclick="document.getElementById('nxAjUsrM').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       ${nuevo ? '' : `<div class="ajFichaEst">${ajEstado(u)}${ajUltimo(u) ? '<span>Última entrada: <b>' + esc(ajUltimo(u)) + '</b></span>' : ''}</div>`}
       <div class="ajSep">Datos</div>
+      ${tieneEmp ? `<div class="fr"><label for="ajUEmp">Empleado vinculado (RRHH)</label><select id="ajUEmp"${nuevo ? ' onchange="window.nxAjUsrEmp(this.value)"' : ''}>${ajEmpOpts(u.empleado_id)}</select><div class="ajHint">${nuevo ? 'Elige su ficha de empleado y se llenan el nombre y el teléfono.' : 'Su ficha de Recursos Humanos (nómina).'}</div></div>` : ''}
       <div class="fr"><label for="ajUNom">Nombre completo</label><input id="ajUNom" class="no-upper" value="${esc(u.nom || '')}" autocomplete="off"${nuevo ? ' oninput="window.nxAjUsrNom(this.value)"' : ''}></div>
       ${tieneTel ? `<div class="fr"><label for="ajUTel">WhatsApp del empleado</label><input id="ajUTel" class="no-upper" inputmode="tel" value="${esc(u.telefono || '')}" placeholder="809 555 0000" autocomplete="off"><div class="ajHint">Para enviarle su acceso por WhatsApp.</div></div>` : ''}
       <div class="ajSep">Acceso</div>
@@ -2434,6 +2494,13 @@
   }
   window.nxStaffNuevo = function () { if (!esAdmin()) { toast('err', 'Solo el administrador'); return; } ajFicha(null); };
   window.nxAjUsr = function (id) { const u = (_ajUsuarios || []).find(x => String(x.id) === String(id)); if (u) ajFicha(u); };
+  window.nxAjUsrEmp = function (id) {
+    const e = ajEmpDe(id); if (!e) return;
+    const n = document.getElementById('ajUNom'), t = document.getElementById('ajUTel'), l = document.getElementById('ajULogin');
+    if (n) n.value = String(e.nombre || '');
+    if (t && e.telefono) t.value = String(e.telefono).replace(/\D/g, '');
+    if (l && !l.dataset.tocado) l.value = ajLoginSugerido(e.nombre);
+  };
   window.nxAjUsrNom = function (v) { const l = document.getElementById('ajULogin'); if (l && !l.dataset.tocado) l.value = ajLoginSugerido(v); };
   window.nxAjUsrVerClave = function (b) { const i = document.getElementById('ajUClave'); if (!i) return; i.type = i.type === 'password' ? 'text' : 'password'; b.textContent = i.type === 'password' ? 'Ver' : 'Ocultar'; };
   window.nxAjUsrGenerar = function () { const i = document.getElementById('ajUClave'); if (i) { i.value = ajClaveTemporal(); toast('ok', 'Clave nueva generada'); } };
@@ -2457,7 +2524,8 @@
       if (nuevo) {
         const clave = val('ajUClave');
         const crm = fn && !crmFnIgual(fn, crmFnDe(null)) ? fn : undefined;
-        const j = await ajStaff({ accion: 'crear', nombre: nombre, login: login, clave: clave, rol: rol || 'cajero', almacen_id: val('ajUAlm') || null, pedir_cambio: true, telefono: tel, crm_funciones: crm });
+        const empEl = document.getElementById('ajUEmp');
+        const j = await ajStaff({ accion: 'crear', nombre: nombre, login: login, clave: clave, rol: rol || 'cajero', almacen_id: val('ajUAlm') || null, pedir_cambio: true, telefono: tel, crm_funciones: crm, empleado_id: empEl ? (empEl.value || null) : undefined });
         // Servidor anterior (sin id): las funciones del CRM y el teléfono van aparte, como antes.
         let aviso = '';
         if (!j.id) {
@@ -2476,6 +2544,7 @@
       const cambios = { accion: 'actualizar', usuario_id: id, nombre: nombre, almacen_id: val('ajUAlm') || null };
       if (rol !== undefined) cambios.rol = rol;
       if (telEl) cambios.telefono = tel;
+      const empEl = document.getElementById('ajUEmp'); if (empEl && String(empEl.value || '') !== String(u.empleado_id || '')) cambios.empleado_id = empEl.value || null;
       if (fn && !crmFnIgual(fn, crmFnDe(u))) cambios.crm_funciones = fn;
       await ajStaff(cambios);
       // Servidor anterior: no conoce crm_funciones/telefono en «actualizar»; se comprueba y se guarda aparte.
@@ -4885,6 +4954,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
 .ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
 .ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.nxRhWrap .rhAcc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;font-weight:600;color:#806515;background:rgba(201,162,39,.1);border-radius:999px;padding:2px 8px}
+.nxRhWrap .rhAcc.off{color:#686862;background:rgba(17,17,17,.06)}
+.nxRhWrap .rhDarAcc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font:inherit;font-size:11px;font-weight:600;color:#111;background:#FFFEFA;border:1px solid #d9d5ca;border-radius:999px;padding:3px 9px;cursor:pointer;min-height:28px}
+.ajFicha .ajHint{font-size:11.5px;color:#686862;margin-top:5px;line-height:1.4}
+.ajFicha input[readonly]{background:#F7F5EF;color:#686862}
+.ajFicha #ajUReset{border:1px solid #d9d5ca;background:#FFFEFA;color:#111}
+.nxAjWrap .ajEmpOk{font-size:13px;color:#806515;margin-left:6px;vertical-align:-2px}
+.nxAjWrap .ajVinc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(201,162,39,.4);background:rgba(201,162,39,.08);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.nxAjWrap .ajVinc>i{font-size:20px;color:#806515}
+.nxAjWrap .ajVinc span{flex:1;min-width:180px;display:flex;flex-direction:column}
+.nxAjWrap .ajVinc small{font-size:12px;color:var(--pf-txt2)}
+.ajFicha .ajPares{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto}
+.ajFicha .ajPar{display:grid;grid-template-columns:20px minmax(0,1fr) 18px minmax(0,1fr);gap:8px;align-items:center;border:1px solid #e8e5dc;border-radius:12px;padding:8px 10px;cursor:pointer}
+.ajFicha .ajPar input{accent-color:#C9A227}
+.ajFicha .ajPar span{min-width:0;display:flex;flex-direction:column}
+.ajFicha .ajPar b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ajFicha .ajPar small{font-size:11.5px;color:#686862;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ajFicha .ajPar>i{color:#94918A}
 .ajFicha .ajErr{background:rgba(180,35,24,.08);color:#B42318;border-radius:12px;padding:10px 12px;font-size:13px;margin-top:12px}
 .ajFicha .ajOk{background:rgba(31,122,77,.1);color:#1F7A4D;border-radius:12px;padding:10px 12px;font-size:13px}
 .ajFicha .ajAvisoW{background:rgba(201,140,0,.12);color:#8A5A00;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:8px}
@@ -9884,6 +9971,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   async function cargarRRHH() {
     _empleados = await getAPI().get('rrhh_empleados', 'select=*&order=nombre.asc') || [];
+    // Acceso al sistema de cada empleado (usuario enlazado, migración 47). Solo el administrador ve los usuarios.
+    if (esAdmin() && !_ajUsuarios) { try { await ajCargarUsuarios(); } catch (e) {} }
     _nominas = await getAPI().get('rrhh_nominas', 'select=*&order=fecha.desc,created_at.desc&limit=200') || [];
   }
   function empById(id) { return _empleados.find(x => String(x.id) === String(id)); }
@@ -9895,11 +9984,24 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return `<div class="nxPf nxRhWrap">` + tabs + (_rhTab === 'nominas' ? rhNominas() : rhEmpleados()) + `</div>`;
   }
 
+  // Usuario del sistema enlazado a una ficha de empleado (o null).
+  function rhUsuarioDe(e) { return (_ajUsuarios || []).find(u => u.empleado_id && String(u.empleado_id) === String(e.id)) || null; }
+  function rhAccesoHTML(e) {
+    if (!esAdmin() || !_ajUsuarios || !(_ajUsuarios.length && Object.prototype.hasOwnProperty.call(_ajUsuarios[0], 'empleado_id'))) return '';
+    const u = rhUsuarioDe(e);
+    if (u) return `<div class="rhAcc${u.activo === false ? ' off' : ''}"><i class="ti ti-key"></i> @${esc(u.login || '')} · ${esc(rolLabel(u.rol))}${u.activo === false ? ' · desactivado' : ''}</div>`;
+    return e.activo === false ? '' : `<button type="button" class="rhDarAcc" onclick="window.nxRhDarAcceso('${e.id}')"><i class="ti ti-user-plus"></i> Dar acceso al sistema</button>`;
+  }
+  window.nxRhDarAcceso = async function (id) {
+    if (!esAdmin()) { toast('err', 'Solo el administrador'); return; }
+    if (!_ajUsuarios) await ajCargarUsuarios();
+    ajFicha(null, { empleado_id: id });
+  };
   function rhEmpleados() {
     const activos = _empleados.filter(e => e.activo !== false);
     const nomMensual = activos.reduce((s, e) => s + Number(e.salario || 0), 0);
     const filas = _empleados.length ? _empleados.map(e => `<tr${e.activo === false ? ' style="opacity:.5"' : ''}>
-        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div></td>
+        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div>${rhAccesoHTML(e)}</td>
         <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
         <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
         <td style="text-align:right;white-space:nowrap"><button aria-label="Editar este empleado" class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>

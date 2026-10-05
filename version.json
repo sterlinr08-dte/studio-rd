@@ -1,7 +1,17 @@
 {
-  "version": "59.85",
+  "version": "59.86",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.86",
+      "fecha": "2026-10-05",
+      "notas": [
+        "Usuario ↔ empleado: cada usuario se enlaza con su ficha de Recursos Humanos («Empleado vinculado» en su ficha).",
+        "Crear un usuario partiendo de un empleado: nombre, WhatsApp y usuario se llenan solos. En RRHH → Empleados, cada empleado muestra su usuario y rol, o «Dar acceso al sistema».",
+        "«Vincular por nombre»: muestra los usuarios que coinciden con su ficha de empleado para revisarlos y enlazarlos de una vez.",
+        "Filtro «Sin empleado» en la lista de usuarios; los textos de ayuda de la ficha ya salen del tamaño correcto y «Restablecer clave» se ve como botón."
+      ]
+    },
     {
       "version": "59.85",
       "fecha": "2026-10-05",

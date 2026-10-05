@@ -17,10 +17,15 @@ function base() {
       { id: 'n2', tipo: 'B01', prefijo: 'B01', desde: 1, hasta: 1000, actual: 63, activo: true, vencimiento: '2026-10-20' }],
     pos_acceso: [],
     pos_almacenes: [{ id: 'a1', nombre: 'Edificio Studio', es_principal: true, activo: true }, { id: 'a2', nombre: 'Villa Vázquez', activo: true }],
-    usuarios_sistema: [{ id: 'us-admin', nom: 'ESTERLIN', login: 'admin', rol: 'admin', activo: true, almacen_id: 'a1', organizacion_id: 'org1' },
-      { id: 'us-caj', nom: 'MARIA CAJERA', login: 'maria', rol: 'cajero', activo: true, almacen_id: 'a2' },
-      { id: 'us-ven', nom: 'PEDRO VENDEDOR', login: 'pedro', rol: 'vendedor', activo: false, almacen_id: null },
-      { id: 'us-adm2', nom: 'ANA SOCIA', login: 'ana', rol: 'admin', activo: true, almacen_id: 'a1', telefono: '8095550101' }]
+    usuarios_sistema: [{ id: 'us-admin', nom: 'ESTERLIN', login: 'admin', rol: 'admin', activo: true, almacen_id: 'a1', organizacion_id: 'org1', empleado_id: 'emp-admin' },
+      { id: 'us-caj', nom: 'MARIA CAJERA', login: 'maria', rol: 'cajero', activo: true, almacen_id: 'a2', empleado_id: null },
+      { id: 'us-ven', nom: 'PEDRO VENDEDOR', login: 'pedro', rol: 'vendedor', activo: false, almacen_id: null, empleado_id: null },
+      { id: 'us-adm2', nom: 'ANA SOCIA', login: 'ana', rol: 'admin', activo: true, almacen_id: 'a1', telefono: '8095550101', empleado_id: null }],
+    rrhh_empleados: [{ id: 'emp-admin', nombre: 'Esterlin', puesto: 'Dueño', activo: true, salario: 0 },
+      { id: 'emp-m', nombre: 'María Cajera', puesto: 'Cajera', telefono: '809-555-0111', activo: true, salario: 30000 },
+      { id: 'emp-p', nombre: 'PEDRO VENDEDOR', puesto: 'Vendedor', activo: true, salario: 25000 },
+      { id: 'emp-x', nombre: 'José Nuevo', puesto: 'Almacén', telefono: '8295550123', activo: true, salario: 22000 }],
+    rrhh_nominas: []
   };
 }
 
@@ -162,6 +167,24 @@ async function abrir(b, w, h, db) {
     ok(wa.indexOf('https://wa.me/18095550199?text=') === 0 && decodeURIComponent(wa).indexOf('Usuario: laura.j') > 0 && decodeURIComponent(wa).indexOf('studiord.net/app') > 0, 'Enviar por WhatsApp: al número del empleado con enlace, usuario y clave');
     await p.screenshot({ path: `${OUT}/cfg-acceso-wa-${w}.png` });
     await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
+    // Usuario ↔ empleado (59.86)
+    ok(/Sin empleado 3/.test(await p.textContent('.ajUsrFil')), 'filtro «Sin empleado» (3)');
+    ok(!!(await p.$('.ajUsrF:has-text("ESTERLIN") .ajEmpOk')), 'marca a quien ya está vinculado');
+    ok(/2 usuario\(s\) coinciden/.test(await p.textContent('.ajVinc')), 'aviso: 2 coinciden por nombre (acentos y mayúsculas no importan)');
+    await p.click('.ajVinc button'); await p.waitForTimeout(250);
+    ok(await p.$$eval('.ajPar', x => x.length) === 2, 'revisión muestra las 2 parejas');
+    await p.uncheck('#ajPar1'); await p.click('#ajVincBtn'); await p.waitForTimeout(600);
+    const vinc = llamadas.filter(l => l[0] === 'fn' && l[2].accion === 'actualizar' && l[2].empleado_id);
+    ok(vinc.length === 1 && vinc[0][2].usuario_id === 'us-caj' && vinc[0][2].empleado_id === 'emp-m', 'vincula solo los marcados (María ↔ su ficha)');
+    await p.click('.ajUsrBarra button:has-text("Nuevo usuario")'); await p.waitForTimeout(300);
+    const opts = await p.$$eval('#ajUEmp option', x => x.map(o => o.value));
+    ok(opts.indexOf('emp-admin') < 0 && opts.indexOf('emp-x') >= 0, 'ficha: ofrece solo empleados sin usuario');
+    await p.selectOption('#ajUEmp', 'emp-x'); await p.waitForTimeout(100);
+    ok(await p.$eval('#ajUNom', x => x.value) === 'José Nuevo' && await p.$eval('#ajUTel', x => x.value) === '8295550123' && await p.$eval('#ajULogin', x => x.value) === 'jose.n', 'elegir empleado llena nombre, WhatsApp y usuario');
+    await p.click('#ajUBtn'); await p.waitForTimeout(600);
+    const cr2 = llamadas.filter(l => l[0] === 'fn' && l[2].accion === 'crear').pop();
+    ok(!!cr2 && cr2[2].empleado_id === 'emp-x', 'crear desde empleado → servidor con empleado_id');
+    await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
     await p.click('.ajTabs button:has-text("Roles y permisos")'); await p.waitForTimeout(300);
     ok(!!(await p.$('button:has-text("Nuevo rol")')), 'pestaña Roles y permisos');
     await p.click('.ajTabs button:has-text("Usuarios")'); await p.waitForTimeout(200);
@@ -171,6 +194,14 @@ async function abrir(b, w, h, db) {
     ok(llamadas.some(l => l[0] === 'POST' && l[1] === 'pos_acceso'), 'aviso de permisos → guarda los roles en el servidor');
     // Documentos usan los datos de la empresa
     const emp = await p.evaluate(() => { const d = document.createElement('div'); return window.nxPosCtx && true; });
+    // Recursos Humanos: acceso al sistema de cada empleado
+    await p.evaluate(() => window.nxPosTab('rrhh')); await p.waitForTimeout(900);
+    ok(/@admin/.test(await p.textContent('.nxRhWrap')), 'RRHH: muestra el usuario del empleado vinculado');
+    ok(await p.$$eval('.rhDarAcc', x => x.length) >= 1, 'RRHH: «Dar acceso al sistema» en los que no tienen usuario');
+    await p.click('.rhDarAcc'); await p.waitForTimeout(400);
+    ok(!!(await p.$('#ajUEmp')) && !!(await p.$eval('#ajUEmp', x => x.value)) && !!(await p.$eval('#ajUNom', x => x.value)), 'Dar acceso abre la ficha con el empleado ya elegido');
+    await p.screenshot({ path: `${OUT}/rrhh-acceso-${w}.png` });
+    await p.click('#nxAjUsrM .nxBack'); await p.waitForTimeout(150);
     ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
     await p.close();
   }

@@ -14,6 +14,8 @@ const CORS = {
 // 05-oct-2026 (v4, «Usuarios y acceso»): crear y actualizar guardan también el WhatsApp del empleado (telefono,
 // migración 46) y las funciones del CRM en el MISMO paso (antes era una segunda llamada que podía fallar a medias);
 // crear devuelve el id; nueva acción «accesos»: última entrada de cada usuario (auth.users.last_sign_in_at).
+// 05-oct-2026 (v5): empleado_id (migración 47) enlaza el usuario con su ficha de RRHH: debe ser de la misma empresa y
+// no estar enlazada a otro usuario.
 const PRESET = ["admin", "gerente", "cajero", "vendedor"];
 const json = (o: unknown, status = 200) => Response.json(o, { status, headers: CORS });
 const CANALES = ["whatsapp", "instagram", "facebook"];
@@ -49,6 +51,19 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const accion = String(body.accion || "crear");
 
+    // Empleado de RRHH a enlazar: undefined = no tocar; null = quitar el enlace. Misma empresa y libre.
+    const empleadoDe = async (v: unknown, usuarioId: string | null): Promise<{ ok: true; id: string | null | undefined } | { ok: false; error: string }> => {
+      if (v === undefined) return { ok: true, id: undefined };
+      if (v === null || v === "") return { ok: true, id: null };
+      const id = String(v);
+      const { data: emp } = await admin.from("rrhh_empleados").select("id, organizacion_id").eq("id", id).maybeSingle();
+      if (!emp || emp.organizacion_id !== orgId) return { ok: false, error: "Ese empleado no es de tu empresa" };
+      let q = admin.from("usuarios_sistema").select("id, nom").eq("empleado_id", id);
+      if (usuarioId) q = q.neq("id", usuarioId);
+      const { data: otro } = await q.limit(1);
+      if (otro && otro.length) return { ok: false, error: "Ese empleado ya tiene usuario: " + otro[0].nom };
+      return { ok: true, id };
+    };
     const rolValido = async (rol: string) => {
       if (PRESET.includes(rol)) return true;
       const { data } = await admin.from("pos_acceso").select("rol").eq("organizacion_id", orgId).eq("rol", rol).limit(1);
@@ -65,6 +80,8 @@ Deno.serve(async (req) => {
     if (accion === "crear") {
       const { nombre, login, clave, rol, almacen_id, pedir_cambio } = body;
       const telefono = telDe(body.telefono), crm = crmDe(body.crm_funciones);
+      const emp = await empleadoDe(body.empleado_id, null);
+      if (!emp.ok) return json({ error: emp.error }, 400);
       const lg = String(login || "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
       if (!nombre || !lg || !clave) return json({ error: "Faltan nombre, usuario o clave" }, 400);
       if (String(clave).length < 6) return json({ error: "La clave debe tener al menos 6 caracteres" }, 400);
@@ -79,7 +96,7 @@ Deno.serve(async (req) => {
 
       const { data: usNuevo, error: eUs } = await admin.from("usuarios_sistema")
         .insert({ nom: String(nombre).toUpperCase(), cargo: rolStaff, login: lg, rol: rolStaff, activo: true, organizacion_id: orgId, almacen_id: almacen_id || null,
-          ...(telefono !== undefined ? { telefono } : {}), ...(crm !== undefined ? { crm_funciones: crm } : {}), creado_por: perfil.nom || "admin" })
+          ...(telefono !== undefined ? { telefono } : {}), ...(crm !== undefined ? { crm_funciones: crm } : {}), ...(emp.id ? { empleado_id: emp.id } : {}), creado_por: perfil.nom || "admin" })
         .select().single();
       if (eUs) { await admin.auth.admin.deleteUser(nuevo.user.id); return json({ error: "usuarios_sistema: " + eUs.message }, 500); }
 
@@ -122,6 +139,8 @@ Deno.serve(async (req) => {
       if (body.almacen_id !== undefined) cambios.almacen_id = body.almacen_id || null;
       const tel = telDe(body.telefono); if (tel !== undefined) cambios.telefono = tel;
       const crm = crmDe(body.crm_funciones); if (crm !== undefined) cambios.crm_funciones = crm;
+      const emp = await empleadoDe(body.empleado_id, obj.id); if (!emp.ok) return json({ error: emp.error }, 400);
+      if (emp.id !== undefined) cambios.empleado_id = emp.id;
       if (body.rol !== undefined && body.rol !== obj.rol) {
         if (esYo) return json({ error: "No puedes cambiar tu propio rol" }, 400);
         if (!(await rolValido(String(body.rol)))) return json({ error: "Ese rol no existe" }, 400);

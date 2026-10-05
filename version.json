@@ -6,6 +6,7 @@
       "version": "59.86",
       "fecha": "2026-10-05",
       "notas": [
+        "Ajustes: la sección «Equipo» ahora se llama «Empleados» (Usuarios, Roles y permisos, Vendedores).",
         "Usuario ↔ empleado: cada usuario se enlaza con su ficha de Recursos Humanos («Empleado vinculado» en su ficha).",
         "Crear un usuario partiendo de un empleado: nombre, WhatsApp y usuario se llenan solos. En RRHH → Empleados, cada empleado muestra su usuario y rol, o «Dar acceso al sistema».",
         "«Vincular por nombre»: muestra los usuarios que coinciden con su ficha de empleado para revisarlos y enlazarlos de una vez.",

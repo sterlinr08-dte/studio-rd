@@ -81,7 +81,7 @@ async function abrir(b, w, h, db) {
     await p.waitForTimeout(2500); await p.screenshot({ path: `${OUT}/cfg-inicio-${w}.png`, fullPage: true });
     // Buscar sin perder el foco
     await p.fill('#ajBusq', 'clave'); await p.waitForTimeout(150);
-    ok((await p.$$eval('.ajSecBtn .tx b', x => x.map(e => e.textContent))).join() === 'Equipo', 'buscar «clave» → Equipo');
+    ok((await p.$$eval('.ajSecBtn .tx b', x => x.map(e => e.textContent))).join() === 'Empleados', 'buscar «clave» → Empleados');
     ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'ajBusq'), 'el buscador conserva el foco');
     await p.fill('#ajBusq', ''); await p.waitForTimeout(150);
     // Empresa: RNC válido / inválido, vista previa, guardar
@@ -114,7 +114,7 @@ async function abrir(b, w, h, db) {
     await p.click('.ajVolver'); await p.waitForTimeout(250);
     // Equipo › Usuarios y acceso (59.85): pestañas, lista, buscador, filtros, ficha única, WhatsApp
     p.removeAllListeners('dialog'); p.on('dialog', d => d.accept());
-    await p.click('.ajSecBtn:has-text("Equipo")'); await p.waitForTimeout(900);
+    await p.click('.ajSecBtn:has-text("Empleados")'); await p.waitForTimeout(900);
     const tabs = await p.$$eval('.ajTabs button', x => x.map(e => e.textContent.trim()));
     ok(tabs.join('|') === 'Usuarios|Roles y permisos|Vendedores', 'pestañas de Equipo: ' + tabs.join(', '));
     const usr = await p.$$eval('.ajUsrF .tx b', x => x.map(e => e.textContent));

@@ -2045,7 +2045,7 @@
     ['numeracion', 'ti-list-numbers', 'blue', 'Numeración de documentos', 'Cotizaciones, recibos, notas de crédito…', 'numeracion secuencia numero consecutivo cotizacion recibo nota credito transferencia nomina asiento oportunidad'],
     ['financiamiento', 'ti-calendar-dollar', 'orange', 'Financiamiento y cobros', 'Mora, datos legales y contrato', 'financiamiento cuotas mora recargo gracia contrato plantilla abogado notario testigo acreedor firma legal'],
     ['taller', 'ti-tool', 'green', 'Taller', 'Garantía de reparación', 'taller reparacion garantia dias'],
-    ['equipo', 'ti-users', 'blue', 'Equipo', 'Usuarios, roles, permisos y vendedores', 'equipo usuario usuarios empleado staff clave contraseña rol roles permiso permisos acceso vendedor vendedores comision cajero gerente desactivar crm bandeja'],
+    ['equipo', 'ti-users', 'blue', 'Empleados', 'Usuarios, acceso, roles, permisos y vendedores', 'empleados equipo usuario usuarios empleado staff clave contraseña rol roles permiso permisos acceso vendedor vendedores comision cajero gerente desactivar crm bandeja'],
     ['datos', 'ti-database', 'red', 'Datos', 'Borrar datos de prueba', 'datos borrar prueba limpiar peligro reiniciar']
   ];
   function ajNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
@@ -2259,7 +2259,7 @@
     await getAPI().post('rpc/crm_guardar_funciones', { p_usuario: usuarioId, p_canales: f.canales, p_transferir: f.transferir });
     try { window.logAudit && window.logAudit('CRM_FUNCIONES', 'usuario ' + usuarioId + ' · canales ' + (f.canales.join(', ') || 'ninguno') + ' · transferir ' + (f.transferir ? 'sí' : 'no'), 'Usuarios'); } catch (e) {}
   }
-  // ══ Equipo › Usuarios y acceso (dueño 05-oct-2026: «organízame eso»; maqueta aprobada: «Visto bueno») ══
+  // ══ Empleados (antes «Equipo») › Usuarios y acceso (dueño 05-oct-2026: «organízame eso»; maqueta aprobada: «Visto bueno») ══
   // Lista con buscador y filtros; UNA ficha para crear y editar (antes eran dos ventanas distintas); el acceso se
   // envía por WhatsApp con la clave temporal (el empleado la cambia al entrar). Lo sensible lo hace el servidor
   // (crear-usuario-staff): crear, editar, clave, desactivar. Esta pantalla solo la ve el administrador.
@@ -12556,7 +12556,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
 
 
-  // Crear usuario: ver «Equipo › Usuarios y acceso» (ajFicha). nxStaffNuevo abre la ficha única.
+  // Crear usuario: ver «Empleados › Usuarios y acceso» (ajFicha). nxStaffNuevo abre la ficha única.
 
   // ── CSS + registro en el hub ──
   function inyectarCSS() {

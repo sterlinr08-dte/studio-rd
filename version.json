@@ -1,7 +1,15 @@
 {
-  "version": "59.92",
+  "version": "59.93",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.93",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Listas de 10 en 10, segunda parte: reparaciones entregadas (antes solo 40), solicitudes de financiamiento ya decididas (antes 20), cierres de caja (antes los últimos 10) y movimientos de la caja abierta, proveedores con sus compras y pagos, IMEI/seriales de un artículo, categorías, y en Reacondicionado los pedidos de piezas, «Mis equipos» y «Mi historial».",
+        "Ya se ven los registros viejos: el historial carga todas las ventas (antes 400), y suben los límites de compras, cotizaciones, notas de crédito, prefacturas, apartados, CRM, nóminas, asientos, movimientos de inventario y solicitudes."
+      ]
+    },
     {
       "version": "59.92",
       "fecha": "2026-10-06",

@@ -31,7 +31,7 @@
 | 10 | **Vista rueda** (modo experimental, Facturas + Cobros, solo admin) | ✅ decretado y construido — v50.9, ampliado v51.0 |
 | 11 | **Botones de acción y barra inferior** (POS) | ✅ decretado y auditado — v53.3, Tanda 1 |
 | 12 | **Envíos de WhatsApp (individuales y masivos)** | ✅ decretado y auditado — v57.98 |
-| 13 | **Listas de 10 en 10** (STUDIO) | ✅ decretado y auditado — v59.92, Tanda 1 |
+| 13 | **Listas de 10 en 10** (STUDIO) | ✅ decretado y auditado — v59.92 Tanda 1, v59.93 Tanda 2 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -741,4 +741,20 @@ aprobación" quedó desactualizado y se corrigió en la misma tanda.
   - cierres de caja: 10;
   - reparaciones entregadas: 40;
   - solicitudes de financiamiento: 20.
+
+### Tanda 2 (v59.93)
+- **Se paginaron:**
+  - reparaciones entregadas (antes se cortaban en 40);
+  - solicitudes de financiamiento decididas (antes 20);
+  - cierres de caja (antes los últimos 10; ahora se cargan 500) y movimientos de la caja abierta;
+  - proveedores, y las compras y pagos de un proveedor;
+  - IMEI/seriales de un artículo y categorías;
+  - Reacondicionado: pedidos de piezas, «Mis equipos» y «Mi historial».
+- **Límites de carga que escondían registros viejos:**
+  - ventas: todas, en páginas de 1000 con `getTodasPOS` (antes 400);
+  - hasta 2000: compras (antes 100), cotizaciones (300), apartados (300), CRM (400) y nóminas (200);
+  - hasta 3000: notas de crédito (500), prefacturas (500), solicitudes (300) y movimientos de un artículo (300);
+  - asientos: 5000 (antes 600);
+  - movimientos recientes de inventario: 1000 (antes 200).
+- **Sigue fuera, por la regla:** el catálogo de fallas de Reacondicionado, que va agrupado por categoría. Los selectores mantienen su tope de 400 con la lupa.
 

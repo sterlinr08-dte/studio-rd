@@ -6,6 +6,7 @@ const APP_URL = process.env.QA_URL || 'http://localhost:8790/index.html';
 const OUT = process.env.QA_OUT || require('os').tmpdir();
 let fallos = 0; const ok = (c, m) => { console.log((c ? 'OK    ' : 'FALLA ') + m); if (!c) fallos++; };
 const NOMBRES = ['ANA', 'BRENDA', 'CARLOS', 'DANIA', 'ELVIN', 'FRANCIS', 'GLORIA', 'HECTOR', 'IRIS', 'JOSE', 'KARLA', 'LUIS', 'MARIA', 'NELSON', 'OLGA', 'PEDRO', 'QUELVIN', 'ROSA', 'SANDRA', 'TOMAS', 'URSULA', 'VICTOR', 'WENDY', 'XIOMARA', 'YAN'];
+let MUCHAS = false;
 function base() {
   return {
     profiles: [{ id: 'auth-a', usuario_sistema_id: 'us-a', nom: 'ADMIN', login: 'admin', rol: 'admin', activo: true, must_change_password: false }],
@@ -14,7 +15,7 @@ function base() {
     usuarios_sistema: [{ id: 'us-a', nom: 'ADMIN', login: 'admin', rol: 'admin', activo: true, almacen_id: 'a1', organizacion_id: 'org1' }],
     pos_clientes: NOMBRES.map((n, i) => ({ id: 'c' + i, codigo: 'C-' + String(100 + i).padStart(5, '0'), nombre: n + ' PRUEBA', telefono: '80955500' + String(i).padStart(2, '0'), es_cliente: true, activo: true, nivel_precio: 'final' })),
     pos_productos: Array.from({ length: 23 }, (_, i) => ({ id: 'p' + i, nombre: 'ARTICULO ' + (i + 1), codigo: 'PRD-00' + (1000 + i), precio: 100, costo: 50, stock: 5, activo: true, tipo: 'producto' })),
-    pos_ventas: Array.from({ length: 13 }, (_, i) => ({ id: 'v' + i, numero: i + 1, numero_factura: 'CO' + String(i + 1).padStart(8, '0'), fecha: '2026-10-06', created_at: '2026-10-06T10:00:00', total: 100, estado: 'completada', cliente_nombre: 'Consumidor final' }))
+    pos_ventas: Array.from({ length: MUCHAS ? 1450 : 13 }, (_, i) => ({ id: 'v' + i, numero: i + 1, numero_factura: 'CO' + String(i + 1).padStart(8, '0'), fecha: '2026-10-06', created_at: '2026-10-06T10:00:00', total: 100, estado: 'completada', cliente_nombre: 'Consumidor final' }))
   };
 }
 (async () => {
@@ -31,6 +32,7 @@ function base() {
       if (u.pathname.startsWith('/rest/v1/rpc/')) return send([]);
       let filas = db[u.pathname.slice(9)] || [];
       for (const [k, v] of u.searchParams) { if (/^(select|order|limit|offset|on_conflict)$/.test(k)) continue; const mm = /^eq\.(.*)$/.exec(v); if (mm) filas = filas.filter(x => String(x[k]) === decodeURIComponent(mm[1])); }
+      const off = Number(u.searchParams.get('offset') || 0), lim = u.searchParams.get('limit'); if (lim) filas = filas.slice(off, off + Number(lim));
       return send(filas);
     });
     await p.goto(APP_URL + '#access_token=tok&refresh_token=r&expires_in=3600');
@@ -67,6 +69,29 @@ function base() {
     await p.evaluate(() => window.nxPosTab('clientes')); await p.waitForTimeout(400);
     await p.evaluate(() => window.nxPosTab('ventas')); await p.waitForTimeout(600);
     ok(/11–13 de 13/.test(await pie('historial-ventas')), 'al volver a Historial sigue en la página 2');
+    ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+    await p.close();
+  }
+  { // Tanda 2: las ventas ya no se cortan en 400 (se cargan todas en páginas de 1000)
+    MUCHAS = true; const db = base();
+    const p = await b.newPage({ viewport: { width: 1280, height: 900 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.route(/edbknlkjnlfmkkiizdbe\.supabase\.co/, async route => {
+      const r = route.request(), u = new URL(r.url()); const send = o => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
+      if (u.pathname.startsWith('/auth/v1/user')) return send({ id: 'auth-a', email: 'a@studio.local' });
+      if (u.pathname.startsWith('/auth/v1/')) return send({ access_token: 'tok', refresh_token: 'r', expires_in: 3600, user: { id: 'auth-a' } });
+      if (u.pathname.startsWith('/rest/v1/rpc/')) return send([]);
+      let filas = db[u.pathname.slice(9)] || [];
+      for (const [k, v] of u.searchParams) { if (/^(select|order|limit|offset|on_conflict)$/.test(k)) continue; const mm = /^eq\.(.*)$/.exec(v); if (mm) filas = filas.filter(x => String(x[k]) === decodeURIComponent(mm[1])); }
+      const off = Number(u.searchParams.get('offset') || 0), lim = u.searchParams.get('limit'); if (lim) filas = filas.slice(off, off + Number(lim));
+      return send(filas);
+    });
+    await p.goto(APP_URL + '#access_token=tok&refresh_token=r&expires_in=3600');
+    await p.waitForFunction(() => window.nxPosCfgListo === true, null, { timeout: 30000 });
+    await p.evaluate(() => window.nxPosTab('ventas')); await p.waitForTimeout(1200);
+    const t = await p.$eval('.nxP10[data-de="historial-ventas"]', x => x.innerText.replace(/\s+/g, ' ')).catch(() => '');
+    ok(/1–10 de 1,450/.test(t), 'Historial con 1,450 ventas: se cargan todas, no solo 400 (' + t.slice(0, 40) + ')');
+    await p.evaluate(() => window.nxPag10('historial-ventas', 145)); await p.waitForTimeout(200);
+    ok(/1,441–1,450|1441–1450/.test(await p.$eval('.nxP10[data-de="historial-ventas"]', x => x.innerText.replace(/\s+/g, ' ')).catch(() => '')), 'la última página (145) muestra 1441–1450');
     ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
     await p.close();
   }

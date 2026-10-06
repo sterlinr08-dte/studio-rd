@@ -61,7 +61,7 @@
     let b = `<button type="button" aria-label="Página anterior" ${p <= 1 ? 'disabled' : ''} onclick="window.nxPag10('${clave}',${p - 1})">‹</button>`, prev = 0;
     nums.forEach(x => { if (prev && x - prev > 1) b += '<span class="dots">…</span>'; b += `<button type="button" class="${x === p ? 'on' : ''}" ${x === p ? 'aria-current="page"' : ''} onclick="window.nxPag10('${clave}',${x})">${x}</button>`; prev = x; });
     b += `<button type="button" aria-label="Página siguiente" ${p >= pags ? 'disabled' : ''} onclick="window.nxPag10('${clave}',${p + 1})">›</button>`;
-    pie.innerHTML = `<span><b>${desde + 1}–${Math.min(hasta, n)}</b> de <b>${n.toLocaleString('en-US')}</b></span><div class="nxP10B">${b}</div>`;
+    pie.innerHTML = `<span><b>${(desde + 1).toLocaleString('en-US')}–${Math.min(hasta, n).toLocaleString('en-US')}</b> de <b>${n.toLocaleString('en-US')}</b></span><div class="nxP10B">${b}</div>`;
   }
   window.nxPag10 = function (clave, p) {
     _p10[clave] = p;
@@ -327,13 +327,13 @@
       getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
       getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
       getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
-      g('pos_apartados', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_apartados', 'select=*&order=created_at.desc&limit=2000'),
       g('pos_apartado_pagos', 'select=*&order=created_at.asc&limit=1500'),
       g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc'),
       g('pos_stock_almacen', 'select=*&limit=20000'),
       g('pos_prefacturas', 'select=*&estado=eq.abierta&order=created_at.desc&limit=200'),
-      g('pos_devoluciones', 'select=*&order=created_at.desc&limit=500'),
-      g('pos_prefacturas', 'select=*&order=created_at.desc&limit=500'),
+      g('pos_devoluciones', 'select=*&order=created_at.desc&limit=3000'),
+      g('pos_prefacturas', 'select=*&order=created_at.desc&limit=3000'),
       g('pos_niveles_precio', 'select=*&activo=eq.true&order=orden.asc,nombre.asc'),
       g('pos_producto_niveles', 'select=*&limit=20000'),
       g('pos_ventas_suspendidas', 'select=*&order=created_at.desc&limit=100')
@@ -369,7 +369,7 @@
     const [prov, cli, compras, cc, pp] = await Promise.all([
       g('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc'),
       _clientes.length ? Promise.resolve(null) : g('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc'),
-      g('pos_compras', 'select=*&order=created_at.desc&limit=100'),
+      g('pos_compras', 'select=*&order=created_at.desc&limit=2000'),
       g('pos_compras', 'select=proveedor_id,total&a_credito=eq.true'),
       g('pos_compra_pagos', 'select=proveedor_id,monto')
     ]);
@@ -475,7 +475,7 @@
     } catch (e) { _dashKPI = null; }
   }
   async function cargarVentas() {
-    _ventas = await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=400') || [];
+    _ventas = (await getTodasPOS('pos_ventas', 'select=*&order=created_at.desc,id.desc')) || await getAPI().get('pos_ventas', 'select=*&order=created_at.desc&limit=400') || [];   // Reglamento 13, Tanda 2: todas (antes 400)
   }
   async function cargarSaldosCli() {
     _fiadoByCli = {}; _abonosByCli = {};
@@ -640,7 +640,7 @@
     if (t === 'clientes') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; await cargarSaldosCli(); } catch (e) {} }
     if (t === 'entidades') { try { _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {} }
     if (t === 'compras') { try { await cargarComprasTab(); } catch (e) {} }
-    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {} }
+    if (t === 'caja') { try { const cj = await getAPI().get('pos_cajas', cajaQS('abierta', 1)); _caja = (cj && cj[0]) || null; _cajaTot = _caja ? await totalesCaja(_caja) : null; _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 500)) || []; } catch (e) {} }
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { if (window.nxReportes) await window.nxReportes.cargar(); else await cargarReportes(); } catch (e) {} }
@@ -2016,7 +2016,7 @@
         <div class="fr"><label>Color de este lote (opcional — se aplica a todos los que agregues ahora)</label>${colorSelectHTML('serInColor', '')}</div>
         <button class="btn bsm bc1" type="button" style="margin-bottom:10px" onclick="window.nxSerialAdd('${pid}')"><i class="ti ti-plus"></i> Agregar</button>
         <div style="font-size:10.5px;font-weight:800;color:#94a3b8;text-transform:uppercase;margin-bottom:4px">Disponibles (${rows.length})</div>
-        <div style="overflow-y:auto;flex:1;border:1px solid #e2e8f0;border-radius:10px">${lista}</div>
+        <div data-pag10="seriales" style="overflow-y:auto;flex:1;border:1px solid #e2e8f0;border-radius:10px">${lista}</div>
       </div>`;
     document.body.appendChild(ov);
   };
@@ -6440,7 +6440,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <div class="mt"><span><i class="ti ti-tags"></i> Categorías</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosCats').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           <div style="display:flex;gap:6px;margin-bottom:10px"><input id="posCatNom" class="no-upper" placeholder="Nueva categoría" style="flex:1;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;outline:none"><button aria-label="Agregar una categoría" class="btn bc1 bsm" type="button" onclick="window.nxPosAddCat()"><i class="ti ti-plus"></i></button></div>
-          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
+          <div data-pag10="categorias" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div>
         </div>
       </div>`;
     document.body.appendChild(ov);
@@ -8212,11 +8212,11 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       if (!v2) { try { postAsientoCompra(compra, body.subtotal, body.itbis, !!aCred); } catch (e) {} } // v2: el asiento lo crea el servidor (única fuente)
       toast('ok', 'Compra registrada', 'No. ' + (compra.numero || '') + ' · ' + (v2 ? 'desembarcado ' + fmt2(core.total_desembarcado != null ? core.total_desembarcado : subtotal) : fmt(subtotal)) + ' · stock actualizado');
       _compraGastos = { flete: 0, impuesto_modo: 'pct', impuesto_valor: 0, otros: [] };
-      docGuardado('comp', { id: compra.id, numero: compra.numero, total: subtotal, imprimir: async () => { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; } catch (e) {} window.nxCompraImprimir(compra.id); } });
+      docGuardado('comp', { id: compra.id, numero: compra.numero, total: subtotal, imprimir: async () => { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=2000') || []; } catch (e) {} window.nxCompraImprimir(compra.id); } });
       _compraItems = []; _compraVista = 'lista';
       await cargarComprasTab(); await cargarPOS();
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
-      if (imprimir) { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=100') || []; window.nxCompraImprimir(compra.id); } catch (e) {} }
+      if (imprimir) { try { _compras = await getAPI().get('pos_compras', 'select=*&order=created_at.desc&limit=2000') || []; window.nxCompraImprimir(compra.id); } catch (e) {} }
     } catch (e) { toast('err', 'No se pudo registrar la compra', String(e && e.message || e)); }
   };
   window.nxPosCompraVer = async function (id) {
@@ -8495,7 +8495,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal nxPrForm" style="max-width:430px;max-height:86vh;display:flex;flex-direction:column">
         <div class="mt"><span><i class="ti ti-building-warehouse"></i> Proveedores</span><button class="nxBack" type="button" onclick="document.getElementById('nxPosProvs').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
-        <div style="overflow-y:auto;flex:1"><div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProv()"><i class="ti ti-plus"></i> Nuevo proveedor</button></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${lista}</div></div>
+        <div style="overflow-y:auto;flex:1"><div style="margin-bottom:10px"><button class="btn bsm bc1" type="button" onclick="window.nxPosNuevoProv()"><i class="ti ti-plus"></i> Nuevo proveedor</button></div><div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden" data-pag10="proveedores">${lista}</div></div>
       </div>`;
     document.body.appendChild(ov);
   };
@@ -8557,9 +8557,9 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">${kpi('Comprado (créd.)', fmt(totC), '#0f172a')}${kpi('Pagado', fmt(totP), '#059669')}${kpi('Saldo (CxP)', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}</div>
           ${saldo > 0 && cv2() ? `<button class="btn bc1" type="button" style="width:100%;margin-bottom:10px" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-file-invoice"></i> Abonar por factura (Cuentas por pagar)</button>` : saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px"><div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR PAGO AL PROVEEDOR</div><div style="display:flex;gap:6px"><input id="provPagoMonto" data-nx-money inputmode="numeric" placeholder="Monto" style="flex:1;min-width:0;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px"><select id="provPagoMet" style="flex:0 0 auto;padding:9px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:12px;background:#fff"><option>Efectivo</option><option>Transferencia</option><option>Cheque</option></select><button aria-label="Registrar un pago al proveedor" class="btn bc1 bsm" type="button" onclick="window.nxPosPagarProv('${id}')"><i class="ti ti-plus"></i></button></div></div>` : '<div style="text-align:center;color:#16a34a;font-weight:800;font-size:12px;margin-bottom:10px"><i class="ti ti-circle-check"></i> Sin deuda</div>'}
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">COMPRAS A CRÉDITO (${compras.length})</div>
-          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${comprasHTML}</div>
+          <div data-pag10="prov-compras" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:8px">${comprasHTML}</div>
           <div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PAGOS (${pagos.length})</div>
-          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
+          <div data-pag10="prov-pagos" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">${pagosHTML}</div>
         </div>
         <div class="fe" style="margin-top:10px;gap:8px"><button class="btn bsm bghost" type="button" onclick="window.nxPosEditProv('${id}')"><i class="ti ti-edit"></i> Editar</button><button class="btn bsm bghost" type="button" style="color:#dc2626" onclick="window.nxPosDelProv('${id}')"><i class="ti ti-minus"></i> Borrar</button></div>
       </div>`;
@@ -8605,7 +8605,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function renderCaja() {
     try { window.nxPfEnsureCSS(); } catch (e) {}
     const cierresHTML = _cierres.length ? _cierres.map(c => `<tr onclick="window.nxPosVerCierre('${c.id}')" style="cursor:pointer" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}"><td style="font-size:10px">${fechaDMY(c.cierre)}</td><td style="text-align:right">${fmt(c.efectivo_esperado)}</td><td style="text-align:right;color:${Number(c.descuadre) < 0 ? 'var(--pf-red)' : Number(c.descuadre) > 0 ? 'var(--pf-orange)' : 'var(--pf-green)'};font-weight:700">${Number(c.descuadre) > 0 ? '+' : ''}${fmt(c.descuadre)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--pf-txt3);font-size:11px;padding:14px">Sin cierres aún</td></tr>';
-    const histo = `<div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:14px 0 4px">CIERRES RECIENTES</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody>${cierresHTML}</tbody></table></div>`;
+    const histo = `<div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:14px 0 4px">CIERRES DE CAJA</div><div class="tw" style="font-size:11px"><table style="width:100%"><thead><tr><th>Fecha cierre</th><th style="text-align:right">Esperado</th><th style="text-align:right">Descuadre</th></tr></thead><tbody data-pag10="caja-cierres">${cierresHTML}</tbody></table></div>`;
     if (!_caja) {
       return `<div class="nxPf nxCajaWrap"><div class="cajaCard" style="max-width:420px">
           <div style="text-align:center;padding:6px 0 12px"><i class="ti ti-lock" style="font-size:34px;color:var(--pf-txt3)"></i><div style="font-weight:800;color:var(--pf-txt);margin-top:6px">Caja cerrada</div><div style="font-size:11px;color:var(--pf-txt2)">Abre la caja para empezar el turno.</div></div>
@@ -8622,7 +8622,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         </div>
         <div class="cajaEsp" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:12px">Efectivo esperado en caja</span><b style="font-size:17px">${fmt(tt.esperado)}</b></div>
         <div style="font-size:11px;font-weight:800;color:var(--pf-txt2);margin:4px 0 4px">MOVIMIENTOS DE EFECTIVO</div>
-        <div style="background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;overflow:hidden;margin-bottom:6px">${movsHTML}</div>
+        <div data-pag10="caja-movs" style="background:var(--pf-panel);border:1px solid var(--pf-line);border-radius:10px;overflow:hidden;margin-bottom:6px">${movsHTML}</div>
         <div style="display:flex;gap:6px;margin-bottom:12px"><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('entrada')"><i class="ti ti-plus"></i> Entrada</button><button class="btn bsm bghost" type="button" onclick="window.nxPosMovimiento('salida')"><i class="ti ti-minus"></i> Salida / Gasto</button></div>
         <button class="btn bc1" type="button" style="width:100%" onclick="window.nxPosCerrarCaja()"><i class="ti ti-lock"></i> Cerrar caja / Arqueo</button>
       </div>${histo}</div>`;
@@ -8725,7 +8725,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       cerrarModal('nxPosCierre');
       const movs = (tt.movs || []).slice();
       _caja = null; _cajaTot = null;
-      try { _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 10)) || []; } catch (e) {}
+      try { _cierres = await getAPI().get('pos_cajas', cajaQS('cerrada', 500)) || []; } catch (e) {}
       const v = document.getElementById('v-pos'); if (v) renderPOS(v);
       imprimirCierre(cerrada, movs);
     } catch (e) { toast('err', 'No se pudo cerrar', String(e && e.message || e)); }
@@ -8800,7 +8800,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function isoMesIni() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA'); }
   async function cargarContabilidad() {
     _cuentas = await getAPI().get('pos_cuentas', 'select=*&order=codigo.asc') || [];
-    _asientos = await getAPI().get('pos_asientos', 'select=*&order=fecha.desc,created_at.desc&limit=600') || [];
+    _asientos = await getAPI().get('pos_asientos', 'select=*&order=fecha.desc,created_at.desc&limit=5000') || [];
     // Unir las líneas en JS (no depende de la detección de relación de PostgREST)
     try {
       const lns = await getAPI().get('pos_asiento_lineas', 'select=*&limit=5000') || [];
@@ -9370,7 +9370,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   // ── MÓDULO COTIZACIONES / PRESUPUESTOS (POS) ──
   // ════════════════════════════════════════════════════════════════════
   async function cargarCotizaciones() {
-    _cotizaciones = await getAPI().get('pos_cotizaciones', 'select=*&order=created_at.desc&limit=300') || [];
+    _cotizaciones = await getAPI().get('pos_cotizaciones', 'select=*&order=created_at.desc&limit=2000') || [];
   }
   function cotProxNumero() { let mx = 0; (_cotizaciones || []).forEach(c => { const m = String(c.numero || '').match(/(\d+)\s*$/); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } }); return 'COT-' + String(mx + 1).padStart(4, '0'); }
   function cotTotales(lineas) {
@@ -9612,7 +9612,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return prod.stock;
   }
   async function cargarInventario() {
-    try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=200') || []; } catch (e) { _invMovs = []; }
+    try { _invMovs = await getAPI().get('pos_inv_movimientos', 'select=*&order=fecha.desc&limit=1000') || []; } catch (e) { _invMovs = []; }
     try { _almacenes = await getAPI().get('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc') || []; } catch (e) {}
     try { const rows = await getAPI().get('pos_stock_almacen', 'select=*&limit=20000') || []; _stockAlmRows = {}; rows.forEach(r => { _stockAlmRows[stockKey(r.producto_id, r.almacen_id)] = { id: r.id, stock: Number(r.stock || 0) }; }); } catch (e) { _stockAlmRows = {}; }
     try { _invDescuadres = await getAPI().post('rpc/pos_inventario_conciliacion', {}) || []; } catch (e) { _invDescuadres = []; }
@@ -9674,7 +9674,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   };
   window.nxInvVerProd = async function (id) {
     _invProdSel = id;
-    try { _invProdMovs = await getAPI().get('pos_inv_movimientos', 'select=*&producto_id=eq.' + id + '&order=fecha.desc&limit=300') || []; } catch (e) { _invProdMovs = []; }
+    try { _invProdMovs = await getAPI().get('pos_inv_movimientos', 'select=*&producto_id=eq.' + id + '&order=fecha.desc&limit=3000') || []; } catch (e) { _invProdMovs = []; }
     const v = document.getElementById('v-pos'); if (v) renderPOS(v);
   };
   window.nxInvCerrarProd = function () { _invProdSel = ''; _invProdMovs = []; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
@@ -9957,7 +9957,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   const CRM_ETAPAS = [['nuevo', 'Nuevo', '#6d28d9'], ['contactado', 'Contactado', '#0891b2'], ['cotizado', 'Cotizado', '#7c3aed'], ['ganado', 'Ganado', '#16a34a'], ['perdido', 'Perdido', '#dc2626']];
   function crmEt(e) { return CRM_ETAPAS.find(x => x[0] === e) || CRM_ETAPAS[0]; }
   function crmAbierta(o) { return ['nuevo', 'contactado', 'cotizado'].indexOf(o.etapa) >= 0; }
-  async function cargarCRM() { try { _crm = await getAPI().get('pos_crm', 'select=*&order=created_at.desc&limit=400') || []; } catch (e) { _crm = []; } }
+  async function cargarCRM() { try { _crm = await getAPI().get('pos_crm', 'select=*&order=created_at.desc&limit=2000') || []; } catch (e) { _crm = []; } }
   function renderCRM() {
     nxPfEnsureCSS();
     const abiertas = _crm.filter(crmAbierta);
@@ -10285,7 +10285,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (_empleados.some(e => e.codigo)) _empleados.sort((a, b) => String(a.codigo || '~').localeCompare(String(b.codigo || '~'), 'en', { numeric: true }));
     // Acceso al sistema de cada empleado (usuario enlazado, migración 47). Solo el administrador ve los usuarios.
     if (esAdmin() && !_ajUsuarios) { try { await ajCargarUsuarios(); } catch (e) {} }
-    _nominas = await getAPI().get('rrhh_nominas', 'select=*&order=fecha.desc,created_at.desc&limit=200') || [];
+    _nominas = await getAPI().get('rrhh_nominas', 'select=*&order=fecha.desc,created_at.desc&limit=2000') || [];
   }
   function empById(id) { return _empleados.find(x => String(x.id) === String(id)); }
 
@@ -10742,7 +10742,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       return `<div class="nxRepCol"><div class="nxRepColH" style="--rc:${e[2]}"><span>${e[1]}</span><b>${activas.filter(r => r.estado === e[0]).length}</b></div>${cards || '<div class="nxRepEmpty">—</div>'}</div>`;
     }).join('');
     const entregadasHTML = _repVista === 'entregadas'
-      ? (vistaLista.length ? vistaLista.slice(0, 40).map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
+      ? (vistaLista.length ? vistaLista.map(r => { const g = garantiaInfo(r); return `<div class="nxMdRow" style="cursor:pointer" onclick="window.nxRepVer('${r.id}')" tabindex="0" onkeydown="if(event.keyCode==13||event.keyCode==32){event.preventDefault();this.click()}" role="button"><div style="flex:1;min-width:0"><div class="nxMdNom">${esc(r.equipo)} · ${esc(r.numero || '')}</div><div class="nxMdSub">${esc(r.cliente_nombre || '')} · entregado ${String(r.entregado_at || '').slice(0, 10)}${g ? ` · <span style="color:${g.vigente ? '#16a34a' : '#dc2626'};font-weight:700">garantía ${g.vigente ? 'hasta ' + g.fecha : 'vencida'}</span>` : ''}</div></div><b>${fmt(r.cobrado_monto || 0)}</b></div>`; }).join('') : '<div class="nxRepEmpty" style="padding:20px">Sin entregadas</div>')
       : '';
     return `<div class="nxPf nxRepWrapK"><div style="margin-bottom:8px"><span id="repQLupa"></span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
@@ -10752,7 +10752,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <button type="button" class="nxInvPill${_repVista === 'entregadas' ? ' on' : ''}" onclick="window.nxRepVista('entregadas')">Entregadas</button>
         </div>
       </div>
-      ${_repVista === 'entregadas' ? entregadasHTML : `<div class="nxRepKb">${cols}</div>`}</div>`;
+      ${_repVista === 'entregadas' ? `<div data-pag10="rep-entregadas">${entregadasHTML}</div>` : `<div class="nxRepKb">${cols}</div>`}</div>`;
   }
   window.nxRepBuscar = function (q) {
     const ql = String(q || '').trim().toLowerCase();
@@ -13235,7 +13235,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const g = (t, q) => getAPI().get(t, q).catch(() => null);
     const [pl, so, pf, rf, ct] = await Promise.all([
       g('pos_fin_planes', 'select=*&order=activo.desc,nombre.asc'),
-      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300'),
+      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=3000'),
       g('pos_fin_perfil', 'select=*&limit=3000'),
       g('pos_fin_referencias', 'select=*&order=created_at.asc&limit=6000'),
       g('pos_cuentas_bancarias', 'select=*&activa=eq.true&order=predeterminada.desc,alias.asc')
@@ -13274,7 +13274,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       getTodasPOS('pos_financiamientos', 'select=*&order=created_at.desc,id.asc'),
       getTodasPOS('pos_fin_cuotas', 'select=*&order=fecha_venc.asc,id.asc'),
       getTodasPOS('pos_fin_pagos', 'select=*&order=fecha.asc,created_at.asc,id.asc'),
-      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=300')
+      g('pos_fin_solicitudes', 'select=*&order=created_at.desc&limit=3000')
     ]);
     if (fins) _fins = fins; if (fcuo) _finCuotas = fcuo; if (finpag) _finPagos = finpag; if (so) _finSols = so;
   }
@@ -15072,9 +15072,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const pend = _finSols.filter(s => s.estado === 'pendiente');
     const sel = _finV2SolSel ? _finSols.find(s => String(s.id) === String(_finV2SolSel)) : null;
     if (sel) return finV2SolDetalleHTML(sel);
-    const otras = _finSols.filter(s => s.estado !== 'pendiente').slice(0, 20);
+    const otras = _finSols.filter(s => s.estado !== 'pendiente');
     const row = s => { const pl = finPlanEfectivo(s); const cls = s.estado === 'pendiente' ? 'warn' : s.estado === 'aprobada' ? 'ok' : 'gris'; return `<div class="nxF2Row" onclick="window.nxFinV2Go('aprobacion','${s.id}')"><div class="top"><div class="who"><div class="nxF2Av ${s.estado === 'pendiente' ? '' : 'gris'}">${finIniciales(s.cliente_nombre).ini}</div><div style="min-width:0"><div class="nm">${esc(s.cliente_nombre || '')}</div><div class="ds">${esc(s.codigo || '')} · ${esc((s.items || []).map(i => i.nombre).join(', '))}</div></div></div><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${s.estado === 'pendiente' ? finEvBadge(s) + finExpBadge(s) : ''}<span class="nxF2Badge ${cls}">${String(s.estado).toUpperCase()}</span></span></div><div class="bot"><span>${esc(finTerminosTxt(pl))} · inicial ${fmt2(s.inicial)} · ${finFechaCorta(s.created_at)}</span><span class="amt">${fmt2(s.precio_total - s.inicial)}</span></div></div>`; };
-    return finV2HeaderHTML('Solicitudes', pend.length + ' pendiente(s) de aprobación', 'cartera') + (pend.length ? pend.map(row).join('') : '<div class="nxF2Note" style="margin-bottom:10px">No hay solicitudes pendientes.</div>') + (otras.length ? '<div class="nxF2Lbl" style="margin:12px 0 8px">Decididas recientes</div>' + otras.map(row).join('') : '');
+    return finV2HeaderHTML('Solicitudes', pend.length + ' pendiente(s) de aprobación', 'cartera') + (pend.length ? pend.map(row).join('') : '<div class="nxF2Note" style="margin-bottom:10px">No hay solicitudes pendientes.</div>') + (otras.length ? '<div class="nxF2Lbl" style="margin:12px 0 8px">Decididas</div><div data-pag10="fin-solicitudes">' + otras.map(row).join('') + '</div>' : '');
   }
   function finV2SolDetalleHTML(s) {
     const pl = finPlanEfectivo(s); const cli = _clientes.find(c => String(c.id) === String(s.cliente_id)) || {};

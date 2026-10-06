@@ -1,7 +1,17 @@
 {
-  "version": "59.90",
+  "version": "59.91",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.91",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Clientes duplicados: en Clientes y Entidades, «Revisar duplicados» muestra los grupos con la misma cédula, teléfono o nombre. El administrador marca la ficha que queda y la une: se le pasan las ventas, abonos, cuotas, documentos y chats de las otras, que quedan inactivas (no se borran). Los montos no cambian.",
+        "Ya no se puede crear otro cliente con una cédula que tiene otro cliente: el sistema avisa y ofrece abrir la ficha que ya existe.",
+        "Código de cliente automático: lo pone el sistema, siguiendo C-00450, C-00451… (suplidores PR-0001…, bancos BC-0001…), y nunca se repite.",
+        "Chats de WhatsApp ↔ cliente: un chat nuevo se enlaza solo con el cliente de ese teléfono, y al crear o corregir un cliente se le pegan sus chats."
+      ]
+    },
     {
       "version": "59.90",
       "fecha": "2026-10-06",

@@ -80,7 +80,8 @@ async function abrir(b, w, h, db) {
     await p.fill('#entTel', '8095551234');
     await p.evaluate(() => { const b = [...document.querySelectorAll('#nxEntForm button')].find(x => /Guardar/.test(x.textContent)); if (b) b.click(); }); await p.waitForTimeout(900);
     const post = llamadas.find(l => l[0] === 'POST' && l[1] === 'pos_clientes');
-    ok(!!post && post[3].nombre === 'Juana Prueba' && post[3].es_cliente === true && !!post[3].codigo, 'se guarda en Entidades (pos_clientes) con código');
+    // 59.91 (migración 50): el código lo pone la base; la pantalla lo manda vacío
+    ok(!!post && post[3].nombre === 'Juana Prueba' && post[3].es_cliente === true && !post[3].codigo, 'se guarda en Entidades (pos_clientes); el código lo pone la base');
     const cliTxt = await p.evaluate(() => (document.getElementById('facCliInfoWrap') || document.getElementById('facCliTxt') || {}).innerText || '');
     ok(/Juana Prueba/i.test(cliTxt), 'queda elegido en la factura (' + cliTxt.replace(/\s+/g, ' ').slice(0, 60) + ')');
     await p.screenshot({ path: `${OUT}/dinero-cliente-${w}.png` });

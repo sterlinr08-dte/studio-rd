@@ -5020,6 +5020,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
 .ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
 .ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.nxDupNota{font-size:12.5px;color:#4a4740;background:#F7F5EF;border:1px solid rgba(201,162,39,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;line-height:1.45}
+.nxDupG{border:1px solid #e8e5dc;border-radius:14px;padding:10px;margin-bottom:10px;background:#fff}
+.nxDupGh{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.nxDupMot{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#806515}
+.nxDupEmp{font-size:10.5px;font-weight:700;color:#9a3412;background:#fff7ed;border-radius:999px;padding:1px 7px}
+.nxDupF{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.nxDupF.on{border-color:#C9A227;background:rgba(201,162,39,.08)}
+.nxDupF input{accent-color:#C9A227;margin:0}
+.nxDupT{min-width:0;display:flex;flex-direction:column}.nxDupT b{font-size:13px;overflow-wrap:anywhere}.nxDupT small{font-size:11.5px;color:#686862}
+.nxDupN{font-size:11.5px;color:#4a4740;text-align:right;font-variant-numeric:tabular-nums}
+.nxDupQ{grid-column:2/4;justify-self:start;font-size:10.5px;font-weight:800;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;padding:1px 8px}
+@media (max-width:540px){.nxDupF{grid-template-columns:20px minmax(0,1fr)}.nxDupN{grid-column:2;text-align:left}}
 .rhCod{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:6px;background:#F7F5EF;border:1px solid rgba(201,162,39,.45);color:#806515;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:1px}
 .nxRhWrap .rhAcc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;font-weight:600;color:#806515;background:rgba(201,162,39,.1);border-radius:999px;padding:2px 8px}
 .nxRhWrap .rhAcc.off{color:#686862;background:rgba(17,17,17,.06)}
@@ -6712,11 +6724,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   function entRolesBadges(c) {
     return ENT_ROLES.filter(r => c[r[0]]).map(r => `<span class="rolebadge">${r[1]}</span>`).join('') || '<span style="color:var(--pf-txt3);font-size:10px">—</span>';
   }
-  function entCodigoAuto(c) {
-    const pref = c.es_cliente ? 'CL' : c.es_proveedor ? 'PR' : c.es_empleado ? 'EM' : c.es_banco ? 'BC' : 'EN';
-    let mx = 0; (_clientes || []).forEach(x => { const m = String(x.codigo || '').match(new RegExp('^' + pref + '-?(\\d+)$')); if (m) { const n = parseInt(m[1], 10); if (n > mx) mx = n; } });
-    return pref + '-' + String(mx + 1).padStart(4, '0');
-  }
+  // Migración 50: el código de toda Entidad lo pone la base (C-00450…, PR-0001…, BC-0001…, EM-<código del empleado>)
+  // y nunca se repite. La pantalla ya no lo calcula: devolver null deja que la base lo asigne.
+  function entCodigoAuto() { return null; }
+
   function renderEntidades() {
     nxPfEnsureCSS();
     const fil = c => _entFiltro === 'todas' || (_entFiltro === 'clientes' && c.es_cliente) || (_entFiltro === 'proveedores' && c.es_proveedor) || (_entFiltro === 'empleados' && c.es_empleado) || (_entFiltro === 'bancos' && c.es_banco);
@@ -6732,6 +6743,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     return `<div class="nxPf">
       <div class="toolbar2">
         <button class="ab g2 sm" type="button" onclick="window.nxEntNueva()"><i class="ti ti-plus"></i> Nueva entidad</button>
+        ${puedeRevisarDup() ? '<button class="ab g3 sm" type="button" onclick="window.nxDupAbrir()"><i class="ti ti-users-group"></i> Revisar duplicados</button>' : ''}
         <div class="chiprow">${chip('todas', 'Todas')}${chip('clientes', 'Clientes')}${chip('proveedores', 'Proveedores')}${chip('empleados', 'Empleados')}${chip('bancos', 'Bancos')}</div>
       </div>
       <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Código</th><th>Nombre</th><th style="text-align:center">Tipo</th><th>Roles</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
@@ -6877,7 +6889,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         if (!ok) { const cb = _entAlGuardar; cerrarModal('nxEntForm'); abrirEntidad(dup, null, cb); return; }
       }
     }
-    if (!body.codigo) body.codigo = entCodigoAuto(body);
+    // Código: si se deja vacío lo pone la base (migración 50: C-00450…, PR-0001…, BC-0001…; empleados EM-<código>)
     try {
       let entId = id;
       if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body);
@@ -6894,7 +6906,18 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
       const cb = _entAlGuardar; _entAlGuardar = null;
       if (cb && entId) { const ent = _clientes.find(x => String(x.id) === String(entId)); if (ent) { try { cb(ent); } catch (e) {} } }
-    } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+    } catch (e) {
+      const m = String(e && e.message || e);
+      if (/CLIENTE_CEDULA_DUPLICADA/.test(m)) {
+        let det = ''; try { det = (JSON.parse(m).details || ''); } catch (e2) {}
+        const otro = det ? _clientes.find(x => String(x.codigo || '') === det.split(' · ')[0]) : null;
+        toast('err', 'Esa cédula ya es de otro cliente', det || 'Ábrelo o únelos en «Revisar duplicados»');
+        if (otro && confirm('La cédula ya la tiene ' + det + '.\n\n¿Abrir esa ficha?')) { const cb = _entAlGuardar; cerrarModal('nxEntForm'); abrirEntidad(otro, null, cb); }
+        return;
+      }
+      if (/pos_clientes_codigo_unico|duplicate key/i.test(m)) { toast('err', 'Ese código ya lo tiene otra entidad', 'Déjalo vacío para que el sistema asigne uno'); return; }
+      toast('err', 'No se pudo guardar', m);
+    }
   };
   // Crea/actualiza la ficha de RRHH enlazada a una entidad-empleado (salario/puesto se completan en RRHH)
   async function syncEmpleadoEntidad(entId, body) {
@@ -6925,11 +6948,82 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         ${kpiPf('Por cobrar (crédito)', fmt(totalCobrar), totalCobrar > 0 ? 'var(--pf-red)' : 'var(--pf-green)')}
         ${kpiPf('Con deuda', conDeuda, 'var(--pf-orange)')}
       </div>
-      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button></div>
+      <div class="toolbar2 nxConBusca"><label class="nxBuscaFila"><i class="ti ti-search"></i><input type="search" placeholder="Nombre, cédula o teléfono" aria-label="Buscar cliente" oninput="window.nxFiltrarFilas('nxCliTb', this.value)"></label><button class="ab g2 sm" type="button" onclick="window.nxPosNuevoCli()"><i class="ti ti-plus"></i> Nuevo cliente</button>${puedeRevisarDup() ? '<button class="ab g3 sm" type="button" onclick="window.nxDupAbrir()"><i class="ti ti-users-group"></i> Revisar duplicados</button>' : ''}</div>
       <div class="card" style="padding:0;overflow-x:auto"><table class="ltbl"><thead><tr><th>Cliente</th><th style="text-align:right">Saldo (crédito)</th><th></th></tr></thead><tbody id="nxCliTb">${filas}${lista.length ? '<tr class="nxSinRes" style="display:none"><td colspan="3" class="emptyrow">Ningún cliente coincide con la búsqueda.</td></tr>' : ''}</tbody></table></div>
     </div>`;
   }
   window.nxPosNuevoCli = function () { abrirEntidad(null, { es_cliente: true }); };
+
+  // ── Revisar y unir clientes duplicados (migración 50: pos_clientes_duplicados / pos_unir_clientes) ──
+  // Lo ven administrador y gerente; solo el administrador une. Unir pasa a la ficha marcada las ventas, abonos, cuotas,
+  // documentos y chats de las otras, completa sus datos vacíos y deja las otras inactivas (no se borran). Los montos no
+  // cambian: el saldo del cliente es la suma de lo que ya tenía cada ficha.
+  function miRolPOS() { try { return ((typeof sesion !== 'undefined' && sesion) || window.sesion || {}).rol || ''; } catch (e) { return ''; } }
+  function puedeRevisarDup() { return ['admin', 'gerente'].includes(miRolPOS()); }
+  let _dup = null, _dupSel = {}, _dupUniendo = false;
+  window.nxDupAbrir = async function () {
+    cerrarModal('nxDup');
+    const ov = document.createElement('div'); ov.id = 'nxDup'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal nxDupM" style="max-width:720px;max-height:92vh;display:flex;flex-direction:column">
+        <div class="mt"><span><i class="ti ti-users-group"></i> Clientes duplicados</span><button class="nxBack" type="button" onclick="document.getElementById('nxDup').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div id="nxDupCuerpo" style="overflow-y:auto;flex:1"><div class="emptyrow" style="padding:22px;text-align:center">Buscando duplicados…</div></div>
+      </div>`;
+    document.body.appendChild(ov);
+    await dupCargar();
+  };
+  async function dupCargar() {
+    try { _dup = await getAPI().post('rpc/pos_clientes_duplicados', {}) || []; }
+    catch (e) { _dup = null; const c = document.getElementById('nxDupCuerpo'); if (c) c.innerHTML = '<div class="emptyrow" style="padding:22px">No se pudo revisar: ' + esc(String(e && e.message || e)).slice(0, 160) + '</div>'; return; }
+    dupPintar();
+  }
+  function dupGrupos() {
+    const g = {}; (_dup || []).forEach(r => { (g[r.grupo] = g[r.grupo] || { k: r.grupo, motivo: r.motivo, filas: [] }).filas.push(r); });
+    return Object.values(g).filter(x => x.filas.length > 1);
+  }
+  function dupPintar() {
+    const c = document.getElementById('nxDupCuerpo'); if (!c) return;
+    const grupos = dupGrupos();
+    if (!grupos.length) { c.innerHTML = '<div class="emptyrow" style="padding:26px;text-align:center"><i class="ti ti-circle-check" style="font-size:22px;color:#15803d"></i><br>No hay clientes duplicados.</div>'; return; }
+    const admin = miRolPOS() === 'admin';
+    c.innerHTML = `<div class="nxDupNota">${grupos.length} grupo${grupos.length === 1 ? '' : 's'} con la misma cédula, teléfono o nombre. Marca la ficha que <b>queda</b> y pulsa «Unir»: las demás le pasan sus ventas, abonos, cuotas, documentos y chats, y quedan inactivas (no se borran). Los montos no cambian.${admin ? '' : '<br><b>Solo el administrador puede unir.</b>'}</div>` +
+      grupos.map((g, gi) => {
+        // queda por defecto: la de más ventas, luego más abonos, luego la que tiene cédula, luego la más vieja
+        const def = g.filas.slice().sort((a, b) => Number(b.ventas) - Number(a.ventas) || Number(b.abonos) - Number(a.abonos) || (b.cedula ? 1 : 0) - (a.cedula ? 1 : 0) || String(a.creado).localeCompare(String(b.creado)))[0];
+        const sel = _dupSel[g.k] && g.filas.some(f => f.cliente_id === _dupSel[g.k]) ? _dupSel[g.k] : def.cliente_id; _dupSel[g.k] = sel;
+        return `<div class="nxDupG"><div class="nxDupGh"><span class="nxDupMot">${esc(g.motivo)}</span>${g.filas.some(f => f.es_empleado) ? '<span class="nxDupEmp">incluye un empleado</span>' : ''}</div>
+          ${g.filas.map(f => `<label class="nxDupF${f.cliente_id === sel ? ' on' : ''}"><input type="radio" name="dup${gi}" ${f.cliente_id === sel ? 'checked' : ''} onchange="window.nxDupMarcar(${gi},'${f.cliente_id}')">
+            <span class="nxDupT"><b><span class="rhCod">${esc(f.codigo || '—')}</span>${esc(f.nombre || '')}</b><small>${[f.cedula ? 'Céd. ' + esc(f.cedula) : '', f.telefono ? esc(fmtTel(f.telefono)) : ''].filter(Boolean).join(' · ') || 'Sin cédula ni teléfono'}</small></span>
+            <span class="nxDupN">${Number(f.ventas)} venta${Number(f.ventas) === 1 ? '' : 's'} · ${Number(f.abonos)} abono${Number(f.abonos) === 1 ? '' : 's'}${Number(f.chats) ? ' · ' + Number(f.chats) + ' chat' + (Number(f.chats) === 1 ? '' : 's') : ''}</span>
+            ${f.cliente_id === sel ? '<span class="nxDupQ">Queda</span>' : ''}</label>`).join('')}
+          ${admin ? `<div class="fe" style="margin-top:8px"><button class="btn bc1 bsm" type="button" onclick="window.nxDupUnir(${gi})"${_dupUniendo ? ' disabled' : ''}><i class="ti ti-arrow-merge"></i> Unir en la marcada</button></div>` : ''}
+        </div>`;
+      }).join('');
+  }
+  window.nxDupMarcar = function (gi, id) { const g = dupGrupos()[gi]; if (!g) return; _dupSel[g.k] = id; dupPintar(); };
+  window.nxDupUnir = async function (gi) {
+    if (_dupUniendo) return;
+    const g = dupGrupos()[gi]; if (!g) return;
+    const queda = g.filas.find(f => f.cliente_id === _dupSel[g.k]) || g.filas[0];
+    const quitar = g.filas.filter(f => f.cliente_id !== queda.cliente_id);
+    if (quitar.some(f => f.es_empleado)) { toast('err', 'Una de las fichas es de un empleado', 'Esas no se unen aquí'); return; }
+    const txt = 'Queda: ' + (queda.codigo || '') + ' ' + queda.nombre + '\n\nSe le pasan las ventas, abonos, cuotas, documentos y chats de:\n' + quitar.map(f => '• ' + (f.codigo || '') + ' ' + f.nombre + ' (' + Number(f.ventas) + ' ventas, ' + Number(f.abonos) + ' abonos)').join('\n') + '\n\nEsas fichas quedan inactivas. Los montos no cambian. ¿Unir?';
+    if (!confirm(txt)) return;
+    _dupUniendo = true; dupPintar();
+    try {
+      const r = await getAPI().post('rpc/pos_unir_clientes', { p_queda: queda.cliente_id, p_quitar: quitar.map(f => f.cliente_id) });
+      const res = Array.isArray(r) ? r[0] : r; const mov = (res && res.movidos) || {};
+      const n = (k, l) => mov[k] ? mov[k] + ' ' + l : '';
+      toast('ok', 'Clientes unidos en ' + (queda.codigo || queda.nombre), [n('pos_ventas', 'ventas'), n('pos_abonos', 'abonos'), n('pos_financiamientos', 'financiamientos'), n('crm_conversaciones', 'chats')].filter(Boolean).join(' · ') || 'Sin movimientos que pasar');
+      try { window.logAudit && window.logAudit('CLIENTES_UNIDOS', (queda.codigo || '') + ' ← ' + quitar.map(f => f.codigo).join(', '), 'Clientes'); } catch (e) {}
+      _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      const v = document.getElementById('v-pos'); if (v) renderPOS(v);
+    } catch (e) {
+      const m = String(e && e.message || e);
+      toast('err', 'No se pudo unir', /SOLO_ADMIN/.test(m) ? 'Solo el administrador une clientes' : /ES_EMPLEADO/.test(m) ? 'Una de las fichas es de un empleado' : m.slice(0, 160));
+    } finally { _dupUniendo = false; }
+    await dupCargar();
+  };
   window.nxPosEditCli = function (id) { const c = _clientes.find(x => String(x.id) === String(id)); if (c) abrirEntidad(c, null); };
   window.nxPosCliVer = async function (id) {
     const c = _clientes.find(x => String(x.id) === String(id)); if (!c) return;

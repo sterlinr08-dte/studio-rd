@@ -31,6 +31,20 @@ Lo hacen **disparadores en la base**, no la pantalla. No dupliques esta lógica 
 - **Freno anti-rebote:** `nx.sync_persona` (`set_config(..., true)`, local a la transacción), leído con `nx_sync_activo()`.
 - **`pos_personal()`** (SECURITY DEFINER, solo `authenticated`): empleados con código, usuario, rol, `comision_pct` y `soy_yo`, **sin salarios**. Es la lista de personal para cualquier pantalla. No leas `rrhh_empleados` ni `usuarios_sistema` para listas: el segundo solo lo lee el administrador.
 
+### Clientes — migración 50 (59.91)
+- **Código automático en la base** (`trg_zcodigo_pos_clientes`): Entidad sin código → cliente `C-00450`…, suplidor `PR-0001`…, banco `BC-0001`… (empleado `EM-`, migración 49). Índice único `pos_clientes_codigo_unico`. Editar con el código vacío lo conserva. La pantalla ya no calcula códigos: `entCodigoAuto()` devuelve null.
+- **Cédula repetida** (`trg_zcedula_pos_clientes`): no se puede crear ni poner a un cliente activo una cédula de 9+ dígitos que ya tiene otro cliente activo (`CLIENTE_CEDULA_DUPLICADA`, el detalle trae «código · nombre»). Los duplicados viejos se pueden seguir editando hasta unirlos. El teléfono repetido solo avisa (pantalla).
+- **Chats de WhatsApp ↔ Cliente** por los últimos 10 dígitos (`nx_tel10`): un chat nuevo toma el cliente de su teléfono (`trg_zcliente_crm_conv`), y un cliente nuevo o con teléfono corregido recibe sus chats sin enlazar (`trg_zchats_pos_clientes`). Si dos clientes comparten teléfono, no se adivina. Instagram no trae teléfono: esos chats se enlazan a mano desde el chat.
+- **`pos_clientes_duplicados()`** (admin y gerente): grupos por cédula, teléfono (sin los de relleno como 809-000-0000) o nombre, con ventas, abonos y chats.
+- **`pos_unir_clientes(queda, quitar[])`** (solo admin):
+  - pasa `cliente_id` en 17 tablas (ventas, fiado, abonos, apartados, cotizaciones, prefacturas, suspendidas, devoluciones, documentos, crédito, financiamientos, solicitudes, documentos y referencias de financiamiento, CRM, chats), y el perfil de financiamiento si la que queda no tiene;
+  - completa los datos vacíos de la que queda;
+  - deja las otras **inactivas** con la nota «Unido a C-…»;
+  - registra `CLIENTES_UNIDOS` en auditoría;
+  - no cambia montos; no une Entidades de empleado.
+  - Usa `nx.fin_rpc` y `nx.unir_clientes`; `nx_validar_caja_propietario` deja editar el cliente de una venta o abono de caja cerrada **solo** con ese aviso y sin cambiar la caja.
+- **Pantalla:** «Revisar duplicados» en Clientes y Entidades. Queda marcada por defecto la ficha con más ventas, luego más abonos, luego la que tiene cédula y luego la más vieja. Se confirma grupo por grupo.
+
 ### Vendedores y técnicos = empleados (59.90)
 - **Al cobrar:**
   - el vendedor es automáticamente el empleado de quien cobra (`soy_yo`);
@@ -77,7 +91,7 @@ Lo hacen **disparadores en la base**, no la pantalla. No dupliques esta lógica 
 9. **Publicar** solo con «publícalo»: primero la migración, después `main`. Luego AGENTS.md §4 y la bitácora.
 
 ## 3. Pendientes (en orden acordado con el dueño)
-- [ ] **Entidad Clientes** (06-oct-2026: «continúa con la entidad clientes»). Siguiente bloque; ver su bitácora.
+- [x] **Entidad Clientes** (06-oct-2026): migración 50 y 59.91. Falta que el dueño una los 34 grupos de duplicados con «Revisar duplicados».
 - [ ] Cerrar la lectura de salarios: la RLS de `rrhh_empleados` deja leer a cualquier rol. Ya ninguna pantalla de personal la necesita gracias a `pos_personal()`.
 - [ ] Ventas históricas sin `vendedor_id`: hay 252 sin vendedor y las viejas solo tienen nombre. **No tocar sin autorización.**
 - [ ] Decidir si se borra `pos_vendedores`, que quedó sin uso.

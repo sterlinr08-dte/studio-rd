@@ -34,6 +34,7 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
 6. No enviar mensajes de WhatsApp a clientes sin autorización del dueño.
 7. Publicación: subir `APP_VERSION` (`index.html`) y `version.json`; los parches se cargan con `?v=APP_VERSION`.
 8. Diseño: `DESIGN.md` es la única línea gráfica (negro y carbón estructural, blanco cálido operativo y oro STUDIO como único acento de marca).
+9. **Automatizaciones:** antes de tocar Entidades, Clientes, RRHH, Usuarios, Vendedores, Técnicos, códigos o listas con buscador, leer la skill `.claude/skills/studio-automatizaciones/SKILL.md` (qué hace el sistema solo, cómo agregar una automatización y los pendientes). Se actualiza en el mismo PR que cambie una automatización.
 
 ## Ventana de contexto y memoria de la IA (explicado al dueño, 05-oct-2026)
 

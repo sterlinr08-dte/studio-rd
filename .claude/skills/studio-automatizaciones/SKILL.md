@@ -80,6 +80,10 @@ Lo hacen **disparadores en la base**, no la pantalla. No dupliques esta lógica 
 - `web_visitas_resumen(dias)` es solo para administrador y gerente. El panel «Visitas a la página web» del Inicio se refresca cada minuto como mucho.
 - Página nueva pública: agregarle `data-pagina`, el `<script src="web-visitas.js" defer>` y su nombre en la lista de `web_registrar_visita`.
 
+### Listas de 10 en 10 — Reglamento 13 (59.92)
+- **Paginador único:** `pag10Aplicar` / `window.nxPag10` (`parches-pos.js`), con MutationObserver. Toda lista lleva `data-pag10="clave"` en su `<tbody>` o caja de tarjetas; las filas que deben verse siempre llevan `data-p10-fijo`.
+- **Búsqueda:** `nxFiltrarFilas` marca las filas que no coinciden y pagina las que sí. No escribas paginadores nuevos. Detalle en `REGLAMENTOS.md` §13.
+
 ### Buscador inteligente en listas (59.88)
 - `parches-pos-buscador.js`: todo `<select>` con 10 opciones o más lleva lupa y buscador, sin tocar el `<select>` real.
 - `data-nx-buscar` lo fuerza en una lista y `data-nx-buscar="no"` lo quita.

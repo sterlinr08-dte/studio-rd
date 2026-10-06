@@ -35,6 +35,7 @@ Contexto de arranque obligatorio para Claude, ChatGPT y cualquier sesión que tr
 7. Publicación: subir `APP_VERSION` (`index.html`) y `version.json`; los parches se cargan con `?v=APP_VERSION`.
 8. Diseño: `DESIGN.md` es la única línea gráfica (negro y carbón estructural, blanco cálido operativo y oro STUDIO como único acento de marca).
 9. **Automatizaciones:** antes de tocar Entidades, Clientes, RRHH, Usuarios, Vendedores, Técnicos, códigos o listas con buscador, leer la skill `.claude/skills/studio-automatizaciones/SKILL.md` (qué hace el sistema solo, cómo agregar una automatización y los pendientes). Se actualiza en el mismo PR que cambie una automatización.
+10. **Listas de 10 en 10** (dueño 06-oct-2026, `REGLAMENTOS.md` §13): toda lista de registros en pantalla va de 10 en 10 con «1–10 de N»; se marca con `data-pag10` y usa el paginador único. La búsqueda busca en toda la lista.
 
 ## Ventana de contexto y memoria de la IA (explicado al dueño, 05-oct-2026)
 

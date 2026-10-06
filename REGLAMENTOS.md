@@ -31,6 +31,7 @@
 | 10 | **Vista rueda** (modo experimental, Facturas + Cobros, solo admin) | ✅ decretado y construido — v50.9, ampliado v51.0 |
 | 11 | **Botones de acción y barra inferior** (POS) | ✅ decretado y auditado — v53.3, Tanda 1 |
 | 12 | **Envíos de WhatsApp (individuales y masivos)** | ✅ decretado y auditado — v57.98 |
+| 13 | **Listas de 10 en 10** (STUDIO) | ✅ decretado y auditado — v59.92, Tanda 1 |
 
 > Los §1-8 son del **POS/Multiempresa**. El §9 es el **núcleo de Seguros** (`index.html`), el negocio
 > original — correduría de seguros de salud. Es el único módulo con DATOS REALES en producción (109
@@ -690,3 +691,54 @@ aprobación" quedó desactualizado y se corrigió en la misma tanda.
 - **Tope de tamaño de un lote masivo** — "Factura a todos" no tiene límite de destinatarios más allá
   del procesamiento de a `LIMITE_MAXIMO` (50) por llamada, que ya evita saturar la Edge Function pero
   no evita que un agente incluya, por error, a un segmento mucho más grande del que quería.
+
+---
+
+## 13 · REGLAMENTO DE LISTAS: SIEMPRE DE 10 EN 10 (STUDIO)
+
+**Decretado por el dueño el 06-oct-2026:** «Reglamento: apilar siempre de 10 en 10».
+
+### La regla
+1. Toda lista de registros que se recorre en pantalla muestra **10 por página**. Ejemplos: clientes, entidades, artículos, ventas, documentos, compras, cuentas, empleados, financiamientos, CRM, usuarios y duplicados.
+2. Debajo va **«1–10 de N»** y los números de página: anterior, 1, …, la actual y sus vecinas, …, la última, siguiente.
+3. La **búsqueda busca en toda la lista**, no solo en la página que se ve, y al buscar o filtrar se vuelve a la página 1.
+4. Si hay 10 o menos, no salen números de página.
+5. La página se recuerda al salir y volver a la misma pantalla, mientras no cambie la cantidad de registros.
+6. **Pantallas nuevas:** el contenedor de las filas lleva `data-pag10="clave"`, en un `<tbody>` o en una caja de tarjetas. Las filas que deben verse siempre, como un aviso o una nota, llevan `data-p10-fijo`. La búsqueda por texto usa `nxFiltrarFilas` (ya paginado) o filtra los datos antes de pintar.
+7. Lo hace un solo paginador: `pag10Aplicar` / `window.nxPag10` en `parches-pos.js`, que se aplica solo al pintar. No se escriben paginadores nuevos por pantalla.
+
+### Qué no entra
+- **Impresiones y documentos:** facturas, estados de cuenta, contratos, cierres. Van completos.
+- **Las líneas de un solo documento:** los artículos de una factura.
+- **Los selectores para elegir algo** (Elegir cliente o artículo): usan el buscador de lista (59.88).
+- **Los chats.**
+- **Los tableros** con columnas (el taller) y los mini resúmenes del Inicio.
+- **Los reportes:** ya van de 10 en 10. El dueño puede ver 25, 50 o todos para revisar; imprimir y Excel llevan todo.
+
+### Tanda 1 (v59.92): auditoría y arreglo
+- **Ya cumplían:** Reacondicionado (lotes, equipos de un lote, devoluciones) y Reportes.
+- **Inventario pasó de 15 a 10** (conserva su paginador propio).
+- **Se paginaron con `data-pag10`:**
+  - Clientes: la búsqueda ya no oculta filas, ahora pagina lo que coincide;
+  - Entidades, Cotizaciones (misma corrección que Clientes);
+  - Historial de ventas, Notas de crédito, Historial de prefacturas;
+  - Compras, Cuentas por pagar;
+  - Contabilidad: plan de cuentas, diario y mayor;
+  - Kardex: movimientos del producto, bajo stock y movimientos recientes (antes cortados en 60);
+  - Transferencias;
+  - Empleados, Nóminas;
+  - Apartados;
+  - Financiamiento: préstamos, cartera y cobranza;
+  - CRM: leads y tablero;
+  - Ajustes: usuarios, vendedores e historial de documentos;
+  - Clientes duplicados.
+- **Pendiente para la Tanda 2:**
+  - Reacondicionado: pedidos de piezas, «Mis equipos» y el catálogo de fallas (que va agrupado por categoría);
+  - el modal de proveedores y el detalle de un proveedor;
+  - movimientos de la caja abierta.
+- **Límites de carga que esconden registros viejos** (no son de la paginación; se ven en la Tanda 2):
+  - ventas: se cargan 400;
+  - cierres de caja: 10;
+  - reparaciones entregadas: 40;
+  - solicitudes de financiamiento: 20.
+

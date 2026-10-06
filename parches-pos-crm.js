@@ -170,7 +170,7 @@
         ${o.notas ? `<div class="nota"><i class="ti ti-note"></i> ${esc(o.notas)}</div>` : ''}
       </div>`;
     }).join('') || '<div class="card crm-vacio">No hay leads en esta vista.</div>';
-    return `<div class="crm-leads-top"><div class="crm-leads-f">${filtros}</div><button class="crm-nuevo" onclick="window.nxCRM.nueva()"><i class="ti ti-plus"></i> Nuevo lead</button></div><div>${cards}</div>`;
+    return `<div class="crm-leads-top"><div class="crm-leads-f">${filtros}</div><button class="crm-nuevo" onclick="window.nxCRM.nueva()"><i class="ti ti-plus"></i> Nuevo lead</button></div><div data-pag10="crm-leads">${cards}</div>`;
   }
 
   function vistaCampanas() {

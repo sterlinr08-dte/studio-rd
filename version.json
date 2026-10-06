@@ -1,7 +1,16 @@
 {
-  "version": "59.91",
+  "version": "59.92",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.92",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Reglamento: todas las listas van de 10 en 10, con «1–10 de N» y los números de página abajo (Clientes, Entidades, Inventario, Historial, Notas de crédito, Prefacturas, Cotizaciones, Compras, Cuentas por pagar, Contabilidad, Kardex, Empleados, Nóminas, Apartados, Financiamiento, CRM, Usuarios y Duplicados).",
+        "La búsqueda busca en toda la lista (no solo en la página que se ve) y al buscar vuelve a la página 1; la página se recuerda al volver a la pantalla.",
+        "Kardex: los movimientos recientes ya no se cortan en 60; se ven todos, de 10 en 10."
+      ]
+    },
     {
       "version": "59.91",
       "fecha": "2026-10-06",

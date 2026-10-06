@@ -1,7 +1,16 @@
 {
-  "version": "59.88",
+  "version": "59.89",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.89",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Artículos con código automático: un artículo nuevo sin código recibe el siguiente PRD (PRD-001643, PRD-001644…). Se puede escribir uno a mano, pero no puede repetirse. Los códigos viejos se quedan igual.",
+        "Al editar un artículo, dejar el código vacío ya no lo borra.",
+        "Empleados con código: 001, 002, 003… por fecha de ingreso; los nuevos reciben el siguiente. Se ve en la lista de Recursos Humanos, en la ficha y al vincular un usuario con su empleado (y se puede buscar por código)."
+      ]
+    },
     {
       "version": "59.88",
       "fecha": "2026-10-06",

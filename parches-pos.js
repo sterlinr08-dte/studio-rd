@@ -2297,7 +2297,9 @@
         catch (e1) { if (i === extras.length - 1) throw e1; }
       }
       // Fichas de empleado de RRHH (para enlazar usuario ↔ empleado). Si no cargan, la ficha simplemente no ofrece el enlace.
-      try { _ajEmpleados = await getAPI().get('rrhh_empleados', 'select=id,nombre,telefono,cedula,puesto,activo&order=nombre.asc') || []; } catch (e3) { _ajEmpleados = []; }
+      // codigo: migración 48; si aún no existe la columna, se lee sin ella
+      try { _ajEmpleados = await getAPI().get('rrhh_empleados', 'select=id,codigo,nombre,telefono,cedula,puesto,activo&order=nombre.asc') || []; }
+      catch (e3) { try { _ajEmpleados = await getAPI().get('rrhh_empleados', 'select=id,nombre,telefono,cedula,puesto,activo&order=nombre.asc') || []; } catch (e4) { _ajEmpleados = []; } }
     }
     catch (e) { _ajUsuarios = null; _ajUsuariosErr = String(e && e.message || e); }
     _ajUsuariosCargando = false;
@@ -2468,7 +2470,7 @@
   function ajEmpOpts(actual) {
     const usados = new Set((_ajUsuarios || []).filter(x => x.empleado_id && String(x.empleado_id) !== String(actual || '')).map(x => String(x.empleado_id)));
     const lista = (_ajEmpleados || []).filter(e => String(e.id) === String(actual || '') || (e.activo !== false && !usados.has(String(e.id))));
-    return '<option value="">— Sin vincular —</option>' + lista.map(e => `<option value="${e.id}"${String(e.id) === String(actual || '') ? ' selected' : ''}>${esc(e.nombre || '')}${e.puesto ? ' · ' + esc(e.puesto) : ''}</option>`).join('');
+    return '<option value="">— Sin vincular —</option>' + lista.map(e => `<option value="${e.id}"${String(e.id) === String(actual || '') ? ' selected' : ''}>${e.codigo ? esc(e.codigo) + ' · ' : ''}${esc(e.nombre || '')}${e.puesto ? ' · ' + esc(e.puesto) : ''}</option>`).join('');
   }
   function ajFicha(u, pre) {
     const nuevo = !u;
@@ -4977,6 +4979,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
 .ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
 .ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.rhCod{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:6px;background:#F7F5EF;border:1px solid rgba(201,162,39,.45);color:#806515;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:1px}
 .nxRhWrap .rhAcc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;font-weight:600;color:#806515;background:rgba(201,162,39,.1);border-radius:999px;padding:2px 8px}
 .nxRhWrap .rhAcc.off{color:#686862;background:rgba(17,17,17,.06)}
 .nxRhWrap .rhDarAcc{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font:inherit;font-size:11px;font-weight:600;color:#111;background:#FFFEFA;border:1px solid #d9d5ca;border-radius:999px;padding:3px 9px;cursor:pointer;min-height:28px}
@@ -5448,7 +5451,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
                     <div class="cols">
                       <div class="fld"><label>Nombre *</label><div class="inw"><i class="ti ti-tag"></i><input id="ppNom" class="no-upper" value="${esc(e.nombre || '')}" placeholder="Nombre del producto"></div></div>
                       <div class="fld"><label>Categoría</label><div class="inw"><i class="ti ti-category"></i><select id="ppCat"><option value="">— Sin categoría —</option>${catOpts}</select><i class="ti ti-chevron-down chev"></i></div></div>
-                      <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Ej: 1004 (opcional)"></div></div>
+                      <div class="fld"><label>Código / código de barras</label><div class="inw"><i class="ti ti-barcode"></i><input id="ppCod" class="no-upper" value="${esc(e.codigo || '')}" placeholder="Automático (PRD-…) o escríbelo"></div></div>
                       <div class="fld"><label>Referencia / spec</label><div class="inw"><i class="ti ti-list-details"></i><input id="ppRef" class="no-upper" value="${esc(e.referencia || '')}" placeholder="Ej: 128GB, color..."></div></div>
                       <div class="fld"><label>Marca</label><div class="inw"><i class="ti ti-award"></i><input id="ppMarca" class="no-upper" value="${esc(e.marca || '')}" placeholder="Ej: Apple"></div></div>
                       <div class="fld"><label>Tipo</label><div class="inw"><i class="ti ti-package"></i><select id="ppTipo"><option value="producto"${e.tipo !== 'servicio' ? ' selected' : ''}>Producto (con stock)</option><option value="servicio"${e.tipo === 'servicio' ? ' selected' : ''}>Servicio (sin stock)</option></select></div></div>
@@ -5905,8 +5908,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         const delta = stockNuevo - Number(prod.stock || 0);
         if (delta !== 0) await moverStock(prod, id ? 'ajuste' : 'apertura', delta, { referencia: id ? 'Edición de producto' : 'Alta de producto', motivo: id ? 'Cambio de stock desde el formulario' : 'Stock inicial' });
       }
-      return { prodId: prodId, nombre: body.nombre };
-    } catch (e) { toast('err', 'No se pudo guardar el artículo', String(e && e.message || e)); return null; }
+      return { prodId: prodId, nombre: body.nombre, codigo: (prod && prod.codigo) || body.codigo || '' };
+    } catch (e) {
+      const m = String(e && e.message || e);
+      // migración 48: el código no puede repetirse (índice pos_productos_codigo_unico)
+      if (/codigo_unico|duplicate key|23505/i.test(m)) { toast('err', 'Ese código ya lo tiene otro artículo', 'Escribe otro o déjalo vacío para que el sistema asigne uno'); return null; }
+      toast('err', 'No se pudo guardar el artículo', m); return null;
+    }
   }
   // Muestra/oculta el estado "Guardando…" en los 2 botones de guardar (protección de doble clic:
   // mientras _pfGuardando es true, ambos quedan disabled — un segundo clic no dispara nada).
@@ -5965,14 +5973,14 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   window.nxPosGuardarProd = async function (id) {
     const r = await nxPfGuardarTodo(id); if (!r) return;
-    toast('ok', id ? 'Artículo actualizado' : 'Artículo agregado', r.nombre);
+    toast('ok', id ? 'Artículo actualizado' : 'Artículo agregado', (r.codigo ? r.codigo + ' · ' : '') + r.nombre);
     cerrarModal('nxPosProd');
     await cargarPOS();
     const view = document.getElementById('v-pos'); if (view) renderPOS(view);
   };
   window.nxPfGuardarYNuevo = async function (id) {
     const r = await nxPfGuardarTodo(id); if (!r) return;
-    toast('ok', 'Guardado', r.nombre + ' — listo para el siguiente');
+    toast('ok', 'Guardado', (r.codigo ? r.codigo + ' · ' : '') + r.nombre + ' — listo para el siguiente');
     await cargarPOS();
     const view = document.getElementById('v-pos'); if (view) renderPOS(view);
     abrirProd(null);
@@ -10001,6 +10009,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   }
   async function cargarRRHH() {
     _empleados = await getAPI().get('rrhh_empleados', 'select=*&order=nombre.asc') || [];
+    // migración 48: cada empleado tiene código (001, 002…); la lista va en ese orden
+    if (_empleados.some(e => e.codigo)) _empleados.sort((a, b) => String(a.codigo || '~').localeCompare(String(b.codigo || '~'), 'en', { numeric: true }));
     // Acceso al sistema de cada empleado (usuario enlazado, migración 47). Solo el administrador ve los usuarios.
     if (esAdmin() && !_ajUsuarios) { try { await ajCargarUsuarios(); } catch (e) {} }
     _nominas = await getAPI().get('rrhh_nominas', 'select=*&order=fecha.desc,created_at.desc&limit=200') || [];
@@ -10031,7 +10041,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const activos = _empleados.filter(e => e.activo !== false);
     const nomMensual = activos.reduce((s, e) => s + Number(e.salario || 0), 0);
     const filas = _empleados.length ? _empleados.map(e => `<tr${e.activo === false ? ' style="opacity:.5"' : ''}>
-        <td><div style="font-weight:700;font-size:12.5px">${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div>${rhAccesoHTML(e)}</td>
+        <td><div style="font-weight:700;font-size:12.5px">${e.codigo ? `<span class="rhCod">${esc(e.codigo)}</span>` : ''}${esc(e.nombre || '')}</div><div style="font-size:10px;color:#475569">${esc(e.puesto || '')}${e.departamento ? ' · ' + esc(e.departamento) : ''}${e.cedula ? ' · ' + esc(e.cedula) : ''}</div>${rhAccesoHTML(e)}</td>
         <td style="text-align:right;font-weight:700">${fmt(e.salario)}</td>
         <td style="text-align:center;font-size:10.5px;color:#475569">${esc(({ mensual: 'Mensual', quincenal: 'Quincenal', semanal: 'Semanal', por_hora: 'Por hora' })[e.tipo_pago] || e.tipo_pago || '')}</td>
         <td style="text-align:right;white-space:nowrap"><button aria-label="Editar este empleado" class="btn bsm bc1" onclick="window.nxRhEditEmp('${e.id}')"><i class="ti ti-edit"></i></button></td>
@@ -10098,7 +10108,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     const ov = document.createElement('div'); ov.id = 'nxEmpForm'; ov.className = 'overlay open';
     ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
     ov.innerHTML = `<div class="modal" style="max-width:440px;max-height:92vh;display:flex;flex-direction:column">
-        <div class="mt"><span><i class="ti ti-id-badge-2"></i> ${e ? 'Editar empleado' : 'Nuevo empleado'}</span><button class="nxBack" type="button" onclick="document.getElementById('nxEmpForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div class="mt"><span><i class="ti ti-id-badge-2"></i> ${e ? 'Editar empleado' : 'Nuevo empleado'}${d.codigo ? ` <span class="rhCod">${esc(d.codigo)}</span>` : ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxEmpForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
         <div style="overflow-y:auto;flex:1">
           ${entEmp.length ? `<div class="fr"><label>Vincular con Entidad (empleado)</label><select id="emEnt" onchange="window.nxRhVincEnt()">${entOpts}</select></div>` : ''}
           <div class="fr"><label>Nombre completo *</label><input id="emN" class="no-upper" value="${esc(d.nombre || '')}" placeholder="Nombre y apellido"></div>
@@ -10150,8 +10160,10 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     };
     if (!body.nombre) { toast('err', 'Falta el nombre'); return; }
     try {
-      if (id) await getAPI().patch('rrhh_empleados', 'id=eq.' + id, body); else await getAPI().post('rrhh_empleados', body);
-      cerrarModal('nxEmpForm'); toast('ok', 'Empleado guardado');
+      const guardado = id ? await getAPI().patch('rrhh_empleados', 'id=eq.' + id, body) : await getAPI().post('rrhh_empleados', body);
+      cerrarModal('nxEmpForm');
+      const cod = (guardado && guardado[0] && guardado[0].codigo) || '';
+      toast('ok', 'Empleado guardado', (cod ? 'Código ' + cod + ' · ' : '') + body.nombre);
       await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };

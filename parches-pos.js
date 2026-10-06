@@ -251,7 +251,7 @@
       g('pos_cajas', cajaQS('abierta', 1)),
       g('pos_config', 'select=*&limit=1'),
       g('pos_ncf_secuencias', 'select=*&order=tipo.asc'),
-      g('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc'),
+      getAPI().post('rpc/pos_personal', {}).catch(() => null),   // migración 49: vendedores = empleados
       g('pos_secuencias', 'select=*&order=tipo.asc'),
       g('pos_acceso', 'select=*'),
       g('pos_reparaciones', 'select=*&order=created_at.desc&limit=400'),
@@ -276,7 +276,8 @@
     // se ponían en blanco — auditoría 02-oct-2026, H1); encima, los valores normalizados de siempre.
     if (cf && cf[0]) { _posCfg = Object.assign({}, cf[0], { prefijo_contado: cf[0].prefijo_contado || 'CO', prefijo_credito: cf[0].prefijo_credito || 'CR', mora_pct: Number(cf[0].mora_pct || 0), mora_dias_gracia: Number(cf[0].mora_dias_gracia || 0), garantia_rep_dias: Number(cf[0].garantia_rep_dias || 0), compras_v2: cf[0].compras_v2 === true, financiamiento_v2: cf[0].financiamiento_v2 === true, whatsapp_inbox: cf[0].whatsapp_inbox === true, reacondicionado: cf[0].reacondicionado === true, fin_contrato_titulo: cf[0].fin_contrato_titulo || '', fin_firma_vigencia_horas: Number(cf[0].fin_firma_vigencia_horas || 72) }); }
     window.nxPosCfgListo = true;
-    _ncfSecs = ncf || []; _vendedores = vend || []; _secuencias = sec || []; _acceso = acc || [];
+    _ncfSecs = ncf || []; _secuencias = sec || []; _acceso = acc || [];
+    await personalAplicar(vend);
     _reps = reps || []; _fins = fins || []; _finCuotas = fcuo || []; _finPagos = finpag || []; _apartados = apa || []; _apaPagos = apap || [];
     resyncCuotasPagos();
     if (cv2fin()) { try { await finV2Cargar(); } catch (e) {} }
@@ -323,7 +324,23 @@
     } catch (e) {}
   }
   // Conecta Entidades(es_empleado) con la lista de Vendedores (para asignar ventas a empleados)
+  // ── Personal (migración 49): una persona = Entidad + Empleado (+ Usuario). Los vendedores y técnicos salen de
+  // los empleados activos (pos_personal(): código, nombre, usuario, % comisión; sin salarios). Si la función todavía no
+  // existe, se usa la tabla pos_vendedores como antes.
+  let _personal = null;
+  async function personalAplicar(filas) {
+    if (Array.isArray(filas)) {
+      _personal = filas;
+      _vendedores = filas.filter(p => p.activo !== false).map(p => ({ id: p.empleado_id, codigo: p.codigo || '', nombre: p.nombre, telefono: p.telefono, comision_pct: p.comision_pct, soy_yo: !!p.soy_yo, usuario_id: p.usuario_id, activo: true, _empleado: true }));
+      return;
+    }
+    _personal = null;
+    try { _vendedores = await getAPI().get('pos_vendedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) { _vendedores = []; }
+  }
+  async function personalRecargar() { try { await personalAplicar(await getAPI().post('rpc/pos_personal', {})); } catch (e) { await personalAplicar(null); } }
+  const vendEtiqueta = v => (v.codigo ? v.codigo + ' · ' : '') + (v.nombre || '');
   function mergeVendedorEntidades() {
+    if (_personal) return;   // con la migración 49 las Entidades-empleado ya son los empleados
     try {
       const ids = new Set((_vendedores || []).map(v => String(v.id)));
       (_clientes || []).filter(c => c.es_empleado).forEach(c => { if (!ids.has(String(c.id))) _vendedores.push({ id: c.id, nombre: c.nombre, telefono: c.telefono, comision_pct: 0, _entidad: true, activo: true }); });
@@ -2892,17 +2909,40 @@
   };
   function ajustesVendedores() {
     const filas = _vendedores.length ? _vendedores.map(v => `<tr>
-        <td style="font-weight:700">${esc(v.nombre)}</td>
+        <td style="font-weight:700">${v.codigo ? `<span class="rhCod">${esc(v.codigo)}</span>` : ''}${esc(v.nombre)}</td>
         <td style="text-align:center">${esc(v.telefono || '')}</td>
         <td style="text-align:right;font-weight:700;color:var(--pf-green)">${Number(v.comision_pct || 0)}%</td>
         <td style="text-align:right"><button class="btn bsm bc1" title="Editar" aria-label="Editar vendedor" onclick="window.nxVendEdit('${v.id}')"><i class="ti ti-edit"></i></button></td>
-      </tr>`).join('') : '<tr><td colspan="4" class="emptyrow">Sin vendedores. Agrega uno para asignar ventas y calcular comisiones.</td></tr>';
+      </tr>`).join('') : '<tr><td colspan="4" class="emptyrow">Sin empleados activos. Agrégalos en Recursos Humanos.</td></tr>';
+    if (_personal) return ajCard('ti-user-dollar', 'green', 'Vendedores y comisiones', 'Los vendedores son tus empleados activos (Recursos Humanos). Al cobrar se elige solo el empleado de quien cobra; aquí pones el % de comisión de cada uno.') +
+      `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Empleado</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
+      <button class="ab g2 sm" type="button" onclick="window.nxPosTab('rrhh');setTimeout(function(){window.nxRhNuevoEmp()},300)"><i class="ti ti-plus"></i> Nuevo empleado</button></div>`;
     return ajCard('ti-user-dollar', 'green', 'Vendedores y comisiones', 'Registra a tus vendedores con su % de comisión. Al cobrar podrás elegir el vendedor; en Reportes ves la comisión de cada uno.') +
       `<div class="tw" style="font-size:12px;margin-bottom:12px"><table style="width:100%"><thead><tr><th>Nombre</th><th style="text-align:center">Teléfono</th><th style="text-align:right">Comisión</th><th></th></tr></thead><tbody>${filas}</tbody></table></div>
       <button class="ab g2 sm" type="button" onclick="window.nxVendNuevo()"><i class="ti ti-plus"></i> Agregar vendedor</button></div>`;
   }
   window.nxVendNuevo = function () { abrirVend(null); };
-  window.nxVendEdit = function (id) { const v = _vendedores.find(x => String(x.id) === String(id)); if (!v) return; if (v._entidad) { const ent = _clientes.find(c => String(c.id) === String(id)); if (ent) { abrirEntidad(ent, null); return; } } abrirVend(v); };
+  window.nxVendEdit = function (id) { const v = _vendedores.find(x => String(x.id) === String(id)); if (!v) return; if (v._empleado) { abrirComision(v); return; } if (v._entidad) { const ent = _clientes.find(c => String(c.id) === String(id)); if (ent) { abrirEntidad(ent, null); return; } } abrirVend(v); };
+  // % de comisión del empleado (rrhh_empleados.comision_pct, migración 49)
+  function abrirComision(v) {
+    cerrarModal('nxVendForm');
+    const ov = document.createElement('div'); ov.id = 'nxVendForm'; ov.className = 'overlay open';
+    ov.addEventListener('click', ev => { if (ev.target === ov) ov.remove(); });
+    ov.innerHTML = `<div class="modal" style="max-width:380px">
+        <div class="mt"><span><i class="ti ti-user-dollar"></i> Comisión ${v.codigo ? `<span class="rhCod">${esc(v.codigo)}</span>` : ''}</span><button class="nxBack" type="button" onclick="document.getElementById('nxVendForm').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+        <div style="font-weight:700;margin-bottom:8px">${esc(v.nombre)}</div>
+        <div class="fr"><label>Comisión (%)</label><input id="vdC" inputmode="decimal" value="${v.comision_pct != null ? Number(v.comision_pct) : ''}" placeholder="0"></div>
+        <div style="font-size:11.5px;color:#686862;margin-bottom:8px">Nombre, teléfono y estado se cambian en Recursos Humanos o en su Entidad: las dos fichas son la misma persona.</div>
+        <div class="fe" style="gap:8px"><button class="btn bghost" type="button" onclick="document.getElementById('nxVendForm').remove()">Cancelar</button><button class="btn bc1" type="button" onclick="window.nxVendComGuardar('${v.id}')"><i class="ti ti-device-floppy"></i> Guardar</button></div>
+      </div>`;
+    document.body.appendChild(ov);
+  }
+  window.nxVendComGuardar = async function (empId) {
+    const t = String(val('vdC') || '').trim(); const pct = t === '' ? null : parseFloat(t.replace(',', '.'));
+    if (pct != null && (isNaN(pct) || pct < 0 || pct > 100)) { toast('err', 'La comisión va de 0 a 100 %'); return; }
+    try { await getAPI().patch('rrhh_empleados', 'id=eq.' + empId, { comision_pct: pct }); cerrarModal('nxVendForm'); toast('ok', 'Comisión guardada'); await personalRecargar(); const vv = document.getElementById('v-pos'); if (vv) renderPOS(vv); }
+    catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
+  };
   function abrirVend(v) {
     cerrarModal('nxVendForm');
     const d = v || {};
@@ -3668,6 +3708,7 @@
   // puede cambiarlo libremente en cualquier caso, nunca se fuerza.
   function _posVendAuto() {
     try {
+      const yo = _vendedores.find(v => v.soy_yo); if (yo) return yo;
       const s = curSesPOS(); const nom = s && s.nom ? String(s.nom).trim().toLowerCase() : '';
       if (!nom) return null;
       return _vendedores.find(v => String(v.nombre || '').trim().toLowerCase() === nom) || null;
@@ -3725,7 +3766,7 @@
           <div class="nxPgOpts" id="pgOpts">
             <div class="nxPgF" id="posCliNomBox" style="margin-bottom:10px"><label class="nxPgFl" for="posCli">Nombre para el ticket (opcional)</label><input id="posCli" class="no-upper" placeholder="Nombre del cliente" style="text-align:left"></div>
             <div class="nxPgGrid">
-              ${_vendedores.length ? (() => { const _vAuto = _posVendAuto(); return `<div class="nxPgF"><label class="nxPgFl" for="posVendId">Vendedor${_vAuto ? ' <span class="nxPgAuto">AUTO</span>' : ''}</label><select id="posVendId" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}"${_vAuto && String(_vAuto.id) === String(v.id) ? ' selected' : ''}>${esc(v.nombre)}</option>`).join('')}</select></div>`; })() : ''}
+              ${_vendedores.length ? (() => { const _vAuto = _posVendAuto(); return `<div class="nxPgF"><label class="nxPgFl" for="posVendId">Vendedor${_vAuto ? ' <span class="nxPgAuto">AUTO</span>' : ''}</label><select id="posVendId" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 11px;font-size:16px;font-weight:700;background:#fff;font-family:inherit"><option value="">— Sin vendedor —</option>${_vendedores.map(v => `<option value="${v.id}"${_vAuto && String(_vAuto.id) === String(v.id) ? ' selected' : ''}>${esc(vendEtiqueta(v))}</option>`).join('')}</select></div>`; })() : ''}
               <div class="nxPgF"><label class="nxPgFl" for="posDesc">Descuento %</label><input id="posDesc" inputmode="decimal" value="0" oninput="window.nxPosCobroCalc()"></div>
             </div>
           </div>
@@ -6841,11 +6882,13 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       let entId = id;
       if (id) await getAPI().patch('pos_clientes', 'id=eq.' + id, body);
       else { const r = await getAPI().post('pos_clientes', body); entId = r && r[0] && r[0].id; }
-      // ── Sincronizar con RRHH: crea/actualiza si es empleado; desactiva la ficha si le quitan el rol ──
-      try { if (body.es_empleado && entId) await syncEmpleadoEntidad(entId, body); else if (entId && !body.es_empleado) await getAPI().patch('rrhh_empleados', 'entidad_id=eq.' + entId, { activo: false }); } catch (e) {}
-      toast('ok', id ? 'Entidad actualizada' : 'Entidad creada', body.codigo + ' · ' + body.nombre);
+      // ── RRHH: con la migración 49 la base crea/actualiza/desactiva la ficha del empleado sola; sin ella, la pantalla ──
+      if (!_personal) { try { if (body.es_empleado && entId) await syncEmpleadoEntidad(entId, body); else if (entId && !body.es_empleado) await getAPI().patch('rrhh_empleados', 'entidad_id=eq.' + entId, { activo: false }); } catch (e) {} }
       cerrarModal('nxEntForm');
       _clientes = await getAPI().get('pos_clientes', 'select=*&activo=eq.true&order=nombre.asc') || [];
+      const entG = _clientes.find(x => String(x.id) === String(entId));
+      toast('ok', id ? 'Entidad actualizada' : 'Entidad creada', ((entG && entG.codigo) || body.codigo || '') + ' · ' + body.nombre + (body.es_empleado && _personal ? ' · también en Recursos Humanos' : ''));
+      if (_personal && (body.es_empleado || (id && !body.es_empleado))) await personalRecargar();
       try { _proveedores = await getAPI().get('pos_proveedores', 'select=*&activo=eq.true&order=nombre.asc') || []; } catch (e) {}
       mergeProvEntidades(); mergeVendedorEntidades();
       const view = document.getElementById('v-pos'); if (view) renderPOS(view);
@@ -10132,6 +10175,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <div class="fr"><label>Banco</label><input id="emB" class="no-upper" value="${esc(d.banco || '')}" placeholder="Opcional"></div>
             <div class="fr"><label>Cuenta banco</label><input id="emCb" class="no-upper" value="${esc(d.cuenta_banco || '')}" placeholder="Opcional"></div>
           </div>
+          ${_personal ? `<div class="fr"><label>Comisión por ventas (%)</label><input id="emCom" inputmode="decimal" value="${d.comision_pct != null ? Number(d.comision_pct) : ''}" placeholder="Opcional"></div>` : ''}
+          ${e && e.entidad_id ? `<div style="font-size:11.5px;color:#686862;margin:-2px 0 8px"><i class="ti ti-link"></i> Enlazado con su Entidad: nombre, cédula y teléfono se copian solos.</div>` : ''}
           <div class="fr"><label>Activo</label><select id="emA"><option value="1"${d.activo !== false ? ' selected' : ''}>Sí (activo)</option><option value="0"${d.activo === false ? ' selected' : ''}>No (inactivo)</option></select></div>
         </div>
         <div class="fe" style="margin-top:8px;gap:8px">
@@ -10158,12 +10203,26 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       entidad_id: val('emEnt') || null,
       activo: val('emA') === '1'
     };
+    if (document.getElementById('emCom')) { const t = String(val('emCom') || '').trim(); body.comision_pct = t === '' ? null : (parseFloat(t.replace(',', '.')) || 0); }
+    // Sin «Vincular con Entidad» elegido, no se borra el enlace que puso la base (migración 49)
+    if (!body.entidad_id && id) { const prev = empById(id); if (prev && prev.entidad_id) body.entidad_id = prev.entidad_id; }
+    const antes = id ? empById(id) : null;
+    const usr = antes && typeof rhUsuarioDe === 'function' ? rhUsuarioDe(antes) : null;
+    if (antes && antes.activo !== false && !body.activo && usr && usr.activo !== false) {
+      if (!confirm('Al desactivar a ' + (antes.nombre || 'este empleado') + ', su usuario @' + (usr.login || '') + ' pierde el acceso al sistema.\n\n¿Continuar?')) return;
+    }
     if (!body.nombre) { toast('err', 'Falta el nombre'); return; }
     try {
       const guardado = id ? await getAPI().patch('rrhh_empleados', 'id=eq.' + id, body) : await getAPI().post('rrhh_empleados', body);
       cerrarModal('nxEmpForm');
       const cod = (guardado && guardado[0] && guardado[0].codigo) || '';
       toast('ok', 'Empleado guardado', (cod ? 'Código ' + cod + ' · ' : '') + body.nombre);
+      // Desactivado con usuario: la base ya le quitó el acceso; además se cierra su sesión (bloqueo en el login)
+      if (antes && antes.activo !== false && !body.activo && usr && usr.activo !== false && esAdmin()) {
+        try { await ajStaff({ accion: 'desactivar', usuario_id: usr.id }); } catch (e3) {}
+        toast('ok', 'Acceso retirado', '@' + (usr.login || '') + ' ya no puede entrar'); _ajUsuarios = null;
+      }
+      if (_personal) await personalRecargar();
       await cargarRRHH(); const v = document.getElementById('v-pos'); if (v) renderPOS(v);
     } catch (e) { toast('err', 'No se pudo guardar', String(e && e.message || e)); }
   };
@@ -10519,7 +10578,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
             <div class="fld"><label>Presupuesto RD$</label><div class="inw"><span class="cur">RD$</span><input id="repPre" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
             <div class="fld"><label>Avance RD$</label><div class="inw"><span class="cur">RD$</span><input id="repAbo" data-nx-money inputmode="numeric" placeholder="0" style="padding-left:24px" oninput="window.nxRepEstim()"></div></div>
           </div>
-          <div class="fld" style="margin-top:10px"><label>Técnico</label><div class="inw"><i class="ti ti-user-cog"></i><input id="repTec" class="no-upper" placeholder="Quién repara"></div></div>
+          <div class="fld" style="margin-top:10px"><label>Técnico</label><div class="inw"><i class="ti ti-user-cog"></i>${_personal && _vendedores.length ? `<select id="repTec"><option value="">— Sin asignar —</option>${_vendedores.map(v => `<option value="${esc(v.nombre)}">${esc(vendEtiqueta(v))}</option>`).join('')}</select>` : '<input id="repTec" class="no-upper" placeholder="Quién repara">'}</div></div>
           <div class="nxRepEstim" id="nxRepEstimBox" style="margin-top:10px"></div>
         </div>
       </div>

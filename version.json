@@ -1,7 +1,17 @@
 {
-  "version": "59.89",
+  "version": "59.90",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.90",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Una persona, una ficha: cada empleado tiene su Entidad (EM-001, EM-002…) y quedan enlazados. Un empleado nuevo crea su Entidad, una Entidad marcada «Empleado» crea su ficha en Recursos Humanos, y nombre, cédula y teléfono se copian solos entre las dos.",
+        "Un usuario nuevo crea su empleado (y su Entidad) solo. Al desactivar un empleado, su usuario pierde el acceso al sistema.",
+        "Vendedores = empleados: al cobrar, el vendedor es automáticamente el empleado de quien cobra (con su código); el % de comisión se pone en el empleado.",
+        "Técnicos = empleados: en Reparaciones el técnico se elige de los empleados, y en Reacondicionado la lista de técnicos ya la ven todos los usuarios (antes solo el administrador)."
+      ]
+    },
     {
       "version": "59.89",
       "fecha": "2026-10-06",

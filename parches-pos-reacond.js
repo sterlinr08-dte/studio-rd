@@ -98,7 +98,10 @@
         g('pos_reacond_tareas', 'select=*&order=creado_en.asc&limit=20000'),
         g('pos_reacond_falla_categorias', 'select=*&order=orden.asc'),
         g('pos_reacond_fallas', 'select=*&order=nombre.asc'),
-        g('usuarios_sistema', 'select=id,nom,cargo,rol,activo,login&order=nom.asc'),
+        // Técnicos = empleados con usuario (migración 49: pos_personal, que lee cualquier usuario activo; antes
+        // usuarios_sistema, que solo lee el administrador y a los demás les dejaba la lista vacía)
+        api().post('rpc/pos_personal', {}).then(r => (r || []).filter(p => p.usuario_id).map(p => ({ id: p.usuario_id, nom: (p.codigo ? p.codigo + ' · ' : '') + p.nombre, cargo: p.puesto, rol: p.rol, activo: p.activo !== false && p.usuario_activo !== false })))
+          .catch(() => g('usuarios_sistema', 'select=id,nom,cargo,rol,activo,login&order=nom.asc')),
         g('pos_proveedores', 'select=id,nombre&order=nombre.asc'),
         g('pos_almacenes', 'select=*&activo=eq.true&order=es_principal.desc,nombre.asc')
       ]);

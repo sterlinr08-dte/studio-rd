@@ -746,12 +746,16 @@
   }
   function renderInicio() {
     iniciarRefrescoDashboard();
+    try { nxPfEnsureCSS(); } catch (e) {}
     const _ses = (typeof sesion !== 'undefined') ? sesion : window.sesion;
     const negocio = (_ses && _ses.org && _ses.org.nombre) || empNom() || 'Mi negocio';
     const h = new Date().getHours();
     const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
     const tile = (tab, label, icon, color) => puedeVer(tab) ? `<button type="button" class="nxApp" onclick="window.nxPosTab('${tab}')"><span class="nxAppIco" style="background:${color}1a;color:${color}"><i class="ti ${icon}"></i></span><span class="nxAppNom">${label}</span></button>` : '';
-    const grupo = (titulo, tiles) => tiles.trim() ? `<div class="nxAppSec"><div class="nxAppSecT">${titulo}</div><div class="nxAppGrid">${tiles}</div></div>` : '';
+    // Accesos rápidos: solo los 6 más usados (todo lo demás está en el menú, sin duplicar)
+    const accTiles = tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('caja', 'Caja', 'ti-cash', '#0891b2')
+      + tile('clientes', 'Clientes', 'ti-users', '#db2777') + tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas', 'ti-calendar-dollar', '#806515');
+    const accesos = accTiles.trim() ? `<div class="nxAppSec nxIniAcc"><div class="nxAppSecT">Accesos rápidos</div><div class="nxAppGrid">${accTiles}</div></div>` : '';
     // Dashboard Operativo (Fase 7): 8 indicadores en tiempo real — para TODOS los modos (tienda y admin).
     let kpis = '';
     {
@@ -771,16 +775,21 @@
         : `<span style="color:${pct >= 0 ? '#16a34a' : '#dc2626'};font-weight:800">${pct >= 0 ? '▲ +' : '▼ '}${pct}%</span> vs ayer`;
       const margenPct = (k.ventasHoy || 0) > 0 && k.utilidadHoy != null ? Math.round(k.utilidadHoy / k.ventasHoy * 100) + '% margen' : 'Sin ventas hoy';
       const kpi = (c, ic, l, v, s) => `<div class="nxTKpi"><div class="nxTKpiL"><i class="ti ${ic}" style="color:${c}"></i> ${l}</div><div class="nxTKpiV">${v}</div><div class="nxTKpiS">${s}</div></div>`;
-      kpis = `<div class="nxTKpis">
+      // Inicio simplificado (dueño 06-oct-2026: «tiene demasiado icono»): 4 indicadores principales; taller, inventario
+      // crítico y por pagar salen como avisos SOLO cuando hay algo que atender.
+      kpis = `<div class="nxTKpis nxTKpis4">
           ${kpi('#16a34a', 'ti-cash', 'Ventas de hoy', fmt(k.ventasHoy || 0), trendHoy)}
           ${kpi('#0891b2', 'ti-wallet', 'Caja', k.cajaEf != null ? fmt(k.cajaEf) : '—', _caja ? 'Caja abierta' : 'Caja cerrada')}
           ${kpi('#7c3aed', 'ti-trending-up', 'Utilidad', k.utilidadHoy != null ? fmt(k.utilidadHoy) : '—', margenPct)}
-          ${kpi('#ea580c', 'ti-tool', 'Equipos en taller', String(equiposPend), equiposPend ? 'En el taller' : 'Taller al día')}
-          ${kpi('#2563eb', 'ti-shield-check', 'Garantías', k.garantiasVigentes != null ? String(k.garantiasVigentes) : '—', 'Vigentes')}
-          ${kpi('#d97706', 'ti-alert-triangle', 'Inventario crítico', String(criticos), criticos ? 'Revisar productos' : 'Todo en orden')}
-          ${kpi('#dc2626', 'ti-truck-delivery', 'Por pagar', k.comprasPendientes != null ? fmt(k.comprasPendientes) : '—', 'Por pagar a proveedores')}
           ${kpi('#db2777', 'ti-clock', 'En espera', String(esperando), esperando ? fmt(esperandoVal) + ' por facturar' : 'Nadie esperando')}
         </div>`;
+      const aviso = (tab, ic, txt) => puedeVer(tab) ? `<button type="button" class="nxIniAviso" onclick="window.nxPosTab('${tab}')"><i class="ti ${ic}"></i><span>${txt}</span><i class="ti ti-chevron-right"></i></button>` : '';
+      const avisos = [
+        equiposPend ? aviso('reparaciones', 'ti-tool', equiposPend + (equiposPend === 1 ? ' equipo en el taller' : ' equipos en el taller')) : '',
+        criticos ? aviso('productos', 'ti-alert-triangle', criticos + (criticos === 1 ? ' producto con inventario crítico' : ' productos con inventario crítico')) : '',
+        Number(k.comprasPendientes || 0) > 0 ? aviso('compras', 'ti-truck-delivery', fmt(k.comprasPendientes) + ' por pagar a proveedores') : ''
+      ].join('');
+      if (avisos) kpis += `<div class="nxIniAvisos">${avisos}</div>`;
     }
     let ultVentas = '';
     { // Ultimas ventas: ahora para TODOS
@@ -799,13 +808,8 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo}</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
+        ${accesos}
         ${webVisPanel()}
-        ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + (reacondOn() ? tile('reacond', 'Reacondicionado', 'ti-recycle', '#0e7490') : '') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
-        ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
-        ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
-        ${grupo('Finanzas', tile('caja', 'Caja', 'ti-cash', '#16a34a') + tile('cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas', 'ti-calendar-dollar', '#0891b2') + tile('apartados', 'Apartados', 'ti-bookmark', '#db2777') + tile('contabilidad', 'Contabilidad', 'ti-book-2', '#4f46e5') + tile('reportes', 'Reportes', 'ti-chart-pie', '#d97706'))}
-        ${grupo('Inteligencia', tile('ia', 'IA NEXUS', 'ti-brain', '#9333ea'))}
-        ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
         ${ultVentas}
       </div>`;
   }
@@ -5061,6 +5065,12 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
 .ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
 .ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.nxIniAvisos{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+.nxIniAviso{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;border-radius:12px;border:1px solid rgba(201,162,39,.45);background:#FFFEFA;color:#111;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.nxIniAviso>i:first-child{color:#806515;font-size:17px}.nxIniAviso>i:last-child{color:#94918A;font-size:15px}
+.nxIniAviso:hover{background:rgba(201,162,39,.10)}
+.nxIniAcc .nxAppGrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:700px){.nxIniAcc .nxAppGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .nxWebVis{margin-bottom:16px}
 .nxWebVis .nxTPanelH b i{color:#806515;margin-right:2px}
 .nxWvStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 10px}

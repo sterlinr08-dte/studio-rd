@@ -1,0 +1,9 @@
+-- Prueba de la migración 51 (contador de visitas). Termina en error a propósito: todo se deshace, no deja nada.
+-- Corrida el 06-oct-2026 en la base real: 10 de 10 OK.
+-- Pasos: crear la tabla y las dos funciones tal cual supabase/51_web_visitas.sql (sin «if not exists»), y luego:
+--  · como anon: web_registrar_visita('tienda','instagram','celular','a1b2c3d4e5f6a7b8c9d0') → true; la misma otra vez → false
+--    (misma visita en 30 min); ('lq-n9','whatsapp',…) → true; ('<script>','evil','x','ffffeeeeddddcccc') → true guardada como
+--    otra/otro/computadora; visitante 'x' → false; leer web_visitas → permiso denegado; web_visitas_resumen → permiso denegado.
+--  · como admin (25bea4e1-…): web_visitas_resumen(30) → hoy 3, hoy_visitantes 2, 30 días en por_dia, instagram 1.
+--  · como cajera (9b5d1b70-…): web_visitas_resumen → SOLO_ADMIN_GERENTE.
+-- (El SQL completo de la corrida está en la bitácora 2026-10-06 del contador de visitas.)

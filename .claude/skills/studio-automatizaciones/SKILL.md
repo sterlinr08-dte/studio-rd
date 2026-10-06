@@ -67,6 +67,19 @@ Lo hacen **disparadores en la base**, no la pantalla. No dupliques esta lógica 
 - **Clientes:** `C-00050`… del sistema anterior, y `CL-0001` desde la pantalla (`entCodigoAuto`). Todavía en el navegador: ver §3.
 - El número lo calcula la base con un candado por organización (`pg_advisory_xact_lock`): dos altas al mismo tiempo no reciben el mismo.
 
+### Contador de visitas de la página web — migración 51 (59.91)
+- `web-visitas.js` en `tienda.html`, `lq-n9.html` y `mayoristas.html`. La página se marca con `<html data-pagina="…">`.
+- Manda a `web_registrar_visita` (anon, SECURITY DEFINER): página, origen (Instagram, WhatsApp, Google, Facebook, TikTok, directo u otro), equipo y un número al azar del navegador (`localStorage studio_vis`).
+- **Sin IP ni datos personales.**
+- **No cuenta:**
+  - los equipos del personal (cookie `studio_staff`);
+  - los robots y los navegadores automáticos; para las pruebas, `?qa-visitas=1` los deja contar;
+  - la misma persona en la misma página dentro de 30 minutos;
+  - más de 60 visitas por día de un mismo número.
+- `web_visitas` no se lee ni se escribe directo: solo por las funciones.
+- `web_visitas_resumen(dias)` es solo para administrador y gerente. El panel «Visitas a la página web» del Inicio se refresca cada minuto como mucho.
+- Página nueva pública: agregarle `data-pagina`, el `<script src="web-visitas.js" defer>` y su nombre en la lista de `web_registrar_visita`.
+
 ### Buscador inteligente en listas (59.88)
 - `parches-pos-buscador.js`: todo `<select>` con 10 opciones o más lleva lupa y buscador, sin tocar el `<select>` real.
 - `data-nx-buscar` lo fuerza en una lista y `data-nx-buscar="no"` lo quita.

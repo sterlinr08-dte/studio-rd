@@ -799,6 +799,7 @@
     return `<div class="nxInicio">
         <div class="nxIniHead"><div><div class="nxIniHi">${saludo}</div><div class="nxIniBiz">${esc(negocio)}</div></div></div>
         ${kpis}
+        ${webVisPanel()}
         ${grupo('Ventas', tile('avisos', 'Avisos', 'ti-bell-ringing', '#dc2626') + tile('vender', 'Vender', 'ti-shopping-cart', '#16a34a') + tile('factura', 'Factura', 'ti-file-invoice', '#6d28d9') + tile('prefactura', 'Prefactura', 'ti-file-description', '#7c3aed') + tile('reparaciones', 'Reparaciones', 'ti-tool', '#ea580c') + (reacondOn() ? tile('reacond', 'Reacondicionado', 'ti-recycle', '#0e7490') : '') + tile('cotizaciones', 'Cotizaciones', 'ti-clipboard-text', '#7c3aed') + tile('ventas', 'Historial', 'ti-history', '#475569') + tile('notascredito', 'Notas de crédito', 'ti-file-minus', '#ea580c') + tile('prefhist', 'Prefacturas', 'ti-files', '#7c3aed'))}
         ${grupo('Inventario y compras', tile('productos', 'Inventario', 'ti-box', '#ea580c') + tile('inventario', 'Kardex', 'ti-building-warehouse', '#0d9488') + tile('compras', 'Compras', 'ti-truck-delivery', '#0891b2'))}
         ${grupo('Personas y CRM', tile('entidades', 'Entidades', 'ti-address-book', '#7c3aed') + tile('crm', 'CRM', 'ti-target-arrow', '#e11d48') + tile('clientes', 'Clientes', 'ti-users', '#0891b2') + tile('rrhh', 'Rec. Humanos', 'ti-users-group', '#db2777'))}
@@ -807,6 +808,46 @@
         ${grupo('Configuración', tile('ajustes', 'Ajustes', 'ti-settings', '#475569'))}
         ${ultVentas}
       </div>`;
+  }
+
+  // ── Visitas a la página web (migración 51: web_visitas_resumen) — Inicio, solo administrador y gerente ──
+  // La página pública (tienda, /lq-n9, /mayoristas) cuenta cada visita sin datos personales (web-visitas.js).
+  let _webVis = null, _webVisT = 0, _webVisCargando = false;
+  const WEB_ORIGEN = { instagram: ['Instagram', '#C13584'], whatsapp: ['WhatsApp', '#16a34a'], google: ['Google', '#2563eb'], facebook: ['Facebook', '#1877f2'], tiktok: ['TikTok', '#111111'], directo: ['Directo', '#806515'], otro: ['Otros', '#94918A'] };
+  const WEB_DISP = { celular: ['Celular', 'ti-device-mobile'], computadora: ['Computadora', 'ti-device-desktop'], tableta: ['Tableta', 'ti-device-tablet'] };
+  const WEB_PAG = { tienda: 'Tienda', 'lq-n9': 'LQ-N9 en tu casa', mayoristas: 'Catálogo mayorista', otra: 'Otras' };
+  function webVisPanel() {
+    if (!['admin', 'gerente'].includes(miRolPOS())) return '';
+    try { nxPfEnsureCSS(); } catch (e) {}
+    if (Date.now() - _webVisT > 60000) setTimeout(webVisCargar, 0);
+    return `<div class="nxTPanel nxWebVis" id="nxWebVis">${webVisCuerpo()}</div>`;
+  }
+  async function webVisCargar() {
+    if (_webVisCargando) return; _webVisCargando = true;
+    try { _webVis = await getAPI().post('rpc/web_visitas_resumen', { p_dias: 30 }); _webVisT = Date.now(); }
+    catch (e) { _webVis = { error: true }; _webVisT = Date.now(); }
+    _webVisCargando = false;
+    const el = document.getElementById('nxWebVis'); if (el) el.innerHTML = webVisCuerpo();
+  }
+  function webVisCuerpo() {
+    const head = '<div class="nxTPanelH"><b><i class="ti ti-world"></i> Visitas a la página web</b><small>studiord.net · sin datos personales</small></div>';
+    const r = _webVis;
+    if (!r) return head + '<div class="nxTVEmpty">Contando visitas…</div>';
+    if (r.error) return head + '<div class="nxTVEmpty">El contador todavía no está activo.</div>';
+    const n = x => Number(x || 0).toLocaleString('en-US');
+    const stat = (l, v, s) => `<div class="nxWvS"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
+    const dias = Array.isArray(r.por_dia) ? r.por_dia : [];
+    const max = Math.max(1, ...dias.map(d => Number(d.n || 0)));
+    const W = 300, H = 56, bw = W / Math.max(1, dias.length);
+    const barras = dias.map((d, i) => { const h = Math.max(Number(d.n) ? 3 : 1, Math.round(Number(d.n || 0) / max * (H - 6))); return `<rect x="${(i * bw + 1).toFixed(1)}" y="${H - h}" width="${Math.max(1, bw - 2).toFixed(1)}" height="${h}" rx="1.5" fill="${i === dias.length - 1 ? '#C9A227' : 'rgba(201,162,39,.38)'}"><title>${esc(String(d.d).slice(8, 10) + '/' + String(d.d).slice(5, 7))}: ${n(d.n)} visita${Number(d.n) === 1 ? '' : 's'}</title></rect>`; }).join('');
+    const tot = Number(r.periodo || 0);
+    const parte = (obj, MAP) => Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => { const m = MAP[k] || [k]; return `<span class="nxWvChip">${m[1] && m[1].indexOf('ti-') === 0 ? `<i class="ti ${m[1]}"></i>` : `<i class="nxWvDot" style="background:${m[1] || '#94918A'}"></i>`}${esc(m[0])} <b>${tot ? Math.round(v / tot * 100) : 0}%</b></span>`; }).join('');
+    const pags = Object.entries(r.por_pagina || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="nxWvChip">${esc(WEB_PAG[k] || k)} <b>${n(v)}</b></span>`).join('');
+    return head + `<div class="nxWvStats">${stat('Hoy', n(r.hoy), n(r.hoy_visitantes) + ' persona' + (Number(r.hoy_visitantes) === 1 ? '' : 's'))}${stat('7 días', n(r.semana), n(r.semana_visitantes) + ' personas')}${stat('30 días', n(r.periodo), n(r.periodo_visitantes) + ' personas')}${stat('Desde el inicio', n(r.total), 'visitas')}</div>` +
+      (tot ? `<svg class="nxWvBar" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Visitas por día, últimos 30 días">${barras}</svg><div class="nxWvEje"><span>Hace 30 días</span><span>Hoy</span></div>
+      <div class="nxWvFila"><small>De dónde llegan</small>${parte(r.por_origen, WEB_ORIGEN)}</div>
+      <div class="nxWvFila"><small>Equipo</small>${parte(r.por_dispositivo, WEB_DISP)}</div>
+      <div class="nxWvFila"><small>Páginas</small>${pags}</div>` : '<div class="nxTVEmpty">Todavía no hay visitas. Se cuentan desde que se publicó el contador; los equipos del personal no cuentan.</div>');
   }
 
   // ── TAB: VENDER ──
@@ -5020,6 +5061,21 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ajFicha .ajRol input{margin:2px 0 0;accent-color:#C9A227}
 .ajFicha .ajRol b{display:block;font-size:13.5px}.ajFicha .ajRol small{font-size:12px;color:#686862;line-height:1.35}
 .ajFicha .ajFichaPie{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+.nxWebVis{margin-bottom:16px}
+.nxWebVis .nxTPanelH b i{color:#806515;margin-right:2px}
+.nxWvStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 10px}
+.nxWvS{display:flex;flex-direction:column;gap:1px;background:#F7F5EF;border:1px solid rgba(17,17,17,.06);border-radius:12px;padding:8px 10px;min-width:0}
+.nxWvS span{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#806515}
+.nxWvS b{font-size:20px;font-weight:800;color:#111;font-variant-numeric:tabular-nums;line-height:1.15}
+.nxWvS small{font-size:11px;color:#686862;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nxWvBar{display:block;width:100%;height:56px}
+.nxWvEje{display:flex;justify-content:space-between;font-size:10.5px;color:#94918A;margin:2px 0 8px}
+.nxWvFila{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.nxWvFila>small{flex-basis:100%;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#686862}
+.nxWvChip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 9px;border-radius:999px;background:#fff;border:1px solid #e8e5dc;color:#111}
+.nxWvChip b{font-variant-numeric:tabular-nums}.nxWvChip i.ti{color:#806515}
+.nxWvDot{width:8px;height:8px;border-radius:50%;display:inline-block}
+@media (max-width:540px){.nxWvStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .nxDupNota{font-size:12.5px;color:#4a4740;background:#F7F5EF;border:1px solid rgba(201,162,39,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;line-height:1.45}
 .nxDupG{border:1px solid #e8e5dc;border-radius:14px;padding:10px;margin-bottom:10px;background:#fff}
 .nxDupGh{display:flex;gap:6px;align-items:center;margin-bottom:6px}

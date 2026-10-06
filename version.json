@@ -1,7 +1,16 @@
 {
-  "version": "59.87",
+  "version": "59.88",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.88",
+      "fecha": "2026-10-06",
+      "notas": [
+        "Buscador con lupa en todas las listas largas (artículos, empleados, clientes, cuentas, suplidores): al tocar la lista se abre un buscador en lugar de la lista larga.",
+        "Búsqueda inteligente: sin importar acentos ni mayúsculas, las palabras en cualquier orden, por código, «promax» igual que «pro max» y con tolerancia a un error de letra.",
+        "Los artículos con existencia salen primero, con la cantidad en stock al lado; los últimos elegidos en cada lista salen arriba como «Recientes»."
+      ]
+    },
     {
       "version": "59.87",
       "fecha": "2026-10-05",

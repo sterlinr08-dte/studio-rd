@@ -1,7 +1,16 @@
 {
-  "version": "59.92",
+  "version": "59.93",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.93",
+      "fecha": "2026-10-08",
+      "notas": [
+        "Seguridad: anular una factura solo lo puede hacer el administrador o el gerente, y ahora lo exige también el servidor (no solo la pantalla). Las facturas no se borran; se anulan.",
+        "El botón «Anular» del Historial ya no le sale a quien no puede anular.",
+        "Cajas: nadie más que el administrador puede borrar una caja, y los movimientos solo se quitan de la caja propia abierta."
+      ]
+    },
     {
       "version": "59.92",
       "fecha": "2026-10-06",

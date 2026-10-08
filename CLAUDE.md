@@ -79,3 +79,6 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
   reportes de financiamiento, subida de documentos, manifest/iconos PWA propios, podar de `index.html` las
   vistas/funciones latentes de Seguros y las tablas núcleo heredadas (`agentes`, `bancos`, `secuencias_ncf`,
   `recibo_contador`, `saas_*`, `rrhh_*` si no se usan).
+
+## Regla del dueño: usar SIEMPRE las skills instaladas (08-oct-2026)
+Antes de cualquier tarea, revisar las skills disponibles (`.claude/skills/` de este repo y las que anuncie la sesión) y usar la que corresponda **sin esperar a que el dueño la nombre**: diseño, seguridad (`security-audit`), video (`remotion-*`; en nexus-pro también HyperFrames), redes (`ver-video-redes` en nexus-pro), revisión de código, etc. Si una skill puede mejorar el trabajo aunque no se pidiera, proponerla o aplicarla. El catálogo completo por necesidad está en el `CLAUDE.md` de nexus-pro. No conectar cuentas ni gastar en servicios de pago sin el OK del dueño.

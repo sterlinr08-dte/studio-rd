@@ -6485,7 +6485,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
         <td>${esc(v.cliente_nombre || 'Consumidor final')}</td>
         <td><span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:${esCred ? '#fef3c7' : '#dcfce7'};color:${esCred ? '#92400e' : '#166534'}">${esCred ? 'CRÉDITO' : 'CONTADO'}</span>${anulada ? ' <span style="font-size:9px;color:#dc2626;font-weight:800">ANULADA</span>' : ''}</td>
         <td style="text-align:right;font-weight:800;color:#059669;white-space:nowrap">${fmt(v.total)}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button> <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}</td>
+        <td style="text-align:right;white-space:nowrap"><button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosTicket('${v.id}')" title="Ticket" aria-label="Ticket"><i class="ti ti-receipt"></i></button>${!anulada ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxDevNueva('${v.id}')" title="Devolución / Nota de crédito" aria-label="Devolución / Nota de crédito"><i class="ti ti-arrow-back-up" style="color:#ea580c"></i></button>${facPuedeAnular() ? ` <button class="btn bsm bghost" onclick="event.stopPropagation();window.nxPosAnularVenta('${v.id}')" title="Anular" aria-label="Anular"><i class="ti ti-ban" style="color:#dc2626"></i></button>` : ''}` : ''}</td>
       </tr>`;
     }).join('');
   }
@@ -6494,6 +6494,8 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
   window.nxPosHistFecha = function () { _histDesde = val('histDesde') || ''; _histHasta = val('histHasta') || ''; pintarHistorial(); };
   window.nxPosHistLimpiar = function () { _histQ = ''; _histDesde = ''; _histHasta = ''; const v = document.getElementById('v-pos'); if (v) renderPOS(v); };
   window.nxPosAnularVenta = async function (id) {
+    // 59.93: el servidor (migración 52) ya rechaza la anulación de quien no es admin/gerente; aquí solo se avisa claro.
+    if (!facPuedeAnular()) { toast('warn', 'Anular', 'Solo el administrador o el gerente puede anular'); return; }
     const v = (_ventas || []).find(x => String(x.id) === String(id)); if (!v) return;
     // A-CRIT: si la venta financió cuotas ya cobradas, calcular cuánto ANTES de tocar nada — hace
     // falta para avisarle al cajero (ese dinero no lo devuelve el sistema solo) y para no reversar

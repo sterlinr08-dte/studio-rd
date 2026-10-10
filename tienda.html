@@ -297,9 +297,6 @@ footer .acceso-equipo:hover{color:var(--texto)}
 .hero-escena::before{content:"";position:absolute;inset:4% -3% 0;z-index:-1;border-radius:50%;background:radial-gradient(ellipse at center,rgba(247,245,239,.1),transparent 68%);transform:translateX(var(--luz-x,0));transition:transform .55s var(--ease),opacity .55s var(--ease)}
 .hero-escena[data-modelo="1"]{--luz-x:7%}.hero-escena[data-modelo="2"]{--luz-x:-7%}
 .hero-letra{position:absolute;top:8%;left:0;right:0;text-align:center;font:800 clamp(100px,15vw,210px)/1 var(--disp);letter-spacing:-.075em;color:transparent;-webkit-text-stroke:1px rgba(247,245,239,.12);z-index:-1;pointer-events:none}
-/* Partículas que forman la letra del modelo (ver script «Portada: la letra gigante…»); sin JS queda .hero-letra. */
-.hero-particulas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
-.hero-escena.con-particulas .hero-letra{visibility:hidden}
 .hero-pedestal{position:absolute;left:8%;right:8%;bottom:10%;height:14%;border-radius:50%;border:1px solid rgba(201,162,39,.36);background:rgba(247,245,239,.025);box-shadow:0 24px 34px rgba(0,0,0,.24);z-index:-1}
 picture:has(>#hero-foto){display:contents}
 #hero-foto-m{display:none}
@@ -1182,120 +1179,6 @@ document.getElementById('anio').textContent = new Date().getFullYear();
   escena.addEventListener('lostpointercapture', () => { gesto = null; });
 })();
 
-
-// Portada: la letra gigante del modelo («N9», «H8», «HLD») formada por partículas; al cambiar de modelo los
-// puntos se deshacen y forman el nuevo. Solo adorno: no toca el carrusel (escucha el cambio de #hero-letra).
-// Con «reducir movimiento», sin canvas o si algo falla, queda la letra de siempre. Arranca después de cargar
-// la página, se detiene cuando los puntos llegan a su sitio y en pantallas fuera de vista o pestañas ocultas.
-(function () {
-  const escena = document.getElementById('hero-escena'), letra = document.getElementById('hero-letra');
-  const reducido = matchMedia('(prefers-reduced-motion: reduce)');
-  if (!escena || !letra || reducido.matches || !window.requestAnimationFrame || !window.IntersectionObserver) return;
-  const lienzo = document.createElement('canvas'), ctx = lienzo.getContext && lienzo.getContext('2d');
-  if (!ctx) return;
-  lienzo.className = 'hero-particulas'; lienzo.setAttribute('aria-hidden', 'true');
-  const BLANCO = 'rgb(243,242,238)', ORO = 'rgb(242,210,106)';
-  let P = [], ancho = 0, alto = 0, raf = 0, ultimo = 0, visible = false, cargada = false, listo = false, puntero = null, modelo = +escena.dataset.modelo || 0;
-
-  // Dibuja el texto actual fuera de pantalla con la misma letra, tamaño y espaciado que #hero-letra y toma puntos de él.
-  function objetivos() {
-    const texto = letra.textContent.trim(); if (!texto || !ancho || !alto) return [];
-    const cs = getComputedStyle(letra), fs = parseFloat(cs.fontSize), ls = parseFloat(cs.letterSpacing) || 0;
-    const c = document.createElement('canvas'); c.width = ancho; c.height = alto;
-    const g = c.getContext('2d', { willReadFrequently: true });
-    g.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + fs + 'px ' + cs.fontFamily;
-    const letras = [...texto], anchos = letras.map(ch => g.measureText(ch).width), m = g.measureText(texto);
-    const total = anchos.reduce((s, w) => s + w + ls, 0);
-    const base = letra.offsetTop + (m.fontBoundingBoxAscent != null ? (fs - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent : fs * .8);
-    let x = letra.offsetLeft + (letra.offsetWidth - total) / 2;
-    g.fillStyle = '#fff';
-    letras.forEach((ch, i) => { g.fillText(ch, x, base); x += anchos[i] + ls; });
-    const d = g.getImageData(0, 0, ancho, alto).data;
-    const lleno = (px, py) => px >= 0 && py >= 0 && px < ancho && py < alto && d[(py * ancho + px) * 4 + 3] > 128;
-    let area = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 128) area++;
-    const paso = Math.max(2, Math.round(Math.sqrt(area / (ancho < 500 ? 900 : 1500)))), pts = [];
-    for (let py = paso >> 1; py < alto; py += paso) for (let px = paso >> 1; px < ancho; px += paso) {
-      if (!lleno(px, py)) continue;
-      const borde = !lleno(px + paso, py) || !lleno(px - paso, py) || !lleno(px, py + paso) || !lleno(px, py - paso);
-      pts.push({ x: px + (Math.random() - .5) * paso * 1.1, y: py + (Math.random() - .5) * paso * 1.1, borde });
-    }
-    return pts.sort((a, b) => a.x - b.x);
-  }
-  const nueva = (x, y) => ({ x, y, vx: 0, vy: 0, tx: x, ty: y, a: 0, ta: 0, k: .03 + Math.random() * .035, s: 1.1 + Math.random() * .8, oro: Math.random() < .13, sale: false });
-  // Reparte los puntos entre los nuevos destinos de izquierda a derecha (recorridos cortos); sobrantes se apagan.
-  function asignar(pts, dir) {
-    if (!pts.length) return;
-    P = P.filter(p => !p.sale);
-    while (P.length < pts.length) { const o = P[(Math.random() * P.length) | 0]; P.push(o ? nueva(o.x, o.y) : nueva(Math.random() * ancho, Math.random() * alto)); }
-    P.sort((a, b) => a.x - b.x);
-    let previo = -1;
-    P.forEach((p, i) => {
-      if (dir) { const ang = Math.random() * 6.283, v = 1 + Math.random() * 4.5; p.vx += Math.cos(ang) * v + dir * 2.5; p.vy += Math.sin(ang) * v; }
-      const j = Math.floor(i * pts.length / P.length);
-      if (j === previo) { p.sale = true; p.ta = 0; p.tx = p.x + (Math.random() - .5) * 90; p.ty = p.y + (Math.random() - .5) * 90; return; }
-      previo = j; p.tx = pts[j].x; p.ty = pts[j].y; p.ta = pts[j].borde ? .6 : .26;
-    });
-  }
-  function medir() {
-    const w = escena.clientWidth, h = escena.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (!w || !h || (w === ancho && h === alto)) return false;
-    ancho = w; alto = h; lienzo.width = Math.round(w * dpr); lienzo.height = Math.round(h * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return true;
-  }
-  function cuadro(t) {
-    raf = 0;
-    const dt = ultimo ? Math.min(3, (t - ultimo) / 16.67) : 1, freno = Math.pow(.87, dt); ultimo = t;
-    let mueve = false;
-    for (const p of P) {
-      let ax = (p.tx - p.x) * p.k, ay = (p.ty - p.y) * p.k;
-      if (puntero) {
-        const dx = p.x - puntero.x, dy = p.y - puntero.y, d2 = dx * dx + dy * dy;
-        if (d2 < 4900 && d2 > .01) { const dist = Math.sqrt(d2), f = (1 - dist / 70) * 2.4 / dist; ax += dx * f; ay += dy * f; }
-      }
-      p.vx = (p.vx + ax * dt) * freno; p.vy = (p.vy + ay * dt) * freno;
-      p.x += p.vx * dt; p.y += p.vy * dt; p.a += (p.ta - p.a) * Math.min(1, .07 * dt);
-      if (Math.abs(p.vx) + Math.abs(p.vy) > .03 || Math.abs(p.ta - p.a) > .01) mueve = true;
-    }
-    P = P.filter(p => !(p.sale && p.a < .01));
-    ctx.clearRect(0, 0, ancho, alto);
-    for (const oro of [false, true]) {
-      ctx.fillStyle = oro ? ORO : BLANCO;
-      for (const p of P) if (p.oro === oro && p.a > .01) { ctx.globalAlpha = p.a; ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s); }
-    }
-    ctx.globalAlpha = 1;
-    if (mueve) animar();
-  }
-  function animar() { if (!raf && listo && visible && !document.hidden) { ultimo = 0; raf = requestAnimationFrame(cuadro); } }
-  function apagar() {
-    listo = false; cancelAnimationFrame(raf); raf = 0; P = [];
-    lienzo.remove(); escena.classList.remove('con-particulas');
-    vista.disconnect(); cambio.disconnect(); if (tamano) tamano.disconnect();
-  }
-  function arrancar() {
-    if (listo || !cargada || !visible) return;
-    try {
-      escena.insertBefore(lienzo, letra.nextSibling); medir();
-      const pts = objetivos(); if (!pts.length) throw new Error('sin puntos');
-      asignar(pts, 0); listo = true; escena.classList.add('con-particulas'); animar();
-    } catch (_) { apagar(); }
-  }
-  const vista = new IntersectionObserver(es => { visible = es[es.length - 1].isIntersecting; if (listo) animar(); else arrancar(); });
-  const cambio = new MutationObserver(() => {
-    if (!listo) return;
-    const nuevo = +escena.dataset.modelo || 0, dir = (nuevo - modelo + 3) % 3 === 1 ? 1 : -1; modelo = nuevo;
-    try { asignar(objetivos(), dir); animar(); } catch (_) { apagar(); }
-  });
-  const tamano = window.ResizeObserver ? new ResizeObserver(() => { if (listo && medir()) { try { asignar(objetivos(), 0); animar(); } catch (_) { apagar(); } } }) : null;
-  vista.observe(escena); cambio.observe(letra, { childList: true, characterData: true, subtree: true }); if (tamano) tamano.observe(escena);
-  document.addEventListener('visibilitychange', animar);
-  reducido.addEventListener('change', e => { if (e.matches) apagar(); });
-  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    escena.addEventListener('pointermove', e => { const r = escena.getBoundingClientRect(); puntero = { x: e.clientX - r.left, y: e.clientY - r.top }; animar(); });
-    escena.addEventListener('pointerleave', () => { puntero = null; animar(); });
-  }
-  const empezar = () => (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { cargada = true; arrancar(); });
-  if (document.readyState === 'complete') empezar(); else addEventListener('load', empezar, { once: true });
-})();
 
 // ════ Pedido (carrito) de la tienda — mismo flujo que /mayoristas. Clave de cada línea: «id-tarjeta|variante».
 (function () {

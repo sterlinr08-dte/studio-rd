@@ -420,6 +420,10 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
   background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center;background-repeat:no-repeat}
 @media(min-width:900px){#nxBgPhoto{background-image:url(/bg-office-desktop.jpg)}}
 body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
+/* STUDIO (10-oct-2026, pedido del dueño): sin la foto de oficina heredada de NEXUS PRO, que se asomaba un instante
+   entre la carga y el login. Fondo oscuro de la marca; con el sistema abierto, el gris claro del punto de venta. */
+html.nx-studio #nxBgPhoto{background-image:none!important;background-color:#0a0a0a}
+html.nx-studio body:not(.tema-premium):has(#loginScreen[style*="none"]) #nxBgPhoto{background-color:#f8fafc}
 /* html,body{background:var(--bg0)} (arriba) le pone a <html> un fondo EXPLÍCITO — eso
    desactiva la propagación del fondo de <body> al "canvas" del navegador (solo pasa si
    html queda transparente), así que <body> pinta su propio fondo sólido como caja normal
@@ -3105,13 +3109,13 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
 <!-- ═══════════════ SPLASH · CARGA ═══════════════ -->
 <div id="nxSplash" aria-hidden="true">
   <div class="nxs-inner">
-    <div class="nxs-badge nxs-st"><img data-part class="nxs-logo" src="logo-studio.png" alt="Studio" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
+    <div class="nxs-badge nxs-st"><img class="nxs-logo" src="logo-studio.png" alt="Studio" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
     <div class="nxs-brand">Cargando Studio</div>
     <div class="nxs-tag">Preparando tu espacio de trabajo...</div>
   </div>
 </div>
 <div id="nxLoader" style="display:none" aria-hidden="true">
-  <div class="nxs-badge nxs-st"><img data-part class="nxs-logo" src="logo-studio.png" alt="" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
+  <div class="nxs-badge nxs-st"><img class="nxs-logo" src="logo-studio.png" alt="" width="1080" height="1080" decoding="async"><span class="nxs-bar"></span></div>
 </div>
 <script>
 (function(){var s=document.getElementById('nxSplash');if(!s)return;
@@ -3237,7 +3241,7 @@ window.nxLoginBtnHTML=function(){ return document.documentElement.classList.cont
 </script>
 
 <script id="stLogoParticulas">
-/* Logo de STUDIO formado por partículas (10-oct-2026). En la carga (splash/loader) y en el login, el logo se arma con
+/* Logo de STUDIO formado por partículas (10-oct-2026). Solo en el login (pedido del dueño): el logo se arma con
    puntitos de luz y después queda la imagen nítida de siempre. En computadora, al pasar el ratón por el logo del login,
    se vuelve puntitos que se apartan y, al salir, vuelve a quedar nítido. Solo adorno: con «reducir movimiento», sin
    canvas o si algo falla, se ve el logo normal (img.nx-part-ok). La marca html.nx-part la pone el <head>. */
@@ -3315,10 +3319,8 @@ window.nxLoginBtnHTML=function(){ return document.documentElement.classList.cont
  function empezar(img,conRaton){
   listaImg(img).then(function(){try{armar(img,conRaton);}catch(e){mostrar(img);}},function(){mostrar(img);});
  }
- // Carga: el logo de la pantalla que esté a la vista (bienvenida o recarga).
- imgs.filter(function(img){return img.classList.contains('nxs-logo');}).forEach(function(img){if(visible(img))empezar(img,false);else mostrar(img);});
  // Login: espera a que la carga se quite y el login esté a la vista; si no aparece (sesión abierta), logo normal.
- var lg=imgs.filter(function(img){return !img.classList.contains('nxs-logo');})[0], ls=document.getElementById('loginScreen');
+ var lg=imgs[0], ls=document.getElementById('loginScreen');
  if(!lg)return;
  var t0=Date.now();
  (function mirar(){

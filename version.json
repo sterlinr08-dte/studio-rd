@@ -6,9 +6,9 @@
       "version": "59.94",
       "fecha": "2026-10-10",
       "notas": [
-        "Tienda: en la portada, la letra grande del modelo («N9», «H8», «HLD») ahora se forma con puntitos de luz; al cambiar de modelo los puntos se deshacen y forman el nuevo.",
-        "Login y pantalla de carga: el logo de STUDIO se arma con puntitos de luz y luego queda nítido. En computadora, al pasar el ratón por el logo del login, los puntitos se apartan.",
-        "Con «reducir movimiento» activado en el teléfono, o si algo falla, se ve la letra y el logo de siempre. No retrasa la carga de la página."
+        "Login: el logo de STUDIO se arma con puntitos de luz y luego queda nítido. En computadora, al pasar el ratón por el logo, los puntitos se apartan.",
+        "Se quitó la foto de oficina que se asomaba un instante al abrir el sistema, entre la pantalla de carga y el login.",
+        "Con «reducir movimiento» activado en el teléfono, o si algo falla, se ve el logo de siempre."
       ]
     },
     {

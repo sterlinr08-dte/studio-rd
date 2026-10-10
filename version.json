@@ -1,7 +1,15 @@
 {
-  "version": "59.93",
+  "version": "59.94",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.94",
+      "fecha": "2026-10-10",
+      "notas": [
+        "Tienda: en la portada, la letra grande del modelo («N9», «H8», «HLD») ahora se forma con puntitos de luz; al cambiar de modelo los puntos se deshacen y forman el nuevo.",
+        "Con «reducir movimiento» activado en el teléfono, o si algo falla, se ve la letra de siempre. No retrasa la carga de la página."
+      ]
+    },
     {
       "version": "59.93",
       "fecha": "2026-10-08",

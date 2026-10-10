@@ -21,6 +21,9 @@ window.sentryOnLoad=function(){
 <script>/* Marca por dominio: en studiord.net el login/splash usan la piel STUDIO (solo CSS + textos; misma app). */
 (function(){try{if(true){document.documentElement.classList.add('nx-studio');document.title='Iniciar sesión · Studio';var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=optional';document.head.appendChild(l);}}catch(e){}})();</script>
 
+<script>/* Logo de partículas (ver #stLogoParticulas): con esta marca el logo espera a armarse con puntitos; si ese script no corre en 3 s, se muestra igual. */
+(function(){try{var h=document.documentElement;if(!h.classList.contains('nx-studio')||matchMedia('(prefers-reduced-motion: reduce)').matches||!document.createElement('canvas').getContext)return;h.classList.add('nx-part');setTimeout(function(){if(!window.__nxPart)h.classList.remove('nx-part');},3000);}catch(e){}})();</script>
+<style>html.nx-part img[data-part]:not(.nx-part-ok){visibility:hidden}</style>
 <script>/* Portada pública (25-sep-2026): el Worker muestra la tienda en «/» salvo en equipos donde ya se entró al sistema. Esta marca (solo «1», sin datos) la pone el inicio de sesión. */
 window.nxMarcarPersonal=function(){try{document.cookie='studio_staff=1; Max-Age=31536000; Path=/; SameSite=Lax; Secure'}catch(e){}};try{if(sessionStorage.getItem('nx_sesion'))window.nxMarcarPersonal()}catch(e){}</script>
 <!-- ═══ PWA — INSTALABLE EN iOS Y ANDROID ═══ -->
@@ -417,6 +420,10 @@ body.tema-premium .tnav{--tnb-bg:#1c2230;--tnb-hi:#262e40;--tnb-lo:#0b0d13;--tnb
   background-image:url(/bg-office-mobile.jpg);background-size:cover;background-position:center;background-repeat:no-repeat}
 @media(min-width:900px){#nxBgPhoto{background-image:url(/bg-office-desktop.jpg)}}
 body.tema-premium #nxBgPhoto{background-image:none;background-color:var(--bg0)}
+/* STUDIO (10-oct-2026, pedido del dueño): sin la foto de oficina heredada de NEXUS PRO, que se asomaba un instante
+   entre la carga y el login. Fondo oscuro de la marca; con el sistema abierto, el gris claro del punto de venta. */
+html.nx-studio #nxBgPhoto{background-image:none!important;background-color:#0a0a0a}
+html.nx-studio body:not(.tema-premium):has(#loginScreen[style*="none"]) #nxBgPhoto{background-color:#f8fafc}
 /* html,body{background:var(--bg0)} (arriba) le pone a <html> un fondo EXPLÍCITO — eso
    desactiva la propagación del fondo de <body> al "canvas" del navegador (solo pasa si
    html queda transparente), así que <body> pinta su propio fondo sólido como caja normal
@@ -3147,7 +3154,7 @@ html.nx-studio #loginScreen.st2.gold-paused *,html.nx-studio #loginScreen.st2.go
 <div id="loginScreen">
 <div class="lwrap">
 <div class="lbox">
-  <div class="lx-st-mark"><span class="lx-st-glow" aria-hidden="true"></span><img src="logo-studio.png" alt="Studio" width="1080" height="1080" loading="eager" draggable="false"/><span class="lx-st-shine" aria-hidden="true"></span></div>
+  <div class="lx-st-mark"><span class="lx-st-glow" aria-hidden="true"></span><img data-part src="logo-studio.png" alt="Studio" width="1080" height="1080" loading="eager" draggable="false"/><span class="lx-st-shine" aria-hidden="true"></span></div>
   <p class="lx-st-tag">Hogar, movilidad y tecnología</p>
   <div class="lshield"><i class="ti ti-shield-check"></i></div>
   <div class="lh">Bienvenido de nuevo</div>
@@ -3230,6 +3237,99 @@ window.nxLoginBtnHTML=function(){ return document.documentElement.classList.cont
  new MutationObserver(function(){btn.setAttribute('aria-busy',String(btn.disabled));}).observe(btn,{attributes:true,attributeFilter:['disabled']});
  new MutationObserver(function(){if(err.style.display==='block'&&err.textContent.trim()&&!reduced.matches){box.classList.remove('st2-shake');void box.offsetWidth;box.classList.add('st2-shake');}}).observe(err,{attributes:true,attributeFilter:['style'],childList:true,subtree:true,characterData:true});
  box.addEventListener('animationend',function(e){if(e.animationName==='st2Shake')box.classList.remove('st2-shake');});
+})();
+</script>
+
+<script id="stLogoParticulas">
+/* Logo de STUDIO formado por partículas (10-oct-2026). Solo en el login (pedido del dueño): el logo se arma con
+   puntitos de luz y después queda la imagen nítida de siempre. En computadora, al pasar el ratón por el logo del login,
+   se vuelve puntitos que se apartan y, al salir, vuelve a quedar nítido. Solo adorno: con «reducir movimiento», sin
+   canvas o si algo falla, se ve el logo normal (img.nx-part-ok). La marca html.nx-part la pone el <head>. */
+(function(){
+ var html=document.documentElement, imgs=[].slice.call(document.querySelectorAll('img[data-part]'));
+ var mostrar=function(img){img.classList.add('nx-part-ok');};
+ if(!html.classList.contains('nx-part')){imgs.forEach(mostrar);return;}
+ window.__nxPart=true;
+ var BLANCO='rgb(247,245,239)', ORO='rgb(227,196,92)', visible=function(el){return !!(el&&el.isConnected&&el.getClientRects().length&&el.offsetWidth);};
+ var listaImg=function(img){return img.complete&&img.naturalWidth?Promise.resolve():(img.decode?img.decode():Promise.reject());};
+
+ function armar(img,conRaton){
+  var box=img.parentElement, pad=28, c=document.createElement('canvas'), ctx=c.getContext('2d');
+  if(!ctx)throw new Error('sin canvas');
+  c.className='nx-logo-part';c.setAttribute('aria-hidden','true');
+  var P=[], w=0, h=0, raf=0, ultimo=0, inicio=0, puntero=null, estado='armando', tapa=null;
+  function medir(){
+   var iw=img.offsetWidth, ih=img.offsetHeight, dpr=Math.min(2,window.devicePixelRatio||1); if(!iw||!ih)return false;
+   w=iw+pad*2;h=ih+pad*2;
+   c.style.cssText='position:absolute;left:'+(img.offsetLeft-pad)+'px;top:'+(img.offsetTop-pad)+'px;width:'+w+'px;height:'+h+'px;z-index:2;pointer-events:none';
+   c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return true;
+  }
+  // Dibuja el logo fuera de pantalla igual que lo pinta el <img> (object-fit) y toma puntos donde hay tinta.
+  function puntos(){
+   var iw=img.offsetWidth, ih=img.offsetHeight, g=document.createElement('canvas'); g.width=iw;g.height=ih;
+   var x=g.getContext('2d',{willReadFrequently:true}), nw=img.naturalWidth, nh=img.naturalHeight, fit=getComputedStyle(img).objectFit;
+   var s=fit==='cover'?Math.max(iw/nw,ih/nh):fit==='contain'?Math.min(iw/nw,ih/nh):0;
+   if(s)x.drawImage(img,(iw-nw*s)/2,(ih-nh*s)/2,nw*s,nh*s);else x.drawImage(img,0,0,iw,ih);
+   var d=x.getImageData(0,0,iw,ih).data, area=0, pts=[];
+   for(var i=3;i<d.length;i+=4)if(d[i]>110)area++;
+   var paso=Math.max(1.4,Math.sqrt(area/(conRaton?1400:800)));
+   for(var py=paso/2;py<ih;py+=paso)for(var px=paso/2;px<iw;px+=paso)
+    if(d[((py|0)*iw+(px|0))*4+3]>110)pts.push({x:px+pad+(Math.random()-.5)*paso*.8,y:py+pad+(Math.random()-.5)*paso*.8});
+   return pts;
+  }
+  function cuadro(t){
+   raf=0;if(!img.isConnected)return;
+   var dt=ultimo?Math.min(3,(t-ultimo)/16.67):1, freno=Math.pow(.84,dt), mueve=false;ultimo=t;if(!inicio)inicio=t;
+   for(var i=0;i<P.length;i++){
+    var p=P[i], ax=(p.tx-p.x)*p.k, ay=(p.ty-p.y)*p.k;
+    if(puntero){var dx=p.x-puntero.x, dy=p.y-puntero.y, d2=dx*dx+dy*dy;if(d2<2500&&d2>.01){var dist=Math.sqrt(d2), f=(1-dist/50)*3/dist;ax+=dx*f;ay+=dy*f;}}
+    p.vx=(p.vx+ax*dt)*freno;p.vy=(p.vy+ay*dt)*freno;p.x+=p.vx*dt;p.y+=p.vy*dt;p.a+=(.92-p.a)*Math.min(1,.08*dt);
+    if(Math.abs(p.vx)+Math.abs(p.vy)>.04||p.a<.9)mueve=true;
+   }
+   ctx.clearRect(0,0,w,h);
+   [false,true].forEach(function(oro){ctx.fillStyle=oro?ORO:BLANCO;for(var i=0;i<P.length;i++){var p=P[i];if(p.oro===oro){ctx.globalAlpha=p.a;ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s);}}});
+   ctx.globalAlpha=1;
+   if((estado==='armando'&&(!mueve||t-inicio>1700))||(estado==='volviendo'&&!mueve)){revelar();return;}
+   if(mueve||estado==='armando')seguir();
+  }
+  function seguir(){if(!raf){raf=requestAnimationFrame(cuadro);}}
+  // La imagen nítida aparece y los puntos se apagan.
+  function revelar(){
+   estado='revelando';mostrar(img);
+   if(tapa){tapa.cancel();tapa=null;}
+   if(img.animate)img.animate([{opacity:0},{opacity:1}],{duration:480,easing:'ease-out'});
+   var fin=function(){estado='quieto';if(!conRaton)c.remove();};
+   if(c.animate){c.getAnimations().forEach(function(a){a.cancel();});c.animate([{opacity:1},{opacity:0}],{duration:480,easing:'ease-out',fill:'forwards'}).onfinish=fin;}else fin();
+  }
+  medir();box.appendChild(c);
+  P=puntos().map(function(t){return{x:Math.random()*w,y:Math.random()*h,vx:0,vy:0,tx:t.x,ty:t.y,a:0,k:.045+Math.random()*.045,s:(conRaton?1.3:1.1)+Math.random()*.6,oro:Math.random()<.15};});
+  if(!P.length)throw new Error('sin puntos');
+  seguir();
+  if(conRaton&&matchMedia('(hover: hover) and (pointer: fine)').matches){
+   box.addEventListener('pointerenter',function(){
+    if(estado!=='quieto'&&estado!=='volviendo')return;
+    estado='hover';ultimo=0;
+    c.getAnimations().forEach(function(a){a.cancel();});
+    if(img.animate&&!tapa)tapa=img.animate([{opacity:1},{opacity:0}],{duration:160,fill:'forwards'});
+   });
+   box.addEventListener('pointermove',function(e){if(estado!=='hover')return;var r=c.getBoundingClientRect();puntero={x:e.clientX-r.left,y:e.clientY-r.top};seguir();});
+   box.addEventListener('pointerleave',function(){if(estado!=='hover')return;puntero=null;estado='volviendo';seguir();});
+  }
+ }
+ function empezar(img,conRaton){
+  listaImg(img).then(function(){try{armar(img,conRaton);}catch(e){mostrar(img);}},function(){mostrar(img);});
+ }
+ // Login: espera a que la carga se quite y el login esté a la vista; si no aparece (sesión abierta), logo normal.
+ var lg=imgs[0], ls=document.getElementById('loginScreen');
+ if(!lg)return;
+ var t0=Date.now();
+ (function mirar(){
+  var carga=document.getElementById('nxSplash'), L=document.getElementById('nxLoader');
+  var tapado=(carga&&carga.isConnected)||(L&&L.isConnected&&L.style.display!=='none');
+  if(!tapado&&ls&&getComputedStyle(ls).display!=='none'&&visible(lg)){empezar(lg,true);return;}
+  if(Date.now()-t0>20000){mostrar(lg);return;}
+  setTimeout(mirar,150);
+ })();
 })();
 </script>
 
@@ -6889,7 +6989,7 @@ async function guardarRolPerms(rol){
 
 // ── CHANGELOG ──────────────────────────────────────────────────────
 // ── SISTEMA DE AUTO-ACTUALIZACIÓN ──────────────────────────────────
-const APP_VERSION='59.93';
+const APP_VERSION='59.94';
 // URL del archivo de versión en tu GitHub (lee la última versión publicada)
 // La actualización se sirve desde el MISMO dominio de la app (Cloudflare, deploy automático
 // con cada push a main) — más rápido y sin depender de GitHub raw (caché de ~5 min, límites).

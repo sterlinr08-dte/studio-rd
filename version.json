@@ -1,7 +1,16 @@
 {
-  "version": "59.93",
+  "version": "59.94",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.94",
+      "fecha": "2026-10-10",
+      "notas": [
+        "Login: el logo de STUDIO se arma con puntitos de luz y luego queda nítido. En computadora, al pasar el ratón por el logo, los puntitos se apartan.",
+        "Se quitó la foto de oficina que se asomaba un instante al abrir el sistema, entre la pantalla de carga y el login.",
+        "Con «reducir movimiento» activado en el teléfono, o si algo falla, se ve el logo de siempre."
+      ]
+    },
     {
       "version": "59.93",
       "fecha": "2026-10-08",

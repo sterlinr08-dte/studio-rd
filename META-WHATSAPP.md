@@ -24,7 +24,8 @@ Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada 
 **Decisiones del dueño:**
 - 08-oct: no mover la página ni la cuenta publicitaria de José a Studiord mientras WhatsApp no esté estable.
 - 11-oct: esquema **«compartido»**. Los activos siguen en el portafolio de José y se **comparten** con Studiord; el dueño es administrador con control total en los dos.
-- 11-oct: el dueño dice que ya pidió/compartió la página **studio__rd** y **@studio__rd** con Studiord. Por la API todavía **no aparece** en la cuenta 1105787685433439 (puede ser demora, falta de aprobación o «Conectar activos», o límite de lo que la API muestra). Pendiente: 3 capturas (Páginas, Cuentas de Instagram, Activos conectados de …3439) y prueba de «usar publicación existente».
+- **11-oct, 16:25 RD — RESUELTO:** el Instagram **@studio__rd** (ID 17841446933552881, propiedad del portafolio de José) quedó **compartido con Studiord** con acceso total. Se usó «Asignar socio» con el ID **28811977941729276**. En Studiord quedó conectado a la página Studiord y a la cuenta publicitaria **1105787685433439**. Comprobado por la API: la cuenta …3439 ya ve @studio__rd y sus publicaciones promocionables, o sea que «usar publicación existente» queda disponible.
+- **Pendiente de seguridad:** antes de esto, el Instagram ya tenía un socio llamado «Studiord» (con la S verde) con control total, pero no aparecía en nuestro Studiord. Puede ser **otro negocio con el mismo nombre**. Hay que revisar la pestaña Socios de @studio__rd en el portafolio de José; si salen dos «Studiord», identificar el extraño por su ID y quitarlo con el OK del dueño.
 
 ## 2. WhatsApp 829-624-7623 (STUDIO) — incidente y decisión
 
@@ -55,7 +56,7 @@ Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada 
 2. Elegir el número nuevo del CRM y conectarlo solo por API.
 3. Decidir el destino de la campaña pausada y reactivarla solo con el «sí» del dueño.
 4. Verificación del negocio Studiord (documentos).
-5. Confirmar el uso compartido de studio__rd / @studio__rd en la cuenta 1105787685433439.
+5. ~~Confirmar @studio__rd en la cuenta 1105787685433439~~ ✅ 11-oct. Queda revisar el posible socio «Studiord» duplicado (§1).
 6. App de Meta for Developers: paso 1 pendiente (token de usuario del sistema solo en Supabase Secrets, nunca en el chat).
 
 ## 6. Reglas

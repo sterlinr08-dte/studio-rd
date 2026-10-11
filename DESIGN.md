@@ -316,5 +316,6 @@ El dueño mandó estas bibliotecas «para tomarlas como referencia para cuando q
 - **Originkit**: https://www.originkit.dev. ~590 efectos animados: fondos, textos, cursores, 3D.
 - **GetLayers AI**: https://www.getlayers.ai. Instrucciones listas para que la IA haga páginas web de cine (plantillas, escenas 3D, fondos). Muchas son de pago: solo con el OK del dueño.
 - **Stage**: https://getstage.co. Es un método: antes de programar una pantalla nueva grande, investigar la competencia, definir la estrategia, juntar referencias y dibujar el recorrido de las pantallas, y mostrar una maqueta. Es de pago y no hace falta: se hace con nuestras skills.
+- **Raylight**: https://www.raylight.app. Videos de presentación hechos con capturas (cámara 3D, transiciones). Es referencia de estilo para videos de la tienda; se hacen sin pagar con HyperFrames o Remotion. La cuenta y los planes, solo con el OK del dueño.
 
 Se rehacen en nuestro código con la línea gráfica de STUDIO (negro y oro, SF Pro, §10 movimiento): no se pega su código sin revisar la licencia, ni se conectan cuentas o MCP sin el OK del dueño. Los efectos pesados van solo en la tienda pública o el login, no en el POS. Lista completa e ideas por pantalla: `HERRAMIENTAS.md` de nexus-pro, sección «Referencias de diseño que mandó el dueño».

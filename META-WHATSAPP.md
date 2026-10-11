@@ -79,7 +79,11 @@ Los colores del logo («S» morada, verde…) **cambian según la pantalla de Me
 
 ## 5. Pendientes abiertos
 
-1. Confirmar que el 829-624-7623 quedó desvinculado de Zernio.
+1. Confirmar que el 829-624-7623 quedó desvinculado de Zernio. **11-oct:** el dueño preguntó si el 7623 está disponible.
+   - En Meta su cuenta de WhatsApp aparece aprobada, sin bloqueo.
+   - En el CRM no entra nada desde el 07-oct a las 16:06 RD.
+   - Falta la prueba en el celular: abrir WhatsApp Business y mandarle un «hola» desde otro celular (dos rayitas = funciona).
+   - Aunque funcione, no se reconecta ni se re-registra.
 2. Conectar al CRM el número nuevo, solo por API. **11-oct:** el dueño confirmó que el **829-876-1072** es suyo, y ese será el del CRM. **12-oct, en la PC:**
    - el dueño manda una captura de Zernio → Connections, con el perfil STUDIO;
    - si el número ya está en Zernio, se deja en el perfil STUDIO;

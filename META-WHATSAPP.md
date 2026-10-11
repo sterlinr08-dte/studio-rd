@@ -4,7 +4,7 @@
 Este archivo existe porque la memoria del chat se resume y se pierde. Lo que está aquí **manda sobre la memoria de la conversación**.
 Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada de tokens ni claves aquí.
 
-Última actualización: **11-oct-2026** (Claude).
+Última actualización: **11-oct-2026, tarde** (Claude).
 
 ## 1. Portafolios (Meta Business)
 
@@ -12,6 +12,14 @@ Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada 
 |---|---|---|
 | **jose antonio peralta** (socio del dueño) | 936305359029409 | Dueño de las páginas **Studiord** (1314249678440736, la de los anuncios), **Studiord duplicada** (1297387236799363) y **studio__rd** (1019169997947516, la del Instagram). Cuenta publicitaria **1467569175031161** activa. Ahí sí sale «usar publicación existente». |
 | **Studiord** (del dueño) | 28811977941729276 | Cuenta publicitaria **1105787685433439** activa, con pago; usa la página Studiord compartida desde José. Cuenta **1784394786159387 DESACTIVADA** por «actividad inusual» (no usar, no crear más cuentas). WABA **1321807679839286** con VISA. **Negocio sin verificar** (esperando documentos). |
+
+**Otros datos comprobados (API de Meta, 11-oct):**
+- Verificación del negocio: **Studiord sin verificar** (información del negocio completa); **jose antonio peralta sin verificar** (información del negocio incompleta).
+- Ningún portafolio tiene app de desarrollador conectada.
+- La cuenta **1105787685433439** era personal (sin portafolio) el 07-oct; desde el 10-oct aparece dentro de **Studiord**.
+- Cuenta personal **1818621165988039** (…8039): activa, sin portafolio y **sin forma de pago**.
+- El perfil de Facebook conectado (Coco Wireles / studiord2026) administra los **dos** portafolios y puede anunciar con las páginas Studiord 1314249678440736 y 1297387236799363.
+- **Corrección:** lo que aparece como «página studio__rd» (1019169997947516) en la cuenta de José es, casi seguro, el **Instagram @studio__rd usado en anuncios**, no una página aparte. Lo que le falta a Studiord es la **cuenta de Instagram @studio__rd** (Cuentas de Instagram), no una página.
 
 **Decisiones del dueño:**
 - 08-oct: no mover la página ni la cuenta publicitaria de José a Studiord mientras WhatsApp no esté estable.

@@ -314,5 +314,6 @@ Dirección aprobada a partir de dos videos de referencia: producto grande, cambi
 El dueño mandó estas bibliotecas «para tomarlas como referencia para cuando queramos algo»: cuando pida un efecto o una animación, se mira aquí primero.
 - **The Kitchen**: https://www.dqnamo.com/kitchen. Piezas que parecen objetos reales: impresora de recibos, «mantén presionado para confirmar», boleto perforado, botón que cambia, firma que se dibuja sola…
 - **Originkit**: https://www.originkit.dev. ~590 efectos animados: fondos, textos, cursores, 3D.
+- **GetLayers AI**: https://www.getlayers.ai. Instrucciones listas para que la IA haga páginas web de cine (plantillas, escenas 3D, fondos). Muchas son de pago: solo con el OK del dueño.
 
 Se rehacen en nuestro código con la línea gráfica de STUDIO (negro y oro, SF Pro, §10 movimiento): no se pega su código sin revisar la licencia, ni se conectan cuentas o MCP sin el OK del dueño. Los efectos pesados van solo en la tienda pública o el login, no en el POS. Lista completa e ideas por pantalla: `HERRAMIENTAS.md` de nexus-pro, sección «Referencias de diseño que mandó el dueño».

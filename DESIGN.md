@@ -307,3 +307,12 @@ Aclaración del dueño: debe poder entrar desde la propia web en cualquier dispo
 ## Portada de tres modelos — 2026-09-24
 
 Dirección aprobada a partir de dos videos de referencia: producto grande, cambio coordinado de foto/nombre/especificaciones e iluminación neutra dentro del negro y oro. Selector manual de LQ-N9, LQ-H8 y LQ-HLD, flechas, teclado y gesto horizontal. Sin avance automático. En móvil: título, producto y controles, después datos y acción; escritorio en dos columnas. CTA al WhatsApp del modelo seleccionado. Usa fotografías existentes y datos del catálogo; no simula vistas traseras de un objeto 3D. Movimiento reducido cancela también transiciones en curso. Se conserva el acceso Personal en el pie.
+
+
+## Referencias de efectos del dueño — 2026-10-11
+
+El dueño mandó estas bibliotecas «para tomarlas como referencia para cuando queramos algo»: cuando pida un efecto o una animación, se mira aquí primero.
+- **The Kitchen**: https://www.dqnamo.com/kitchen. Piezas que parecen objetos reales: impresora de recibos, «mantén presionado para confirmar», boleto perforado, botón que cambia, firma que se dibuja sola…
+- **Originkit**: https://www.originkit.dev. ~590 efectos animados: fondos, textos, cursores, 3D.
+
+Se rehacen en nuestro código con la línea gráfica de STUDIO (negro y oro, SF Pro, §10 movimiento): no se pega su código sin revisar la licencia, ni se conectan cuentas o MCP sin el OK del dueño. Los efectos pesados van solo en la tienda pública o el login, no en el POS. Lista completa e ideas por pantalla: `HERRAMIENTAS.md` de nexus-pro, sección «Referencias de diseño que mandó el dueño».

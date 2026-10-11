@@ -6,6 +6,18 @@ Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada 
 
 Última actualización: **11-oct-2026, tarde** (Claude).
 
+## 0. Ficha rápida: lo que STUDIO usa SIEMPRE (por número, no por color)
+
+| Qué | Usar siempre | No usar |
+|---|---|---|
+| Perfil de Facebook para entrar | **Coco Wireles** (studiord2026) | — |
+| Portafolio | **Studiord**, ID **28811977941729276** (en el enlace sale `business_id=28811977941729276`) | Cualquier otro «Studiord»; el de José solo cuando haga falta compartir algo |
+| Cuenta publicitaria | **1105787685433439** (termina en **3439**) | …9387 (desactivada), …8039 (personal, sin tarjeta), …1161 (de José) |
+| Página de Facebook | **Studiord 1314249678440736** (la de los anuncios) | Studiord duplicada 1297387236799363 |
+| Instagram | **@studio__rd**, ID 17841446933552881 | — |
+
+Los colores del logo («S» morada, verde…) **cambian según la pantalla de Meta**. Para confirmar, usa siempre el **número (ID)**.
+
 ## 1. Portafolios (Meta Business)
 
 | Portafolio | ID | Qué tiene |

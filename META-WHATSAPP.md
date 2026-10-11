@@ -4,7 +4,7 @@
 Este archivo existe porque la memoria del chat se resume y se pierde. Lo que está aquí **manda sobre la memoria de la conversación**.
 Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada de tokens ni claves aquí.
 
-Última actualización: **11-oct-2026, tarde** (Claude).
+Última actualización: **11-oct-2026, 16:40 RD** (Claude).
 
 ## 0. Ficha rápida: lo que STUDIO usa SIEMPRE (por número, no por color)
 
@@ -49,6 +49,18 @@ Los colores del logo («S» morada, verde…) **cambian según la pantalla de Me
   - **NUNCA volver a conectar el 829-624-7623 por coexistencia ni re-registrarlo.** Fue la causa del bloqueo.
 - **Número nuevo para el CRM: pendiente de elegir** (candidato mencionado: 829-744-8336, que está en el portafolio de José). Se conecta **una sola vez**, **solo API** (`onboarding=api`, sin app en ningún celular), en el perfil STUDIO de Zernio, idealmente con Studiord ya verificado. Primeros días: solo recibir y contestar; nada masivo (límite inicial de Meta: 250 contactos/día).
 
+**Revisión de solo lectura, 11-oct 16:40 RD** (API de Meta y base del CRM; no se cambió nada):
+
+| Número | Dónde está | Estado |
+|---|---|---|
+| **+1 829-876-1072** «Studiord» | Studiord, cuenta de WhatsApp propia 1021174677644475 (aprobada) | **NUEVO.** Registrado en Meta. No sale en ninguna nota ni bitácora anterior. Al CRM no le ha llegado nada de él. **Falta que el dueño confirme si es suyo y quién lo conectó.** |
+| +1 829-624-7623 «studio rd» | Studiord, cuenta 1321807679839286 (aprobada) | Sigue registrado en Meta. Último evento en el CRM: **07-oct 20:06 UTC** (16:06 RD). Nada después. No se reconecta (decisión del 08-oct). |
+| +1 555-325-7850 | Studiord, cuenta 1548828723930062 (**deshabilitada**) | Número de prueba de EE. UU. No usar. |
+| 829-744-8336 (mayoristas) | **Ya no aparece** ni en el portafolio de José ni en Studiord | El 06-oct estaba en el de José. Sigue en la página de mayoristas como enlace de WhatsApp normal. |
+
+- Instagram sigue entrando al CRM (último mensaje 11-oct 16:56 UTC).
+- Studiord: perfil completo y con forma de pago, **sin verificar** y **sin app de desarrollador**. Por eso desde aquí no se pueden dar de alta números; la conexión se hace en Zernio.
+
 ## 3. Campañas
 
 | Campaña | ID | Estado |
@@ -60,12 +72,15 @@ Los colores del logo («S» morada, verde…) **cambian según la pantalla de Me
 
 - Instagram **studio__rd** y Facebook **Studiord** (página 1314249678440736) conectados al CRM y funcionando (07-oct).
 - WhatsApp: ver §2. Zernio usa el registro oficial de Meta (Embedded Signup); el riesgo no es la herramienta sino los re-registros y el uso.
+- **Un perfil de Zernio puede tener varios números de WhatsApp**, cada uno como su propia cuenta. Lo que no se puede es tener el mismo número activo en dos perfiles (docs.zernio.com/platforms/whatsapp). Un resumen de la conversación decía «un WhatsApp por perfil», y eso es falso.
+- Para que un número entre al CRM tiene que estar en el perfil **STUDIO**, porque el webhook «STUDIO bandeja» solo escucha ese perfil. Con Facebook pasó el 07-oct: quedó en «Default» y no llegaba nada.
+- Cuando llega el primer evento de una cuenta nueva, `crm-webhook` la registra **apagada** en `crm_canales`. Hay que encenderla, con el OK del dueño, y probar solo con su número.
 - No reconectar **@bayolcell** en Zernio sin decisión del dueño (cuenta de BAYOL).
 
 ## 5. Pendientes abiertos
 
 1. Confirmar que el 829-624-7623 quedó desvinculado de Zernio.
-2. Elegir el número nuevo del CRM y conectarlo solo por API.
+2. Elegir el número nuevo del CRM y conectarlo solo por API. **11-oct:** apareció el 829-876-1072 en Studiord; falta que el dueño confirme si es suyo y mande una captura de Zernio → Connections. Si hay que pasar por la ventana de Meta, mejor otro día que no sea el 11-oct, porque ese día ya se cambió el Instagram.
 3. Decidir el destino de la campaña pausada y reactivarla solo con el «sí» del dueño.
 4. Verificación del negocio Studiord (documentos).
 5. ~~Confirmar @studio__rd en la cuenta 1105787685433439~~ ✅ 11-oct. Queda revisar el posible socio «Studiord» duplicado (§1).

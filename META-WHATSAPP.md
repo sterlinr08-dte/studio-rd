@@ -4,7 +4,7 @@
 Este archivo existe porque la memoria del chat se resume y se pierde. Lo que está aquí **manda sobre la memoria de la conversación**.
 Se actualiza en cada cambio (con fecha) y deja su bitácora. Sin secretos: nada de tokens ni claves aquí.
 
-Última actualización: **11-oct-2026, 16:40 RD** (Claude).
+Última actualización: **11-oct-2026, 16:45 RD** (Claude).
 
 ## 0. Ficha rápida: lo que STUDIO usa SIEMPRE (por número, no por color)
 
@@ -53,7 +53,7 @@ Los colores del logo («S» morada, verde…) **cambian según la pantalla de Me
 
 | Número | Dónde está | Estado |
 |---|---|---|
-| **+1 829-876-1072** «Studiord» | Studiord, cuenta de WhatsApp propia 1021174677644475 (aprobada) | **NUEVO.** Registrado en Meta. No sale en ninguna nota ni bitácora anterior. Al CRM no le ha llegado nada de él. **Falta que el dueño confirme si es suyo y quién lo conectó.** |
+| **+1 829-876-1072** «Studiord» | Studiord, cuenta de WhatsApp propia 1021174677644475 (aprobada) | **NUEVO.** Registrado en Meta. No sale en ninguna nota ni bitácora anterior. Al CRM no le ha llegado nada de él. **Es del dueño** (lo confirmó el 11-oct, 16:45 RD). Será el número del CRM. Falta ver si ya está en Zernio y en qué perfil. |
 | +1 829-624-7623 «studio rd» | Studiord, cuenta 1321807679839286 (aprobada) | Sigue registrado en Meta. Último evento en el CRM: **07-oct 20:06 UTC** (16:06 RD). Nada después. No se reconecta (decisión del 08-oct). |
 | +1 555-325-7850 | Studiord, cuenta 1548828723930062 (**deshabilitada**) | Número de prueba de EE. UU. No usar. |
 | 829-744-8336 (mayoristas) | **Ya no aparece** ni en el portafolio de José ni en Studiord | El 06-oct estaba en el de José. Sigue en la página de mayoristas como enlace de WhatsApp normal. |
@@ -80,8 +80,12 @@ Los colores del logo («S» morada, verde…) **cambian según la pantalla de Me
 ## 5. Pendientes abiertos
 
 1. Confirmar que el 829-624-7623 quedó desvinculado de Zernio.
-2. Elegir el número nuevo del CRM y conectarlo solo por API. **11-oct:** apareció el 829-876-1072 en Studiord; falta que el dueño confirme si es suyo y mande una captura de Zernio → Connections. Si hay que pasar por la ventana de Meta, mejor otro día que no sea el 11-oct, porque ese día ya se cambió el Instagram.
-3. Decidir el destino de la campaña pausada y reactivarla solo con el «sí» del dueño.
+2. Conectar al CRM el número nuevo, solo por API. **11-oct:** el dueño confirmó que el **829-876-1072** es suyo, y ese será el del CRM. **12-oct, en la PC:**
+   - el dueño manda una captura de Zernio → Connections, con el perfil STUDIO;
+   - si el número ya está en Zernio, se deja en el perfil STUDIO;
+   - si no está, se conecta con «Use my own number», en el portafolio Studiord, nunca con coexistencia;
+   - confirmar también que el número no está en la app de WhatsApp de ningún celular.
+3. Decidir el destino de la campaña pausada y reactivarla solo con el «sí» del dueño. El 12-oct, en la PC, el dueño revisa la publicidad. Eso no autoriza reactivarla.
 4. Verificación del negocio Studiord (documentos).
 5. ~~Confirmar @studio__rd en la cuenta 1105787685433439~~ ✅ 11-oct. Queda revisar el posible socio «Studiord» duplicado (§1).
 6. App de Meta for Developers: paso 1 pendiente (token de usuario del sistema solo en Supabase Secrets, nunca en el chat).

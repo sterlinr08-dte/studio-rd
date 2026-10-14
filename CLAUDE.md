@@ -82,3 +82,8 @@ La **ventana de contexto** es la memoria de trabajo de la IA durante una convers
 
 ## Regla del dueño: usar SIEMPRE las skills instaladas (08-oct-2026)
 Antes de cualquier tarea, revisar las skills disponibles (`.claude/skills/` de este repo y las que anuncie la sesión) y usar la que corresponda **sin esperar a que el dueño la nombre**: diseño, seguridad (`security-audit`), video (`remotion-*`; en nexus-pro también HyperFrames), redes (`ver-video-redes` en nexus-pro), revisión de código, etc. Si una skill puede mejorar el trabajo aunque no se pidiera, proponerla o aplicarla. El catálogo completo por necesidad está en el `CLAUDE.md` de nexus-pro. No conectar cuentas ni gastar en servicios de pago sin el OK del dueño.
+
+## Referencias de diseño compartidas (dueño, 14-oct-2026)
+- La lista de referencias que manda el dueño (reels y páginas: The Kitchen, Originkit, GetLayers, Stage, Raylight, MotionSites, beUI, Skecher UI…) vive en **`docs/REFERENCIAS-DISENO.md`**, **igual en los 3 proyectos** (`nexus-pro`, `bayolcell-taller`, `studio-rd`).
+- **Cuando el dueño mande un reel o una página de referencia a cualquier chat, se agrega la fila en ese archivo de los 3 proyectos** (más una bitácora en cada uno), no solo en el proyecto del chat.
+- **Antes de cualquier pedido de diseño, leer esa lista primero.** Un chat no puede leer la conversación de otro: solo comparten lo que queda escrito.

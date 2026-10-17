@@ -1,6 +1,6 @@
 -- Prueba de la migración 53 (metas de ventas del Tablero).
 -- 16-oct-2026: corrida en un Postgres 16 desechable con las mismas funciones mi_rol/mi_organizacion/mi_usuario_id de STUDIO
--- y los tres usuarios reales simulados: 17 de 17 OK. En la base real queda para el momento de publicar (la herramienta de
+-- y los tres usuarios reales simulados: 17 de 17 OK; el 17-oct, con los arreglos de la revisión (nombres y candado), 18 de 18 OK. En la base real queda para el momento de publicar (la herramienta de
 -- consultas pide confirmación para sentencias con delete/drop). Se corre en UNA sola ejecución, en la base real:
 --   begin;  + el cuerpo de supabase/studio/53_metas_ventas.sql  + este archivo.
 -- Termina en raise exception a propósito: TODO se deshace (la tabla y la función incluidas) y no queda nada.
@@ -40,6 +40,12 @@ begin
   exception when others then insert into t_res values (default, 'admin', '5. Rechaza un formato que no es lista', sqlerrm like '%METAS_FORMATO%', sqlerrm); end;
   begin perform pos_metas_guardar('2026-10-01', '[{"vendedor":"","monto":"abc"}]'::jsonb); insert into t_res values (default, 'admin', '6. Rechaza un monto que no es número', false, 'NO lo rechazó');
   exception when others then insert into t_res values (default, 'admin', '6. Rechaza un monto que no es número', sqlerrm like '%METAS_MONTO%', sqlerrm); end;
+  begin
+    v_n := pos_metas_guardar('2026-12-01', jsonb_build_array(jsonb_build_object('vendedor', E'\tAna\n', 'monto', 10), jsonb_build_object('vendedor', repeat('a', 119) || ' bcd', 'monto', 20)));
+    insert into t_res values (default, 'admin', '6b. Nombres con tabulador o largos (corte en un espacio) se limpian y se guardan',
+      v_n = 2 and exists (select 1 from pos_metas_ventas where mes = '2026-12-01' and vendedor = 'Ana') and exists (select 1 from pos_metas_ventas where mes = '2026-12-01' and vendedor = repeat('a', 119)),
+      'guardadas ' || v_n);
+  exception when others then insert into t_res values (default, 'admin', '6b. Nombres con tabulador o largos', false, sqlerrm); end;
   insert into t_res values (default, 'admin', '7. Después del error la meta del mes sigue igual',
     (select count(*) from pos_metas_ventas where mes = '2026-10-01') = 1 and (select monto from pos_metas_ventas where mes = '2026-10-01' and vendedor = '') = 3200000, null);
   begin insert into pos_metas_ventas (organizacion_id, mes, vendedor, monto) values (mi_organizacion(), '2026-12-01', '', 1);

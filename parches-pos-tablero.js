@@ -17,7 +17,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function n(v) { const x = Number(v); return isFinite(x) ? x : 0; }
   function fmt(v) { const r = Math.round(n(v) * 100) / 100; return 'RD$ ' + (r === 0 ? 0 : r).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function fmtEje(v) { const a = Math.abs(v); return a >= 1e6 ? (v / 1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M' : a >= 1e3 ? Math.round(v / 1e3) + 'K' : String(Math.round(v)); }
+  function fmtEje(v) { const a = Math.abs(v), f = (x, u) => (Math.round(x * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + u; return a >= 1e6 ? f(v / 1e6, 'M') : a >= 1e3 ? f(v / 1e3, 'K') : String(Math.round(v)); }
   function fmtCorto(v) { const a = Math.abs(v); return a >= 1e6 ? 'RD$ ' + (v / 1e6).toFixed(2) + ' M' : a >= 1e3 ? 'RD$ ' + Math.round(v / 1e3) + ' K' : fmt(v); }
   function fmtPct(v) { return (Math.round(v * 10) / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
   function toast(t, m, s) { try { window.toast && window.toast(t, m, s); } catch (e) {} }
@@ -70,8 +70,9 @@
       if (diasEntre(d1, d2) > 731) d1 = addDays(d2, -731);           // tope de dos años por consulta
       p2 = addDays(d1, -1); p1 = addDays(p2, -diasEntre(d1, d2));
     }
-    return { d1: d1, d2: d2, p1: p1, p2: p2, hoy: h };
+    return { d1: d1, d2: d2, p1: p1, p2: p2, hoy: h, pre: pre };
   }
+  function claveDe(r) { return [r.d1, r.d2, r.p1, r.p2].join('|'); }
 
   // ── Carga (solo lectura, por páginas de 1,000 como Reportes) ───────────────────────────────────────────────
   async function getAll(tabla, qs) {
@@ -89,8 +90,10 @@
     catch (e) { return null; }                                    // sin la migración 53 (o sin permiso): sin metas
   }
   async function cargar(forzar) {
-    const r = rango(); const clave = [r.d1, r.d2, r.p1, r.p2].join('|');
-    if (!forzar && D && D.clave === clave && !error) { actualizar(); return; }
+    const r = rango(); const clave = claveDe(r);
+    // Volver al rango que ya está cargado: lo que siga en camino de otro rango se descarta (si no, llegaría después y
+    // pintaría cifras de otro período bajo esta pastilla).
+    if (!forzar && D && D.clave === clave && !error) { ++pedido; cargando = false; actualizar(); return; }
     const id = ++pedido; cargando = true; error = ''; actualizar();
     try {
       const [ventas, previas, devol, metas, ultima] = await Promise.all([
@@ -122,14 +125,22 @@
     if (gran === 'hora') for (let h = 0; h < 24; h++) { bIdx[h] = B.length; B.push({ k: h, et: String(h).padStart(2, '0') + ':00', larga: String(h).padStart(2, '0') + ':00 – ' + String(h).padStart(2, '0') + ':59', t: 0, n: 0, meta: 0 }); }
     else if (gran === 'dia') for (let d = r.d1; d <= r.d2; d = addDays(d, 1)) { bIdx[d] = B.length; B.push({ k: d, et: fCorta(d), larga: diaSemana(d) + ' ' + fLarga(d), t: 0, n: 0, meta: 0 }); }
     else for (let m = iniMes(r.d1); m <= r.d2; m = mesSig(m)) { const k = m.slice(0, 7); bIdx[k] = B.length; B.push({ k: k, et: MES[+m.slice(5, 7) - 1] + ' ' + m.slice(2, 4), larga: MESL[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4), ini: maxISO(m, r.d1), fin: minISO(finMes(m), r.d2), t: 0, n: 0, meta: 0 }); }
-    let bruto = 0; const pago = { efectivo: 0, transferencia: 0, tarjeta: 0, otro: 0, credito: 0 };
+    // Metas. Meta completa del mes (con proyección si el mes está en curso) solo en «Este mes» o en un rango que cubre el mes
+    // entero; cualquier otro rango (Hoy, 7 días, fechas a medio mes, varios meses) reparte la meta de cada mes por días.
+    const metasOk = Array.isArray(D.metas), metas = metasOk ? D.metas : [];
+    const mesCompleto = r.d1 === iniMes(r.d1) && ((r.pre === 'mes' && r.d2.slice(0, 7) === r.d1.slice(0, 7)) || r.d2 === finMes(r.d1));
+    const MM = {}; metas.forEach(x => { MM[String(x.mes).slice(0, 10) + '|' + norm(x.vendedor)] = n(x.monto); });
+    const metaMes = (m, vk) => MM[m + '|' + vk] || 0;
+    const metaEntre = (vk, a, b) => { let s = 0; for (let m = iniMes(a); m <= b; m = mesSig(m)) { const mm = metaMes(m, vk); if (!mm) continue; s += mesCompleto ? mm : mm * (diasEntre(maxISO(a, m), minISO(b, finMes(m))) + 1) / diasMes(m); } return s; };
+    let bruto = 0, brutoMeta = 0; const pago = { efectivo: 0, transferencia: 0, tarjeta: 0, otro: 0, credito: 0 };
     const porVend = {}, porProd = {};
     ven.forEach(v => {
-      const t = n(v.total); bruto += t;
+      const t = n(v.total), mv = iniMes(v._p.dia); bruto += t;
+      if (metaMes(mv, '') > 0) brutoMeta += t;               // el avance de la meta solo cuenta los meses que tienen meta
       const b = B[gran === 'hora' ? bIdx[v._p.hora] : gran === 'dia' ? bIdx[v._p.dia] : bIdx[v._p.dia.slice(0, 7)]]; if (b) { b.t += t; b.n++; }
       pago.efectivo += n(v.pagado_efectivo); pago.transferencia += n(v.pagado_transferencia); pago.tarjeta += n(v.pagado_tarjeta); pago.otro += n(v.pagado_otro); pago.credito += n(v.credito_monto);
       const vn = limpio(v.vendedor_nombre) || limpio(v.created_by_name) || 'Sin vendedor', vk = norm(vn);
-      (porVend[vk] = porVend[vk] || { nom: vn, t: 0, n: 0 }); porVend[vk].t += t; porVend[vk].n++;
+      (porVend[vk] = porVend[vk] || { nom: vn, t: 0, tm: 0, n: 0 }); porVend[vk].t += t; porVend[vk].n++; if (metaMes(mv, vk) > 0) porVend[vk].tm += t;
       (v.pos_venta_items || []).forEach(it => {
         // Por nombre limpio, no por ficha: en el inventario hay modelos repetidos con el mismo nombre (p. ej. tres fichas
         // «IPHONE 17 PRO MAX 256GB» con un tabulador delante) y para el dueño son un solo producto.
@@ -139,25 +150,23 @@
     });
     const devTot = dev.reduce((s, d) => s + n(d.total), 0);
     const pBruto = prev.reduce((s, v) => s + n(v.total), 0), pN = prev.length;
-    // Metas: un mes que empieza el día 1 y no se sale de ese mes usa la meta completa del mes (con proyección al cierre);
-    // cualquier otro rango reparte la meta de cada mes por los días que toca.
-    const metasOk = Array.isArray(D.metas), metas = metasOk ? D.metas : [];
-    const mesCompleto = r.d1 === iniMes(r.d1) && r.d2.slice(0, 7) === r.d1.slice(0, 7);
-    const metaMes = (m, vk) => { const f = metas.find(x => String(x.mes).slice(0, 10) === m && norm(x.vendedor) === vk); return f ? n(f.monto) : 0; };
-    const metaEntre = (vk, a, b) => { let s = 0; for (let m = iniMes(a); m <= b; m = mesSig(m)) { const mm = metaMes(m, vk); if (!mm) continue; s += mesCompleto ? mm : mm * (diasEntre(maxISO(a, m), minISO(b, finMes(m))) + 1) / diasMes(m); } return s; };
     const meta = metaEntre('', r.d1, r.d2);
+    const mesesRango = []; for (let m = iniMes(r.d1); m <= r.d2; m = mesSig(m)) mesesRango.push(m);
+    const mesesConMeta = mesesRango.filter(m => metaMes(m, '') > 0);
+    const metaParcial = meta > 0 && mesesConMeta.length < mesesRango.length;   // hay meses del rango sin meta: no cuentan
     if (meta > 0 && gran === 'dia') B.forEach(b => { b.meta = metaMes(iniMes(b.k), '') / diasMes(b.k); });
     if (meta > 0 && gran === 'mes') B.forEach(b => { b.meta = metaEntre('', b.ini, b.fin); });
-    const enCurso = mesCompleto && r.d2 === r.hoy && r.d2 < finMes(r.d2);
+    const enCurso = mesCompleto && r.pre === 'mes' && r.d2 === r.hoy && r.d2 < finMes(r.d2);
     const proyeccion = enCurso && bruto > 0 ? bruto / (+r.d2.slice(8)) * diasMes(r.d2) : 0;
     // Equipo: quien vendió en el rango y quien tiene meta aunque no haya vendido.
-    metas.forEach(x => { const vk = norm(x.vendedor); if (vk && !porVend[vk] && metaEntre(vk, r.d1, r.d2) > 0) porVend[vk] = { nom: limpio(x.vendedor), t: 0, n: 0 }; });
+    metas.forEach(x => { const vk = norm(x.vendedor); if (vk && !porVend[vk] && metaEntre(vk, r.d1, r.d2) > 0) porVend[vk] = { nom: limpio(x.vendedor), t: 0, tm: 0, n: 0 }; });
     const equipo = Object.keys(porVend).map(k => Object.assign({ meta: metaEntre(k, r.d1, r.d2) }, porVend[k])).sort((a, b) => b.t - a.t || a.nom.localeCompare(b.nom));
     const prods = Object.keys(porProd).map(k => porProd[k]).sort((a, b) => b.monto - a.monto || b.cant - a.cant);
     return {
       r: r, gran: gran, B: B, ven: ven, anul: anul, bruto: bruto, n: ven.length, ticket: ven.length ? bruto / ven.length : 0,
       devTot: devTot, devN: dev.length, pBruto: pBruto, pN: pN, pTicket: pN ? pBruto / pN : 0, pago: pago,
-      metasOk: metasOk, meta: meta, mesCompleto: mesCompleto, proyeccion: proyeccion, equipo: equipo, hayMetaVend: equipo.some(e => e.meta > 0), prods: prods
+      metasOk: metasOk, meta: meta, brutoMeta: brutoMeta, metaParcial: metaParcial, mesesConMeta: mesesConMeta, mesCompleto: mesCompleto, proyeccion: proyeccion,
+      equipo: equipo, hayMetaVend: equipo.some(e => e.meta > 0), prods: prods
     };
   }
 
@@ -175,16 +184,17 @@
   function kpisHTML() {
     const ini = vis && !entrada ? vis : null;                  // al cambiar de rango, los números corren desde lo que se ve
     const val = (k, v) => valorK(k, ini ? ini[k] : v);
-    const r = C.r, nomMes = MESL[+r.d1.slice(5, 7) - 1];
+    const r = C.r, nomMes = MESL[+r.d1.slice(5, 7) - 1], mesForm = MESL[+r.d2.slice(5, 7) - 1];
     let metaV, metaS, metaX = '';
     if (C.meta > 0) {
-      const p = C.bruto / C.meta * 100, falta = C.meta - C.bruto;
+      const p = C.brutoMeta / C.meta * 100, falta = C.meta - C.brutoMeta;
       metaV = val('m', p);
       metaX = `<div class="nxTbBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(100, p))}" aria-label="Avance de la meta"><i id="nxTbMetaBar" style="transform:scaleX(${Math.min(1, (ini ? ini.m : p) / 100)})"></i></div>`;
-      metaS = (falta > 0 ? 'Faltan ' + fmt(falta) + ' de ' + fmt(C.meta) : 'Meta cumplida: ' + fmt(C.meta)) + (C.proyeccion ? `<br>Al ritmo actual cierra en ${fmt(C.proyeccion)}` : '');
+      metaS = (falta > 0 ? 'Faltan ' + fmt(falta) + ' de ' + fmt(C.meta) : 'Meta cumplida: ' + fmt(C.meta)) + (C.proyeccion ? `<br>Al ritmo actual cierra en ${fmt(C.proyeccion)}` : '')
+        + (C.metaParcial ? `<br>Solo cuentan los meses con meta (${esc(C.mesesConMeta.map(m => MES[+m.slice(5, 7) - 1]).join(', '))}): vendido ${fmt(C.brutoMeta)}` : '');
     } else {
       metaV = '<span class="nxTbSinMeta">Sin meta</span>';
-      metaS = !C.metasOk ? 'Las metas se activan al publicar esta versión.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas()">Definir la meta de ${esc(nomMes)}</button>` : 'El administrador todavía no definió la meta.';
+      metaS = !C.metasOk ? 'Las metas se activan al publicar esta versión.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas()">Definir la meta de ${esc(mesForm)}</button>` : 'El administrador todavía no definió la meta.';
     }
     const devS = C.devTot > 0 ? `<br>Devoluciones ${fmt(C.devTot)} · netas ${fmt(C.bruto - C.devTot)}` : '';
     return `<div class="nxTbKpis">
@@ -216,7 +226,7 @@
   function equipoHTML() {
     const lista = C.equipo.slice(0, 10), conMeta = C.hayMetaVend;
     const filas = lista.map(e => {
-      const p = conMeta ? (e.meta > 0 ? e.t / e.meta * 100 : null) : (C.bruto ? e.t / C.bruto * 100 : 0);
+      const p = conMeta ? (e.meta > 0 ? e.tm / e.meta * 100 : null) : (C.bruto ? e.t / C.bruto * 100 : 0);
       const tono = !conMeta ? 'oro' : p == null ? '' : p >= 80 ? 'ok' : p >= 50 ? 'warn' : 'bad';
       const barra = p == null ? '<span class="nxTbMute">Sin meta</span>' : `<div class="nxTbPg"><div class="nxTbBar"><i class="${tono}" style="transform:scaleX(${Math.min(1, p / 100).toFixed(4)})"></i></div><span>${fmtPct(p)}</span></div>`;
       return `<div class="nxTbTr" role="row"><div role="cell"><div class="nxTbWho"><span class="nxTbAv" aria-hidden="true">${esc(iniciales(e.nom))}</span><div><b>${esc(e.nom)}</b><small>${e.n} factura${e.n === 1 ? '' : 's'}${conMeta && e.meta > 0 ? ' · meta ' + fmt(e.meta) : ''}</small></div></div></div><div role="cell" class="r m">${fmt(e.t)}</div><div role="cell" class="pg">${barra}</div></div>`;
@@ -249,13 +259,18 @@
     const k = '<section class="nxTbK nxTbSk"><i></i><i></i><i></i></section>';
     return `<div class="nxTbKpis" aria-busy="true">${k + k + k + k}</div><div class="nxTbG2"><section class="nxTbCard nxTbSk alto"></section><section class="nxTbCard nxTbSk alto"></section></div>`;
   }
+  // El rango que describe la pantalla: el de los datos pintados (si ya llegaron) o el que se está pidiendo.
+  function rangoVisible() { return D && !cargando && !error ? D.r : rango(); }
   function subTxt() {
-    const r = rango();
+    const r = rangoVisible();
     return `${rangoTxt(r.d1, r.d2)} · comparado con ${rangoTxt(r.p1, r.p2)}${cargando && D ? ' · actualizando…' : ''}`;
   }
+  // Pasada la medianoche (o al volver a la pestaña otro día), «Hoy», «7 días»… ya son otro rango: se recargan solos.
+  function revisarVigencia() { if (D && !cargando && D.clave !== claveDe(rango())) cargar(false); }
   function render() {
     ensureCSS();
-    const r = rango();
+    if (D && !cargando && D.clave !== claveDe(rango())) setTimeout(revisarVigencia, 0);
+    const r = rangoVisible();
     const chips = PRE.map(p => `<button type="button" role="tab" aria-selected="${pre === p[0]}" class="nxTbSegB${pre === p[0] ? ' on' : ''}" data-p="${p[0]}" onclick="window.nxTablero.preset('${p[0]}')">${p[1]}</button>`).join('');
     return `<div class="nxTb" id="nxTbRoot">
       <header class="nxTbHead">
@@ -284,8 +299,10 @@
   function despuesDeCuerpo(dibujoNuevo) {
     dibujar(dibujoNuevo);
     if (!C || !D) return;
-    const obj = { v: C.bruto, t: C.ticket, f: C.n, m: C.meta > 0 ? C.bruto / C.meta * 100 : 0 };
+    const obj = { v: C.bruto, t: C.ticket, f: C.n, m: C.meta > 0 ? C.brutoMeta / C.meta * 100 : 0 };
     const bar = document.getElementById('nxTbMetaBar');
+    // El tamaño de letra se ajusta con el valor final (así no salta durante la animación).
+    const antes = vis; vis = obj; escribir(); ajustarKv(); vis = antes;
     if (!vis || entrada || reduced()) { vis = obj; escribir(); if (bar) bar.style.transform = `scaleX(${Math.min(1, obj.m / 100)})`; entrada = false; return; }
     if (bar) requestAnimationFrame(() => { bar.style.transform = `scaleX(${Math.min(1, obj.m / 100)})`; });
     // Los números corren desde lo que se ve hasta el valor nuevo en 520 ms con salida suave; otro cambio de rango a mitad
@@ -303,6 +320,14 @@
   function escribir() {
     ['v', 't', 'f'].forEach(k => { const e = document.getElementById('nxTbKv-' + k); if (e) e.textContent = valorK(k, vis[k]); });
     const em = document.getElementById('nxTbKv-m'); if (em && C && C.meta > 0) em.textContent = valorK('m', vis.m);
+  }
+  // Un monto largo (RD$ 128,703,075.00) no se corta con «…»: la letra baja hasta 14 px para que quepa en su tarjeta.
+  function ajustarKv() {
+    document.querySelectorAll('#nxTbRoot .nxTbKv').forEach(e => {
+      e.style.fontSize = '';
+      let fs = parseFloat(getComputedStyle(e).fontSize) || 22;
+      while (e.scrollWidth > e.clientWidth + 1 && fs > 14) { fs -= 1; e.style.fontSize = fs + 'px'; }
+    });
   }
   function techo(v) { if (v <= 0) return 1; const e = Math.pow(10, Math.floor(Math.log10(v / 4))); for (const f of [1, 2, 2.5, 5, 10]) if (f * e * 4 >= v) return f * e * 4; return 10 * e * 4; }
   function dibujar(animar) {
@@ -357,7 +382,7 @@
     root.querySelectorAll('.nxTbSegB').forEach(b => { const on = b.getAttribute('data-p') === pre; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
     moverThumb(true);
     const f = document.getElementById('nxTbFechas'); if (f) f.hidden = pre !== 'fechas';
-    const r = rango(), dd = document.getElementById('nxTbDesde'), hh = document.getElementById('nxTbHasta');
+    const r = rangoVisible(), dd = document.getElementById('nxTbDesde'), hh = document.getElementById('nxTbHasta');
     if (dd && document.activeElement !== dd) dd.value = r.d1; if (hh && document.activeElement !== hh) hh.value = r.d2;
     if (cargando && D) return;                                     // mientras llega lo nuevo se queda lo anterior (con «actualizando…»)
     const body = document.getElementById('nxTbBody'); if (!body) return;
@@ -366,23 +391,35 @@
   }
 
   // ── Metas (solo el administrador; las guarda el servidor con pos_metas_guardar) ────────────────────────────
-  let mMes = '', mFilas = [];
+  let mMes = '', mFilas = [], mFilasMes = '', mPedido = 0, mVolver = null, mTeclas = null;
   async function metas() {
     if (!esAdmin()) { toast('err', 'Solo el administrador define las metas'); return; }
-    const r = rango(); mMes = iniMes(r.d2);
+    const r = rangoVisible(); mMes = iniMes(r.d2);
     abrirMetas(true);
-    try { await cargarFormMetas(); pintarMetas(); }
-    catch (e) { const c = document.getElementById('nxTbMetasC'); if (c) c.innerHTML = '<p class="nxTbHint">' + esc(metasErr(e)) + '</p>'; }
+    await cargarYPintarMetas();
+  }
+  // Cada carga lleva su número y su mes: si mientras tanto se pidió otra (otro mes, o se cerró y se abrió de nuevo),
+  // la respuesta vieja se descarta y no se mezclan montos de otro mes.
+  async function cargarYPintarMetas() {
+    const tok = ++mPedido, mes = mMes;
+    try {
+      const filas = await cargarFormMetas(mes);
+      if (tok !== mPedido || mes !== mMes) return;
+      mFilas = filas; mFilasMes = mes; pintarMetas();
+    } catch (e) {
+      if (tok !== mPedido) return;
+      const c = document.getElementById('nxTbMetasC'); if (c) c.innerHTML = '<p class="nxTbHint">' + esc(metasErr(e)) + '</p>';
+    }
   }
   function metasErr(e) {
     let msg = String(e && e.message || e); try { const j = JSON.parse(msg); msg = j.details || j.message || msg; } catch (x) {}
     return /pos_metas|PGRST20[25]|404|does not exist/i.test(msg) ? 'Las metas todavía no están activas en la base: se activan al publicar esta versión.' : msg;
   }
-  async function cargarFormMetas() {
+  async function cargarFormMetas(mes) {
     const desde = addDays(hoyISO(), -120);
     const [recientes, guardadas, personal] = await Promise.all([
       getAll('pos_ventas', 'select=total,vendedor_nombre,created_by_name&estado=eq.completada&fecha=gte.' + tsDesde(desde)).catch(() => []),
-      api().get('pos_metas_ventas', 'select=vendedor,monto&mes=eq.' + mMes),
+      api().get('pos_metas_ventas', 'select=vendedor,monto&mes=eq.' + mes),
       api().post('rpc/pos_personal', {}).catch(() => [])
     ]);
     const fila = {}; const add = (nom, t) => { const nm = limpio(nom); const k = norm(nm); if (!k) return; (fila[k] = fila[k] || { nom: nm, t: 0, monto: '' }); fila[k].t += t || 0; };
@@ -391,18 +428,37 @@
     (Array.isArray(personal) ? personal : []).filter(p => p && p.activo !== false && p.nombre).forEach(p => add(p.nombre, 0));
     let negocio = '';
     (guardadas || []).forEach(g => { if (!norm(g.vendedor)) negocio = n(g.monto); else { add(g.vendedor, 0); fila[norm(g.vendedor)].monto = n(g.monto); } });
-    mFilas = [{ k: '', nom: '', monto: negocio }].concat(Object.keys(fila).map(k => Object.assign({ k: k }, fila[k])).sort((a, b) => b.t - a.t || a.nom.localeCompare(b.nom)));
+    return [{ k: '', nom: '', monto: negocio }].concat(Object.keys(fila).map(k => Object.assign({ k: k }, fila[k])).sort((a, b) => b.t - a.t || a.nom.localeCompare(b.nom)));
   }
   function mesesOpc() { const out = []; let m = mesAnt(mesAnt(mesAnt(iniMes(hoyISO())))); for (let i = 0; i < 16; i++) { out.push(m); m = mesSig(m); } if (out.indexOf(mMes) < 0) out.unshift(mMes); return out; }
   function abrirMetas(cargandoForm) {
-    const id = 'nxTbMetasM'; const o = document.getElementById(id); if (o) o.remove();
+    const id = 'nxTbMetasM'; const o = document.getElementById(id); if (o) cerrarMetas(true);
+    mVolver = document.activeElement;
     const ov = document.createElement('div'); ov.id = id; ov.className = 'overlay open';
-    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    ov.addEventListener('click', e => { if (e.target === ov) cerrarMetas(); });
     ov.innerHTML = `<div class="modal nxPrForm nxTbMetas" style="max-width:520px" role="dialog" aria-modal="true" aria-labelledby="nxTbMetasT">
-      <div class="mt"><span id="nxTbMetasT"><i class="ti ti-target-arrow"></i> Metas de ventas</span><button class="nxBack" type="button" onclick="document.getElementById('${id}').remove()"><i class="ti ti-arrow-left"></i> Volver</button></div>
+      <div class="mt"><span id="nxTbMetasT"><i class="ti ti-target-arrow"></i> Metas de ventas</span><button class="nxBack" type="button" id="nxTbMetasVolver" onclick="window.nxTablero.metasCerrar()"><i class="ti ti-arrow-left"></i> Volver</button></div>
       <div id="nxTbMetasC">${cargandoForm ? '<div class="nxTbSk alto" style="height:220px;border-radius:12px"></div>' : ''}</div></div>`;
     document.body.appendChild(ov);
-    const esc2 = e => { if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc2); } }; document.addEventListener('keydown', esc2);
+    // Teclado: Escape cierra; Tab no se sale del diálogo.
+    mTeclas = e => {
+      if (e.key === 'Escape') { e.preventDefault(); cerrarMetas(); return; }
+      if (e.key !== 'Tab') return;
+      const f = Array.from(ov.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);
+      if (!f.length) return;
+      const a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && (document.activeElement === a || !ov.contains(document.activeElement))) { e.preventDefault(); z.focus(); }
+      else if (!e.shiftKey && (document.activeElement === z || !ov.contains(document.activeElement))) { e.preventDefault(); a.focus(); }
+    };
+    document.addEventListener('keydown', mTeclas, true);
+    try { document.getElementById('nxTbMetasVolver').focus(); } catch (e) {}
+  }
+  function cerrarMetas(sinFoco) {
+    ++mPedido;                                                    // lo que siga cargando ya no se pinta
+    const ov = document.getElementById('nxTbMetasM'); if (ov) ov.remove();
+    if (mTeclas) { document.removeEventListener('keydown', mTeclas, true); mTeclas = null; }
+    const v = mVolver; mVolver = null;
+    if (!sinFoco && v && document.contains(v)) try { v.focus(); } catch (e) {}
   }
   function pintarMetas() {
     const c = document.getElementById('nxTbMetasC'); if (!c) return;
@@ -414,22 +470,24 @@
       <div class="nxTbMetaSec">Metas por vendedor <small id="nxTbMetaSuma"></small></div>
       <div class="nxTbMetaL">${mFilas.slice(1).map((f, j) => `<div class="nxTbMetaF"><span><b>${esc(f.nom)}</b><small>${f.t ? 'Vendió ' + fmt(f.t) + ' en los últimos 120 días' : 'Sin ventas recientes'}</small></span>${campo(f, j + 1)}</div>`).join('') || '<p class="nxTbHint">No hay vendedores con ventas recientes.</p>'}</div>
       <div class="ajErr" id="nxTbMetaErr" role="alert" hidden></div>
-      <div class="fe"><button class="btn bghost" type="button" onclick="document.getElementById('nxTbMetasM').remove()">Cancelar</button><button class="btn bc1" type="button" id="nxTbMetaOk" onclick="window.nxTablero.metasGuardar()"><i class="ti ti-device-floppy"></i> Guardar metas</button></div>`;
+      <div class="fe"><button class="btn bghost" type="button" onclick="window.nxTablero.metasCerrar()">Cancelar</button><button class="btn bc1" type="button" id="nxTbMetaOk" onclick="window.nxTablero.metasGuardar()"><i class="ti ti-device-floppy"></i> Guardar metas</button></div>`;
     try { window.nxMoney && window.nxMoney.scan && window.nxMoney.scan(c); } catch (e) {}
     metasSuma();
+    try { const f = document.getElementById('nxTbMeta0'); if (f && c.contains(document.activeElement) === false) f.focus({ preventScroll: true }); } catch (e) {}
   }
   function leerMonto(i) { const e = document.getElementById('nxTbMeta' + i); if (!e) return 0; try { if (window.nxMoney && window.nxMoney.parse) return Number(window.nxMoney.parse(e.value)) || 0; } catch (er) {} return Number(String(e.value).replace(/[^0-9.]/g, '')) || 0; }
   function metasSuma() { const s = mFilas.slice(1).reduce((a, f, j) => a + leerMonto(j + 1), 0), e = document.getElementById('nxTbMetaSuma'); if (e) e.textContent = s ? 'suman ' + fmt(s) : ''; }
-  async function metasMes(v) { mMes = iniMes(v); const c = document.getElementById('nxTbMetasC'); if (c) c.innerHTML = '<div class="nxTbSk alto" style="height:220px;border-radius:12px"></div>'; try { await cargarFormMetas(); pintarMetas(); } catch (e) { if (c) c.innerHTML = '<p class="nxTbHint">' + esc(metasErr(e)) + '</p>'; } }
+  async function metasMes(v) { mMes = iniMes(v); const c = document.getElementById('nxTbMetasC'); if (c) c.innerHTML = '<div class="nxTbSk alto" style="height:220px;border-radius:12px"></div>'; try { document.getElementById('nxTbMetasVolver').focus(); } catch (e) {} await cargarYPintarMetas(); }
   async function metasGuardar() {
     const btn = document.getElementById('nxTbMetaOk'), err = document.getElementById('nxTbMetaErr');
+    if (mFilasMes !== mMes) { if (err) { err.textContent = 'Espera a que carguen las metas de ese mes.'; err.hidden = false; } return; }
     const lista = mFilas.map((f, i) => ({ vendedor: f.nom, monto: Math.round(leerMonto(i) * 100) / 100 })).filter(x => x.monto > 0);
     if (btn) btn.disabled = true; if (err) err.hidden = true;
     try {
       await api().post('rpc/pos_metas_guardar', { p_mes: mMes, p_metas: lista });
       const neg = lista.find(x => !x.vendedor);
       try { window.logAudit && window.logAudit('POS_METAS_VENTAS', 'Metas de ' + MESL[+mMes.slice(5, 7) - 1] + ' ' + mMes.slice(0, 4) + ': negocio ' + (neg ? fmt(neg.monto) : 'sin meta') + ' · ' + lista.filter(x => x.vendedor).length + ' vendedor(es)', 'Tablero'); } catch (e) {}
-      const m = document.getElementById('nxTbMetasM'); if (m) m.remove();
+      cerrarMetas();
       toast('ok', 'Metas guardadas', MESL[+mMes.slice(5, 7) - 1] + ' ' + mMes.slice(0, 4));
       cargar(true);
     } catch (e) {
@@ -437,7 +495,7 @@
     }
   }
 
-  // ── Estilos (alcance .nxTb; tema Clásico claro y Premium Dark oscuro) ─────────────────────────────────────
+  // ── Estilos (alcance .nxTb; claro como Inicio y Reportes) ─────────────────────────────────────
   function ensureCSS() {
     if (document.getElementById('nxTbCSS')) return;
     const st = document.createElement('style'); st.id = 'nxTbCSS';
@@ -466,7 +524,7 @@ html.nx-studio #v-pos .nxTb .nxTbIcoB{display:inline-flex;align-items:center;gap
 .nxTbFechas label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;color:var(--tb-steel)}
 html.nx-studio #v-pos .nxTb .nxTbFechas input{height:38px;border:1px solid var(--tb-line);border-radius:10px;padding:0 10px;font-size:14px;background:var(--tb-card);color:var(--tb-ink);min-width:150px}
 .nxTbBody{display:flex;flex-direction:column;gap:14px;min-width:0}
-.nxTbKpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.nxTbKpis{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:12px}
 .nxTbK,.nxTbCard{background:var(--tb-card);border:1px solid var(--tb-line);border-radius:16px;box-shadow:var(--tb-shadow);min-width:0}
 .nxTbK{position:relative;padding:14px 16px 13px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
 .nxTbK::before{content:"";position:absolute;left:16px;right:16px;top:0;height:2px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,var(--tb-gold),rgba(201,162,39,.12))}
@@ -575,7 +633,8 @@ html.nx-studio #v-pos .nxTb .nxTbLink{border:0;background:none;padding:2px 0;col
   }
 
   let rz = 0;
-  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.getElementById('nxTbChart')) { dibujar(false); moverThumb(false); } }, 140); }, { passive: true });
+  addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.getElementById('nxTbRoot')) { dibujar(false); moverThumb(false); ajustarKv(); } }, 140); }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && document.getElementById('nxTbRoot')) revisarVigencia(); });
 
   window.nxTablero = {
     render: render, postRender: postRender,
@@ -585,8 +644,8 @@ html.nx-studio #v-pos .nxTb .nxTbLink{border:0;background:none;padding:2px 0;col
     preset: function (p) { if (!PRE.some(x => x[0] === p)) return; if (p === 'fechas') { const r = rango(); cDesde = r.d1; cHasta = r.d2; } pre = p; guardarRango(); cargar(false); },
     fechas: function () { const a = (document.getElementById('nxTbDesde') || {}).value, b = (document.getElementById('nxTbHasta') || {}).value; if (!a || !b) return; cDesde = a; cHasta = b; pre = 'fechas'; guardarRango(); cargar(false); },
     verHasta: function (iso) { if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return; cDesde = addDays(iso, -29); cHasta = iso; pre = 'fechas'; guardarRango(); cargar(false); },
-    metas: metas, metasMes: metasMes, metasGuardar: metasGuardar, metasSuma: metasSuma,
-    _calc: function () { return D ? calc() : null; }, _rango: rango
+    metas: metas, metasMes: metasMes, metasGuardar: metasGuardar, metasSuma: metasSuma, metasCerrar: function () { cerrarMetas(); },
+    _calc: function () { return D ? calc() : null; }, _rango: rango, _fmtEje: fmtEje
   };
   // Si la pestaña se abrió antes de que este archivo terminara de cargar (p. ej. al volver «donde me quedé»).
   try { if (document.querySelector('#v-pos .nxTbEspera')) { window.nxTablero.entrar(); ctx().renderPOS && ctx().renderPOS(); } } catch (e) {}

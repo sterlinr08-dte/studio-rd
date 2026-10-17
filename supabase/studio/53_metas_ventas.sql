@@ -60,9 +60,14 @@ begin
   end if;
   select us.nom into v_nom from public.usuarios_sistema us where us.id = public.mi_usuario_id();
 
+  -- Dos guardados del mismo mes a la vez (hay dos administradores) van uno detrás del otro: si no, el segundo no vería
+  -- las filas que acaba de insertar el primero y el mes quedaría con una mezcla de las dos listas.
+  perform pg_advisory_xact_lock(hashtextextended(v_org::text || ':' || v_mes::text, 0));
   delete from public.pos_metas_ventas where organizacion_id = v_org and mes = v_mes;
   for e in select value from jsonb_array_elements(p_metas) loop
-    v_vend := left(regexp_replace(btrim(coalesce(e->>'vendedor', '')), '\s+', ' ', 'g'), 120);
+    -- Primero se juntan los espacios (tabuladores y saltos incluidos), después se corta a 120 y al final se recortan los
+    -- bordes: así el nombre siempre cumple el CHECK (antes un tabulador al inicio o un corte en un espacio lo rompía).
+    v_vend := btrim(left(regexp_replace(coalesce(e->>'vendedor', ''), '\s+', ' ', 'g'), 120));
     begin
       v_monto := round(coalesce((e->>'monto')::numeric, 0), 2);
     exception when others then

@@ -76,7 +76,13 @@ async function abrir(b, w, h, rol, opt) {
     }
     if (t === 'rpc/pos_personal') return send([{ empleado_id: 'e1', nombre: 'Ana Pérez', activo: true }, { empleado_id: 'e2', nombre: 'Marta Nueva', activo: true }]);
     if (t.startsWith('rpc/')) return send([]);
-    if (t === 'pos_metas_ventas') { if (opt.sinMetas) return send({ code: 'PGRST205', message: "Could not find the table 'public.pos_metas_ventas' in the schema cache" }, 404); return send(filtrar(st.metas, u.searchParams)); }
+    if (t === 'pos_metas_ventas') {
+      if (opt.sinMetas) return send({ code: 'PGRST205', message: "Could not find the table 'public.pos_metas_ventas' in the schema cache" }, 404);
+      if (opt.retrasoMetasMes && u.searchParams.get('mes') === 'eq.' + opt.retrasoMetasMes) await new Promise(res => setTimeout(res, 1500));
+      return send(filtrar(st.metas, u.searchParams));
+    }
+    // Retraso a propósito en la consulta de «Hoy» (para probar que una respuesta tardía no pisa otro rango).
+    if (opt.retrasoHoy && t === 'pos_ventas' && (u.searchParams.getAll('fecha') || []).some(f => f.startsWith('gte.2026-10-16T00:00:00'))) await new Promise(res => setTimeout(res, 1500));
     if (r.method() !== 'GET') return send([]);
     return send(filtrar(db[t] || [], u.searchParams));
   });
@@ -199,6 +205,57 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForTimeout(800);
   ok(/se activan al publicar/.test(await txt(p, '#nxTbMetasC')), 'el formulario de metas avisa que faltan en la base');
   ok(await sinDesborde(p), 'sin desborde horizontal');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+
+  // ── 5. Lo que encontró la revisión previa a publicar (17-oct-2026) ──
+  console.log('\n--- Hallazgos de la revisión (regresión)');
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0], METAS_A[2]], retrasoHoy: true, retrasoMetasMes: '2026-10-01' }));
+  await entrar(p);
+  // a) Carrera: «Hoy» (lento) y enseguida «Este mes» (ya cargado): la respuesta tardía de «Hoy» no debe pisar el mes.
+  await p.click('.nxTbSegB[data-p="hoy"]'); await p.waitForTimeout(150); await p.click('.nxTbSegB[data-p="mes"]'); await p.waitForTimeout(2300);
+  ok(await txt(p, '#nxTbKv-v') === 'RD$ 780,000.00' && await p.$$eval('#nxTbChart rect.hit', r => r.length) === 16 && /1 oct – 16 oct/.test(await txt(p, '#nxTbSub')), 'carrera: volver a «Este mes» mientras «Hoy» carga deja las cifras del mes (' + await txt(p, '#nxTbKv-v') + ')');
+  // b) Rango del 1 al 7 que no es «Este mes»: la meta se reparte (3,100,000 × 7/31 = 700,000), sin proyección.
+  await p.click('.nxTbSegB[data-p="fechas"]'); await p.waitForTimeout(300);
+  await p.fill('#nxTbDesde', '2026-10-01'); await p.fill('#nxTbHasta', '2026-10-07'); await p.evaluate(() => window.nxTablero.fechas());
+  await p.waitForFunction(() => /1 oct – 7 oct/.test(document.getElementById('nxTbSub').textContent) && !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 8000 }); await p.waitForTimeout(800);
+  const km7 = await txt(p, '.nxTbK[data-k="m"]');
+  ok(/Meta del período/.test(km7) && await txt(p, '#nxTbKv-m') === '57.1 %' && /de RD\$ 700,000\.00/.test(km7) && !/cierra en/.test(km7), 'del 1 al 7: meta repartida 700,000 (57.1 %), sin «meta de octubre» ni proyección: ' + km7);
+  // c) Varios meses con meta solo en octubre: el avance cuenta solo octubre (780,000 de 1,600,000 = 48.8 %).
+  await preset(p, 'anio');
+  const kmA = await txt(p, '.nxTbK[data-k="m"]');
+  ok(await txt(p, '#nxTbKv-m') === '48.8 %' && /de RD\$ 1,600,000\.00/.test(kmA) && /Solo cuentan los meses con meta \(oct\): vendido RD\$ 780,000\.00/.test(kmA), 'Este año con meta solo en octubre: 48.8 % y lo explica: ' + kmA);
+  const eqA = await p.$$eval('.nxTbG3 .nxTbCard:first-child .nxTbTr:not(.nxTbTh)', rs => rs.map(r => r.innerText.replace(/\s+/g, ' ').trim()));
+  ok(/Luis Gómez .* 184\.1 %/.test(eqA[0] || ''), 'equipo: el % de Luis cuenta solo octubre contra su meta repartida (184.1 %): ' + (eqA[0] || ''));
+  // d) Eje: miles y millones con decimales (sin marcas repetidas).
+  ok(await p.evaluate(() => [1500, 2500, 7500, 1250000, 80000].map(window.nxTablero._fmtEje).join(' ')) === '1.5K 2.5K 7.5K 1.25M 80K', 'eje: 1.5K 2.5K 7.5K 1.25M 80K');
+  // e) Formulario de metas: el foco entra al diálogo, Escape lo cierra y el foco vuelve al botón «Metas».
+  await preset(p, 'mes');
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMeta0', { timeout: 8000 }); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'nxTbMeta0'), 'el foco entra al primer campo del formulario');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  ok(!(await p.$('#nxTbMetasM')) && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('title') === 'Metas de ventas'), 'Escape cierra y el foco vuelve a «Metas»');
+  // f) Carrera del formulario: octubre (lento) se abre y se cierra; se abre septiembre: no deben aparecer montos de octubre.
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForTimeout(150); await p.evaluate(() => window.nxTablero.metasCerrar());
+  await preset(p, 'mesant');
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMeta0', { timeout: 8000 }); await p.waitForTimeout(2000);
+  ok(await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01' && await p.$eval('#nxTbMeta0', e => e.value) === '', 'reabrir en septiembre no trae los montos de octubre que llegaron tarde');
+  await p.evaluate(() => window.nxTablero.metasCerrar());
+  // g) Medianoche: con «Hoy» abierto, al pasar al 17-oct el tablero se recarga y describe el día nuevo.
+  await preset(p, 'hoy');
+  await p.clock.setSystemTime(new Date('2026-10-17T04:10:00Z'));
+  await p.evaluate(() => window.nxPosCtx.renderPOS()); await p.waitForTimeout(2500);
+  ok(/^17 oct 2026 · comparado con 16 oct 2026/.test(await txt(p, '#nxTbSub')) && await txt(p, '#nxTbKv-v') === 'RD$ 0.00', 'medianoche: «Hoy» pasa solo al 17-oct (' + await txt(p, '#nxTbSub') + ' · ' + await txt(p, '#nxTbKv-v') + ')');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // h) Sin metas en «Este año»: el botón nombra el mes que abre el formulario; y un monto de 8 cifras cabe a 1280 px.
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [], ventas: VENTAS_A.concat([V('big', '2026-10-15T15:00:00Z', 28703075, { credito_monto: 28703075 }, 'Ana Pérez', 'Caja', [it('p1', 'IPHONE 17 PRO MAX 256GB', 1, 28703075)])]) }));
+  await entrar(p);
+  ok(await p.$eval('#nxTbKv-v', e => e.scrollWidth <= e.clientWidth + 1) && await txt(p, '#nxTbKv-v') === 'RD$ 29,483,075.00', 'un monto de 8 cifras (RD$ 29,483,075.00) se ve completo a 1280 px');
+  await preset(p, 'anio');
+  const link = await txt(p, '.nxTbK[data-k="m"] .nxTbLink');
+  await p.click('.nxTbK[data-k="m"] .nxTbLink'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 });
+  ok(link === 'Definir la meta de octubre' && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-10-01', 'el botón dice «' + link + '» y abre ese mes');
   ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await ctx.close();
 

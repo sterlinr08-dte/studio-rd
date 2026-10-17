@@ -52,7 +52,7 @@ async function abrir(b, w, h, rol, opt) {
   const p = await ctx.newPage();
   await p.clock.install({ time: new Date(opt.reloj || '2026-10-16T22:30:00Z') });   // el reloj corre desde el 16-oct 18:30 RD
   const errs = []; p.on('pageerror', e => errs.push(e.message));
-  const st = { guardado: null, metas: (opt.metas || []).slice() };
+  const st = { guardado: null, metas: (opt.metas || []).slice(), falla: false };
   const acceso = [{ rol: 'gerente', organizacion_id: ORG, modulos: ['inicio', 'vender', 'reportes'] }, { rol: 'cajero', organizacion_id: ORG, modulos: ['inicio', 'vender', 'caja'] }];
   const db = {
     profiles: [{ id: 'auth-u', usuario_sistema_id: 'us-u', nom: 'USUARIO', login: 'u', rol, activo: true, must_change_password: false }],
@@ -83,6 +83,7 @@ async function abrir(b, w, h, rol, opt) {
     }
     // Retraso a propósito en la consulta de «Hoy» (para probar que una respuesta tardía no pisa otro rango).
     if (opt.retrasoTodo && t === 'pos_ventas' && r.method() === 'GET') await new Promise(res => setTimeout(res, 1200));
+    if (st.falla && t === 'pos_ventas') return send({ code: 'XX000', message: 'falla simulada' }, 500);
     if (opt.retrasoHoy && t === 'pos_ventas' && (u.searchParams.getAll('fecha') || []).some(f => f.startsWith('gte.2026-10-16T00:00:00'))) await new Promise(res => setTimeout(res, 1500));
     if (r.method() !== 'GET') return send([]);
     return send(filtrar(db[t] || [], u.searchParams));
@@ -294,6 +295,49 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   await p.clock.fastForward('01:30'); await p.waitForTimeout(2500);
   ok(/^17 oct 2026 · comparado con 16 oct 2026/.test(await txt(p, '#nxTbSub')) && await p.$eval('#nxTbHasta', e => e.max) === '2026-10-17', 'medianoche sin tocar nada: «Hoy» pasa solo al 17-oct y el máximo de las fechas es el 17 (' + await txt(p, '#nxTbSub') + ')');
   ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  console.log('\n--- Tercera revisión (regresión)');
+  // f) Tab desde la lupa del mes no saca el foco del diálogo; después Escape lo cierra.
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]] }));
+  await entrar(p);
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 }); await p.waitForTimeout(300);
+  await p.click('#nxTbMetaMes'); await p.waitForTimeout(300);
+  const lupa = !!(await p.$('.nxSbPanel'));
+  const dentro = [];
+  for (let i = 0; i < 4; i++) { await p.keyboard.press('Tab'); await p.waitForTimeout(120); dentro.push(await p.evaluate(() => { const m = document.getElementById('nxTbMetasM'); return !!(m && m.contains(document.activeElement)); })); }
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  ok(lupa && dentro.every(Boolean) && !(await p.$('#nxTbMetasM')), 'Tab desde la lupa del mes se queda en el diálogo (' + dentro.join(',') + ') y Escape lo cierra');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // g) Medianoche en «Fechas» (no recarga): la fecha máxima pasa al día nuevo y el aviso queda armado para la siguiente.
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [], reloj: '2026-10-31T03:58:30Z' }));
+  await entrar(p); await p.click('.nxTbSegB[data-p="fechas"]'); await p.waitForTimeout(900);
+  const max30 = await p.$eval('#nxTbHasta', e => e.max);
+  await p.clock.fastForward('01:30'); await p.waitForTimeout(1500);
+  const max31 = await p.$eval('#nxTbHasta', e => e.max);
+  await p.clock.fastForward('24:00:00'); await p.waitForTimeout(1500);
+  const max01 = await p.$eval('#nxTbHasta', e => e.max);
+  ok(max30 === '2026-10-30' && max31 === '2026-10-31' && max01 === '2026-11-01', 'medianoche en «Fechas»: el máximo pasa 30 → 31 oct → 1 nov sin tocar nada (' + [max30, max31, max01].join(' → ') + ')');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // h) 30-oct: «Actualizar» en «Este mes» y tocar «Fechas» (mismas fechas) mientras recarga: se adopta «Fechas».
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], reloj: '2026-10-30T16:00:00Z', retrasoTodo: true }));
+  await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(700);
+  await p.click('.nxTbAcc .nxTbIcoB[title="Actualizar"]'); await p.waitForTimeout(150); await p.click('.nxTbSegB[data-p="fechas"]');
+  await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(900);
+  const mH = await txt(p, '.nxTbK[data-k="m"]');
+  ok(/Meta del período/.test(mH) && !/cierra en/.test(mH), '«Actualizar» + «Fechas» con las mismas fechas: la meta se calcula como «Fechas» (' + mH.slice(0, 60) + ')');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // i) Falla la carga de otro mes: «Metas» abre el mes que dice la cabecera, no el último que se pintó.
+
+  ({ p, errs, ctx, st } = await abrir(b, 1280, 900, 'admin', { metas: [] }));
+  await entrar(p);
+  st.falla = true; await p.click('.nxTbSegB[data-p="mesant"]'); await p.waitForTimeout(1500);
+  const hayErr = /Reintentar/.test(await txt(p, '#nxTbRoot'));
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 }); await p.waitForTimeout(300);
+  ok(hayErr && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01', 'con error en «Mes anterior», «Metas» abre septiembre (error ' + hayErr + ')');
+  await p.evaluate(() => window.nxTablero.metasCerrar()); st.falla = false;
   await ctx.close();
   // e) 30-oct: «Este mes» y «Fechas» (1 al 30) piden las mismas fechas, pero la meta se calcula distinto.
   ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], reloj: '2026-10-30T16:00:00Z' }));

@@ -109,12 +109,18 @@
         api().get('pos_ventas', 'select=fecha&estado=eq.completada&order=fecha.desc&limit=1').catch(() => [])
       ]);
       if (id !== pedido) return;                                   // llegó otra consulta más nueva: esta se descarta
-      D = { clave: clave, r: r, ventas: ventas, previas: previas, devol: devol, metas: metas, ultima: (ultima && ultima[0] && ultima[0].fecha) || '' };
+      // Si mientras tanto se tocó otra pastilla que pide las mismas fechas («Este mes» y «Fechas» del 1 a hoy), los datos
+      // sirven igual pero la meta se calcula con la pastilla que se ve ahora.
+      const rAhora = rango();
+      D = { clave: clave, r: claveDe(rAhora) === clave ? rAhora : r, ventas: ventas, previas: previas, devol: devol, metas: metas, ultima: (ultima && ultima[0] && ultima[0].fecha) || '' };
     } catch (e) {
       if (id !== pedido) return;
       error = String(e && e.message || e);
     }
     cargando = false; actualizar(); armarMedianoche();
+    // Si la medianoche pasó con la consulta en camino, lo que llegó es del día anterior: se pide de nuevo (con error no,
+    // para no repetir sin fin si la red sigue caída).
+    if (!error && D && D.clave !== claveDe(rango())) setTimeout(revisarVigencia, 0);
   }
   function armarMedianoche() {
     clearTimeout(tMedianoche);
@@ -276,7 +282,12 @@
     return `${rangoTxt(r.d1, r.d2)} · comparado con ${rangoTxt(r.p1, r.p2)}${cargando && D ? ' · actualizando…' : ''}`;
   }
   // Pasada la medianoche (o al volver a la pestaña otro día), «Hoy», «7 días»… ya son otro rango: se recargan solos.
-  function revisarVigencia() { if (D && !cargando && D.clave !== claveDe(rango())) cargar(false); }
+  // Al cambiar el día (temporizador de medianoche o al volver a la pestaña): la fecha máxima de «Fechas» pasa a hoy y, si el
+  // rango cambió, se recarga. Si no hace falta recargar, el aviso de la próxima medianoche queda armado (cargar() lo arma al terminar).
+  function revisarVigencia() {
+    const h = hoyISO(); ['nxTbDesde', 'nxTbHasta'].forEach(id => { const x = document.getElementById(id); if (x) x.max = h; });
+    if (D && !cargando && D.clave !== claveDe(rango())) cargar(false); else armarMedianoche();
+  }
   function render() {
     ensureCSS();
     if (D && !cargando && D.clave !== claveDe(rango())) setTimeout(revisarVigencia, 0);
@@ -406,7 +417,7 @@
   async function metas(mes) {
     if (!esAdmin()) { toast('err', 'Solo el administrador define las metas'); return; }
     // El mes que se ve en pantalla (aunque esté cargando otro rango), o el que trae el botón.
-    mMes = /^\d{4}-\d{2}-01$/.test(mes || '') ? mes : iniMes(((C && D && C.r) || rangoVisible()).d2);
+    mMes = /^\d{4}-\d{2}-01$/.test(mes || '') ? mes : iniMes(((!error && C && D && C.r) || rangoVisible()).d2);
     abrirMetas(true);
     await cargarYPintarMetas();
   }
@@ -455,8 +466,10 @@
     // Teclado: Escape cierra; Tab no se sale del diálogo.
     mTeclas = e => {
       if (!document.getElementById('nxTbMetasM')) return;
-      // Teclas de otra capa abierta encima (lupa del selector de mes, Ctrl+K): no son del diálogo.
-      if (e.target && e.target !== document.body && e.target !== document.documentElement && !ov.contains(e.target)) return;
+      // Teclas de otra capa abierta encima: el Escape de la lupa del selector de mes cierra solo su lista y Ctrl+K maneja
+      // todas las suyas. Lo demás (Tab desde la lupa, o con el foco escapado al fondo) sigue en la trampa del diálogo.
+      const capa = e.target && e.target.closest ? e.target.closest('.nxSbPanel,#nxUnivS') : null;
+      if (capa && (e.key === 'Escape' || capa.id === 'nxUnivS')) return;
       if (e.key === 'Escape') { e.preventDefault(); cerrarMetas(); return; }
       if (e.key !== 'Tab') return;
       const f = Array.from(ov.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);

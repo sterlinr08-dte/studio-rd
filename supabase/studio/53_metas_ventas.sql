@@ -1,6 +1,7 @@
 -- 53_metas_ventas.sql — STUDIO RD (16-oct-2026). Metas de ventas del Tablero de ventas (parches-pos-tablero.js).
--- NO APLICADA: espera el «publícalo» del dueño. Orden al publicar: correr la prueba (todo se deshace), aplicar esta
--- migración y después publicar 59.95. Sin esta migración el tablero funciona igual y dice «sin meta».
+-- 59.95 ya está publicada (17-oct-2026). ESTA MIGRACIÓN FALTA: la pega el dueño en el SQL Editor (la herramienta de
+-- migraciones de esta sesión pide una confirmación que no se puede dar). Sin ella el tablero funciona y dice que las
+-- metas todavía no están activas. Ver docs/bitacora/2026-10-17-0142-claude.md.
 --
 -- Qué guarda: una meta en pesos por MES para el negocio (vendedor = '') y, si se quiere, una por vendedor (el nombre
 -- tal como sale en la factura: vendedor_nombre o, si falta, quien facturó). El tablero reparte la meta del mes por días

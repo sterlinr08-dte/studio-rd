@@ -120,7 +120,7 @@
     cargando = false; actualizar(); armarMedianoche();
     // Si la medianoche pasó con la consulta en camino, lo que llegó es del día anterior: se pide de nuevo (con error no,
     // para no repetir sin fin si la red sigue caída).
-    if (!error && D && D.clave !== claveDe(rango())) setTimeout(revisarVigencia, 0);
+    if (!error && D && D.clave !== claveDe(rango()) && document.getElementById('nxTbRoot') && !document.hidden) setTimeout(revisarVigencia, 0);
   }
   function armarMedianoche() {
     clearTimeout(tMedianoche);
@@ -210,7 +210,7 @@
         + (C.metaParcial ? `<br>Solo cuentan los meses con meta (${esc(C.mesesConMeta.map(m => MES[+m.slice(5, 7) - 1]).join(', '))}): vendido ${fmt(C.brutoMeta)}` : '');
     } else {
       metaV = '<span class="nxTbSinMeta">Sin meta</span>';
-      metaS = !C.metasOk ? 'Las metas se activan al publicar esta versión.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas('${iniMes(r.d2)}')">Definir la meta de ${esc(mesForm)}</button>` : 'El administrador todavía no definió la meta.';
+      metaS = !C.metasOk ? 'Las metas todavía no están activas en la base de datos.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas('${iniMes(r.d2)}')">Definir la meta de ${esc(mesForm)}</button>` : 'El administrador todavía no definió la meta.';
     }
     const devS = C.devTot > 0 ? `<br>Devoluciones ${fmt(C.devTot)} · netas ${fmt(C.bruto - C.devTot)}` : '';
     return `<div class="nxTbKpis">
@@ -264,7 +264,8 @@
       ${antes ? `<button type="button" class="btn bc1" onclick="window.nxTablero.verHasta('${ult}')"><i class="ti ti-calendar-event"></i> Ver los 30 días hasta el ${esc(fCorta(ult))}</button>` : ''}</section>`;
   }
   function cuerpoHTML() {
-    if (error) return `<section class="nxTbCard nxTbVacio"><i class="ti ti-cloud-off" aria-hidden="true"></i><div class="nxTbH2" role="heading" aria-level="2">No se pudieron cargar las ventas</div><p>${esc(error.slice(0, 220))}</p><button type="button" class="btn bc1" onclick="window.nxTablero.recargar()"><i class="ti ti-refresh"></i> Reintentar</button></section>`;
+    // Con la tarjeta de error en pantalla no queda ningún cálculo visible (si no, «Metas» abriría el mes de lo último que se pintó).
+    if (error) { C = null; return `<section class="nxTbCard nxTbVacio"><i class="ti ti-cloud-off" aria-hidden="true"></i><div class="nxTbH2" role="heading" aria-level="2">No se pudieron cargar las ventas</div><p>${esc(error.slice(0, 220))}</p><button type="button" class="btn bc1" onclick="window.nxTablero.recargar()"><i class="ti ti-refresh"></i> Reintentar</button></section>`; }
     if (!D) return esqueletoHTML();
     C = calc();
     const vacio = !C.n && !C.anul.length;
@@ -417,7 +418,7 @@
   async function metas(mes) {
     if (!esAdmin()) { toast('err', 'Solo el administrador define las metas'); return; }
     // El mes que se ve en pantalla (aunque esté cargando otro rango), o el que trae el botón.
-    mMes = /^\d{4}-\d{2}-01$/.test(mes || '') ? mes : iniMes(((!error && C && D && C.r) || rangoVisible()).d2);
+    mMes = /^\d{4}-\d{2}-01$/.test(mes || '') ? mes : iniMes(((C && D && C.r) || rangoVisible()).d2);
     abrirMetas(true);
     await cargarYPintarMetas();
   }
@@ -436,7 +437,7 @@
   }
   function metasErr(e) {
     let msg = String(e && e.message || e); try { const j = JSON.parse(msg); msg = j.details || j.message || msg; } catch (x) {}
-    return /pos_metas|PGRST20[25]|404|does not exist/i.test(msg) ? 'Las metas todavía no están activas en la base: se activan al publicar esta versión.' : msg;
+    return /pos_metas|PGRST20[25]|404|does not exist/i.test(msg) ? 'Las metas todavía no están activas en la base de datos.' : msg;
   }
   async function cargarFormMetas(mes) {
     const desde = addDays(hoyISO(), -120);
@@ -466,10 +467,12 @@
     // Teclado: Escape cierra; Tab no se sale del diálogo.
     mTeclas = e => {
       if (!document.getElementById('nxTbMetasM')) return;
-      // Teclas de otra capa abierta encima: el Escape de la lupa del selector de mes cierra solo su lista y Ctrl+K maneja
-      // todas las suyas. Lo demás (Tab desde la lupa, o con el foco escapado al fondo) sigue en la trampa del diálogo.
-      const capa = e.target && e.target.closest ? e.target.closest('.nxSbPanel,#nxUnivS') : null;
-      if (capa && (e.key === 'Escape' || capa.id === 'nxUnivS')) return;
+      // Teclas de otra capa abierta encima: el Escape de la lupa del selector de mes cierra solo su lista, y las demás
+      // ventanas (Ctrl+K, Artículo 360, la búsqueda global…) manejan todas las suyas. Lo demás (Tab desde la lupa, o con
+      // el foco escapado al fondo) sigue en la trampa del diálogo.
+      if (document.querySelector('.gs-overlay.show') || Array.from(document.querySelectorAll('.overlay.open')).some(x => x !== ov && (ov.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING))) return;   // otra ventana encima
+      const capa = e.target && e.target.closest ? e.target.closest('.nxSbPanel,.overlay,.gs-overlay') : null;
+      if (capa && capa !== ov && (e.key === 'Escape' || !capa.classList.contains('nxSbPanel'))) return;
       if (e.key === 'Escape') { e.preventDefault(); cerrarMetas(); return; }
       if (e.key !== 'Tab') return;
       const f = Array.from(ov.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);

@@ -199,13 +199,13 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   await entrar(p);
   const vac = await txt(p, '.nxTbVacio');
   ok(/No hay ventas registradas del 1 oct – 16 oct 2026/.test(vac) && /La última venta registrada en STUDIO es del 18 sep 2026/.test(vac), 'estado vacío explica la última venta: ' + vac);
-  ok(/Las metas se activan al publicar esta versión/.test(await txt(p, '.nxTbK[data-k="m"]')), 'sin la migración: la meta lo dice, sin romper nada');
+  ok(/Las metas todavía no están activas en la base de datos/.test(await txt(p, '.nxTbK[data-k="m"]')), 'sin la migración: la meta lo dice, sin romper nada');
   await p.screenshot({ path: `${OUT}/tablero-390-vacio.png`, fullPage: true });
   await p.click('.nxTbVacio .btn'); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent) && !!document.getElementById('nxTbChart'), null, { timeout: 10000 }); await p.waitForTimeout(700);
   const subB = await txt(p, '#nxTbSub'), venB = await txt(p, '#nxTbKv-v'), fechasB = await p.$eval('#nxTbFechas', e => !e.hidden);
   ok(/20 ago – 18 sep 2026/.test(subB) && venB === 'RD$ 729,100.00' && fechasB, `el botón abre los 30 días hasta el 18-sep con las fechas a la vista (${subB} · ${venB} · fechas ${fechasB})`);
   await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForTimeout(800);
-  ok(/se activan al publicar/.test(await txt(p, '#nxTbMetasC')), 'el formulario de metas avisa que faltan en la base');
+  ok(/todavía no están activas en la base de datos/.test(await txt(p, '#nxTbMetasC')), 'el formulario de metas avisa que faltan en la base');
   ok(await sinDesborde(p), 'sin desborde horizontal');
   ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await ctx.close();
@@ -338,6 +338,30 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 }); await p.waitForTimeout(300);
   ok(hayErr && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01', 'con error en «Mes anterior», «Metas» abre septiembre (error ' + hayErr + ')');
   await p.evaluate(() => window.nxTablero.metasCerrar()); st.falla = false;
+  await ctx.close();
+  console.log('\n--- Verificación final (regresión)');
+  // j) Con el diálogo de metas abierto y un monto escrito, Ctrl+K y Escape cierran la búsqueda, no el diálogo.
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [] }));
+  await entrar(p);
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMeta0', { timeout: 8000 }); await p.waitForTimeout(300);
+  await p.click('#nxTbMeta0'); await p.keyboard.type('5000000'); await p.waitForTimeout(150);
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(500);
+  const gsAbierta = await p.evaluate(() => { const g = document.getElementById('gsOverlay'); return !!(g && g.classList.contains('show')); });
+  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+  const v0 = await p.$eval('#nxTbMeta0', e => e.value).catch(() => '');
+  ok(gsAbierta && !!(await p.$('#nxTbMetasM')) && /5,?000,?000/.test(v0), 'Ctrl+K y Escape no cierran el diálogo de metas ni borran el monto (' + v0 + ', búsqueda ' + gsAbierta + ')');
+  await p.evaluate(() => { try { window.nxBuscUnivCerrar && window.nxBuscUnivCerrar(); } catch (e) {} window.nxTablero.metasCerrar(); });
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // k) Error en «Mes anterior» y «Reintentar» lento: mientras recarga, «Metas» abre septiembre (el mes de la cabecera).
+  ({ p, errs, ctx, st } = await abrir(b, 1280, 900, 'admin', { metas: [], retrasoTodo: true }));
+  await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 });
+  st.falla = true; await p.click('.nxTbSegB[data-p="mesant"]'); await p.waitForFunction(() => /Reintentar/.test(document.getElementById('nxTbRoot').innerText), null, { timeout: 10000 });
+  st.falla = false; await p.click('#nxTbRoot .btn.bc1'); await p.waitForTimeout(150);
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 });
+  ok(await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01', '«Reintentar» en curso tras un error: «Metas» abre septiembre (' + await p.$eval('#nxTbMetaMes', e => e.value) + ')');
+  await p.evaluate(() => window.nxTablero.metasCerrar());
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await ctx.close();
   // e) 30-oct: «Este mes» y «Fechas» (1 al 30) piden las mismas fechas, pero la meta se calcula distinto.
   ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], reloj: '2026-10-30T16:00:00Z' }));

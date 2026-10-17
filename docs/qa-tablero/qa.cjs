@@ -1,0 +1,207 @@
+// QA del Tablero de ventas (16-oct-2026, dueño: «Excelente, aplícalo» sobre la maqueta del dashboard).
+// Base Supabase SIMULADA con ventas inventadas de cifras conocidas; nunca toca la base real. Reloj: 16-oct-2026 18:30 RD (corre desde ahí).
+// Uso: desde la raíz del repo, python3 -m http.server 8790 & ; node docs/qa-tablero/qa.cjs   (QA_OUT=carpeta para las capturas)
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const APP_URL = process.env.QA_URL || 'http://localhost:8790/index.html';
+const OUT = process.env.QA_OUT || require('os').tmpdir();
+let fallos = 0; const ok = (c, m) => { console.log((c ? 'OK    ' : 'FALLA ') + m); if (!c) fallos++; };
+const ORG = 'org1';
+const it = (pid, nom, cant, imp) => ({ producto_id: pid, nombre: nom, cantidad: cant, precio: imp / cant, importe: imp });
+const V = (id, fecha, total, pagos, vend, creador, items, estado) => Object.assign({ id, organizacion_id: ORG, fecha, total, estado: estado || 'completada', pagado_efectivo: 0, pagado_tarjeta: 0, pagado_transferencia: 0, pagado_otro: 0, credito_monto: 0, vendedor_nombre: vend, created_by_name: creador, pos_venta_items: items }, pagos);
+// Octubre (1–16): 780,000 en 5 facturas. Septiembre: 490,000 en 4 (una a las 23:30 del 30-sep RD = 1-oct en UTC).
+const VENTAS_A = [
+  V('s1', '2026-09-05T15:00:00Z', 200000, { pagado_efectivo: 200000 }, 'Ana Pérez', 'Caja', [it('p2', 'TV 55', 1, 200000)]),
+  V('s2', '2026-09-17T03:00:00Z', 100000, { pagado_transferencia: 100000 }, 'Luis Gómez', 'Caja', [it('p3', 'Bocina', 5, 100000)]),
+  V('s3', '2026-09-20T15:00:00Z', 120000, { pagado_efectivo: 120000 }, 'Luis Gómez', 'Caja', [it('p3', 'Bocina', 6, 120000)]),
+  V('s4', '2026-10-01T03:30:00Z', 70000, { pagado_efectivo: 70000 }, 'Ana Pérez', 'Caja', [it('p3', 'Bocina', 3, 70000)]),
+  V('o1', '2026-10-01T04:00:00Z', 100000, { pagado_efectivo: 100000 }, 'Ana Pérez', 'Caja', [it('p1', 'IPHONE 17 PRO MAX 256GB', 1, 100000)]),
+  V('o2', '2026-10-03T15:00:00Z', 250000, { pagado_transferencia: 250000 }, null, 'Super Admin', [it('p1', '\tIPHONE 17 PRO MAX 256GB', 2, 250000)]),
+  V('o3', '2026-10-05T20:00:00Z', 50000, { pagado_tarjeta: 50000 }, ' ANA  PEREZ ', 'Caja', [it(null, 'Cargador  USB', 5, 50000)]),
+  V('o4', '2026-10-10T16:00:00Z', 300000, { pagado_efectivo: 100000, credito_monto: 200000 }, 'Luis Gómez', 'Caja', [it('p9', 'TV  55', 1, 300000)]),   // otra ficha con el mismo nombre
+  V('o5', '2026-10-11T16:00:00Z', 999999, { pagado_efectivo: 999999 }, 'Luis Gómez', 'Caja', [it('p2', 'TV 55', 3, 999999)], 'anulada'),
+  V('o6', '2026-10-16T22:00:00Z', 80000, { pagado_otro: 80000 }, 'Luis Gómez', 'Caja', [it('p3', 'Bocina', 4, 80000)])
+];
+const DEVOL_A = [{ id: 'd1', fecha: '2026-10-12', total: 30000, estado: 'emitida' }, { id: 'd2', fecha: '2026-10-13', total: 5000, estado: 'anulada' }];
+const METAS_A = [{ mes: '2026-10-01', vendedor: '', monto: 3100000 }, { mes: '2026-10-01', vendedor: 'Ana Pérez', monto: 1000000 }, { mes: '2026-10-01', vendedor: 'Luis Gómez', monto: 400000 }, { mes: '2026-10-01', vendedor: 'Pedro Sin Venta', monto: 500000 }];
+// Caso real de hoy: la última venta registrada es del 18-sep y octubre está vacío.
+const VENTAS_B = [V('b1', '2026-09-18T20:00:00Z', 729100, { pagado_efectivo: 729100 }, 'Winifergomez', 'Caja', [it('p1', 'IPHONE 17 PRO MAX 256GB', 1, 729100)])];
+
+function filtrar(rows, sp) {
+  let out = rows.slice();
+  for (const [k, raw] of sp.entries()) {
+    if (['select', 'order', 'limit', 'offset'].includes(k)) continue;
+    const m = /^(eq|gte|gt|lte|lt|is)\.(.*)$/.exec(raw); if (!m) continue;
+    const op = m[1], val = m[2];
+    out = out.filter(r => {
+      const a = r[k]; if (op === 'is') return String(a) === val;
+      const fecha = /^\d{4}-\d{2}-\d{2}/.test(val);
+      const x = fecha ? new Date(String(a).length === 10 ? a + 'T00:00:00Z' : a).getTime() : (typeof a === 'number' ? a : String(a));
+      const y = fecha ? new Date(val.length === 10 ? val + 'T00:00:00Z' : val).getTime() : (typeof a === 'number' ? Number(val) : val);
+      return op === 'eq' ? x === y : op === 'gte' ? x >= y : op === 'gt' ? x > y : op === 'lte' ? x <= y : x < y;
+    });
+  }
+  const ord = sp.get('order'); if (ord) { const [c, d] = ord.split('.'); out.sort((a, b) => (a[c] < b[c] ? -1 : a[c] > b[c] ? 1 : 0) * (d === 'desc' ? -1 : 1)); }
+  const off = +(sp.get('offset') || 0), lim = sp.get('limit') ? +sp.get('limit') : out.length;
+  return out.slice(off, off + lim);
+}
+
+async function abrir(b, w, h, rol, opt) {
+  opt = opt || {};
+  const movil = w < 500;
+  const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: movil, hasTouch: movil });
+  const p = await ctx.newPage();
+  await p.clock.install({ time: new Date('2026-10-16T22:30:00Z') });   // el reloj corre desde el 16-oct 18:30 RD
+  const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const st = { guardado: null, metas: (opt.metas || []).slice() };
+  const acceso = [{ rol: 'gerente', organizacion_id: ORG, modulos: ['inicio', 'vender', 'reportes'] }, { rol: 'cajero', organizacion_id: ORG, modulos: ['inicio', 'vender', 'caja'] }];
+  const db = {
+    profiles: [{ id: 'auth-u', usuario_sistema_id: 'us-u', nom: 'USUARIO', login: 'u', rol, activo: true, must_change_password: false }],
+    organizaciones: [{ id: ORG, slug: 'studio', nombre: 'STUDIO', tipo: 'tienda', activo: true }],
+    pos_config: [{ organizacion_id: ORG }], pos_almacenes: [{ id: 'a1', nombre: 'Edificio Studio', es_principal: true, activo: true }],
+    usuarios_sistema: [{ id: 'us-u', nom: 'USUARIO', login: 'u', rol, activo: true, almacen_id: 'a1', organizacion_id: ORG }],
+    pos_acceso: acceso, pos_ventas: opt.ventas || VENTAS_A, pos_devoluciones: opt.devol || DEVOL_A
+  };
+  await p.route(/edbknlkjnlfmkkiizdbe\.supabase\.co/, async route => {
+    const r = route.request(), u = new URL(r.url()); const send = (o, s) => route.fulfill({ status: s || 200, contentType: 'application/json', body: JSON.stringify(o) });
+    if (u.pathname.startsWith('/auth/v1/user')) return send({ id: 'auth-u', email: 'u@studio.local' });
+    if (u.pathname.startsWith('/auth/v1/')) return send({ access_token: 'tok', refresh_token: 'r', expires_in: 3600, user: { id: 'auth-u' } });
+    const t = u.pathname.slice(9);
+    if (t === 'rpc/pos_metas_guardar') {
+      if (opt.sinMetas) return send({ code: 'PGRST202', message: 'Could not find the function public.pos_metas_guardar' }, 404);
+      if (rol !== 'admin') return send({ code: 'P0001', message: 'METAS_SOLO_ADMIN', details: 'Solo el administrador define las metas de ventas' }, 400);
+      const body = JSON.parse(r.postData() || '{}'); st.guardado = body;
+      const mes = String(body.p_mes).slice(0, 8) + '01';
+      st.metas = st.metas.filter(x => x.mes !== mes).concat((body.p_metas || []).filter(x => x.monto > 0).map(x => ({ mes, vendedor: String(x.vendedor || '').trim(), monto: x.monto })));
+      return send((body.p_metas || []).length);
+    }
+    if (t === 'rpc/pos_personal') return send([{ empleado_id: 'e1', nombre: 'Ana Pérez', activo: true }, { empleado_id: 'e2', nombre: 'Marta Nueva', activo: true }]);
+    if (t.startsWith('rpc/')) return send([]);
+    if (t === 'pos_metas_ventas') { if (opt.sinMetas) return send({ code: 'PGRST205', message: "Could not find the table 'public.pos_metas_ventas' in the schema cache" }, 404); return send(filtrar(st.metas, u.searchParams)); }
+    if (r.method() !== 'GET') return send([]);
+    return send(filtrar(db[t] || [], u.searchParams));
+  });
+  await p.goto(APP_URL + '#access_token=tok&refresh_token=r&expires_in=3600');
+  await p.waitForFunction(() => window.nxPosCfgListo === true && !!window.nxTablero, null, { timeout: 30000 });
+  await p.waitForFunction(() => !document.getElementById('nxSplash'), null, { timeout: 15000 });   // bienvenida de la primera carga (2.8 s)
+  if (opt.premium) await p.evaluate(() => { if (window.aplicarTema) window.aplicarTema('premium'); else document.body.classList.add('tema-premium'); });
+  return { p, errs, st, ctx };
+}
+const txt = (p, sel) => p.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
+async function entrar(p) { await p.evaluate(() => { try { localStorage.removeItem('studio_tablero_rango'); } catch (e) {} window.nxPosTab('tablero'); }); await p.waitForSelector('#nxTbKv-v', { timeout: 15000 }); await p.waitForTimeout(400); }
+async function preset(p, k) { await p.click(`.nxTbSegB[data-p="${k}"]`); await p.waitForFunction(() => !/actualizando/.test((document.getElementById('nxTbSub') || {}).textContent || ''), null, { timeout: 10000 }); await p.waitForTimeout(900); }
+async function sinDesborde(p) { return p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && (document.getElementById('nxTbRoot') || { scrollWidth: 0, clientWidth: 1 }).scrollWidth <= document.getElementById('nxTbRoot').clientWidth + 1); }
+
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+
+  // ── 1. Administrador, escritorio: cifras de octubre, comparación, metas, gráfica, pagos, equipo y productos ──
+  console.log('\n--- Administrador 1280x900 · Este mes (1–16 oct 2026)');
+  let { p, errs, st, ctx } = await abrir(b, 1280, 900, 'admin', { metas: METAS_A });
+  ok(await p.$eval('#nxTSide', e => /Tablero de ventas/.test(e.innerText)).catch(() => false), 'el menú tiene «Tablero de ventas»');
+  await entrar(p);
+  ok(/1 oct – 16 oct 2026 · comparado con 1 sep – 16 sep 2026/.test(await txt(p, '#nxTbSub')), 'rango y comparación: ' + await txt(p, '#nxTbSub'));
+  ok(await txt(p, '#nxTbKv-v') === 'RD$ 780,000.00', 'Ventas = RD$ 780,000.00 (sin la anulada ni la venta de las 23:30 del 30-sep): ' + await txt(p, '#nxTbKv-v'));
+  const kv = await txt(p, '.nxTbK[data-k="v"]');
+  ok(/\+160\.0 %/.test(kv) && /Devoluciones RD\$ 30,000\.00 · netas RD\$ 750,000\.00/.test(kv), 'comparación +160 % y devoluciones/netas: ' + kv);
+  ok(await txt(p, '#nxTbKv-f') === '5' && /\+150\.0 %/.test(await txt(p, '.nxTbK[data-k="f"]')) && /1 anulada \(no cuentan\)/.test(await txt(p, '.nxTbK[data-k="f"]')), 'Facturas 5 (+150 %), 1 anulada aparte');
+  ok(await txt(p, '#nxTbKv-t') === 'RD$ 156,000.00' && /\+4\.0 %/.test(await txt(p, '.nxTbK[data-k="t"]')), 'Ticket promedio RD$ 156,000.00 (+4 %)');
+  const km = await txt(p, '.nxTbK[data-k="m"]');
+  ok(/Meta de octubre/.test(km) && await txt(p, '#nxTbKv-m') === '25.2 %' && /Faltan RD\$ 2,320,000\.00 de RD\$ 3,100,000\.00/.test(km) && /cierra en RD\$ 1,511,250\.00/.test(km), 'meta del mes completa 25.2 %, lo que falta y proyección: ' + km);
+  ok(await p.$$eval('#nxTbChart rect.hit', r => r.length) === 16, 'gráfica: 16 días');
+  ok(await p.$$eval('#nxTbChart rect.b', r => r.length) === 5 && await p.$$eval('#nxTbChart rect.b.bajo', r => r.length) === 2 && await p.$('#nxTbChart path.meta') !== null, 'barras: 5 días con venta, 2 bajo la meta diaria (100,000; el 1-oct la iguala), línea de meta');
+  const pagos = await p.$$eval('.nxTbLegF', fs => fs.map(f => f.innerText.replace(/\s+/g, ' ').trim()));
+  ok(pagos.join('|') === 'Efectivo RD$ 200,000.00 25.6 %|Transferencia RD$ 250,000.00 32.1 %|Tarjeta RD$ 50,000.00 6.4 %|Otro RD$ 80,000.00 10.3 %|Crédito y financiamiento RD$ 200,000.00 25.6 %', 'formas de pago cuadran con las ventas: ' + pagos.join(' | '));
+  const eq = await p.$$eval('.nxTbG3 .nxTbCard:first-child .nxTbTr:not(.nxTbTh)', rs => rs.map(r => r.innerText.replace(/\s+/g, ' ').trim()));
+  ok(eq.length === 4 && /^LG Luis Gómez 2 facturas · meta RD\$ 400,000\.00 RD\$ 380,000\.00 95\.0 %$/.test(eq[0]) && /Super Admin 1 factura RD\$ 250,000\.00 Sin meta/.test(eq[1]) && /Ana Pérez 2 facturas · meta RD\$ 1,000,000\.00 RD\$ 150,000\.00 15\.0 %/.test(eq[2]) && /Pedro Sin Venta 0 facturas · meta RD\$ 500,000\.00 RD\$ 0\.00 0\.0 %/.test(eq[3]), 'equipo (vendedor o quien facturó; «ANA PEREZ» = «Ana Pérez»; con meta sin vender): ' + eq.join(' | '));
+  const pr = await p.$$eval('.nxTbG3 .nxTbCard:last-child .nxTbTr:not(.nxTbTh)', rs => rs.map(r => r.innerText.replace(/\s+/g, ' ').trim()));
+  ok(pr.join('|') === '1 IPHONE 17 PRO MAX 256GB 3 RD$ 350,000.00|2 TV 55 1 RD$ 300,000.00|3 Bocina 4 RD$ 80,000.00|4 Cargador USB 5 RD$ 50,000.00', 'productos (el del tabulador se suma al mismo): ' + pr.join(' | '));
+  ok(await sinDesborde(p), 'sin desborde horizontal');
+  await p.screenshot({ path: `${OUT}/tablero-1280.png`, fullPage: true });
+  // Rango «7 días»: la meta se reparte (3,100,000 × 7/31 = 700,000); los números corren desde lo que se veía.
+  await p.click('.nxTbSegB[data-p="7d"]');
+  await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 });
+  await p.waitForTimeout(60);
+  const enCamino = await txt(p, '#nxTbKv-v');
+  await p.waitForTimeout(1100);
+  ok(await txt(p, '#nxTbKv-v') === 'RD$ 380,000.00' && enCamino !== 'RD$ 380,000.00', '7 días: RD$ 380,000.00, y el número corre (a mitad: ' + enCamino + ')');
+  ok(/Meta del período/.test(await txt(p, '.nxTbK[data-k="m"]')) && await txt(p, '#nxTbKv-m') === '54.3 %' && /de RD\$ 700,000\.00/.test(await txt(p, '.nxTbK[data-k="m"]')), '7 días: meta repartida RD$ 700,000.00 → 54.3 %');
+  const th = await p.$eval('#nxTbThumb', e => ({ x: e.style.transform, w: e.style.width }));
+  const b7 = await p.$eval('.nxTbSegB[data-p="7d"]', e => ({ x: e.offsetLeft, w: e.offsetWidth }));
+  ok(th.x === `translateX(${b7.x}px)` && th.w === b7.w + 'px', 'la pastilla se movió a «7 días»');
+  await preset(p, 'hoy');
+  ok(await p.$$eval('#nxTbChart rect.hit', r => r.length) === 24 && await txt(p, '#nxTbKv-v') === 'RD$ 80,000.00' && /Sin ventas en el período anterior/.test(await txt(p, '.nxTbK[data-k="v"]')), 'Hoy: por hora (24), RD$ 80,000.00, ayer sin ventas');
+  await preset(p, 'mesant');
+  ok(await txt(p, '#nxTbKv-v') === 'RD$ 490,000.00' && await txt(p, '#nxTbKv-f') === '4', 'Mes anterior (sep): RD$ 490,000.00 en 4 facturas (incluye la de las 23:30 del 30-sep)');
+  await preset(p, 'anio');
+  ok(await p.$$eval('#nxTbChart rect.hit', r => r.length) === 10 && await txt(p, '#nxTbKv-v') === 'RD$ 1,270,000.00', 'Este año: por mes (10), RD$ 1,270,000.00');
+  const prA = await p.$$eval('.nxTbG3 .nxTbCard:last-child .nxTbTr:not(.nxTbTh)', rs => rs.map(r => r.innerText.replace(/\s+/g, ' ').trim()));
+  ok(prA[0] === '1 TV 55 2 RD$ 500,000.00' && prA[1] === '2 Bocina 18 RD$ 370,000.00', 'Este año: dos fichas con el mismo nombre («TV 55» y «TV  55») son un solo producto: ' + prA.join(' | '));
+  // Metas: el administrador guarda la de noviembre y la de un vendedor.
+  await preset(p, 'mes');
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMeta0', { timeout: 8000 });
+  ok(await p.$eval('#nxTbMeta0', e => e.value) === '3,100,000.00', 'el formulario trae la meta guardada del negocio');
+  const filasM = await p.$$eval('.nxTbMetaL .nxTbMetaF b', bs => bs.map(x => x.textContent));
+  ok(filasM.includes('Marta Nueva') && filasM.includes('Pedro Sin Venta') && filasM.includes('Luis Gómez'), 'vendedores: con ventas recientes, empleados y con meta (' + filasM.join(', ') + ')');
+  await p.selectOption('#nxTbMetaMes', '2026-11-01'); await p.waitForSelector('#nxTbMeta0', { timeout: 8000 });
+  await p.fill('#nxTbMeta0', '4500000'); await p.click('#nxTbMetaOk'); await p.waitForTimeout(900);
+  ok(st.guardado && st.guardado.p_mes === '2026-11-01' && JSON.stringify(st.guardado.p_metas) === JSON.stringify([{ vendedor: '', monto: 4500000 }]) && !(await p.$('#nxTbMetasM')), 'guarda noviembre por la función del servidor: ' + JSON.stringify(st.guardado));
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+
+  // ── 2. Teléfono 390 y 430 (Clásico) y Premium Dark; toque en una barra ──
+  for (const [w, h, prem] of [[390, 844, false], [430, 932, false], [390, 844, true], [1280, 900, true]]) {
+    console.log(`\n--- ${w}x${h}${prem ? ' Premium Dark' : ''}`);
+    ({ p, errs, ctx } = await abrir(b, w, h, 'admin', { metas: METAS_A, premium: prem }));
+    await entrar(p);
+    ok(await sinDesborde(p), 'sin desborde horizontal');
+    if (w < 500) {
+      // En STUDIO se desplaza el área del módulo, no la ventana: se trae la gráfica a la vista antes de tocar.
+      await p.$eval('#nxTbChart', e => e.scrollIntoView({ block: 'center' })); await p.waitForTimeout(250);
+      const bar = await p.$('#nxTbChart rect.hit[data-i="9"]'); const bb2 = await bar.boundingBox();
+      await p.touchscreen.tap(bb2.x + bb2.width / 2, bb2.y + bb2.height - 10); await p.waitForTimeout(350);
+      const tip = await txt(p, '#nxTbTip');
+      ok(/sáb 10 oct 2026/.test(tip) && /RD\$ 300,000\.00 · 1 factura/.test(tip) && /Sobre la meta/.test(tip), 'tocar la barra del 10-oct muestra el detalle: ' + tip);
+      await p.screenshot({ path: `${OUT}/tablero-${w}${prem ? '-oscuro' : ''}-toque.png` });
+      await p.$eval('#nxTbRoot', e => e.scrollIntoView({ block: 'start' })); await p.waitForTimeout(200);
+    }
+    // Texto oscuro (luminancia baja) sobre tarjeta blanca: legible aunque el tema Premium cambie el tono del texto.
+    if (prem) ok(await p.evaluate(() => { const osc = e => { const m = getComputedStyle(document.querySelector(e)).color.match(/\d+/g).map(Number); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2] < 90; }; return getComputedStyle(document.querySelector('.nxTbK')).backgroundColor === 'rgb(255, 255, 255)' && osc('.nxTbH1') && osc('.nxTbH2') && osc('.nxTbKv') && osc('.nxTbTr:not(.nxTbTh) .m'); }), 'con el tema Premium sigue claro y legible, como Inicio y Reportes');
+    await p.screenshot({ path: `${OUT}/tablero-${w}${prem ? '-oscuro' : ''}.png`, fullPage: true });
+    ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+    await ctx.close();
+  }
+
+  // ── 3. Gerente: lo ve (tiene Reportes) pero no define metas. Cajero: no lo ve. ──
+  console.log('\n--- Roles');
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'gerente', { metas: [] }));
+  ok(await p.$eval('#nxTSide', e => /Tablero de ventas/.test(e.innerText)).catch(() => false), 'gerente (con Reportes) ve «Tablero de ventas»');
+  await entrar(p);
+  ok(!(await p.$('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]')) && /El administrador todavía no definió la meta/.test(await txt(p, '.nxTbK[data-k="m"]')), 'gerente: sin botón de metas; «el administrador todavía no definió la meta»');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'cajero', {}));
+  ok(!(await p.$eval('#nxTSide', e => /Tablero de ventas/.test(e.innerText)).catch(() => true)), 'cajero (sin Reportes) no ve «Tablero de ventas»');
+  await p.evaluate(() => window.nxPosTab('tablero')); await p.waitForTimeout(800);
+  ok(!(await p.$('#nxTbRoot')), 'cajero no puede abrirlo ni escribiendo la pestaña');
+  await ctx.close();
+
+  // ── 4. Sin la migración 53 y con la última venta del 18-sep (como hoy en la base real) ──
+  console.log('\n--- Sin migración 53 · octubre vacío');
+  ({ p, errs, ctx } = await abrir(b, 390, 844, 'admin', { ventas: VENTAS_B, devol: [], sinMetas: true }));
+  await entrar(p);
+  const vac = await txt(p, '.nxTbVacio');
+  ok(/No hay ventas registradas del 1 oct – 16 oct 2026/.test(vac) && /La última venta registrada en STUDIO es del 18 sep 2026/.test(vac), 'estado vacío explica la última venta: ' + vac);
+  ok(/Las metas se activan al publicar esta versión/.test(await txt(p, '.nxTbK[data-k="m"]')), 'sin la migración: la meta lo dice, sin romper nada');
+  await p.screenshot({ path: `${OUT}/tablero-390-vacio.png`, fullPage: true });
+  await p.click('.nxTbVacio .btn'); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent) && !!document.getElementById('nxTbChart'), null, { timeout: 10000 }); await p.waitForTimeout(700);
+  const subB = await txt(p, '#nxTbSub'), venB = await txt(p, '#nxTbKv-v'), fechasB = await p.$eval('#nxTbFechas', e => !e.hidden);
+  ok(/20 ago – 18 sep 2026/.test(subB) && venB === 'RD$ 729,100.00' && fechasB, `el botón abre los 30 días hasta el 18-sep con las fechas a la vista (${subB} · ${venB} · fechas ${fechasB})`);
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForTimeout(800);
+  ok(/se activan al publicar/.test(await txt(p, '#nxTbMetasC')), 'el formulario de metas avisa que faltan en la base');
+  ok(await sinDesborde(p), 'sin desborde horizontal');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+
+  await b.close();
+  console.log(`\n${fallos ? 'FALLAS: ' + fallos : 'TODO OK'}`); process.exitCode = fallos ? 1 : 0;
+})();

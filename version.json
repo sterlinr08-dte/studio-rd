@@ -1,7 +1,16 @@
 {
-  "version": "59.94",
+  "version": "59.95",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.95",
+      "fecha": "2026-10-16",
+      "notas": [
+        "Nuevo «Tablero de ventas» en el menú, debajo de Inicio: ventas, meta, ticket promedio y facturas comparados con el período anterior; ventas por día (por hora en «Hoy» y por mes en «Este año»); formas de pago; desempeño del equipo y productos más vendidos.",
+        "Períodos: Hoy, 7 días, Este mes, Mes anterior, Este año o fechas a elegir. Toca una barra de la gráfica para ver el día.",
+        "Metas de ventas por mes, del negocio y de cada vendedor (las define el administrador). Lo ven quienes tienen Reportes."
+      ]
+    },
     {
       "version": "59.94",
       "fecha": "2026-10-10",

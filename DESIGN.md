@@ -319,3 +319,28 @@ El dueño mandó estas bibliotecas «para tomarlas como referencia para cuando q
 - **Raylight**: https://www.raylight.app. Videos de presentación hechos con capturas (cámara 3D, transiciones). Es referencia de estilo para videos de la tienda; se hacen sin pagar con HyperFrames o Remotion. La cuenta y los planes, solo con el OK del dueño.
 
 Se rehacen en nuestro código con la línea gráfica de STUDIO (negro y oro, SF Pro, §10 movimiento): no se pega su código sin revisar la licencia, ni se conectan cuentas o MCP sin el OK del dueño. Los efectos pesados van solo en la tienda pública o el login, no en el POS. Lista completa e ideas por pantalla: `docs/REFERENCIAS-DISENO.md` (el mismo archivo en los 3 proyectos).
+
+
+## Tablero de ventas — 2026-10-16
+
+El dueño mandó la imagen de un tablero de ventas oscuro («mira ese Dashboard para mi sistema») y aprobó la maqueta con datos
+reales («Excelente, aplícalo»). En el sistema se traduce a la línea STUDIO de siempre, igual que Inicio y Reportes.
+- **Color:** lienzo cálido, tarjetas blancas y el oro como único acento. El tema Premium no lo oscurece: en STUDIO el POS no cambia de fondo, y una isla oscura chocaría.
+- **Cabecera:** título 28 px/700/−.022em y una línea con el rango y el período con que se compara. Un control segmentado con pastilla que se desliza: Hoy, 7 días, Este mes, Mes anterior, Este año y Fechas. Al lado, «Metas» (solo el administrador) y «Actualizar».
+- **Indicadores:** 4 tarjetas con montos en mono tabular, hilo dorado arriba y variación en verde o rojo semántico: Ventas, Meta, Ticket promedio y Facturas.
+- **Gráficas:**
+  - Barras oro. Las que quedan bajo la meta se ven en arena, y la meta va como línea discontinua.
+  - La gráfica es por hora en «Hoy», por día hasta 62 días y por mes en rangos largos.
+  - Formas de pago en dona, con la familia oro/grafito.
+- **Equipo y productos:** rejillas de hasta 10 y 5 filas.
+- **Movimiento (§10):**
+  - La pastilla se mueve en 340 ms con la curva `(.22,1,.36,1)`.
+  - Al cambiar de rango, los números corren 520 ms desde el valor que se ve en pantalla; se pueden interrumpir.
+  - Las barras crecen una vez por cambio de rango.
+  - El detalle de una barra sale al tocarla (pointer-down) o al pasar el ratón.
+  - Con reducir movimiento no hay animación.
+- **Teléfono:**
+  - El período va en su propia fila, con desplazamiento horizontal interno.
+  - Ventas y Meta ocupan todo el ancho; Ticket y Facturas van en dos columnas.
+  - Las metas se escriben en campos a lo ancho. Sin desborde horizontal.
+- **Sin `h1/h2/table`:** el tema Premium heredado los pinta con `!important`. Se usan bloques con `role="heading"` y `role="table"`, y no se agregaron `!important` nuevos.

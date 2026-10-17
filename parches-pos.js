@@ -193,6 +193,8 @@
   function puedeVer(mod) { return mod === 'crm' ? (puedeVerBase('crm') || puedeCap('crm_bandeja')) : puedeVerBase(mod); }
   function crmPermisos() { return { crm: puedeVerBase('crm'), bandeja: puedeCap('crm_bandeja') }; }
   function puedeVerBase(mod) {
+    // Tablero de ventas (parches-pos-tablero.js, 16-oct-2026): lo ve quien tiene Reportes (son los mismos datos de ventas).
+    if (mod === 'tablero') mod = 'reportes';
     const r = rolEfectivo();
     if (mod === 'reacond' && _posCfg.reacondicionado !== true) return false;
     // STUDIO: el módulo «IA NEXUS» se retiró por decisión del dueño (2026-09-23). Oculto en menú, Inicio,
@@ -644,6 +646,7 @@
     if (t === 'contabilidad') { try { await cargarContabilidad(); } catch (e) {} }
     if (t === 'rrhh') { try { await cargarRRHH(); } catch (e) {} }
     if (t === 'reportes') { try { if (window.nxReportes) await window.nxReportes.cargar(); else await cargarReportes(); } catch (e) {} }
+    if (t === 'tablero') { try { window.nxTablero && window.nxTablero.entrar(); } catch (e) {} }
     if (t === 'ia') { try { await Promise.all([cargarReportes(), cargarIAClientes()]); } catch (e) {} }
     if (t === 'cotizaciones') { try { await cargarCotizaciones(); } catch (e) {} }
     if (t === 'inventario') { try { _invProdSel = ''; await cargarInventario(); } catch (e) {} }
@@ -720,6 +723,7 @@
     else if (_posTab === 'caja') body = renderCaja();
     else if (_posTab === 'contabilidad') body = renderContabilidad();
     else if (_posTab === 'reportes') body = window.nxReportes ? window.nxReportes.render() : renderReportes();
+    else if (_posTab === 'tablero') body = window.nxTablero ? window.nxTablero.render() : '<div class="nxTbEspera" style="padding:20px;color:#85817a">Cargando el tablero de ventas…</div>';
     else if (_posTab === 'ia') body = renderIA();
     else if (_posTab === 'cotizaciones') body = renderCotizaciones();
     else if (_posTab === 'rrhh') body = renderRRHH();
@@ -747,6 +751,7 @@
     if (_posTab === 'productos') try { pintarLupaProd(); } catch (e) {}
     if (_posTab === 'reparaciones') try { pintarLupaRep(); } catch (e) {}
     if (_posTab === 'reacond') try { window.nxReacond && window.nxReacond.postRender(); } catch (e) {}
+    if (_posTab === 'tablero') try { window.nxTablero && window.nxTablero.postRender(); } catch (e) {}
     if (_posTab === 'cuotas') try { if (cv2fin()) finV2PostRender(); else pintarLupaFin(); } catch (e) {}
     if (_posTab === 'ventas') try { pintarLupaHist(); } catch (e) {}
   }
@@ -762,16 +767,16 @@
     const rol = rolLabel(rolReal());
     const it = (k, lbl, ic) => puedeVer(k) ? `<button type="button" class="nxTNav${_posTab === k ? ' on' : ''}" onclick="window.nxPosTab('${k}')"><i class="ti ${ic}"></i> ${lbl}</button>` : '';
     const sec = (t, items) => items.trim() ? `<div class="nxTSec">${t}</div>${items}` : '';
-    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool') + (reacondOn() ? it('reacond', 'Reacondicionado', 'ti-recycle') : ''))
+    const nav = sec('Principal', it('inicio', 'Inicio', 'ti-layout-dashboard') + it('tablero', 'Tablero de ventas', 'ti-chart-bar') + it('avisos', 'Avisos', 'ti-bell-ringing') + it('vender', 'Vender', 'ti-shopping-cart') + it('factura', 'Factura', 'ti-file-invoice') + it('prefactura', 'Prefactura', 'ti-file-description') + it('reparaciones', 'Reparaciones', 'ti-tool') + (reacondOn() ? it('reacond', 'Reacondicionado', 'ti-recycle') : ''))
       + sec('Inventario', it('productos', 'Inventario', 'ti-box') + it('inventario', 'Kardex', 'ti-building-warehouse') + it('compras', 'Compras', 'ti-truck-delivery') + it('cotizaciones', 'Cotizaciones', 'ti-clipboard-text'))
       + sec('Personas y CRM', it('entidades', 'Entidades', 'ti-address-book') + it('crm', 'CRM', 'ti-target-arrow') + it('clientes', 'Clientes', 'ti-users') + it('rrhh', 'Rec. Humanos', 'ti-users-group'))
       + sec('Finanzas', it('caja', 'Caja', 'ti-cash') + it('cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas', 'ti-calendar-dollar') + it('apartados', 'Apartados', 'ti-bookmark') + it('ventas', 'Historial', 'ti-history') + it('notascredito', 'Notas de crédito', 'ti-file-minus') + it('prefhist', 'Prefacturas', 'ti-files') + (puedeVer('reportes') && window.nxReportes && window.nxReportes.navHTML ? window.nxReportes.navHTML(_posTab === 'reportes') : it('reportes', 'Reportes', 'ti-chart-pie')) + it('contabilidad', 'Contabilidad', 'ti-book-2'))
       + sec('Inteligencia', it('ia', 'IA NEXUS', 'ti-brain'))
       + sec('Sistema', it('ajustes', 'Ajustes', 'ti-settings'));
     // Título del módulo: en el teléfono va en la barra superior; en computadora, como encabezado de página, salvo en
-    // los módulos que ya traen el suyo (Inicio, Financiamiento, Reportes, Ajustes).
-    const titMod = _posTab === 'inicio' ? biz : ((MODULOS.find(m => m[0] === _posTab) || [])[1] || biz).replace('Financiamiento / Cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas');
-    const titPag = ['inicio', 'cuotas', 'reportes', 'ajustes'].indexOf(_posTab) >= 0 ? '' : `<h1 class="nxTPageT">${esc(titMod)}</h1>`;
+    // los módulos que ya traen el suyo (Inicio, Tablero de ventas, Financiamiento, Reportes, Ajustes).
+    const titMod = _posTab === 'inicio' ? biz : _posTab === 'tablero' ? 'Tablero' : ((MODULOS.find(m => m[0] === _posTab) || [])[1] || biz).replace('Financiamiento / Cuotas', cv2fin() ? 'Financiamiento' : 'Cuotas');
+    const titPag = ['inicio', 'tablero', 'cuotas', 'reportes', 'ajustes'].indexOf(_posTab) >= 0 ? '' : `<h1 class="nxTPageT">${esc(titMod)}</h1>`;
     return `<div class="nxTShell">
         <aside class="nxTSide" id="nxTSide">
           <div class="nxTBrand"><div class="nxTLogo"><i class="ti ti-building-store"></i></div><div class="nxTBiz">${esc(biz)}<small>PUNTO DE VENTA</small></div></div>

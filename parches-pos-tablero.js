@@ -84,17 +84,22 @@
     }
     return out;
   }
-  let D = null, cargando = false, error = '', pedido = 0, entrada = true;
+  let D = null, cargando = false, error = '', pedido = 0, pedidoClave = '', entrada = true, tMedianoche = 0;
   async function cargarMetas(desdeMes, hastaMes) {
     try { return await api().get('pos_metas_ventas', 'select=mes,vendedor,monto&mes=gte.' + desdeMes + '&mes=lte.' + hastaMes + '&order=mes.asc'); }
     catch (e) { return null; }                                    // sin la migración 53 (o sin permiso): sin metas
   }
   async function cargar(forzar) {
     const r = rango(); const clave = claveDe(r);
-    // Volver al rango que ya está cargado: lo que siga en camino de otro rango se descarta (si no, llegaría después y
-    // pintaría cifras de otro período bajo esta pastilla).
-    if (!forzar && D && D.clave === clave && !error) { ++pedido; cargando = false; actualizar(); return; }
-    const id = ++pedido; cargando = true; error = ''; actualizar();
+    if (!forzar && D && D.clave === clave && !error) {
+      // Ya se está recargando este mismo rango («Actualizar», volver a la pestaña, después de guardar metas): que siga.
+      if (cargando && pedidoClave === clave) { actualizar(); return; }
+      // Volver al rango que ya está cargado: lo que siga en camino de OTRO rango se descarta (si no, llegaría después y
+      // pintaría cifras de otro período bajo esta pastilla). Los datos sirven tal cual; solo se adopta la pastilla actual
+      // («Este mes» y «Fechas» del 1 a hoy pueden pedir las mismas fechas, pero la meta se calcula distinto).
+      ++pedido; cargando = false; D.r = r; actualizar(); return;
+    }
+    const id = ++pedido; pedidoClave = clave; cargando = true; error = ''; actualizar();
     try {
       const [ventas, previas, devol, metas, ultima] = await Promise.all([
         getAll('pos_ventas', 'select=id,fecha,total,estado,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,vendedor_nombre,created_by_name,pos_venta_items(producto_id,nombre,cantidad,precio,importe)&fecha=gte.' + tsDesde(r.d1) + '&fecha=lt.' + tsHasta(r.d2) + '&order=fecha.asc'),
@@ -109,7 +114,12 @@
       if (id !== pedido) return;
       error = String(e && e.message || e);
     }
-    cargando = false; actualizar();
+    cargando = false; actualizar(); armarMedianoche();
+  }
+  function armarMedianoche() {
+    clearTimeout(tMedianoche);
+    const dia = 86400000, ahora = Date.now(), prox = (Math.floor((ahora - 4 * 3600000) / dia) + 1) * dia + 4 * 3600000;
+    tMedianoche = setTimeout(() => { if (document.getElementById('nxTbRoot') && !document.hidden) revisarVigencia(); else armarMedianoche(); }, Math.min(dia, prox - ahora + 5000));
   }
 
   // ── Cálculos ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -194,7 +204,7 @@
         + (C.metaParcial ? `<br>Solo cuentan los meses con meta (${esc(C.mesesConMeta.map(m => MES[+m.slice(5, 7) - 1]).join(', '))}): vendido ${fmt(C.brutoMeta)}` : '');
     } else {
       metaV = '<span class="nxTbSinMeta">Sin meta</span>';
-      metaS = !C.metasOk ? 'Las metas se activan al publicar esta versión.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas()">Definir la meta de ${esc(mesForm)}</button>` : 'El administrador todavía no definió la meta.';
+      metaS = !C.metasOk ? 'Las metas se activan al publicar esta versión.' : esAdmin() ? `<button type="button" class="nxTbLink" onclick="window.nxTablero.metas('${iniMes(r.d2)}')">Definir la meta de ${esc(mesForm)}</button>` : 'El administrador todavía no definió la meta.';
     }
     const devS = C.devTot > 0 ? `<br>Devoluciones ${fmt(C.devTot)} · netas ${fmt(C.bruto - C.devTot)}` : '';
     return `<div class="nxTbKpis">
@@ -277,7 +287,7 @@
         <div class="nxTbTit"><div class="nxTbH1" role="heading" aria-level="1">Tablero de ventas</div><p id="nxTbSub">${esc(subTxt())}</p></div>
         <div class="nxTbSegW"><div class="nxTbSeg" id="nxTbSeg" role="tablist" aria-label="Período"><span class="nxTbThumb" id="nxTbThumb" aria-hidden="true"></span>${chips}</div></div>
         <div class="nxTbAcc">${esAdmin() ? '<button type="button" class="nxTbIcoB" onclick="window.nxTablero.metas()" title="Metas de ventas"><i class="ti ti-target-arrow"></i><span>Metas</span></button>' : ''}<button type="button" class="nxTbIcoB" onclick="window.nxTablero.recargar()" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button></div>
-        <div class="nxTbFechas" id="nxTbFechas"${pre === 'fechas' ? '' : ' hidden'}><label>Desde<input type="date" id="nxTbDesde" value="${esc(r.d1)}" max="${esc(r.hoy)}" onchange="window.nxTablero.fechas()"></label><label>Hasta<input type="date" id="nxTbHasta" value="${esc(r.d2)}" max="${esc(r.hoy)}" onchange="window.nxTablero.fechas()"></label></div>
+        <div class="nxTbFechas" id="nxTbFechas"${pre === 'fechas' ? '' : ' hidden'}><label>Desde<input type="date" id="nxTbDesde" value="${esc(r.d1)}" max="${esc(hoyISO())}" onchange="window.nxTablero.fechas()"></label><label>Hasta<input type="date" id="nxTbHasta" value="${esc(r.d2)}" max="${esc(hoyISO())}" onchange="window.nxTablero.fechas()"></label></div>
       </header>
       <div class="nxTbBody" id="nxTbBody">${cuerpoHTML()}</div>
     </div>`;
@@ -384,6 +394,7 @@
     const f = document.getElementById('nxTbFechas'); if (f) f.hidden = pre !== 'fechas';
     const r = rangoVisible(), dd = document.getElementById('nxTbDesde'), hh = document.getElementById('nxTbHasta');
     if (dd && document.activeElement !== dd) dd.value = r.d1; if (hh && document.activeElement !== hh) hh.value = r.d2;
+    if (dd) dd.max = hoyISO(); if (hh) hh.max = hoyISO();
     if (cargando && D) return;                                     // mientras llega lo nuevo se queda lo anterior (con «actualizando…»)
     const body = document.getElementById('nxTbBody'); if (!body) return;
     body.innerHTML = cuerpoHTML();
@@ -392,9 +403,10 @@
 
   // ── Metas (solo el administrador; las guarda el servidor con pos_metas_guardar) ────────────────────────────
   let mMes = '', mFilas = [], mFilasMes = '', mPedido = 0, mVolver = null, mTeclas = null;
-  async function metas() {
+  async function metas(mes) {
     if (!esAdmin()) { toast('err', 'Solo el administrador define las metas'); return; }
-    const r = rangoVisible(); mMes = iniMes(r.d2);
+    // El mes que se ve en pantalla (aunque esté cargando otro rango), o el que trae el botón.
+    mMes = /^\d{4}-\d{2}-01$/.test(mes || '') ? mes : iniMes(((C && D && C.r) || rangoVisible()).d2);
     abrirMetas(true);
     await cargarYPintarMetas();
   }
@@ -442,6 +454,9 @@
     document.body.appendChild(ov);
     // Teclado: Escape cierra; Tab no se sale del diálogo.
     mTeclas = e => {
+      if (!document.getElementById('nxTbMetasM')) return;
+      // Teclas de otra capa abierta encima (lupa del selector de mes, Ctrl+K): no son del diálogo.
+      if (e.target && e.target !== document.body && e.target !== document.documentElement && !ov.contains(e.target)) return;
       if (e.key === 'Escape') { e.preventDefault(); cerrarMetas(); return; }
       if (e.key !== 'Tab') return;
       const f = Array.from(ov.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(x => x.offsetParent !== null);
@@ -482,16 +497,18 @@
     const btn = document.getElementById('nxTbMetaOk'), err = document.getElementById('nxTbMetaErr');
     if (mFilasMes !== mMes) { if (err) { err.textContent = 'Espera a que carguen las metas de ese mes.'; err.hidden = false; } return; }
     const lista = mFilas.map((f, i) => ({ vendedor: f.nom, monto: Math.round(leerMonto(i) * 100) / 100 })).filter(x => x.monto > 0);
-    if (btn) btn.disabled = true; if (err) err.hidden = true;
+    const mes = mMes, tok = mPedido, sel = document.getElementById('nxTbMetaMes'), nomMes = MESL[+mes.slice(5, 7) - 1] + ' ' + mes.slice(0, 4);
+    if (btn) btn.disabled = true; if (sel) sel.disabled = true; if (err) err.hidden = true;
     try {
-      await api().post('rpc/pos_metas_guardar', { p_mes: mMes, p_metas: lista });
+      await api().post('rpc/pos_metas_guardar', { p_mes: mes, p_metas: lista });
       const neg = lista.find(x => !x.vendedor);
-      try { window.logAudit && window.logAudit('POS_METAS_VENTAS', 'Metas de ' + MESL[+mMes.slice(5, 7) - 1] + ' ' + mMes.slice(0, 4) + ': negocio ' + (neg ? fmt(neg.monto) : 'sin meta') + ' · ' + lista.filter(x => x.vendedor).length + ' vendedor(es)', 'Tablero'); } catch (e) {}
-      cerrarMetas();
-      toast('ok', 'Metas guardadas', MESL[+mMes.slice(5, 7) - 1] + ' ' + mMes.slice(0, 4));
+      try { window.logAudit && window.logAudit('POS_METAS_VENTAS', 'Metas de ' + nomMes + ': negocio ' + (neg ? fmt(neg.monto) : 'sin meta') + ' · ' + lista.filter(x => x.vendedor).length + ' vendedor(es)', 'Tablero'); } catch (e) {}
+      if (tok === mPedido && mes === mMes) cerrarMetas();          // si mientras tanto se abrió otro diálogo, no se toca
+      toast('ok', 'Metas guardadas', nomMes);
       cargar(true);
     } catch (e) {
-      if (err) { err.textContent = metasErr(e); err.hidden = false; } if (btn) btn.disabled = false;
+      if (tok !== mPedido) { toast('err', 'No se guardaron las metas de ' + nomMes, metasErr(e)); return; }
+      if (err) { err.textContent = metasErr(e); err.hidden = false; } if (btn) btn.disabled = false; if (sel) sel.disabled = false;
     }
   }
 
@@ -644,7 +661,7 @@ html.nx-studio #v-pos .nxTb .nxTbLink{border:0;background:none;padding:2px 0;col
     preset: function (p) { if (!PRE.some(x => x[0] === p)) return; if (p === 'fechas') { const r = rango(); cDesde = r.d1; cHasta = r.d2; } pre = p; guardarRango(); cargar(false); },
     fechas: function () { const a = (document.getElementById('nxTbDesde') || {}).value, b = (document.getElementById('nxTbHasta') || {}).value; if (!a || !b) return; cDesde = a; cHasta = b; pre = 'fechas'; guardarRango(); cargar(false); },
     verHasta: function (iso) { if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return; cDesde = addDays(iso, -29); cHasta = iso; pre = 'fechas'; guardarRango(); cargar(false); },
-    metas: metas, metasMes: metasMes, metasGuardar: metasGuardar, metasSuma: metasSuma, metasCerrar: function () { cerrarMetas(); },
+    metas: function (m) { return metas(m); }, metasMes: metasMes, metasGuardar: metasGuardar, metasSuma: metasSuma, metasCerrar: function () { cerrarMetas(); },
     _calc: function () { return D ? calc() : null; }, _rango: rango, _fmtEje: fmtEje
   };
   // Si la pestaña se abrió antes de que este archivo terminara de cargar (p. ej. al volver «donde me quedé»).

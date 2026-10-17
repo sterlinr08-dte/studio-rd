@@ -50,7 +50,7 @@ async function abrir(b, w, h, rol, opt) {
   const movil = w < 500;
   const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: movil, hasTouch: movil });
   const p = await ctx.newPage();
-  await p.clock.install({ time: new Date('2026-10-16T22:30:00Z') });   // el reloj corre desde el 16-oct 18:30 RD
+  await p.clock.install({ time: new Date(opt.reloj || '2026-10-16T22:30:00Z') });   // el reloj corre desde el 16-oct 18:30 RD
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const st = { guardado: null, metas: (opt.metas || []).slice() };
   const acceso = [{ rol: 'gerente', organizacion_id: ORG, modulos: ['inicio', 'vender', 'reportes'] }, { rol: 'cajero', organizacion_id: ORG, modulos: ['inicio', 'vender', 'caja'] }];
@@ -82,6 +82,7 @@ async function abrir(b, w, h, rol, opt) {
       return send(filtrar(st.metas, u.searchParams));
     }
     // Retraso a propósito en la consulta de «Hoy» (para probar que una respuesta tardía no pisa otro rango).
+    if (opt.retrasoTodo && t === 'pos_ventas' && r.method() === 'GET') await new Promise(res => setTimeout(res, 1200));
     if (opt.retrasoHoy && t === 'pos_ventas' && (u.searchParams.getAll('fecha') || []).some(f => f.startsWith('gte.2026-10-16T00:00:00'))) await new Promise(res => setTimeout(res, 1500));
     if (r.method() !== 'GET') return send([]);
     return send(filtrar(db[t] || [], u.searchParams));
@@ -256,6 +257,51 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   const link = await txt(p, '.nxTbK[data-k="m"] .nxTbLink');
   await p.click('.nxTbK[data-k="m"] .nxTbLink'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 });
   ok(link === 'Definir la meta de octubre' && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-10-01', 'el botón dice «' + link + '» y abre ese mes');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+
+  // ── 6. Lo que encontró la segunda revisión (17-oct-2026) ──
+  console.log('\n--- Segunda revisión (regresión)');
+  const vMut = VENTAS_A.slice();
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], ventas: vMut, retrasoTodo: true }));
+  await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(700);
+  // a) «Actualizar» y tocar la pastilla activa mientras recarga: la recarga sigue y trae lo nuevo.
+  vMut.push(V('nueva', '2026-10-16T21:00:00Z', 20000, { pagado_efectivo: 20000 }, 'Ana Pérez', 'Caja', [it('p3', 'Bocina', 1, 20000)]));
+  await p.click('.nxTbAcc .nxTbIcoB[title="Actualizar"]'); await p.waitForTimeout(150); await p.click('.nxTbSegB[data-p="mes"]');
+  await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(900);
+  ok(await txt(p, '#nxTbKv-v') === 'RD$ 800,000.00', '«Actualizar» + tocar la pastilla activa: trae la venta nueva (' + await txt(p, '#nxTbKv-v') + ')');
+  // b) Escape en la lupa del selector de mes cierra solo la lista, no el diálogo.
+  await p.click('.nxTbAcc .nxTbIcoB[title="Metas de ventas"]'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 }); await p.waitForTimeout(300);
+  await p.click('#nxTbMetaMes'); await p.waitForTimeout(300);
+  const hayPanel = !!(await p.$('.nxSbPanel'));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+  ok(hayPanel && !(await p.$('.nxSbPanel')) && !!(await p.$('#nxTbMetasM')), 'Escape en la lupa de meses cierra la lista y el diálogo sigue abierto (lupa ' + hayPanel + ')');
+  await p.evaluate(() => window.nxTablero.metasCerrar());
+  // c) «Definir la meta de septiembre» tocado mientras carga otro rango abre septiembre.
+  await ctx.close();
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [], retrasoTodo: true }));
+  await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 });
+  await preset(p, 'mesant');
+  await p.click('.nxTbSegB[data-p="mes"]'); await p.waitForTimeout(100);
+  const lk = await txt(p, '.nxTbK[data-k="m"] .nxTbLink'); await p.click('.nxTbK[data-k="m"] .nxTbLink'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 });
+  ok(lk === 'Definir la meta de septiembre' && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01', 'el botón «' + lk + '» abre septiembre aunque esté cargando otro rango');
+  await p.evaluate(() => window.nxTablero.metasCerrar());
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // d) Medianoche sin tocar nada: el tablero se recarga solo y la fecha máxima pasa a hoy (reloj a las 23:59 RD).
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [], reloj: '2026-10-17T03:58:30Z' }));
+  await entrar(p); await preset(p, 'hoy');
+  await p.clock.fastForward('01:30'); await p.waitForTimeout(2500);
+  ok(/^17 oct 2026 · comparado con 16 oct 2026/.test(await txt(p, '#nxTbSub')) && await p.$eval('#nxTbHasta', e => e.max) === '2026-10-17', 'medianoche sin tocar nada: «Hoy» pasa solo al 17-oct y el máximo de las fechas es el 17 (' + await txt(p, '#nxTbSub') + ')');
+  ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+  await ctx.close();
+  // e) 30-oct: «Este mes» y «Fechas» (1 al 30) piden las mismas fechas, pero la meta se calcula distinto.
+  ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], reloj: '2026-10-30T16:00:00Z' }));
+  await entrar(p);
+  const mMes30 = await txt(p, '.nxTbK[data-k="m"]');
+  await p.click('.nxTbSegB[data-p="fechas"]'); await p.waitForTimeout(900);
+  const mFech30 = await txt(p, '.nxTbK[data-k="m"]');
+  ok(/Meta de octubre/.test(mMes30) && /cierra en/.test(mMes30) && /Meta del período/.test(mFech30) && /de RD\$ 3,000,000\.00/.test(mFech30) && !/cierra en/.test(mFech30), '30-oct: «Este mes» = meta de octubre con proyección; «Fechas» 1–30 = meta repartida 3,000,000 sin proyección');
   ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await ctx.close();
 

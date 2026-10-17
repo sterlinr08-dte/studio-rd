@@ -47,6 +47,7 @@ declare
   e jsonb;
   v_vend text;
   v_monto numeric;
+  v_vistos text[] := '{}';
 begin
   if coalesce(public.mi_rol(), '') <> 'admin' then
     raise exception 'METAS_SOLO_ADMIN' using detail = 'Solo el administrador define las metas de ventas';
@@ -68,6 +69,14 @@ begin
     -- Primero se juntan los espacios (tabuladores y saltos incluidos), después se corta a 120 y al final se recortan los
     -- bordes: así el nombre siempre cumple el CHECK (antes un tabulador al inicio o un corte en un espacio lo rompía).
     v_vend := btrim(left(regexp_replace(coalesce(e->>'vendedor', ''), '\s+', ' ', 'g'), 120));
+    -- Un nombre que solo tenía espacios no se convierte en la meta del negocio, y un vendedor no va dos veces.
+    if v_vend = '' and coalesce(e->>'vendedor', '') <> '' then
+      raise exception 'METAS_FORMATO' using detail = 'Hay un vendedor sin nombre';
+    end if;
+    if lower(v_vend) = any(v_vistos) then
+      raise exception 'METAS_FORMATO' using detail = 'Vendedor repetido: ' || coalesce(nullif(v_vend, ''), 'el negocio');
+    end if;
+    v_vistos := v_vistos || lower(v_vend);
     begin
       v_monto := round(coalesce((e->>'monto')::numeric, 0), 2);
     exception when others then

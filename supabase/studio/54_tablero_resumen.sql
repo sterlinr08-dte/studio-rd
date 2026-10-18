@@ -1,5 +1,5 @@
 -- 54_tablero_resumen.sql — STUDIO RD (18-oct-2026). Resumen del Tablero de ventas en UNA consulta.
--- NO APLICADA: espera el «publícalo» del dueño. Solo lectura: no crea tablas ni cambia datos.
+-- APLICADA el 18-oct-2026 por la API (migración 54_tablero_resumen) con el «publícalo» del dueño (59.96). Solo lectura.
 --
 -- Antes, el tablero (parches-pos-tablero.js) hacía 5 consultas al abrir y bajaba CADA factura del período con sus
 -- artículos (en «Este año», miles de filas en tandas de 1,000) para sumar en el teléfono. Esta función devuelve lo mismo

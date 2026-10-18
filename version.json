@@ -1,7 +1,15 @@
 {
-  "version": "59.95",
+  "version": "59.96",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.96",
+      "fecha": "2026-10-18",
+      "notas": [
+        "Tablero de ventas más rápido: abre con una sola consulta a la base, que ya trae todo sumado (antes eran 5 consultas y bajaba cada factura con sus artículos: de ~1 MB a ~70 KB en «Este año»). Las cifras son las mismas.",
+        "Al volver a un período que ya viste, el tablero lo muestra al instante; si incluye hoy, se actualiza solo por detrás. «Actualizar» siempre trae datos frescos."
+      ]
+    },
     {
       "version": "59.95",
       "fecha": "2026-10-16",

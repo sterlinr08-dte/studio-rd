@@ -316,7 +316,7 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [], retrasoTodo: true }));
   await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 });
   await preset(p, 'mesant');
-  await p.click('.nxTbSegB[data-p="mes"]'); await p.waitForTimeout(100);
+  await p.click('.nxTbSegB[data-p="7d"]'); await p.waitForTimeout(100);   // un período que no está en el caché
   const lk = await txt(p, '.nxTbK[data-k="m"] .nxTbLink'); await p.click('.nxTbK[data-k="m"] .nxTbLink'); await p.waitForSelector('#nxTbMetaMes', { timeout: 8000 });
   ok(lk === 'Definir la meta de septiembre' && await p.$eval('#nxTbMetaMes', e => e.value) === '2026-09-01', 'el botón «' + lk + '» abre septiembre aunque esté cargando otro rango');
   await p.evaluate(() => window.nxTablero.metasCerrar());
@@ -329,6 +329,31 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   ok(/^17 oct 2026 · comparado con 16 oct 2026/.test(await txt(p, '#nxTbSub')) && await p.$eval('#nxTbHasta', e => e.max) === '2026-10-17', 'medianoche sin tocar nada: «Hoy» pasa solo al 17-oct y el máximo de las fechas es el 17 (' + await txt(p, '#nxTbSub') + ')');
   ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await ctx.close();
+  if (!SIN_RESUMEN) {
+    console.log('\n--- Caché de períodos');
+    let st2;
+    ({ p, errs, ctx, st: st2 } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]], retrasoTodo: true }));
+    await entrar(p); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(500);
+    await preset(p, 'mesant'); const vSep = await txt(p, '#nxTbKv-v');
+    await preset(p, '7d');
+    // a) Volver a un período cerrado ya visto: sale al instante y no se vuelve a pedir.
+    const r0 = st2.resumenes; await p.click('.nxTbSegB[data-p="mesant"]'); await p.waitForTimeout(150);
+    const subA = await txt(p, '#nxTbSub'); await p.waitForTimeout(800); const vA = await txt(p, '#nxTbKv-v'); await p.waitForTimeout(800);
+    ok(st2.resumenes === r0 && !/actualizando/.test(subA) && /septiembre|sep/i.test(subA) && vA === vSep, 'volver a «Mes anterior»: sale al instante del caché y no consulta (' + vA + ')');
+    // b) Volver a «Este mes» (incluye hoy): sale al instante y además se actualiza por detrás.
+    await preset(p, 'mes'); await preset(p, '7d');
+    const r1 = st2.resumenes; await p.click('.nxTbSegB[data-p="mes"]'); await p.waitForTimeout(150);
+    const subB = await txt(p, '#nxTbSub'), vB = await txt(p, '#nxTbKv-v');
+    await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 }); await p.waitForTimeout(300);
+    ok(/actualizando/.test(subB) && /RD\$ [1-9]/.test(vB) && st2.resumenes === r1 + 1, '«Este mes» desde el caché: cifras al instante y actualiza por detrás (' + vB + ')');
+    // c) «Actualizar» siempre consulta, aunque el período esté en el caché.
+    await preset(p, 'mesant'); const r2 = st2.resumenes;
+    await p.click('.nxTbAcc .nxTbIcoB[title="Actualizar"]'); await p.waitForFunction(() => !/actualizando/.test(document.getElementById('nxTbSub').textContent), null, { timeout: 10000 });
+    ok(st2.resumenes === r2 + 1, '«Actualizar» trae datos frescos aunque el período esté guardado');
+    ok(errs.length === 0, 'sin errores de página' + (errs.length ? ': ' + errs.join(' | ') : ''));
+    await ctx.close();
+  }
+
   console.log('\n--- Tercera revisión (regresión)');
   // f) Tab desde la lupa del mes no saca el foco del diálogo; después Escape lo cierra.
   ({ p, errs, ctx } = await abrir(b, 1280, 900, 'admin', { metas: [METAS_A[0]] }));

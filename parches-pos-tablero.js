@@ -85,6 +85,11 @@
     return out;
   }
   let D = null, cargando = false, error = '', pedido = 0, pedidoClave = '', entrada = true, tMedianoche = 0, sinResumen = false;
+  // Caché en memoria de los últimos períodos vistos. Al volver a uno, sus cifras salen al instante; si el período incluye
+  // hoy, además se actualiza por detrás. Un período que ya pasó entero (p. ej. el mes anterior) no se vuelve a pedir en
+  // 10 minutos. «Actualizar», entrar a la pestaña y guardar metas siempre piden datos frescos.
+  const CACHE = new Map(), CACHE_MAX = 8, CACHE_TTL = 10 * 60000;
+  function guardarCache(clave, datos) { CACHE.delete(clave); CACHE.set(clave, { datos: datos, t: Date.now() }); while (CACHE.size > CACHE_MAX) CACHE.delete(CACHE.keys().next().value); }
   // Una sola consulta: la base devuelve las ventas ya agrupadas (por día —y hora si el rango es un día— y por vendedor tal
   // como viene en la factura), los artículos sumados por nombre, el período anterior, las devoluciones, las metas y la
   // última venta (migración 54, pos_tablero_resumen). Antes eran 5 consultas que bajaban cada factura con sus artículos.
@@ -127,6 +132,11 @@
       // («Este mes» y «Fechas» del 1 a hoy pueden pedir las mismas fechas, pero la meta se calcula distinto).
       ++pedido; cargando = false; D.r = r; actualizar(); return;
     }
+    const c = !forzar && CACHE.get(clave);
+    if (c) {
+      ++pedido; cargando = false; error = ''; D = Object.assign({ clave: clave, r: r }, c.datos); actualizar();
+      if (r.d2 < r.hoy && Date.now() - c.t < CACHE_TTL) { armarMedianoche(); return; }   // período cerrado y reciente
+    }
     const id = ++pedido; pedidoClave = clave; cargando = true; error = ''; actualizar();
     try {
       let datos = null;
@@ -135,7 +145,8 @@
         catch (e) { if (!/pos_tablero_resumen|PGRST20[25]|404|does not exist/i.test(String(e && e.message || e))) throw e; sinResumen = true; }
       }
       if (!datos) datos = await cargarDetalle(r);
-      if (id !== pedido) return;                                   // llegó otra consulta más nueva: esta se descarta
+      if (id !== pedido) return;
+      guardarCache(clave, datos);                                   // llegó otra consulta más nueva: esta se descarta
       // Si mientras tanto se tocó otra pastilla que pide las mismas fechas («Este mes» y «Fechas» del 1 a hoy), los datos
       // sirven igual pero la meta se calcula con la pastilla que se ve ahora.
       const rAhora = rango();
@@ -548,6 +559,7 @@
       try { window.logAudit && window.logAudit('POS_METAS_VENTAS', 'Metas de ' + nomMes + ': negocio ' + (neg ? fmt(neg.monto) : 'sin meta') + ' · ' + lista.filter(x => x.vendedor).length + ' vendedor(es)', 'Tablero'); } catch (e) {}
       if (tok === mPedido && mes === mMes) cerrarMetas();          // si mientras tanto se abrió otro diálogo, no se toca
       toast('ok', 'Metas guardadas', nomMes);
+      CACHE.clear();                                              // las metas cambiaron: ningún período guardado sirve
       cargar(true);
     } catch (e) {
       if (tok !== mPedido) { toast('err', 'No se guardaron las metas de ' + nomMes, metasErr(e)); return; }

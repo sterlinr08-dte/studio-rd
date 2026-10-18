@@ -84,7 +84,35 @@
     }
     return out;
   }
-  let D = null, cargando = false, error = '', pedido = 0, pedidoClave = '', entrada = true, tMedianoche = 0;
+  let D = null, cargando = false, error = '', pedido = 0, pedidoClave = '', entrada = true, tMedianoche = 0, sinResumen = false;
+  // Una sola consulta: la base devuelve las ventas ya agrupadas (por día —y hora si el rango es un día— y por vendedor tal
+  // como viene en la factura), los artículos sumados por nombre, el período anterior, las devoluciones, las metas y la
+  // última venta (migración 54, pos_tablero_resumen). Antes eran 5 consultas que bajaban cada factura con sus artículos.
+  async function cargarResumen(r) {
+    const j = await api().post('rpc/pos_tablero_resumen', { p_d1: r.d1, p_d2: r.d2, p_p1: r.p1, p_p2: r.p2 });
+    if (!j || !Array.isArray(j.grupos)) throw new Error('Respuesta inesperada del resumen del tablero');
+    return { grupos: j.grupos, items: j.items || [], prev: j.previo || { n: 0, t: 0 }, dev: j.devol || { n: 0, t: 0 }, metas: Array.isArray(j.metas) ? j.metas : [], ultima: j.ultima || '' };
+  }
+  // Respaldo mientras la migración 54 no esté en la base: la forma anterior, llevada a la misma forma agrupada.
+  async function cargarDetalle(r) {
+    const [ventas, previas, devol, metas, ultima] = await Promise.all([
+      getAll('pos_ventas', 'select=id,fecha,total,estado,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,vendedor_nombre,created_by_name,pos_venta_items(producto_id,nombre,cantidad,precio,importe)&fecha=gte.' + tsDesde(r.d1) + '&fecha=lt.' + tsHasta(r.d2) + '&order=fecha.asc'),
+      getAll('pos_ventas', 'select=total,fecha,estado&estado=eq.completada&fecha=gte.' + tsDesde(r.p1) + '&fecha=lt.' + tsHasta(r.p2)),
+      getAll('pos_devoluciones', 'select=total,estado,fecha&fecha=gte.' + r.d1 + '&fecha=lte.' + r.d2).catch(() => []),
+      cargarMetas(iniMes(r.d1), iniMes(r.d2)),
+      api().get('pos_ventas', 'select=fecha&estado=eq.completada&order=fecha.desc&limit=1').catch(() => [])
+    ]);
+    const grupos = [], items = [];
+    ventas.forEach(v => {
+      const p = partesRD(v.fecha); if (!p || p.dia < r.d1 || p.dia > r.d2) return;
+      const ok = v.estado === 'completada';
+      grupos.push({ dia: p.dia, hora: p.hora, ok: ok, vn: v.vendedor_nombre, cb: v.created_by_name, n: 1, t: v.total, ef: v.pagado_efectivo, tr: v.pagado_transferencia, ta: v.pagado_tarjeta, ot: v.pagado_otro, cr: v.credito_monto });
+      if (ok) (v.pos_venta_items || []).forEach(it => items.push({ nombre: it.nombre, cant: it.cantidad, monto: it.importe != null ? n(it.importe) : n(it.precio) * n(it.cantidad) }));
+    });
+    const prev = previas.filter(v => { const p = partesRD(v.fecha); return p && p.dia >= r.p1 && p.dia <= r.p2 && v.estado === 'completada'; });
+    const dev = devol.filter(d => d.estado !== 'anulada' && String(d.fecha).slice(0, 10) >= r.d1 && String(d.fecha).slice(0, 10) <= r.d2);
+    return { grupos: grupos, items: items, prev: { n: prev.length, t: prev.reduce((s, v) => s + n(v.total), 0) }, dev: { n: dev.length, t: dev.reduce((s, d) => s + n(d.total), 0) }, metas: metas, ultima: (ultima && ultima[0] && ultima[0].fecha) || '' };
+  }
   async function cargarMetas(desdeMes, hastaMes) {
     try { return await api().get('pos_metas_ventas', 'select=mes,vendedor,monto&mes=gte.' + desdeMes + '&mes=lte.' + hastaMes + '&order=mes.asc'); }
     catch (e) { return null; }                                    // sin la migración 53 (o sin permiso): sin metas
@@ -101,18 +129,17 @@
     }
     const id = ++pedido; pedidoClave = clave; cargando = true; error = ''; actualizar();
     try {
-      const [ventas, previas, devol, metas, ultima] = await Promise.all([
-        getAll('pos_ventas', 'select=id,fecha,total,estado,pagado_efectivo,pagado_tarjeta,pagado_transferencia,pagado_otro,credito_monto,vendedor_nombre,created_by_name,pos_venta_items(producto_id,nombre,cantidad,precio,importe)&fecha=gte.' + tsDesde(r.d1) + '&fecha=lt.' + tsHasta(r.d2) + '&order=fecha.asc'),
-        getAll('pos_ventas', 'select=total,fecha,estado&estado=eq.completada&fecha=gte.' + tsDesde(r.p1) + '&fecha=lt.' + tsHasta(r.p2)),
-        getAll('pos_devoluciones', 'select=total,estado,fecha&fecha=gte.' + r.d1 + '&fecha=lte.' + r.d2).catch(() => []),
-        cargarMetas(iniMes(r.d1), iniMes(r.d2)),
-        api().get('pos_ventas', 'select=fecha&estado=eq.completada&order=fecha.desc&limit=1').catch(() => [])
-      ]);
+      let datos = null;
+      if (!sinResumen) {
+        try { datos = await cargarResumen(r); }
+        catch (e) { if (!/pos_tablero_resumen|PGRST20[25]|404|does not exist/i.test(String(e && e.message || e))) throw e; sinResumen = true; }
+      }
+      if (!datos) datos = await cargarDetalle(r);
       if (id !== pedido) return;                                   // llegó otra consulta más nueva: esta se descarta
       // Si mientras tanto se tocó otra pastilla que pide las mismas fechas («Este mes» y «Fechas» del 1 a hoy), los datos
       // sirven igual pero la meta se calcula con la pastilla que se ve ahora.
       const rAhora = rango();
-      D = { clave: clave, r: claveDe(rAhora) === clave ? rAhora : r, ventas: ventas, previas: previas, devol: devol, metas: metas, ultima: (ultima && ultima[0] && ultima[0].fecha) || '' };
+      D = Object.assign({ clave: clave, r: claveDe(rAhora) === clave ? rAhora : r }, datos);
     } catch (e) {
       if (id !== pedido) return;
       error = String(e && e.message || e);
@@ -131,10 +158,9 @@
   // ── Cálculos ───────────────────────────────────────────────────────────────────────────────────────────────
   const PAGOS = [['efectivo', 'Efectivo'], ['transferencia', 'Transferencia'], ['tarjeta', 'Tarjeta'], ['otro', 'Otro'], ['credito', 'Crédito y financiamiento']];
   function calc() {
-    const r = D.r, ven = [], anul = [];
-    D.ventas.forEach(v => { const p = partesRD(v.fecha); if (!p || p.dia < r.d1 || p.dia > r.d2) return; v._p = p; (v.estado === 'completada' ? ven : anul).push(v); });
-    const prev = D.previas.filter(v => { const p = partesRD(v.fecha); return p && p.dia >= r.p1 && p.dia <= r.p2 && v.estado === 'completada'; });
-    const dev = D.devol.filter(d => d.estado !== 'anulada' && String(d.fecha).slice(0, 10) >= r.d1 && String(d.fecha).slice(0, 10) <= r.d2);
+    const r = D.r;
+    // Grupos de facturas (día, hora, vendedor): la base ya los trae dentro del rango; se vuelve a acotar por si acaso.
+    const gs = D.grupos.filter(g => g.dia >= r.d1 && g.dia <= r.d2), ven = gs.filter(g => g.ok), anulN = gs.filter(g => !g.ok).reduce((s, g) => s + n(g.n), 0);
     const dias = diasEntre(r.d1, r.d2) + 1, gran = dias === 1 ? 'hora' : dias <= 62 ? 'dia' : 'mes';
     // Cubetas de la gráfica
     const B = [], bIdx = {};
@@ -150,22 +176,23 @@
     const metaEntre = (vk, a, b) => { let s = 0; for (let m = iniMes(a); m <= b; m = mesSig(m)) { const mm = metaMes(m, vk); if (!mm) continue; s += mesCompleto ? mm : mm * (diasEntre(maxISO(a, m), minISO(b, finMes(m))) + 1) / diasMes(m); } return s; };
     let bruto = 0, brutoMeta = 0; const pago = { efectivo: 0, transferencia: 0, tarjeta: 0, otro: 0, credito: 0 };
     const porVend = {}, porProd = {};
-    ven.forEach(v => {
-      const t = n(v.total), mv = iniMes(v._p.dia); bruto += t;
+    let nVen = 0;
+    ven.forEach(g => {
+      const t = n(g.t), k = n(g.n), mv = iniMes(g.dia); bruto += t; nVen += k;
       if (metaMes(mv, '') > 0) brutoMeta += t;               // el avance de la meta solo cuenta los meses que tienen meta
-      const b = B[gran === 'hora' ? bIdx[v._p.hora] : gran === 'dia' ? bIdx[v._p.dia] : bIdx[v._p.dia.slice(0, 7)]]; if (b) { b.t += t; b.n++; }
-      pago.efectivo += n(v.pagado_efectivo); pago.transferencia += n(v.pagado_transferencia); pago.tarjeta += n(v.pagado_tarjeta); pago.otro += n(v.pagado_otro); pago.credito += n(v.credito_monto);
-      const vn = limpio(v.vendedor_nombre) || limpio(v.created_by_name) || 'Sin vendedor', vk = norm(vn);
-      (porVend[vk] = porVend[vk] || { nom: vn, t: 0, tm: 0, n: 0 }); porVend[vk].t += t; porVend[vk].n++; if (metaMes(mv, vk) > 0) porVend[vk].tm += t;
-      (v.pos_venta_items || []).forEach(it => {
-        // Por nombre limpio, no por ficha: en el inventario hay modelos repetidos con el mismo nombre (p. ej. tres fichas
-        // «IPHONE 17 PRO MAX 256GB» con un tabulador delante) y para el dueño son un solo producto.
-        const nom = limpio(it.nombre) || 'Artículo', k = norm(nom), c = n(it.cantidad);
-        (porProd[k] = porProd[k] || { nom: nom, cant: 0, monto: 0 }); porProd[k].cant += c; porProd[k].monto += it.importe != null ? n(it.importe) : n(it.precio) * c;
-      });
+      const b = B[gran === 'hora' ? bIdx[g.hora] : gran === 'dia' ? bIdx[g.dia] : bIdx[g.dia.slice(0, 7)]]; if (b) { b.t += t; b.n += k; }
+      pago.efectivo += n(g.ef); pago.transferencia += n(g.tr); pago.tarjeta += n(g.ta); pago.otro += n(g.ot); pago.credito += n(g.cr);
+      const vn = limpio(g.vn) || limpio(g.cb) || 'Sin vendedor', vk = norm(vn);
+      (porVend[vk] = porVend[vk] || { nom: vn, t: 0, tm: 0, n: 0 }); porVend[vk].t += t; porVend[vk].n += k; if (metaMes(mv, vk) > 0) porVend[vk].tm += t;
     });
-    const devTot = dev.reduce((s, d) => s + n(d.total), 0);
-    const pBruto = prev.reduce((s, v) => s + n(v.total), 0), pN = prev.length;
+    // Por nombre limpio, no por ficha: en el inventario hay modelos repetidos con el mismo nombre (p. ej. tres fichas
+    // «IPHONE 17 PRO MAX 256GB» con un tabulador delante) y para el dueño son un solo producto.
+    D.items.forEach(it => {
+      const nom = limpio(it.nombre) || 'Artículo', k = norm(nom);
+      (porProd[k] = porProd[k] || { nom: nom, cant: 0, monto: 0 }); porProd[k].cant += n(it.cant); porProd[k].monto += n(it.monto);
+    });
+    const devTot = n(D.dev.t);
+    const pBruto = n(D.prev.t), pN = n(D.prev.n);
     const meta = metaEntre('', r.d1, r.d2);
     const mesesRango = []; for (let m = iniMes(r.d1); m <= r.d2; m = mesSig(m)) mesesRango.push(m);
     const mesesConMeta = mesesRango.filter(m => metaMes(m, '') > 0);
@@ -179,8 +206,8 @@
     const equipo = Object.keys(porVend).map(k => Object.assign({ meta: metaEntre(k, r.d1, r.d2) }, porVend[k])).sort((a, b) => b.t - a.t || a.nom.localeCompare(b.nom));
     const prods = Object.keys(porProd).map(k => porProd[k]).sort((a, b) => b.monto - a.monto || b.cant - a.cant);
     return {
-      r: r, gran: gran, B: B, ven: ven, anul: anul, bruto: bruto, n: ven.length, ticket: ven.length ? bruto / ven.length : 0,
-      devTot: devTot, devN: dev.length, pBruto: pBruto, pN: pN, pTicket: pN ? pBruto / pN : 0, pago: pago,
+      r: r, gran: gran, B: B, anulN: anulN, bruto: bruto, n: nVen, ticket: nVen ? bruto / nVen : 0,
+      devTot: devTot, devN: n(D.dev.n), pBruto: pBruto, pN: pN, pTicket: pN ? pBruto / pN : 0, pago: pago,
       metasOk: metasOk, meta: meta, brutoMeta: brutoMeta, metaParcial: metaParcial, mesesConMeta: mesesConMeta, mesCompleto: mesCompleto, proyeccion: proyeccion,
       equipo: equipo, hayMetaVend: equipo.some(e => e.meta > 0), prods: prods
     };
@@ -217,7 +244,7 @@
       ${kpi('v', 'ti-chart-bar', 'Ventas', val('v', C.bruto), variacion(C.bruto, C.pBruto) + devS)}
       ${kpi('m', 'ti-target-arrow', C.mesCompleto && C.meta > 0 ? 'Meta de ' + esc(nomMes) : 'Meta del período', metaV, metaS, metaX)}
       ${kpi('t', 'ti-receipt', 'Ticket promedio', val('t', C.ticket), variacion(C.ticket, C.pTicket))}
-      ${kpi('f', 'ti-file-invoice', 'Facturas', val('f', C.n), variacion(C.n, C.pN) + (C.anul.length ? `<br>${C.anul.length} anulada${C.anul.length === 1 ? '' : 's'} (no cuentan)` : ''))}
+      ${kpi('f', 'ti-file-invoice', 'Facturas', val('f', C.n), variacion(C.n, C.pN) + (C.anulN ? `<br>${C.anulN} anulada${C.anulN === 1 ? '' : 's'} (no cuentan)` : ''))}
     </div>`;
   }
   function graficaHTML() {
@@ -268,7 +295,7 @@
     if (error) { C = null; return `<section class="nxTbCard nxTbVacio"><i class="ti ti-cloud-off" aria-hidden="true"></i><div class="nxTbH2" role="heading" aria-level="2">No se pudieron cargar las ventas</div><p>${esc(error.slice(0, 220))}</p><button type="button" class="btn bc1" onclick="window.nxTablero.recargar()"><i class="ti ti-refresh"></i> Reintentar</button></section>`; }
     if (!D) return esqueletoHTML();
     C = calc();
-    const vacio = !C.n && !C.anul.length;
+    const vacio = !C.n && !C.anulN;
     return kpisHTML() + (vacio ? vacioHTML() : `<div class="nxTbG2">${graficaHTML()}${donaHTML()}</div><div class="nxTbG3">${equipoHTML()}${productosHTML()}</div>`)
       + `<p class="nxTbPie">Facturas completadas; las anuladas no cuentan. Montos con ITBIS, como se cobraron. Fechas en hora de República Dominicana.</p>`;
   }
@@ -448,7 +475,7 @@
     ]);
     const fila = {}; const add = (nom, t) => { const nm = limpio(nom); const k = norm(nm); if (!k) return; (fila[k] = fila[k] || { nom: nm, t: 0, monto: '' }); fila[k].t += t || 0; };
     (recientes || []).forEach(v => add(limpio(v.vendedor_nombre) || limpio(v.created_by_name) || '', n(v.total)));
-    (D && D.ventas || []).forEach(v => add(limpio(v.vendedor_nombre) || limpio(v.created_by_name) || '', 0));
+    (D && D.grupos || []).forEach(g => add(limpio(g.vn) || limpio(g.cb) || '', 0));
     (Array.isArray(personal) ? personal : []).filter(p => p && p.activo !== false && p.nombre).forEach(p => add(p.nombre, 0));
     let negocio = '';
     (guardadas || []).forEach(g => { if (!norm(g.vendedor)) negocio = n(g.monto); else { add(g.vendedor, 0); fila[norm(g.vendedor)].monto = n(g.monto); } });

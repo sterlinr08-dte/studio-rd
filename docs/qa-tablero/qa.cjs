@@ -45,6 +45,28 @@ function filtrar(rows, sp) {
   return out.slice(off, off + lim);
 }
 
+// Simula pos_tablero_resumen (migración 54) con las mismas reglas que el SQL: rango en hora de RD (UTC-4), grupos por
+// día (y hora solo si el rango es un día), estado, vendedor_nombre y created_by_name; artículos por nombre tal cual.
+const SIN_RESUMEN = process.env.QA_SIN_RESUMEN === '1';      // probar la forma anterior (respaldo sin la migración 54)
+function resumenMock(ventas, devol, metas, b) {
+  const tsA = d => new Date(d + 'T00:00:00-04:00').getTime(), sig = d => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + 1); return x.toISOString().slice(0, 10); };
+  const enRango = (f, a, z) => { const t = new Date(f).getTime(); return t >= tsA(a) && t < tsA(sig(z)); };
+  const loc = f => { const x = new Date(new Date(f).getTime() - 4 * 3600000); return { dia: x.toISOString().slice(0, 10), hora: x.getUTCHours() }; };
+  const num = x => +x || 0, G = {}, I = {};
+  ventas.filter(v => enRango(v.fecha, b.p_d1, b.p_d2)).forEach(v => {
+    const l = loc(v.fecha), ok = v.estado === 'completada', hora = b.p_d1 === b.p_d2 ? l.hora : null;
+    const k = [l.dia, hora, ok, v.vendedor_nombre, v.created_by_name].join('|');
+    const g = G[k] = G[k] || { dia: l.dia, hora: hora, ok: ok, vn: v.vendedor_nombre, cb: v.created_by_name, n: 0, t: 0, ef: 0, tr: 0, ta: 0, ot: 0, cr: 0 };
+    g.n++; g.t += num(v.total); g.ef += num(v.pagado_efectivo); g.tr += num(v.pagado_transferencia); g.ta += num(v.pagado_tarjeta); g.ot += num(v.pagado_otro); g.cr += num(v.credito_monto);
+    if (ok) (v.pos_venta_items || []).forEach(it => { const i = I[it.nombre] = I[it.nombre] || { nombre: it.nombre, cant: 0, monto: 0 }; i.cant += num(it.cantidad); i.monto += it.importe != null ? num(it.importe) : num(it.precio) * num(it.cantidad); });
+  });
+  const prev = ventas.filter(v => v.estado === 'completada' && enRango(v.fecha, b.p_p1, b.p_p2));
+  const dev = devol.filter(d => d.estado !== 'anulada' && d.fecha >= b.p_d1 && d.fecha <= b.p_d2);
+  const comp = ventas.filter(v => v.estado === 'completada').map(v => v.fecha).sort();
+  return { grupos: Object.values(G), items: Object.values(I), previo: { n: prev.length, t: prev.reduce((s, v) => s + num(v.total), 0) }, devol: { n: dev.length, t: dev.reduce((s, d) => s + num(d.total), 0) },
+    metas: metas.filter(m => m.mes >= b.p_d1.slice(0, 8) + '01' && m.mes <= b.p_d2.slice(0, 8) + '01'), ultima: comp.length ? comp[comp.length - 1] : null };
+}
+
 async function abrir(b, w, h, rol, opt) {
   opt = opt || {};
   const movil = w < 500;
@@ -74,6 +96,14 @@ async function abrir(b, w, h, rol, opt) {
       st.metas = st.metas.filter(x => x.mes !== mes).concat((body.p_metas || []).filter(x => x.monto > 0).map(x => ({ mes, vendedor: String(x.vendedor || '').trim(), monto: x.monto })));
       return send((body.p_metas || []).length);
     }
+    if (t === 'rpc/pos_tablero_resumen') {
+      if (SIN_RESUMEN || opt.sinMetas) return send({ code: 'PGRST202', message: 'Could not find the function public.pos_tablero_resumen' }, 404);
+      const body = JSON.parse(r.postData() || '{}'); st.resumenes = (st.resumenes || 0) + 1;
+      if (opt.retrasoTodo) await new Promise(res => setTimeout(res, 1200));
+      if (opt.retrasoHoy && body.p_d1 === '2026-10-16' && body.p_d2 === '2026-10-16') await new Promise(res => setTimeout(res, 1500));
+      if (st.falla) return send({ code: 'XX000', message: 'falla simulada' }, 500);
+      return send(resumenMock(db.pos_ventas, db.pos_devoluciones, st.metas, body));
+    }
     if (t === 'rpc/pos_personal') return send([{ empleado_id: 'e1', nombre: 'Ana Pérez', activo: true }, { empleado_id: 'e2', nombre: 'Marta Nueva', activo: true }]);
     if (t.startsWith('rpc/')) return send([]);
     if (t === 'pos_metas_ventas') {
@@ -81,6 +111,7 @@ async function abrir(b, w, h, rol, opt) {
       if (opt.retrasoMetasMes && u.searchParams.get('mes') === 'eq.' + opt.retrasoMetasMes) await new Promise(res => setTimeout(res, 1500));
       return send(filtrar(st.metas, u.searchParams));
     }
+    if (t === 'pos_ventas' && r.method() === 'GET') st.ventasGets = (st.ventasGets || 0) + 1;
     // Retraso a propósito en la consulta de «Hoy» (para probar que una respuesta tardía no pisa otro rango).
     if (opt.retrasoTodo && t === 'pos_ventas' && r.method() === 'GET') await new Promise(res => setTimeout(res, 1200));
     if (st.falla && t === 'pos_ventas') return send({ code: 'XX000', message: 'falla simulada' }, 500);
@@ -106,7 +137,9 @@ async function sinDesborde(p) { return p.evaluate(() => document.documentElement
   console.log('\n--- Administrador 1280x900 · Este mes (1–16 oct 2026)');
   let { p, errs, st, ctx } = await abrir(b, 1280, 900, 'admin', { metas: METAS_A });
   ok(await p.$eval('#nxTSide', e => /Tablero de ventas/.test(e.innerText)).catch(() => false), 'el menú tiene «Tablero de ventas»');
+  await p.waitForTimeout(1500); st.ventasGets = 0; st.resumenes = 0;   // lo que pidió el Inicio antes no cuenta
   await entrar(p);
+  ok(SIN_RESUMEN ? st.ventasGets >= 2 : (st.resumenes === 1 && !st.ventasGets), SIN_RESUMEN ? 'sin la migración 54: carga con la forma anterior (' + st.ventasGets + ' consultas de ventas)' : 'al abrir: 1 sola consulta (resumen de la base) y ninguna factura descargada');
   ok(/1 oct – 16 oct 2026 · comparado con 1 sep – 16 sep 2026/.test(await txt(p, '#nxTbSub')), 'rango y comparación: ' + await txt(p, '#nxTbSub'));
   ok(await txt(p, '#nxTbKv-v') === 'RD$ 780,000.00', 'Ventas = RD$ 780,000.00 (sin la anulada ni la venta de las 23:30 del 30-sep): ' + await txt(p, '#nxTbKv-v'));
   const kv = await txt(p, '.nxTbK[data-k="v"]');

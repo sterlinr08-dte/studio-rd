@@ -87,3 +87,10 @@ Antes de cualquier tarea, revisar las skills disponibles (`.claude/skills/` de e
 - La lista de referencias que manda el dueño (reels y páginas: The Kitchen, Originkit, GetLayers, Stage, Raylight, MotionSites, beUI, Skecher UI…) vive en **`docs/REFERENCIAS-DISENO.md`**, **igual en los 3 proyectos** (`nexus-pro`, `bayolcell-taller`, `studio-rd`).
 - **Cuando el dueño mande un reel o una página de referencia a cualquier chat, se agrega la fila en ese archivo de los 3 proyectos** (más una bitácora en cada uno), no solo en el proyecto del chat.
 - **Antes de cualquier pedido de diseño, leer esa lista primero.** Un chat no puede leer la conversación de otro: solo comparten lo que queda escrito.
+
+## Regla del dueño: puntos de control antes de escribir código (23-oct-2026)
+> Reel de VibeWise (instagram.com/reel/De0wcU4Pxl9): «me gustaría eso».
+
+Para todo cambio que no sea trivial: **primero 2–3 opciones en palabras sencillas con ventajas y desventajas (y maqueta si se puede
+ver), el dueño decide, y después un informe de qué cambió, por qué y qué pruebas pasaron.** Si el módulo no se conoce, antes un mapa
+corto del código. Detalle en `.claude/skills/puntos-de-control/SKILL.md` (igual en los 3 proyectos).

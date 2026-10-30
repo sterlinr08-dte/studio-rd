@@ -1,0 +1,5569 @@
+[
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo artículo (producto)",
+  "donde": "POS > Inventario",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "1 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "11 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "92 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 14, abajo 12, lados 14 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "34 px («Guardar artículo»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "14 de 14 más chicos: «Volver» 34×34; «Vista previa» 104×32; «Más opciones» 34×32; «Información» 109×34"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 11 en MAYÚSCULAS"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "1 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "11 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "64 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 12, lados -25 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "41 px («Guardar artículo»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "11 de 11 más chicos: «Volver» 41×34; «Vista previa» 104×41; «Más opciones» 41×41; «Información» 109×41"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 6 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista; 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Crear nivel de precio",
+  "donde": "POS > Artículo > Precios",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "57 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 35, abajo 33, lados 35 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar nivel»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Cerrar» 30×30; «Precio fijo Descue» 170×40; «NIVEL ACTIVO» 350×16; «Cancelar» 171×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 3 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "122 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 29, abajo 27, lados 29 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar nivel»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Cerrar» 36×36; «Precio fijo Descue» 316×40; «NIVEL ACTIVO» 316×16"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 3 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Categorías",
+  "donde": "POS > Inventario",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 22, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Agregar una categoría»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×30; «Agregar una catego» 22×36"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 16 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "44 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Agregar una categoría»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×36; «Agregar una catego» 22×44"
+   }
+  ],
+  "arreglo_sugerido": "cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Importar productos (CSV)",
+  "donde": "POS > Inventario",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "11 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Importar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 78×30; «Agregar nuevos» 206×36; «Actualizar precios» 206×36; «Cancelar» 138×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («Datos de Infoplus»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "11 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Importar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 5 más chicos: «Volver» 78×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («Datos de Infoplus»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Seleccionar artículos",
+  "donde": "POS > Factura",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 28, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "34 px («Agregar SCOOTER DEMO»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 4 más chicos: «Cerrar» 78×30; «Agregar SCOOTER DE» 34×34; «Agregar NEVERA DEM» 34×34"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "40 px («Agregar SCOOTER DEMO»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 4 más chicos: «Cerrar» 78×36; «Agregar SCOOTER DE» 40×40; «Agregar NEVERA DEM» 40×40"
+   }
+  ],
+  "arreglo_sugerido": "cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo cliente (POS)",
+  "donde": "POS > Clientes",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "32 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "29 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 13, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "10 de 10 más chicos: «Volver» 30×30; «Información» 220×32; «Comercial» 219×32; «CLIENTE» 113×35"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "51 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "6 de 10 más chicos: «Volver» 36×36; «CLIENTE» 113×35; «PROVEEDOR» 140×35; «EMPLEADO» 131×35"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista; 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo proveedor",
+  "donde": "POS > Compras",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "32 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 13, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "10 de 10 más chicos: «Volver» 30×30; «Información» 220×32; «Comercial» 219×32; «CLIENTE» 113×35"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 9 en MAYÚSCULAS"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "6 de 10 más chicos: «Volver» 36×36; «CLIENTE» 113×35; «PROVEEDOR» 140×35; «EMPLEADO» 131×35"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista; 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva compra",
+  "donde": "POS > Compras",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9–39 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 41, abajo 24, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Buscar proveedor…» 586×37; «Nuevo proveedor» 34×34; «Buscar empleado…» 626×37; «Compra a crédito (» 180×18"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («Proveedor»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9–39 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 41 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Nuevo proveedor» 38×44; «Compra a crédito (» 180×18; «PRINCIPAL SUCURSAL» 304×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («Proveedor»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Movimiento de caja (entrada)",
+  "donde": "POS > Caja",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Registrar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Volver» 78×30; «Cancelar» 74×36; «Registrar» 95×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («Concepto»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Registrar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Volver» 78×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («Concepto»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Cerrar caja",
+  "donde": "POS > Caja",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "8–55 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "29–34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Cerrar caja»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Volver» 78×30; «Cancelar» 74×36; «Cerrar caja» 107×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («Efectivo contado»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "8–55 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15, lados 5 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "29–34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Cerrar caja»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Volver» 78×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («Efectivo contado»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva cotización",
+  "donde": "POS > Cotizaciones",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4–135 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 35, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40–42 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar e imprimir»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "2 de 7 más chicos: «Volver» 30×30; «— Cliente / consum» 580×40"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («CLIENTE»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 5 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4–82 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 139 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40–42 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 7 más chicos: «Volver» 36×36; «— Cliente / consum» 314×40"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («CLIENTE»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva oportunidad (CRM)",
+  "donde": "POS > CRM",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "27 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 13, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 30×30; «— Sin enlazar — CL» 195×40; «Nuevo Contactado C» 195×40; «Cancelar» 102×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE DE LA OPORTUN»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 10 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "6–13 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "11 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 36×36; «— Sin enlazar — CL» 314×40; «Nuevo Contactado C» 314×40"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE DE LA OPORTUN»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 10 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva cuenta contable",
+  "donde": "POS > Contabilidad",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "6 de 6 más chicos: «Volver» 78×30; «Activo Pasivo Capi» 358×34; «Deudora Acreedora» 358×34; «Sí No» 358×34"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («CÓDIGO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "4 de 6 más chicos: «Volver» 78×36; «Activo Pasivo Capi» 344×34; «Deudora Acreedora» 344×34; «Sí No» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («CÓDIGO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo asiento contable",
+  "donde": "POS > Contabilidad",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3–90 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "6–9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "96 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 17 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–38 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar asiento»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "8 de 8 más chicos: «Volver» 78×30; «— Cuenta —» 288×38; «Quitar esta línea» 32×30; «— Cuenta —» 288×38"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («FECHA»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 8 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3–178 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "6–9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "118 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–38 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar asiento»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "5 de 8 más chicos: «Volver» 78×36; «— Cuenta —» 344×38; «Quitar esta línea» 101×30; «— Cuenta —» 344×38"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («FECHA»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 8 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Registrar gasto",
+  "donde": "POS > Contabilidad",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 78×30; «6001 — GASTOS GENE» 378×34; «Caja (efectivo) Ba» 378×34; «Cancelar» 74×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («TIPO DE GASTO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 78×36; «6001 — GASTOS GENE» 344×34; «Caja (efectivo) Ba» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («TIPO DE GASTO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo almacén",
+  "donde": "POS > Inventario > Almacenes",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Volver» 78×30; «Cancelar» 74×36; «Guardar» 88×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Volver» 78×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Transferir entre almacenes",
+  "donde": "POS > Inventario > Almacenes",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3–50 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9–68 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "17 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–42 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Transferir y despachar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 78×30; «PRINCIPAL SUCURSAL» 518×34; «PRINCIPAL SUCURSAL» 518×34; «Cancelar» 74×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («DESDE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3–50 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9–68 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "17 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–42 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12–13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Transferir y despachar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 78×36; «PRINCIPAL SUCURSAL» 344×34; «PRINCIPAL SUCURSAL» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («DESDE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo apartado",
+  "donde": "POS > Apartados",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "8–54 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 35, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar y enviar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "1 de 4 más chicos: «Volver» 30×30"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («ARTÍCULO QUE APARTA »)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 6 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 35 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 4 más chicos: «Volver» 36×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («ARTÍCULO QUE APARTA »)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 6 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva entidad (cliente/proveedor)",
+  "donde": "POS > Entidades",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "32 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "29 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 13, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "10 de 10 más chicos: «Volver» 30×30; «Información» 220×32; «Comercial» 219×32; «CLIENTE» 113×35"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "51 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "6 de 10 más chicos: «Volver» 36×36; «CLIENTE» 113×35; «PROVEEDOR» 140×35; «EMPLEADO» 131×35"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («TIPO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista; 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo comprobante NCF",
+  "donde": "POS > Ajustes > NCF",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 78×30; «B01 — Crédito Fisc» 378×34; «Sí No» 378×34; «Cancelar» 74×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («TIPO DE COMPROBANTE »)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 78×36; «B01 — Crédito Fisc» 344×34; «Sí No» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («TIPO DE COMPROBANTE »)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 7 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo vendedor",
+  "donde": "POS > Ajustes > Vendedores",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Volver» 78×30; «Sí No» 358×34; «Cancelar» 74×36; «Guardar» 88×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Volver» 78×36; «Sí No» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo usuario (personal)",
+  "donde": "POS > Ajustes > Usuarios",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9–48 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "159 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Crear usuario»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "10 de 14 más chicos: «Volver» 78×30; «Ver» 39×36; «Generar otra» 82×16; «— Sin almacén fijo» 478×34"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («Nombre completo»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9–48 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "175 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–44 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Crear usuario»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "6 de 14 más chicos: «Volver» 78×36; «— Sin almacén fijo» 344×34; «WhatsApp» 92×15; «Instagram» 92×15"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («Nombre completo»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo rol de acceso",
+  "donde": "POS > Ajustes > Accesos",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "568 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "26 de 28 más chicos: «Volver» 78×30; «INICIO» 205×37; «AVISOS» 205×37; «VENDER» 205×37"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE DEL ROL *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 1 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "606 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "24 de 28 más chicos: «Volver» 78×36; «INICIO» 181×37; «AVISOS» 166×37; «VENDER» 181×37"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE DEL ROL *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 1 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva secuencia",
+  "donde": "POS > Ajustes > Secuencias",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Crear»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Volver» 78×30; «Cancelar» 74×36; «Crear» 70×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE DEL DOCUMENTO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Crear»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Volver» 78×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE DEL DOCUMENTO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo empleado",
+  "donde": "POS > RR.HH.",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Volver» 78×30; «Mensual Quincenal » 398×34; «Cancelar» 74×36; «Guardar» 88×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE COMPLETO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 12 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "-1 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34–36 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 78×36; «Mensual Quincenal » 344×34; «Sí (activo) No (in» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE COMPLETO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 13 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Recibir equipo (reparación)",
+  "donde": "POS > Taller",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "122 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 87, lados 15 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar e imprimir»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "14 de 18 más chicos: «Volver» 30×30; «Patrón» 130×30; «PIN» 130×30; «Otro» 129×30"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10–49 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–8 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 139, lados -29 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "13 de 17 más chicos: «Volver» 36×36; «Patrón» 94×36; «PIN» 94×36; «Otro» 93×36"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px, 10 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Solicitud de financiamiento",
+  "donde": "POS > Financiamiento",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "90 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–52 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 28, abajo 514, lados -83 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "34 px («Registrar gasto»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "12 de 25 más chicos: «Buscar todo Ctrl K» 220×32; «Volver a Multiempr» 218×35; «Resumen» 96×40; «Plan de cuentas» 144×40"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "9.5 px («Desde»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "185 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "0–11 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 10, abajo 685, lados -13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "40 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Registrar gasto»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 10 más chicos: «Resumen» 96×40; «Plan de cuentas» 144×40; «Libro Diario» 114×40"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "9.5 px («Desde»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 10 px"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Ajustes (página con campos)",
+  "donde": "POS > Ajustes",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 13, abajo 13, lados 13 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "15 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 13, abajo 13, lados 13 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "15 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   }
+  ],
+  "arreglo_sugerido": "cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Buscador universal",
+  "donde": "POS (barra)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 14, abajo 8, lados 8 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "15 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "1 de 1 más chicos: «Cerrar» 28×28"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 8, lados 8 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "15 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 1 más chicos: «Cerrar» 28×44"
+   }
+  ],
+  "arreglo_sugerido": "cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Cobrar (venta)",
+  "donde": "POS > Vender",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "252 px"
+   },
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "2–10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 12, abajo 14, lados 12 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "7 de 15 más chicos: «Cerrar» 36×36; «Exacto» 88×40; «+100» 88×40; «+200» 88×40"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Monto recibido»)"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "292 px"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "2–10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 12, abajo 12, lados 12 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "7 de 15 más chicos: «Cerrar» 36×36; «Exacto» 115×40; «+100» 115×40; «+200» 115×40"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "10.5 px («Efectivo»)"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre botones de una misma fila/lista"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Cliente (seguros, legado)",
+  "donde": "Clientes (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3–49 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "18–52 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "30–36 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "10–12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar cliente»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "28 de 48 más chicos: «Cerrar ventana» 34×36; «PARTICULAR» 95×27; «🟢 Activo» 91×37; «🟡 En proceso» 123×37"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE COMPLETO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8–10 px, 16 en MAYÚSCULAS"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3–49 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "18–52 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "32–44 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "10–12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar cliente»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "16 de 48 más chicos: «Cerrar ventana» 38×44; «DOCUMENTACIÓN» 156×13; «CÉDULA» 156×13; «CARNET» 156×13"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE COMPLETO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8–10 px, 16 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Registrar cobro / abono (legado)",
+  "donde": "Cobros (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "64–75 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "200 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 18 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "32–38 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Registrar abono»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "10 de 11 más chicos: «Cerrar ventana» 32×32; «VER HISTORIAL» 89×11; «RD$500» 78×37; «RD$1,000» 78×37"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («MÉTODO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "64–75 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "208 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14, lados 12 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "32–38 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Registrar abono»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "7 de 11 más chicos: «Cerrar ventana» 32×44; «VER HISTORIAL» 89×11; «RD$500» 82×37; «RD$1,000» 82×37"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («MÉTODO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Asiento (legado)",
+  "donde": "Contabilidad (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9–25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "25–34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "10–12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Registrar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Cerrar ventana» 34×36; «1101 · Efectivo y » 191×25; «1101 · Efectivo y » 191×25; «Cancelar» 84×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («FECHA *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9–25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "25–34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "10–12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Registrar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Cerrar ventana» 38×44; «1101 · Efectivo y » 346×25; «1101 · Efectivo y » 346×25"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («FECHA *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 7 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Agente (legado)",
+  "donde": "Agentes (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "32–34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Cerrar ventana» 34×36; «Cancelar» 84×36; «Guardar» 96×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 6 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "32–34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Cerrar ventana» 38×44"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 6 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Empresa (legado)",
+  "donde": "Ajustes (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "32 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "3 de 3 más chicos: «Cerrar ventana» 34×36; «Cancelar» 84×36; «Guardar» 96×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 6 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "32 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "1 de 3 más chicos: «Cerrar ventana» 38×44"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 6 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Usuario (legado)",
+  "donde": "Ajustes (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "27–32 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "11–12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Cerrar ventana» 34×36; «Administrador Supe» 176×27; «Cancelar» 84×36; «Guardar» 96×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "27–32 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "11–12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Cerrar ventana» 38×44; «Administrador Supe» 346×27"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («NOMBRE *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 5 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Inhabilitar cliente (legado)",
+  "donde": "Clientes (legado NEXUS)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 20, abajo 20, lados 20 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "27–32 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "11–12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Cerrar ventana» 34×36; «Falta de pago Soli» 360×27; «Cancelar» 84×36; «Inhabilitar» 101×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («MOTIVO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 14, abajo 14 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "27–32 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "11–12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "no se encontró botón principal visible"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Cerrar ventana» 38×44; «Falta de pago Soli» 346×27"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («MOTIVO»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 2 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Ajustar existencia",
+  "donde": "POS > Inventario",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "47 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Aplicar ajuste»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Volver» 78×30; «SCOOTER DEMO (A1) » 378×34; «PRINCIPAL SUCURSAL» 378×34; «Cancelar» 74×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "8 px («PRODUCTO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "3 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "9 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "47 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Aplicar ajuste»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Volver» 78×36; «SCOOTER DEMO (A1) » 344×34; «PRINCIPAL SUCURSAL» 344×34"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "8 px («PRODUCTO *»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "tamaño 8 px, 4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Pagar a proveedor",
+  "donde": "POS > Compras",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana nxPosProvPago (modal .nxPrForm + .fr). No abrió en la prueba porque necesita un proveedor con saldo real.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Metas de ventas",
+  "donde": "POS > Tablero",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "17–19 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar metas»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Volver» 78×30; «julio 2026 agosto » 184×17; «Cancelar» 74×36; «Guardar metas» 133×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "17–19 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar metas»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Volver» 78×36; «julio 2026 agosto » 184×17"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nuevo lote (reacondicionados)",
+  "donde": "POS > Reacondicionados",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–2 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "12–33 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "19–21 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Crear lote»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Cerrar» 30×30; «button.nxRcSSClear» 4×4; «Cancelar» 86×36; «Crear lote» 100×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "3 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "0–28 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "12–33 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "19–21 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Crear lote»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Cerrar» 36×36; «button.nxRcSSClear» 4×44"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "4 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Registrar equipo existente",
+  "donde": "POS > Reacondicionados",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "0–33 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "31–62 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "17–32 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Registrar equipo»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "6 de 6 más chicos: «Cerrar» 30×30; «button.nxRcSSClear» 4×4; «button.nxRcSSClear» 4×4; «🔧 En Proceso ⏳ Esp» 231×17"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "7 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "0–59 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "12–62 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "21 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "17–32 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Registrar equipo»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "4 de 6 más chicos: «Cerrar» 36×36; «button.nxRcSSClear» 4×44; «button.nxRcSSClear» 4×44; «🔧 En Proceso ⏳ Esp» 231×17"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "8 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva falla (catálogo)",
+  "donde": "POS > Reacondicionados",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "29 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "49 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "17–32 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 5 más chicos: «Cerrar» 30×30; «-- Seleccionar cat» 232×17; «FALLA ACTIVA (DISP» 490×16; «Cancelar» 86×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "2 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "0–46 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "49 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "17–32 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "3 de 5 más chicos: «Cerrar» 36×36; «-- Seleccionar cat» 232×17; «FALLA ACTIVA (DISP» 344×16"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "3 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva categoría (reacond.)",
+  "donde": "POS > Reacondicionados",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "39 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "36 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Cerrar» 30×30; «ACTIVA» 64×15; «Cancelar» 86×36; «Guardar» 88×36"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (PC 1280)",
+    "esperado": "13 px, minúscula normal",
+    "real": "1 en MAYÚSCULAS"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "39 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "34 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 1, lados 1 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "19 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "13 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («Guardar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 4 más chicos: «Cerrar» 36×36; «ACTIVA» 64×15"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Cancelar»)"
+   },
+   {
+    "regla": "etiquetas en minúscula normal, 13 px (celular 390)",
+    "esperado": "13 px, minúscula normal",
+    "real": "1 en MAYÚSCULAS"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Nueva devolución a suplidor",
+  "donde": "POS > Reacondicionados",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana del módulo Reacondicionados (.nxRcModal). Necesita equipos/lotes reales para abrir.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Login del personal",
+  "donde": "index.html (studiord.net/entrar)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "92 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "50 px («Iniciar sesión»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "2 de 5 más chicos: «on» 18×18; «Ver la página de l» 400×16"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («Usuario»)"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "16 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "92 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "50 px («Iniciar sesión»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 5 más chicos: «on» 18×18; «Ver la página de l» 342×16"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («Usuario»)"
+   }
+  ],
+  "arreglo_sugerido": "Separación entre Usuario y Contraseña a 20 px; botón «Iniciar sesión» a 54 px; casilla «Recordarme» y enlaces con zona de toque de 44 px; etiquetas a 13 px; 24 px entre bloques.",
+  "nota": "La pantalla de entrada no tiene tarjeta con borde (el formulario va suelto sobre fondo negro), así que la regla del borde interior no se pudo aplicar. «grupo → grupo» 92 px incluye la fila Recordarme/¿Olvidaste?."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Cambiar contraseña (primer ingreso)",
+  "donde": "index.html",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 24, abajo 24, lados 24 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "32 px («GUARDAR Y ENTRAR»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "1 de 1 más chicos: «GUARDAR Y ENTRAR» 312×32"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px («GUARDAR Y ENTRAR»)"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "lados 24 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "42 px"
+   },
+   {
+    "regla": "letra de los campos (celular 390)",
+    "esperado": "16 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "44 px («GUARDAR Y ENTRAR»)"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px («GUARDAR Y ENTRAR»)"
+   }
+  ],
+  "arreglo_sugerido": "cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Tienda: hoja del pedido",
+  "donde": "tienda.html (portada pública)",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "botones de una misma lista (PC 1280)",
+    "esperado": "8 px",
+    "real": "26 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 15, abajo 17, lados 21 px"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "5 de 7 más chicos: «Cerrar pedido» 40×40; «−» 40×40; «+» 40×40; «Quitar» 48×27"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12.5 px («Quitar»)"
+   },
+   {
+    "regla": "botones de una misma lista (celular 390)",
+    "esperado": "8 px",
+    "real": "26 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 30, abajo 16, lados 21 px"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "5 de 7 más chicos: «Cerrar pedido» 40×40; «−» 40×40; «+» 40×40; «Quitar» 48×27"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12.5 px («Quitar»)"
+   }
+  ],
+  "arreglo_sugerido": "relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 8 px entre botones de una misma fila/lista",
+  "nota": "No tiene campos de escribir: solo botones (− / +, Quitar, Vaciar, Enviar por WhatsApp). Probado con un artículo agregado."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Mayoristas: hoja del pedido",
+  "donde": "mayoristas.html",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "todo lo tocable ≥ 44×44",
+    "esperado": "44×44",
+    "real": "botones − / + 42×44 px"
+   },
+   {
+    "regla": "borde interior de la ventana",
+    "esperado": "24/16 cel, 48/40 PC",
+    "real": "14 px arriba, 20 px lados"
+   },
+   {
+    "regla": "botones de una misma lista",
+    "esperado": "8 px",
+    "real": "10 px (pie)"
+   }
+  ],
+  "nota": "mayoristas.html — el catálogo viene de la RPC tienda_mayoristas_catalogo; sin datos no hay artículos para agregar. Por CSS: botones − / + de 42×44 px (ancho 42 < 44), relleno de la hoja 14/20 px, pie con gap 10 px.",
+  "arreglo_sugerido": "Botones − / + a 44×44, relleno de la hoja 24/16 en celular y 48/40 en PC, 8 px entre botones."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Calculadora LQ-N9 (cotizar)",
+  "donde": "lq-n9.html",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "44 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48/40 PC, 24/16 celular",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12 px (etiqueta «Precio (RD$)»)"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "4 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "44 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "48/40 PC, 24/16 celular",
+    "real": "18 px"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12 px (etiqueta «Precio (RD$)»)"
+   }
+  ],
+  "arreglo_sugerido": "Cajitas a 48 px, 8 px etiqueta→cajita, 20 px entre campos, etiquetas a 13 px, relleno de tarjeta 24/16 (cel) y 48/40 (PC).",
+  "nota": "Letra de los campos 16 px: cumple. No tiene botón principal (calcula al escribir)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Firma de contrato (cliente)",
+  "donde": "firma-financiamiento.html?t=…",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "6 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48/40 PC, 24/16 celular",
+    "real": "16 px por todos lados"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "6 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "12 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "48/40 PC, 24/16 celular",
+    "real": "16 px por todos lados"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44 px",
+    "real": "casilla «Leí el contrato» 39 px de alto"
+   }
+  ],
+  "arreglo_sugerido": "Subir a 8 px etiqueta→cajita y a 20 px entre campos; relleno de tarjeta a 24/16 en celular y 48/40 en PC; casilla con fila de 44 px en PC.",
+  "nota": "Campos 48 px y letra 17 px: cumplen. Botón «Firmar contrato» 52 px: cumple (±2). Medido directo con getBoundingClientRect en datos simulados."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Expediente de crédito (cliente)",
+  "donde": "firma-financiamiento.html?s=…",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "firma-financiamiento.html?s=… — necesita un expediente real (RPC pos_fin_sol_ver); con datos simulados no pintó el formulario.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: enviar ubicación",
+  "donde": "POS > CRM > Chat",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "35 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Enviar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Volver» 78×30; «Usar mi ubicación » 378×38; «Guardar como ubica» 378×15; «Enviar» 378×38"
+   },
+   {
+    "regla": "letra mínima de controles (PC 1280)",
+    "esperado": "13 px",
+    "real": "12.5 px («Guardar como ubicaci»)"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "50 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Enviar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "4 de 4 más chicos: «Volver» 78×36; «Usar mi ubicación » 344×38; «Guardar como ubica» 344×30; «Enviar» 344×38"
+   },
+   {
+    "regla": "letra mínima de controles (celular 390)",
+    "esperado": "13 px",
+    "real": "12.5 px («Guardar como ubicaci»)"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); ninguna letra de control por debajo de 13 px; 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: enviar contacto",
+  "donde": "POS > CRM > Chat",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "33 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "33 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Enviar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×30; «Enviar» 378×38"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "33 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "33 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "18 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Enviar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×36; «Enviar» 344×38"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); 24 px entre bloques (campos → botón principal → otras opciones)"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: etiquetas del chat",
+  "donde": "POS > CRM > Chat",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana bdEtM (.modal.nxCrmModal). Necesita una conversación abierta.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: respuestas rápidas",
+  "donde": "POS > CRM > Chat",
+  "metodo": "medido",
+  "medido_en": [
+   "1280 px",
+   "390 px"
+  ],
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "título → texto de ayuda (PC 1280)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (PC 1280)",
+    "esperado": "8 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "campo → campo siguiente (PC 1280)",
+    "esperado": "20 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (PC 1280)",
+    "esperado": "24 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (PC 1280)",
+    "esperado": "48 arriba/abajo, 40 lados",
+    "real": "arriba 21, abajo 21, lados 21 px"
+   },
+   {
+    "regla": "alto de los campos (PC 1280)",
+    "esperado": "48 px",
+    "real": "38–66 px"
+   },
+   {
+    "regla": "letra de los campos (PC 1280)",
+    "esperado": "16 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "botón principal (PC 1280)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Agregar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (PC 1280)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×30; «Agregar» 418×38"
+   },
+   {
+    "regla": "título → texto de ayuda (celular 390)",
+    "esperado": "8 px",
+    "real": "14 px"
+   },
+   {
+    "regla": "etiqueta → cajita (celular 390)",
+    "esperado": "8 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "campo → campo siguiente (celular 390)",
+    "esperado": "20 px",
+    "real": "25 px"
+   },
+   {
+    "regla": "grupo → grupo (último campo → botón principal) (celular 390)",
+    "esperado": "24 px",
+    "real": "10 px"
+   },
+   {
+    "regla": "borde interior de la ventana (celular 390)",
+    "esperado": "24 arriba/abajo, 16 lados",
+    "real": "arriba 15, abajo 15 px"
+   },
+   {
+    "regla": "alto de los campos (celular 390)",
+    "esperado": "48 px",
+    "real": "38 px"
+   },
+   {
+    "regla": "botón principal (celular 390)",
+    "esperado": "54 px de alto",
+    "real": "38 px («Agregar»)"
+   },
+   {
+    "regla": "todo lo tocable ≥ 44×44 (celular 390)",
+    "esperado": "44×44 px",
+    "real": "2 de 2 más chicos: «Volver» 78×36; «Agregar» 344×38"
+   }
+  ],
+  "arreglo_sugerido": "etiquetas a 13 px sin mayúsculas forzadas y 8 px de separación con la cajita (regla común .fr label / label de la ventana); cajitas a 48 px de alto y letra de 16 px (.fr input/select); 20 px entre un campo y el siguiente (margin-bottom del .fr o gap de la rejilla); relleno interior de la ventana 48/40 px en PC y 24/16 px en celular; botón principal a 54 px de alto; subir a 44×44 px los botones pequeños (Volver/×, chips, ⓘ, casillas con su etiqueta); 24 px entre bloques (campos → botón principal → otras opciones); 8 px entre el título y su texto de ayuda"
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: transferir conversación",
+  "donde": "POS > CRM > Chat",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana crmTrM (.modal.nxCrmModal). Necesita una conversación abierta.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "CRM: plantillas WhatsApp",
+  "donde": "POS > CRM > Chat",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana bdPlantM (.modal.nxCrmModal). Necesita una conversación y plantillas reales.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Devolución de venta",
+  "donde": "POS > Ventas",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana nxDevForm (.modal + .fr). Necesita una venta real.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ },
+ {
+  "proyecto": "STUDIO",
+  "formulario": "Abonar a cuenta por pagar",
+  "donde": "POS > Compras > CxP",
+  "metodo": "por código",
+  "estado": "no cumple",
+  "fallas": [
+   {
+    "regla": "etiqueta → cajita / etiquetas 13 px",
+    "esperado": "8 px; 13 px minúscula",
+    "real": "misma base .fr que las ventanas medidas: etiqueta 8–11 px, en MAYÚSCULAS, 3–4 px sobre la cajita"
+   },
+   {
+    "regla": "alto y letra de los campos",
+    "esperado": "48 px / 16 px",
+    "real": "base .fr input: ~40 px / 12 px"
+   },
+   {
+    "regla": "borde interior",
+    "esperado": "48/40 PC, 24/16 cel",
+    "real": "base .modal: 20 px (14 px en celular)"
+   },
+   {
+    "regla": "botón principal",
+    "esperado": "54 px",
+    "real": "~36 px (clase .btn)"
+   }
+  ],
+  "nota": "Ventana nxCxpAb (.modal.nxPrForm.nxCxpAb + .fr; CSS propio: etiquetas 11 px). Necesita una compra a crédito real.",
+  "arreglo_sugerido": "Se arregla junto con las demás al corregir la base común (.modal, .fr label, .fr input, .btn)."
+ }
+]

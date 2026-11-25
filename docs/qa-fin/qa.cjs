@@ -79,7 +79,9 @@ async function abrir(b, w, h, db, opt = {}) {
 }
 const rpcs = (ll, fn) => ll.filter(x => x[1] === 'rpc/' + fn);
 
-(async () => {
+// Otras pruebas (qa-cobrar.cjs) reutilizan la base simulada.
+module.exports = { chromium, base, abrir, ok, enDias, fallos: () => fallos };
+if (require.main === module) (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   for (const [w, h] of [[1280, 860], [390, 844]]) {
     console.log(`\n--- ${w}x${h} · admin`);

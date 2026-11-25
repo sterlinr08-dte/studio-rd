@@ -205,7 +205,7 @@
     ['fin', 'Financiamiento', 'ti-calendar-dollar', [
       ['fin_resumen', 'Resumen de Financiamiento'], ['fin_cartera', 'Cartera de Financiamientos'], ['fin_venc', 'Cuotas Vencidas por Antigüedad'],
       ['fin_prox', 'Cuotas por Cobrar'], ['fin_cobros', 'Cobros de Cuotas'], ['fin_otorgados', 'Financiamientos Otorgados'],
-      ['fin_sol', 'Solicitudes de Crédito'], ['fin_firmas', 'Contratos sin Firma del Cliente']]],
+      ['fin_sol', 'Solicitudes de Financiamiento'], ['fin_firmas', 'Contratos sin Firma del Cliente']]],
     ['conta', 'Contabilidad', 'ti-notebook', [
       ['con_er', 'Estado de Resultados'], ['con_diario', 'Libro Diario'], ['con_bal', 'Balanza de Comprobación'],
       ['con_gastos', 'Gastos por Cuenta'], ['con_607', 'Formato 607 · Ventas'], ['con_606', 'Formato 606 · Compras'], ['con_itbis', 'Resumen de ITBIS']]],
@@ -802,7 +802,7 @@
           return { f, cap: pend.reduce((a2, q) => a2 + q.capP, 0), int: pend.reduce((a2, q) => a2 + q.intP, 0), mora: pend.reduce((a2, q) => a2 + q.moraP, 0), venc: pend.filter(q => q.dias > 0).reduce((a2, q) => a2 + q.capP + q.intP + q.moraP, 0), pag: qs.length - pend.length, tot: qs.length, prox, at }; };
         const R2 = act.map(filaF);
         if (id === 'fin_cartera') {
-          const cols = [T('Código', { m: 1 }), T('Cliente'), T('Plan'), T('Cuotas', { r: 1 }), $('Capital'), $('Interés'), $('Mora'), $('Total pendiente'), T('Próxima'), T('Atraso', { r: 1 })];
+          const cols = [T('Código', { m: 1 }), T('Cliente'), T('Plan'), T('Cuotas', { r: 1 }), $('Capital'), $('Interés'), $('Recargo'), $('Total pendiente'), T('Próxima'), T('Atraso', { r: 1 })];
           const fila = o => [o.f.codigo || '', o.f.cliente_nombre || '', (L.plan[o.f.plan_id] || {}).nombre || 'Sin plan', o.pag + '/' + o.tot, o.cap, o.int, o.mora, o.cap + o.int + o.mora, o.prox ? dmy(o.prox.venc) : '', o.at ? o.at + ' días' : 'Al día'];
           return { cols, grupos: agrupar(R2, o => o.at > 0 ? '1 · Atrasados' : '2 · Al día', fila, cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') })), alCorte: 1, nota: 'Solo financiamientos activos. Mora calculada a hoy con la regla de cada plan (días de gracia incluidos).' };
         }
@@ -819,14 +819,14 @@
           ${k('Otorgado en el rango', m2(otor.reduce((a2, f) => a2 + n(f.monto_financiado), 0)), otor.length + ' contrato(s) · interés contratado ' + m2(otor.reduce((a2, f) => a2 + n(f.interes_total), 0)), '')}
           ${k('Cobrado en el rango', m2(cob.cap + cob.int + cob.mora), 'Capital ' + m2(cob.cap) + ' · interés ' + m2(cob.int) + ' · mora ' + m2(cob.mora), 'ok')}
           ${k('Ganado en el rango', m2(cob.int + cob.mora), 'Interés + mora cobrados (ingreso real)', '')}
-        </div>${sinFirma ? `<ul class="nxRpAl"><li class="warn"><i class="ti ti-signature"></i><span><b>${sinFirma} contrato(s) activos sin firma del cliente.</b> Envía el link desde Cuotas → detalle del financiamiento, o mira «Contratos sin Firma del Cliente».</span></li></ul>` : ''}</div>`;
-        const cols = [T('Plan'), $('Activos', { fmt: v => String(v) }), $('Capital pendiente'), $('Interés pendiente'), $('Vencido'), $('Mora')];
+        </div>${sinFirma ? `<ul class="nxRpAl"><li class="warn"><i class="ti ti-signature"></i><span><b>${sinFirma} contrato(s) activos sin firma del cliente.</b> Envía el link desde Financiamiento → detalle del financiamiento, o mira «Contratos sin Firma del Cliente».</span></li></ul>` : ''}</div>`;
+        const cols = [T('Plan'), $('Activos', { fmt: v => String(v) }), $('Capital pendiente'), $('Interés pendiente'), $('Vencido'), $('Recargo')];
         const pp = {}; R2.forEach(o => { const nm = (L.plan[o.f.plan_id] || {}).nombre || 'Sin plan'; const a2 = pp[nm] = pp[nm] || [nm, 0, 0, 0, 0, 0]; a2[1]++; a2[2] += o.cap; a2[3] += o.int; a2[4] += o.venc; a2[5] += o.mora; });
         return { cols, grupos: [grupo('', Object.values(pp).sort((a2, b2) => b2[2] - a2[2]), cols)], resumen, nota: 'Cartera y vencido a hoy; otorgado y cobrado según el rango de fechas. El interés se gana al cobrarlo.' };
       }
       case 'fin_venc': {
         const L = libroFin(x);
-        const cols = [T('Cliente'), T('Teléfono'), T('Código', { m: 1 }), T('Cuota', { r: 1 }), T('Venció'), T('Días', { r: 1 }), $('Cuota pendiente'), $('Mora'), $('Total')];
+        const cols = [T('Cliente'), T('Teléfono'), T('Código', { m: 1 }), T('Cuota', { r: 1 }), T('Venció'), T('Días', { r: 1 }), $('Cuota pendiente'), $('Recargo'), $('Total')];
         const l = L.cuotas.filter(q => q.dias > 0 && q.f.estado === 'activo' && q.capP + q.intP > 0.01).sort((a2, b2) => b2.dias - a2.dias);
         const tr = d => d > 90 ? '1 · Más de 90 días' : d > 60 ? '2 · 61 a 90 días' : d > 30 ? '3 · 31 a 60 días' : '4 · 1 a 30 días';
         return { cols, grupos: agrupar(l, q => tr(q.dias), q => [q.f.cliente_nombre || '', q.cli.telefono || '', q.f.codigo || '', q.c.numero, dmy(q.venc), q.dias, q.capP + q.intP, q.moraP, q.capP + q.intP + q.moraP], cols, ks => ks.sort()).map(g => Object.assign(g, { t: g.t.replace(/^\d · /, '') })), alCorte: 1, nota: 'Lista para cobranza: los más atrasados primero. La mora se calcula a hoy con la regla del plan.' };
@@ -841,7 +841,7 @@
         const fin = {}; x.fins.forEach(f => { fin[f.id] = f; }); const cn = {}; x.cuotas.forEach(c => { cn[c.id] = c.numero; });
         const l = x.pagos.filter(p => { const d = diaRD(p.fecha); return d >= desde && d <= hasta; });
         const sg = p => p.tipo === 'reversa' ? -1 : 1;
-        const cols = [T('Fecha'), T('Código', { m: 1 }), T('Cliente'), T('Cuota', { r: 1 }), T('Tipo'), $('Capital'), $('Interés'), $('Mora'), $('Total')];
+        const cols = [T('Fecha'), T('Código', { m: 1 }), T('Cliente'), T('Cuota', { r: 1 }), T('Tipo'), $('Capital'), $('Interés'), $('Recargo'), $('Total')];
         return { cols, grupos: agrupar(l, p => p.metodo || 'Otro', p => [dmy(p.fecha), (fin[p.financiamiento_id] || {}).codigo || '', (fin[p.financiamiento_id] || {}).cliente_nombre || '', cn[p.cuota_id] || '', p.tipo === 'reversa' ? 'Reversa' : 'Pago', sg(p) * n(p.monto_principal), sg(p) * n(p.monto_interes), sg(p) * n(p.monto_mora), sg(p) * n(p.monto)], cols, porTotalDesc(8)), nota: 'Las reversas restan. Interés y mora son ingreso; el capital solo recupera lo prestado.' };
       }
       case 'fin_otorgados': {

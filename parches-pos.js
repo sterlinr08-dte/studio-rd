@@ -13458,6 +13458,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffCobMonto{text-align:right}.ffCobMonto b{font:700 17px var(--f2-mono)}.ffCobMonto span{display:block;font-size:12px;font-weight:700}
 .ffCobMonto span.bad{color:#b91c1c}.ffCobMonto span.warn{color:#b45309}.ffCobMonto span.ok{color:#15803d}
 .ffCobAcc{display:flex;gap:8px}.ffCobAcc .nxF2Btn{flex:1;min-height:46px}
+html.nx-studio #v-pos .ffCobAcc .nxF2Btn{min-height:46px;height:auto}html.nx-studio #v-pos .nxF2Chip.ffCobChip{min-height:44px;font-size:13px;padding-inline:14px}.ffCobRes{margin-bottom:10px}
 .ffCobCli{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px}.ffCobCli b{font-size:15px}.ffCobCli span{color:var(--f2-steel)}.ffCobCli .rojo{color:#b91c1c;font-weight:700}
 .ffBuscar input{height:52px!important;font-size:16px!important}
 .ffChecks{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px}.ffChecks .ok{color:#15803d}.ffChecks .no{color:#b91c1c;font-weight:700}

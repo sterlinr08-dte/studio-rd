@@ -26,7 +26,10 @@ function datos(rol) {
     await p.evaluate(() => window.nxPosTab('cuotas')); await p.waitForTimeout(700);
     const home = await p.evaluate(() => document.body.innerText);
     ok(/Cobrar cuotas/i.test(home) && !/Pagos de hoy/i.test(home) && !/Cobranza/i.test(home), 'inicio: un solo botón «Cobrar cuotas» (sin «Pagos de hoy» ni «Cobranza»)');
-    ok(/Para hoy: 3 clientes/i.test(home), 'el botón dice cuántos hay para hoy (3)');
+    // En el teléfono el subtítulo de los botones secundarios se oculta a propósito (studio-pulido.css §26): queda el número.
+    ok(w < 500 ? await p.$eval('.ffBig .bdg', x => x.textContent.trim() === '3') : /Para hoy: 3 clientes/i.test(home), 'el botón dice cuántos hay para hoy (3)');
+    await p.waitForFunction(() => { const s = document.getElementById('nxSplash'); return !s || getComputedStyle(s).display === 'none' || getComputedStyle(s).opacity === '0' || getComputedStyle(s).visibility === 'hidden'; }, null, { timeout: 15000 }).catch(() => {});
+    await p.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
     if (CAPS) await p.screenshot({ path: `${CAPS}/inicio-${w}-${rol}.png` });
     await p.evaluate(() => window.nxFinV2Go('cobrar')); await p.waitForTimeout(500);
     const filas = () => p.$$eval('#ffCobLista .ffCob', n => n.map(x => x.querySelector('b').textContent));

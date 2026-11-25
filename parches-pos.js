@@ -2343,7 +2343,7 @@
       </div>`;
   }
   function ajMoraHTML() {
-    return ajCard('ti-percentage', 'orange', 'Recargo por mora (Cuotas)', `Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar mora.${cv2fin() ? ' Cada plan de financiamiento puede tener su propia mora; esta se usa cuando el plan no dice nada.' : ''}${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:var(--pf-red)">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:var(--pf-txt3)">Mora desactivada</b> — no se le cobra recargo a nadie.'}`)
+    return ajCard('ti-percentage', 'orange', 'Recargo por atraso (Financiamiento)', `Recargo que se le suma UNA vez a una cuota vencida (no se acumula por día). Déjalo en 0% para no cobrar recargo.${cv2fin() ? ' Cada plan de financiamiento puede tener su propia mora; esta se usa cuando el plan no dice nada.' : ''}${_posCfg.mora_pct > 0 ? `<br>Hoy: <b style="color:var(--pf-red)">${_posCfg.mora_pct}%</b> sobre la cuota, después de <b>${_posCfg.mora_dias_gracia}</b> día(s) de gracia.` : '<br><b style="color:var(--pf-txt3)">Mora desactivada</b> — no se le cobra recargo a nadie.'}`)
       + `<div class="g2">
           <div class="fld"><label>% de mora</label><div class="inw"><i class="ti ti-percentage"></i><input id="cfgMoraPct" inputmode="decimal" value="${_posCfg.mora_pct}" placeholder="0"></div></div>
           <div class="fld"><label>Días de gracia</label><div class="inw"><i class="ti ti-calendar-clock"></i><input id="cfgMoraDias" inputmode="numeric" value="${_posCfg.mora_dias_gracia}" placeholder="0"></div></div>
@@ -7197,7 +7197,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
             ${kpi('Total a crédito', fmt(totFiado), '#0f172a')}${kpi('Abonado', fmt(totAb), '#059669')}${kpi('Saldo', fmt(saldo), saldo > 0 ? '#dc2626' : '#16a34a')}
           </div>
-          ${finesCli.length ? `<div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">PLANES DE CUOTAS ACTIVOS (${finesCli.length}) · ${fmt(totCuotas)} pendiente</div>
+          ${finesCli.length ? `<div style="font-size:11px;font-weight:800;color:#475569;margin:8px 0 4px">FINANCIAMIENTOS ACTIVOS (${finesCli.length}) · ${fmt(totCuotas)} pendiente</div>
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:10px">${planesHTML}</div>` : ''}
           ${saldo > 0 ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px;margin-bottom:10px">
             <div style="font-size:11px;font-weight:800;color:#475569;margin-bottom:6px">REGISTRAR ABONO</div>
@@ -12486,7 +12486,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
       esc(x.f.cliente_nombre || '') + ' · <b style="color:var(--pf-red)">' + fmt(x.monto) + '</b>',
       x.cuotas.length + ' cuota(s) vencida(s) · ' + esc(x.f.descripcion || ''),
       wa(tel, msg) + sms(tel, msg, !!(cli && cli.acepta_whatsapp)) +
-      `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('cuotas')" aria-label="Ir a Cuotas"><i class="ti ti-cash"></i></button>`
+      `<button class="ab g2" style="height:30px;width:30px;padding:0" onclick="window.nxPosTab('cuotas')" aria-label="Ir a Financiamiento"><i class="ti ti-cash"></i></button>`
       );
     }).join('') : '';
     // 2) Apartados vencidos o por vencer (3 días)
@@ -13293,6 +13293,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     if (_finV2Vista === 'cobrar') { const i = document.getElementById('ffCobQ'); if (i && window.matchMedia && window.matchMedia('(pointer:fine)').matches) try { i.focus(); } catch (e) {} }
   }
   window.nxFinV2Go = function (vista, id) {
+    if (vista === 'hoy' || vista === 'cobranza') { _ffCobF = vista === 'hoy' ? 'hoy' : 'atrasados'; _ffCobQ = ''; vista = 'cobrar'; }
     _finV2Vista = vista || 'cartera';
     if (vista === 'detalle') _finV2Sel = id || _finV2Sel;
     if (vista === 'aprobacion') _finV2SolSel = id || null;
@@ -13304,7 +13305,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
     }
     if (vista === 'planes') _finPlanEdit = null;
     if (vista === 'cotizar' && !_finCot) _finCot = finCotNuevo();
-    if (vista === 'cobrar' || vista === 'hoy') { const v0 = vista; getAPI().get('pos_cajas', cajaQS('abierta', 1)).then(cj => { const antes = !!(_caja && _caja.id); _caja = (cj && cj[0]) || null; if (antes !== !!(_caja && _caja.id) && _finV2Vista === v0 && _posTab === 'cuotas') finV2Repintar(); }).catch(() => {}); }
+    if (vista === 'cobrar') { const v0 = vista; getAPI().get('pos_cajas', cajaQS('abierta', 1)).then(cj => { const antes = !!(_caja && _caja.id); _caja = (cj && cj[0]) || null; if (antes !== !!(_caja && _caja.id) && _finV2Vista === v0 && _posTab === 'cuotas') finV2Repintar(); }).catch(() => {}); }
     finV2Repintar();
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
   };
@@ -13457,6 +13458,7 @@ body.tema-glass .nxPf .chip,body.tema-glass .nxPf .vchip,body.tema-glass .nxPf .
 .ffCobMonto{text-align:right}.ffCobMonto b{font:700 17px var(--f2-mono)}.ffCobMonto span{display:block;font-size:12px;font-weight:700}
 .ffCobMonto span.bad{color:#b91c1c}.ffCobMonto span.warn{color:#b45309}.ffCobMonto span.ok{color:#15803d}
 .ffCobAcc{display:flex;gap:8px}.ffCobAcc .nxF2Btn{flex:1;min-height:46px}
+html.nx-studio #v-pos .ffCobAcc .nxF2Btn{min-height:46px;height:auto}html.nx-studio #v-pos .nxF2Chip.ffCobChip{min-height:44px;font-size:13px;padding-inline:14px}.ffCobRes{margin-bottom:10px}
 .ffCobCli{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px}.ffCobCli b{font-size:15px}.ffCobCli span{color:var(--f2-steel)}.ffCobCli .rojo{color:#b91c1c;font-weight:700}
 .ffBuscar input{height:52px!important;font-size:16px!important}
 .ffChecks{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px}.ffChecks .ok{color:#15803d}.ffChecks .no{color:#b91c1c;font-weight:700}
@@ -13533,16 +13535,14 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const big = (cls, ic, t, sub, go, bdg) => `<button type="button" class="ffBig ${cls}" onclick="window.nxFinV2Go('${go}')"><span class="ic"><i class="ti ${ic}"></i></span><span class="txt"><b>${t}</b><small>${sub}</small></span>${bdg ? `<span class="bdg">${bdg}</span>` : ''}</button>`;
     const guia = `<button type="button" class="nxF2Back ffGuiaBtn" aria-label="Guía de financiamiento" onclick="window.nxFinGuia()"><i class="ti ti-help-circle"></i> Guía</button>`;
     let html = finV2HeaderHTML('Financiamiento', admin ? 'Solicitudes, cobros y cartera' : 'Solicitudes y cobros de cuotas', null, guia) + `
-      <div class="ffBig3 ffBig4">
+      <div class="ffBig3">
         ${big('p', 'ti-file-plus', 'Nueva solicitud', 'Cliente, artículo y condiciones en 5 pasos', 'solicitud')}
         ${big('', 'ti-calculator', 'Consultar / Cotizar', 'Calcula la cuota sin guardar nada', 'cotizar')}
-        ${big('', 'ti-cash', 'Cobrar cuota', 'Busca por cédula, teléfono o nombre', 'cobrar')}
-        ${big('', 'ti-calendar-due', 'Pagos de hoy', hoy.length ? hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie atrasado hoy', 'hoy', hoy.length || '')}
+        ${big('', 'ti-cash', 'Cobrar cuotas', hoy.length ? 'Para hoy: ' + hoy.length + (hoy.length === 1 ? ' cliente · ' : ' clientes · ') + fmt2(hoyMonto) : 'Nadie tiene cuotas para hoy', 'cobrar', hoy.length || '')}
       </div>`;
     if (admin) {
       html += `<div class="ffAdm">
         <button type="button" onclick="window.nxFinV2Go('aprobacion')"><i class="ti ti-checklist"></i> Por aprobar <span class="nxF2Badge ${pend ? 'warn' : 'gris'}">${pend}</span></button>
-        <button type="button" onclick="window.nxFinV2Go('cobranza')"><i class="ti ti-target-arrow"></i> Cobranza</button>
         <button type="button" onclick="window.nxFinV2Go('reportes')"><i class="ti ti-chart-bar"></i> Reportes</button>
         <button type="button" onclick="window.nxFinV2Go('planes')"><i class="ti ti-adjustments-horizontal"></i> Planes</button>
       </div>` + finV2CarteraHTML();
@@ -13572,26 +13572,46 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     const est = dv > 0 ? ['bad', 'Atrasado ' + dv + (dv === 1 ? ' día' : ' días')] : hasta === 0 ? ['warn', 'Paga hoy'] : ['ok', 'Al día · paga el ' + finFechaCorta(prox.fecha_venc)];
     const num = waNum(cli.telefono);
     return `<div class="ffCob ${est[0] === 'ok' ? '' : est[0]}"><div class="ffCobTop"><div style="min-width:0"><b>${esc(f.cliente_nombre || '')}</b><small>${esc([cli.cedula, cli.telefono].filter(Boolean).join(' · '))}</small><small>${esc(f.descripcion || '')} · cuota ${prox.numero} de ${f.cuotas_total}</small></div><div class="ffCobMonto"><b>${fmt2(monto)}</b><span class="${est[0]}">${est[1]}</span></div></div>
-      <div class="ffCobAcc"><button type="button" class="nxF2Btn p" onclick="window.nxFinV2Cobrar('${f.id}')"><i class="ti ti-cash"></i> Cobrar</button>${x && num ? `<button type="button" class="nxF2Btn" onclick="window.nxFinCobWA('${f.id}')" title="Abre WhatsApp con el recordatorio listo; tú decides si lo envías"><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> Recordar</button>` : ''}</div></div>`;
+      <div class="ffCobAcc"><button type="button" class="nxF2Btn p" onclick="window.nxFinV2Cobrar('${f.id}')"><i class="ti ti-cash"></i> Cobrar</button>${x && num ? `<button type="button" class="nxF2Btn" onclick="window.nxFinCobWA('${f.id}')" title="Abre WhatsApp con el recordatorio listo; tú decides si lo envías"><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> Recordar</button>` : ''}${puedeVerMin() ? `<button type="button" class="nxF2Btn" onclick="window.nxFinHistCredito('${f.cliente_id}')"><i class="ti ti-history"></i> Historial</button>` : ''}</div></div>`;
+  }
+  // Una sola pantalla de cobro (25-nov-2026): reemplaza «Cobrar cuota», «Pagos de hoy» y «Cobranza».
+  // Filtros: Para hoy (vence hoy o está atrasado) · Atrasados · Todos. La búsqueda busca en toda la lista.
+  let _ffCobF = 'hoy';
+  function finCobrarFiltrada() {
+    const q = String(_ffCobQ || '').trim(); const mod = finCobModelo();
+    const orden = (a, b) => (FCOB_ORD[a.prio] - FCOB_ORD[b.prio]) || (b.dv - a.dv) || (a.hasta - b.hasta) || (b.saldo - a.saldo);
+    if (q.length >= 2) { const ids = finCobrarBusca(q).map(f => String(f.id)); return mod.filter(x => ids.indexOf(String(x.f.id)) >= 0).sort(orden); }
+    return mod.filter(x => _ffCobF === 'todos' ? true : _ffCobF === 'atrasados' ? x.dv > 0 : (x.dv > 0 || x.hasta <= 0)).sort(orden);
   }
   function finCobrarListaHTML() {
-    const q = String(_ffCobQ || '').trim();
-    if (q.length < 2) { const h = finHoyLista().slice(0, 5); return h.length ? '<div class="ffSec">Tocan hoy o están atrasados</div>' + h.map(x => finCobFilaHTML(x.f, x)).join('') : '<div class="ffVacio">Escribe la cédula, el teléfono o el nombre del cliente.</div>'; }
-    const l = finCobrarBusca(q); const mod = finCobModelo();
-    if (!l.length) return '<div class="ffVacio">No hay cuotas pendientes con esa búsqueda. Revisa lo que escribiste.</div>';
-    return l.map(f => finCobFilaHTML(f, mod.find(y => String(y.f.id) === String(f.id)))).join('');
+    const q = String(_ffCobQ || '').trim(); const l = finCobrarFiltrada();
+    if (l.length) return l.map(x => finCobFilaHTML(x.f, x)).join('');
+    const msg = q.length >= 2 ? 'No hay cuotas pendientes con esa búsqueda. Revisa lo que escribiste.'
+      : !_fins.some(f => f.estado === 'activo') ? 'Todavía no hay financiamientos activos.'
+      : _ffCobF === 'hoy' ? 'Todos están al día. No hay cuotas que cobrar hoy.' : _ffCobF === 'atrasados' ? 'Nadie está atrasado.' : 'No hay cuotas pendientes.';
+    return `<div class="nxF2Card" style="align-items:center;text-align:center;color:var(--f2-steel);font-size:13px;padding:26px"><i class="ti ti-mood-happy" style="font-size:28px"></i>${msg}</div>`;
+  }
+  function finCobrarChipsHTML() {
+    const mod = finCobModelo(); const n = { hoy: mod.filter(x => x.dv > 0 || x.hasta <= 0).length, atrasados: mod.filter(x => x.dv > 0).length, todos: mod.length };
+    return [['hoy', 'Para hoy'], ['atrasados', 'Atrasados'], ['todos', 'Todos']].map(t => `<button type="button" class="nxF2Chip ffCobChip ${_ffCobF === t[0] ? 'on' : ''}" aria-pressed="${_ffCobF === t[0]}" onclick="window.nxFinCobrarFiltro('${t[0]}')">${t[1]} · ${n[t[0]]}</button>`).join('');
+  }
+  function finCobrarResumenHTML() {
+    if (!puedeVerMin()) return '';
+    const mod = finCobModelo(); const hoyK = hoyISOPos();
+    const venc = mod.reduce((s, x) => s + x.vencido, 0);
+    const pagHoy = (_finPagos || []).filter(p => finPagoFecha(p) === hoyK).reduce((s, p) => s + (p.tipo === 'reversa' ? -1 : 1) * Number(p.monto || 0), 0);
+    return `<div class="nxF2Card ffCobRes"><div class="nxF2Line"><span>Atrasado sin cobrar</span><b class="nxF2Mono">${fmt2(venc)}</b></div><div class="nxF2Line"><span>Cobrado hoy</span><b class="nxF2Mono">${fmt2(pagHoy)}</b></div><div class="nxF2Line"><span>Clientes con más de 30 días</span><b class="nxF2Mono">${mod.filter(x => x.prio === 'critico').length}</b></div></div>`;
   }
   function finCobrarHTML() {
-    return finV2HeaderHTML('Cobrar cuota', 'Busca al cliente y toca «Cobrar»', 'cartera') + finCajaAvisoHTML() + `
+    const excel = puedeVerMin() ? `<button type="button" class="nxF2Back" aria-label="Exportar a Excel" onclick="window.nxFinCobExcel()"><i class="ti ti-file-spreadsheet"></i></button>` : null;
+    return finV2HeaderHTML('Cobrar cuotas', 'Busca al cliente o elige de la lista y toca «Cobrar»', 'cartera', excel) + finCajaAvisoHTML() + finCobrarResumenHTML() + `
       <div class="nxF2F ffBuscar" style="margin-bottom:10px"><label for="ffCobQ">Cédula, teléfono o nombre del cliente</label><input id="ffCobQ" type="search" autocomplete="off" placeholder="Ej.: 001-1234567-8, 809… o Juan" value="${esc(_ffCobQ)}" oninput="window.nxFinCobrarBuscar(this.value)"></div>
-      <div id="ffCobLista">${finCobrarListaHTML()}</div>`;
+      <div class="nxF2Chips" id="ffCobChips">${finCobrarChipsHTML()}</div>
+      <div style="font-size:12.5px;color:var(--f2-steel);margin:2px 0 8px">Primero los más atrasados. «Recordar» abre WhatsApp con el mensaje listo; tú decides si lo envías.</div>
+      <div id="ffCobLista" data-pag10="fin-cobrar">${finCobrarListaHTML()}</div>`;
   }
   window.nxFinCobrarBuscar = function (v) { _ffCobQ = v || ''; const el = document.getElementById('ffCobLista'); if (el) el.innerHTML = finCobrarListaHTML(); };
-  function finHoyHTML() {
-    const l = finHoyLista(); const tot = l.reduce((t, x) => t + (x.vencido > 0 ? x.vencido : x.proxMonto), 0);
-    return finV2HeaderHTML('Quién paga hoy', l.length ? l.length + (l.length === 1 ? ' cliente' : ' clientes') + ' · ' + fmt2(tot) : 'Nadie tiene cuotas atrasadas ni de hoy', 'cartera') + finCajaAvisoHTML()
-      + (l.length ? '<div style="font-size:12.5px;color:var(--f2-steel);margin-bottom:8px">Primero los más atrasados. «Recordar» abre WhatsApp con el mensaje listo; tú decides si lo envías.</div>' + l.map(x => finCobFilaHTML(x.f, x)).join('') : '<div class="nxF2Card" style="align-items:center;text-align:center;color:var(--f2-steel);font-size:13px;padding:26px"><i class="ti ti-mood-happy" style="font-size:28px"></i>Todos están al día. No hay cuotas que cobrar hoy.</div>');
-  }
+  window.nxFinCobrarFiltro = function (f) { _ffCobF = f || 'hoy'; const c = document.getElementById('ffCobChips'); if (c) c.innerHTML = finCobrarChipsHTML(); const el = document.getElementById('ffCobLista'); if (el) el.innerHTML = finCobrarListaHTML(); };
   // ══ «Consultar / Cotizar» (29-sep-2026): calculadora de cuotas. NO escribe nada en la base. ═══════════════
   // Usa la MISMA fórmula que el servidor (finV2Amortizar = pos_fin_amortizacion, migración 30) y el mismo interés
   // de la tienda que el asistente (plan activo + condiciones). Los empleados ven la cuota, no el interés.
@@ -13791,11 +13811,9 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     else if (_finV2Vista === 'solicitud') body = finV2SolicitudHTML();
     else if (_finV2Vista === 'enviada') body = finWizEnviadaHTML();
     else if (_finV2Vista === 'cobrar') body = finCobrarHTML();
-    else if (_finV2Vista === 'hoy') body = finHoyHTML();
     else if (_finV2Vista === 'cotizar') body = finCotHTML();
     else if (_finV2Vista === 'aprobacion') body = finV2AprobacionHTML();
     else if (_finV2Vista === 'detalle') body = finV2DetalleHTML();
-    else if (_finV2Vista === 'cobranza') body = finV2CobranzaHTML();
     else if (_finV2Vista === 'reportes') body = finV2ReportesHTML();
     else body = finFacilHomeHTML();
     return `<div class="nxF2">${body}</div>`;
@@ -13842,7 +13860,6 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
   const FCOB_CLS = { critico: 'bad', alta: 'bad', morareciente: 'warn', porvencer: 'info', aldia: 'ok' };
   const FCOB_ORD = { critico: 0, alta: 1, morareciente: 2, porvencer: 3, aldia: 4 };
   const FCOB_PEND = ['critico', 'alta', 'morareciente', 'porvencer'];
-  let _fcobTab = 'pendientes', _fcobQ = '';
   function finPagoFecha(p) { return String(p.fecha || p.created_at || '').slice(0, 10); }
   function finPagosDeFin(fid) { return (_finPagos || []).filter(p => String(p.financiamiento_id) === String(fid)); }
   function finCobModelo() {
@@ -13860,76 +13877,12 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       return { f, prio, dv, hasta, prox: vieja, proxMonto: finV2Pend(vieja).total, saldo: r2(saldo), vencido: r2(vencido), ult, cli, cuotasVenc: imp.filter(c => finV2Atraso(c) > 0).length };
     }).filter(Boolean);
   }
-  function finCobFiltrada(modelo) {
-    const q = (_fcobQ || '').toLowerCase().trim();
-    return modelo.filter(x => {
-      if (_fcobTab === 'pendientes') { if (FCOB_PEND.indexOf(x.prio) < 0) return false; }
-      else if (_fcobTab !== 'todos' && x.prio !== _fcobTab) return false;
-      if (q && [x.f.cliente_nombre, x.f.codigo, x.cli.cedula, x.cli.telefono].filter(Boolean).join(' ').toLowerCase().indexOf(q) < 0) return false;
-      return true;
-    }).sort((a, b) => (FCOB_ORD[a.prio] - FCOB_ORD[b.prio]) || (b.dv - a.dv) || (a.hasta - b.hasta) || (b.saldo - a.saldo));
-  }
   function finCobWaMsg(x) {
     const nom = String(x.f.cliente_nombre || '').split(' ')[0];
     return x.vencido > 0
       ? 'Hola ' + nom + ', te saludamos de ' + empNom() + '. Tu financiamiento ' + (x.f.codigo || '') + ' tiene ' + x.cuotasVenc + ' cuota' + (x.cuotasVenc === 1 ? '' : 's') + ' vencida' + (x.cuotasVenc === 1 ? '' : 's') + ' por ' + fmt2(x.vencido) + ' (' + x.dv + ' día' + (x.dv === 1 ? '' : 's') + ' de atraso). ¿Cuándo pasas a ponerte al día?'
       : 'Hola ' + nom + ', te recordamos que tu cuota ' + x.prox.numero + ' del financiamiento ' + (x.f.codigo || '') + ' vence el ' + finFechaCorta(x.prox.fecha_venc) + ' por ' + fmt2(x.proxMonto) + '. ¡Gracias por tu puntualidad!';
   }
-  function finCobRowHTML(x) {
-    const av = finIniciales(x.f.cliente_nombre); const num = waNum(x.cli.telefono);
-    const est = x.dv > 0 ? `${FCOB_LBL[x.prio].toUpperCase()} · ${x.dv} d` : x.prio === 'porvencer' ? (x.hasta === 0 ? 'VENCE HOY' : 'VENCE EN ' + x.hasta + ' d') : 'AL DÍA';
-    return `<div class="nxF2Row fcobRow ${x.prio}">
-      <div class="top" onclick="window.nxFinV2Go('detalle','${x.f.id}')"><div class="who"><div class="nxF2Av ${FCOB_CLS[x.prio] === 'bad' ? 'bad' : ''}">${av.ini}</div><div style="min-width:0"><div class="nm">${esc(x.f.cliente_nombre || '')}</div><div class="ds">${esc(x.f.codigo || '')}${x.cli.telefono ? ' · ' + esc(x.cli.telefono) : ''}</div></div></div><span class="nxF2Badge ${FCOB_CLS[x.prio]}">${est}</span></div>
-      <div class="fcobNums"><div><span>Monto vencido</span><b class="nxF2Mono ${x.vencido > 0 ? 'rojo' : ''}">${fmt2(x.vencido)}</b></div><div><span>Próxima cuota</span><b class="nxF2Mono">${fmt2(x.proxMonto)}</b><small>${x.prox.numero} · ${finFechaCorta(x.prox.fecha_venc)}</small></div><div><span>Saldo</span><b class="nxF2Mono">${fmt2(x.saldo)}</b></div><div><span>Último pago</span><b>${x.ult ? finFechaCorta(finPagoFecha(x.ult)) : '—'}</b>${x.ult ? `<small>${fmt2(x.ult.monto)}</small>` : ''}</div></div>
-      <div class="fcobAcc">
-        <button type="button" class="nxF2Btn p" onclick="window.nxFinV2Cobrar('${x.f.id}')"><i class="ti ti-cash"></i> Cobrar</button>
-        ${num ? `<button type="button" class="nxF2Btn" onclick="window.nxFinCobWA('${x.f.id}')" title="Abre WhatsApp con el recordatorio listo; tú decides si lo envías"><i class="ti ti-brand-whatsapp" style="color:#16a34a"></i> Recordar</button>` : ''}
-        <button type="button" class="nxF2Btn" onclick="window.nxFinHistCredito('${x.f.cliente_id}')"><i class="ti ti-history"></i> Historial</button>
-      </div></div>`;
-  }
-  function finV2CobranzaHTML() {
-    const m = finCobModelo(); const b = k => m.filter(x => x.prio === k);
-    const sumS = a => a.reduce((s, x) => s + x.saldo, 0), sumV = a => a.reduce((s, x) => s + x.vencido, 0);
-    const crit = b('critico'), alta = b('alta'), mr = b('morareciente'), pv = b('porvencer'), ad = b('aldia');
-    const hoyK = hoyISOPos();
-    const cobrarHoy = sumV(crit) + sumV(alta) + sumV(mr);
-    const pagHoy = (_finPagos || []).filter(p => finPagoFecha(p) === hoyK).reduce((s, p) => s + (p.tipo === 'reversa' ? -1 : 1) * Number(p.monto || 0), 0);
-    const recientes = (_finPagos || []).filter(p => p.tipo !== 'reversa').slice().sort((a, c) => String(c.created_at || c.fecha).localeCompare(String(a.created_at || a.fecha))).slice(0, 5);
-    const kpi = (cls, ico, lbl, v, sub, tab) => `<button type="button" class="fcobK ${cls}${_fcobTab === tab ? ' on' : ''}" onclick="window.nxFinCobTab('${tab}')"><span class="i"><i class="ti ${ico}"></i></span><span class="l">${lbl}</span><b class="nxF2Mono">${v}</b><small>${sub}</small></button>`;
-    const n = a => a.length + (a.length === 1 ? ' cliente' : ' clientes');
-    const tabs = [['pendientes', 'Pendientes', crit.length + alta.length + mr.length + pv.length], ['critico', 'Críticos', crit.length], ['alta', 'Alta', alta.length], ['morareciente', 'Mora reciente', mr.length], ['porvencer', 'Por vencer', pv.length], ['aldia', 'Al día', ad.length], ['todos', 'Todos', m.length]];
-    return finV2HeaderHTML('Cobranza', 'Gestión y seguimiento de la cartera por prioridad', 'cartera',
-      `<button type="button" class="nxF2Back" aria-label="Exportar a Excel" onclick="window.nxFinCobExcel()"><i class="ti ti-file-spreadsheet"></i></button>`) + `
-      <div class="fcobKpis">
-        ${kpi('bad', 'ti-alert-octagon', 'Saldo crítico', fmt2(sumS(crit)), n(crit) + ' · más de 30 días', 'critico')}
-        ${kpi('bad2', 'ti-alert-triangle', 'Alta prioridad', fmt2(sumS(alta)), n(alta) + ' · 8 a 30 días', 'alta')}
-        ${kpi('warn', 'ti-clock-exclamation', 'Mora reciente', fmt2(sumS(mr)), n(mr) + ' · 1 a 7 días', 'morareciente')}
-        ${kpi('info', 'ti-calendar-due', 'Vence en 7 días', fmt2(sumS(pv)), n(pv), 'porvencer')}
-        ${kpi('ok', 'ti-circle-check', 'Al día', String(ad.length), 'sin atrasos', 'aldia')}
-      </div>
-      <div class="fcobGrid">
-        <aside class="nxF2Card fcobSide">
-          <div class="nxF2Lbl">Resumen del día</div>
-          <div class="fcobHoy"><span>Cobrar hoy</span><b class="nxF2Mono">${fmt2(cobrarHoy)}</b><small>Todo lo vencido y sin cubrir</small></div>
-          <div class="nxF2Line"><span>Clientes críticos</span><span class="nxF2Mono" style="color:#b91c1c">${crit.length}</span></div>
-          <div class="nxF2Line"><span>Pagos registrados hoy</span><span class="nxF2Mono">${fmt2(pagHoy)}</span></div>
-          <div class="nxF2Lbl" style="margin-top:6px">Pagos recientes</div>
-          ${recientes.length ? recientes.map(p => { const f = finFinDe(p.financiamiento_id) || {}; return `<div class="nxF2Line"><span>${esc(String(f.cliente_nombre || 'Cliente').split(' ').slice(0, 2).join(' '))} · ${finFechaCorta(finPagoFecha(p))}</span><span class="nxF2Mono">${fmt2(p.monto)}</span></div>`; }).join('') : '<div class="nxF2Note">Sin pagos registrados todavía.</div>'}
-        </aside>
-        <div style="min-width:0">
-          <div class="nxF2Chips">${tabs.map(t => `<button type="button" class="nxF2Chip ${_fcobTab === t[0] ? 'on' : ''}" onclick="window.nxFinCobTab('${t[0]}')">${t[1]} · ${t[2]}</button>`).join('')}</div>
-          <div class="nxF2F" style="margin-bottom:8px"><input type="search" placeholder="Nombre, cédula, teléfono o código…" value="${esc(_fcobQ)}" oninput="window.nxFinCobBuscar(this.value)" autocomplete="off"></div>
-          <div id="fcobLista" data-pag10="fin-cobranza">${finCobListaHTML(m)}</div>
-        </div>
-      </div>`;
-  }
-  function finCobListaHTML(m) {
-    const l = finCobFiltrada(m || finCobModelo());
-    if (!l.length) return `<div class="nxF2Card" style="align-items:center;text-align:center;color:var(--f2-steel);font-size:12px;padding:26px"><i class="ti ti-mood-happy" style="font-size:26px"></i>${_fins.some(f => f.estado === 'activo') ? 'Nada pendiente en esta vista.' : 'Aún no hay financiamientos activos.'}</div>`;
-    return l.map(finCobRowHTML).join('');
-  }
-  window.nxFinCobTab = function (t) { _fcobTab = t || 'pendientes'; finV2Repintar(); };
-  window.nxFinCobBuscar = function (v) { _fcobQ = v || ''; const el = document.getElementById('fcobLista'); if (el) el.innerHTML = finCobListaHTML(); };
   window.nxFinCobWA = function (fid) {
     const x = finCobModelo().find(y => String(y.f.id) === String(fid)); if (!x) return;
     const num = waNum(x.cli.telefono); if (!num) { toast('err', 'El cliente no tiene teléfono válido'); return; }
@@ -13937,7 +13890,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
     window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(finCobWaMsg(x)), '_blank', 'noopener,noreferrer');
   };
   window.nxFinCobExcel = function () {
-    const l = finCobFiltrada(finCobModelo());
+    const l = finCobrarFiltrada();
     if (!l.length) { toast('warn', 'Nada que exportar'); return; }
     const filas = [['Prioridad', 'Días vencido', 'Código', 'Cliente', 'Cédula', 'Teléfono', 'Monto vencido', 'Próxima cuota', 'Vence', 'Saldo', 'Último pago', 'Monto último pago']];
     l.forEach(x => filas.push([FCOB_LBL[x.prio], x.dv, x.f.codigo || '', x.f.cliente_nombre || '', x.cli.cedula || '', x.cli.telefono || '', x.vencido, x.proxMonto, String(x.prox.fecha_venc).slice(0, 10), x.saldo, x.ult ? finPagoFecha(x.ult) : '', x.ult ? Number(x.ult.monto || 0) : '']));
@@ -15510,7 +15463,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
       const c2 = finCuotaDe(c.id); const f2 = finFinDe(f.id);
       try { window.logAudit && window.logAudit('POS_CUOTA_COBRADA', (f.cliente_nombre || '') + ' · ' + (f.codigo || '') + ' · cuota ' + c.numero + '/' + f.cuotas_total + ' · ' + fmt2(monto) + ' · ' + metodoTxt + ((c2 && c2.pagado) ? '' : ' (parcial)'), 'Financiamiento'); } catch (e) {}
       cerrarModal('nxFinM'); const okTit = (c2 && c2.pagado) ? 'Cuota cobrada' : 'Abono registrado', okSub = fmt2(monto) + ((f2 && f2.estado === 'saldado') ? ' · ¡PLAN SALDADO!' : '');
-      if (st.volver === 'cobrar' || st.volver === 'hoy') { _finV2Vista = st.volver; } else { _finV2Vista = 'detalle'; _finV2Sel = f.id; }
+      if (st.volver === 'cobrar') { _finV2Vista = 'cobrar'; } else { _finV2Vista = 'detalle'; _finV2Sel = f.id; }
       finV2Repintar();
       try { if (typeof _cajaTot !== 'undefined' && _caja) _cajaTot = await totalesCaja(_caja); } catch (e) {}
       // Comprobante de pago (fase 4 NEXUS): se ofrece al terminar; abrirlo es un toque del usuario (Safari no lo bloquea).
@@ -15611,7 +15564,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
             <div class="tots">
               <div class="tr"><span>Aplicado a capital</span><b>${fmt2(cap)}</b></div>
               <div class="tr"><span>Aplicado a interés</span><b>${fmt2(int)}</b></div>
-              <div class="tr"><span>Mora</span><b>${fmt2(mora)}</b></div>
+              <div class="tr"><span>Recargo por atraso</span><b>${fmt2(mora)}</b></div>
               <div class="tr grand"><span>Total pagado</span><b>${fmt2(monto)}</b></div>
               <div class="tr"><span>${cuota.pagado ? 'Cuota ' + (cuota.numero || '') : 'Queda de la cuota'}</span><b>${cuota.pagado ? 'SALDADA' : fmt2(finV2Pend(cuota).total)}</b></div>
             </div>
@@ -15665,7 +15618,7 @@ body.ffWinAbierta #toastS .toast:not(:last-child){display:none!important}
           <h3>Cuotas</h3>
           <table><thead><tr><th>#</th><th>Vence</th><th class="r">Cuota</th><th class="r">Pagado</th><th class="r">Pendiente</th><th>Estado</th></tr></thead><tbody>${filasC || '<tr><td colspan="6">Sin cuotas</td></tr>'}</tbody></table>
           <h3>Pagos (${pagos.length})</h3>
-          <table><thead><tr><th>Fecha</th><th>Recibo</th><th>Cuota</th><th>Método</th><th class="r">Capital</th><th class="r">Interés</th><th class="r">Mora</th><th class="r">Total</th></tr></thead><tbody>${filasP || '<tr><td colspan="8" style="color:#8f8a7e">Todavía no hay pagos registrados.</td></tr>'}</tbody></table>
+          <table><thead><tr><th>Fecha</th><th>Recibo</th><th>Cuota</th><th>Método</th><th class="r">Capital</th><th class="r">Interés</th><th class="r">Recargo</th><th class="r">Total</th></tr></thead><tbody>${filasP || '<tr><td colspan="8" style="color:#8f8a7e">Todavía no hay pagos registrados.</td></tr>'}</tbody></table>
         </div>
         <div class="foot"><span>Refleja los pagos registrados hasta la fecha de corte. La mora pendiente se calcula al día de hoy según el plan.</span><span>Impreso el ${esc(fechaDMY(new Date().toISOString()))}</span></div>
       </div>

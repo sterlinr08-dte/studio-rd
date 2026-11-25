@@ -1,7 +1,17 @@
 {
-  "version": "59.96",
+  "version": "59.97",
   "url": "https://studiord.net/index.html",
   "cambios": [
+    {
+      "version": "59.97",
+      "fecha": "2026-11-24",
+      "notas": [
+        "Financiamiento: una sola pantalla «Cobrar cuotas» en lugar de «Cobrar cuota», «Pagos de hoy» y «Cobranza». Tiene tres filtros con su conteo (Para hoy, Atrasados y Todos) y busca por cédula, teléfono o nombre en toda la lista.",
+        "El administrador y el gerente ven arriba lo atrasado sin cobrar, lo cobrado hoy y los clientes con más de 30 días, además del historial del cliente y el Excel.",
+        "Nombres iguales en todo el sistema: «Financiamiento» y «Recargo por atraso» (antes Cuotas, planes de cuotas y Mora).",
+        "El cobro funciona igual que antes: no cambió la ventana de cobro ni los recibos."
+      ]
+    },
     {
       "version": "59.96",
       "fecha": "2026-10-18",

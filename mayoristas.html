@@ -221,7 +221,7 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   .grupo-cab{margin-bottom:10px;align-items:center}
   .grupo-cab h2{font-size:24px}
   .grupo-cab .total-g{display:none}
-  .grupo-cab .cuenta{display:inline-flex;align-items:baseline;gap:4px;font:700 12px var(--mono);letter-spacing:.08em;color:var(--suave)}
+  .grupo-cab .cuenta{display:inline-flex;align-items:baseline;gap:4px;flex:0 0 auto;white-space:nowrap;font:700 12px var(--mono);letter-spacing:.08em;color:var(--suave)}
   .grupo-cab .cuenta b{color:var(--texto);font-size:14px}
   .grupo-cab .cuenta i{font-style:normal;margin-left:6px;color:var(--oro-luz);transition:opacity .4s}
   .grupo.movido .cuenta i{opacity:0}
@@ -374,7 +374,8 @@ header{position:sticky;top:0;z-index:40;background:rgba(7,8,10,.72);backdrop-fil
   const SB = 'https://edbknlkjnlfmkkiizdbe.supabase.co';
   const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkYmtubGtqbmxmbWtraWl6ZGJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMjg3MTYsImV4cCI6MjEwNTYwNDcxNn0.WKAda5kdWH9TxT0YbMNhJu-DoLFmXgLyrJFGD7Nr2Ec';
   const WHATSAPP = '18297448336';               // número mayorista (confirmado por el dueño)
-  const ORDEN = ['Movilidad', 'Monta cargas', 'Hogar', 'Tecnología'];
+  // Los nombres viejos se conservan para que el orden no cambie mientras la base se renombra.
+  const ORDEN = ['Vehículos eléctricos', 'Movilidad', 'Vehículos de gasolina', 'Monta cargas', 'Hogar', 'Tecnología'];
   const $ = s => document.querySelector(s);
   const rd = n => 'RD$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
